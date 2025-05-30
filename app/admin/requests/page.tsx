@@ -1,9 +1,9 @@
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Campus Compass',
+  title: 'Requests',
 };
 
 export default function Page() {
-  return <p>Home Screen, current location on the map will be shown here</p>;
+  return <p>All the requests to add new places will appear here</p>;
 }

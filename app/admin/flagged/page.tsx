@@ -1,9 +1,9 @@
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Campus Compass',
+  title: 'Moderation Settings',
 };
 
 export default function Page() {
-  return <p>Home Screen, current location on the map will be shown here</p>;
+  return <p>All the flagged reviews, requests will appear here.</p>;
 }
