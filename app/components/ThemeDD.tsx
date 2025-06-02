@@ -72,9 +72,9 @@ export function ThemeDD() {
       html.classList.add('dark');
     } else if (theme === 'light') {
       html.classList.add('light');
-    } else if (theme === 'rose') {
+    } else if (theme === 'theme-rose') {
       html.classList.add('theme-rose');
-    } else if (theme === 'slate') {
+    } else if (theme === 'theme-slate') {
       html.classList.add('theme-slate');
     }
   }, [theme]);
