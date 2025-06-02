@@ -12,11 +12,17 @@
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
+    "@radix-ui/react-navigation-menu": "^1.2.13",
+    "@radix-ui/react-slot": "^1.2.3",
     "@storybook/nextjs": "^8.6.14",
+    "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "lucide-react": "^0.511.0",
+    "maplibre-gl": "^5.5.0",
     "next": "15.3.2",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "tailwind-merge": "^3.3.0"
   },
   "devDependencies": {
     "@chromatic-com/storybook": "^3.2.6",
@@ -39,6 +45,7 @@
     "eslint-plugin-storybook": "^0.12.0",
     "playwright": "^1.52.0",
     "tailwindcss": "^4",
+    "tw-animate-css": "^1.3.3",
     "typescript": "^5",
     "vitest": "^3.1.4"
   },
