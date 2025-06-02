@@ -1,5 +1,8 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+
 import { Separator } from '@/components/ui/separator'
 import {  ScrollArea, ScrollBar  } from '@/components/ui/scroll-area'
 import Image from 'next/image'
@@ -14,19 +17,42 @@ import {
 } from "@/components/ui/drawer"
 import { Textarea } from "@/components/ui/textarea"
 
-export default function ReviewPage() {
+export default function Review(){
+
+    const searchParams = useSearchParams();
+    const id = searchParams.get('id'); // extract ?id=abc123
+    const [place, setPlace] = useState<{
+        name: string;
+        average_rating: number;
+        desc: string
+        reviews?: { author: string; body: string; rating: number }[];
+    }| null>(null);
+    
+    useEffect(() => {
+        if (!id) return;
+
+        fetch('/data.json')
+            .then(res => res.json())
+            .then((data) => {
+                const found = data.find((p: any) => p.id === id);
+                setPlace(found || null);
+            });
+    }, [id]);
+
+    if (!place) return <div className="p-4">Loading...</div>;
+
     return (
         <div className="flex-col items-center">
             <div className="mx-auto max-w-4xl">
-                <h2 className="mx-5 mb-4 mt-8 text-3xl font-bold" >Students Activity Center</h2>
+                <h2 className="mx-5 mb-4 mt-8 text-3xl font-bold" >{ place.name ? place.name : "Unknown"}</h2>
                 <Separator/>
                 <div className="mt-4 flex items-center">
                     <p className="ml-5 text-lg">Rating: </p>
-                    <RatedStars count={5} rating={4} iconSize={20} icon={''} color={''}/>
-                    <p className="ms-1 text-sm font-light text-gray-500 dark:text-gray-400">(4/5)</p>
+                    <RatedStars count={5} rating={place.average_rating} iconSize={20} icon={''} color={''}/>
+                    <p className="ms-1 text-sm font-light text-gray-500 dark:text-gray-400">({place.average_rating}/5)</p>
                 </div>
                 <p className="mx-5 my-3">
-                    IIT Kanpur provides rooms for all the clubs of Students’ Gymkhana in its Student Activity Centre (SAC) which is the hub of all the extracurricular activities of students. It also houses Open Air Theatre (OAT) with a seating capacity of over 1400 people which is used in almost every inter-hall competition like Galaxy, Takneek etc.
+                    {place.desc}
                 </p>
                 <ScrollArea className="max-w-4xl border whitespace-nowrap mx-auto">
                     <ScrollBar orientation="horizontal" />
@@ -83,8 +109,20 @@ export default function ReviewPage() {
                     </Drawer>
                 </div>
 
-                <ReviewCard author={"Mr. Bean"} review_body={"Very nice place. Late nights here are just THE VIBE!"} rating={4}></ReviewCard>
-                <ReviewCard author={"Mr. Boon"} review_body={"Too many dogs"} rating={2}></ReviewCard>
+                {/*<ReviewCard author={"Mr. Bean"} review_body={"Very nice place. Late nights here are just THE VIBE!"} rating={4}></ReviewCard>*/}
+                {/*<ReviewCard author={"Mr. Boon"} review_body={"Too many dogs"} rating={2}></ReviewCard>*/}
+                {place.reviews && place.reviews.length > 0 ? (
+                    place.reviews.map((review: any, index: number) => (
+                        <ReviewCard
+                            key={index}
+                            author={review.author}
+                            review_body={review.body}
+                            rating={review.rating}
+                        />
+                    ))
+                ) : (
+                    <p className="mt-4 text-gray-500 italic">No reviews yet.</p>
+                )}
 
             </div>
         </div>

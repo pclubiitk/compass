@@ -1,0 +1,45 @@
+[
+  {
+    "id": "1",
+    "name": "Students' Activity Center",
+    "average_rating": 4,
+    "desc": "IIT Kanpur provides rooms for all the clubs of Students’ Gymkhana in its Student Activity Centre (SAC) which is the hub of all the extracurricular activities of students. It also houses Open Air Theatre (OAT) with a seating capacity of over 1400 people which is used in almost every inter-hall competition like Galaxy, Takneek etc.",
+
+    "reviews": [
+      {
+        "author": "Mr. Kumar",
+        "body": "Very nice place, all-nighters at OAT are the best!",
+        "rating": 4
+      },
+      {
+        "author": "Mrs. Srivastav",
+        "body": "Too many dogs",
+        "rating": 2
+      },
+      {
+        "author": "Rohan",
+        "body": "My girlfriend broke up with me here :(",
+        "rating": 1
+      }
+    ]
+
+  },
+  {
+    "id": "2",
+    "name": "Cafe Coffee Day",
+    "average_rating": 3,
+    "desc": "CCD (Café Coffee Day) at IIT Kanpur is a popular hangout spot for students, faculty, and visitors. Located near the Library Fountains, it offers a cozy environment to relax, chat, or work on assignments over a cup of coffee. With a variety of snacks, beverages, and light meals, CCD serves as both a casual meeting place and a late-evening refreshment hub on campus.",
+    "reviews": [
+      {
+        "author": "Mrs. Singh",
+        "body": "Cool vibe, a pricey tho",
+        "rating": 3
+      },
+      {
+        "author": "Mrs. Gupta",
+        "body": "Love the Devil's Own shake, give it a try",
+        "rating": 4
+      }
+    ]
+  }
+]

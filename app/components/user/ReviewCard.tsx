@@ -1,4 +1,4 @@
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { Card, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import RatedStars from './RatedStars'
 
