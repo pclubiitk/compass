@@ -2,6 +2,20 @@
 import data from "../../../dummy.json";
 import { use } from "react";
 import { useParams } from "react-router-dom";
+import { useRouter } from "next/navigation";
+import { CircleX } from "lucide-react";
+import { X } from "lucide-react";
+import { Share2 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { CircleUserRound } from "lucide-react";
+import * as React from "react";
+import { Bold } from "lucide-react";
+import { Toggle } from "@/components/ui/toggle";
+import { Button } from "@/components/ui/button";
+import { Star, StarHalf, StarOff } from "lucide-react";
+import Image from "next/image";
+import { Heart } from "lucide-react";
+
 import {
   Card,
   CardContent,
@@ -28,10 +42,7 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
-import { Button } from "@/components/ui/button";
-import { Star, StarHalf, StarOff } from "lucide-react";
-import Image from "next/image";
-import { Heart } from 'lucide-react';
+
 type Props = {
   params: { id: string };
 };
@@ -45,7 +56,6 @@ const rating = data.ratting;
 const fullStars = Math.floor(rating);
 const hasHalfStar = rating % 1 >= 0.5;
 const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
-import { useRouter } from "next/navigation";
 
 import {
   AlertDialog,
@@ -59,12 +69,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-import { CircleX } from "lucide-react";
-import { X } from "lucide-react";
-import { Share2 } from "lucide-react";
-import { Progress } from "@/components/ui/progress"
-import { CircleUserRound } from 'lucide-react';
-import * as React from "react"
 import {
   FacebookShareButton,
   FacebookIcon,
@@ -76,91 +80,84 @@ import {
   WhatsappIcon,
   LinkedinShareButton,
   LinkedinIcon,
-} from 'next-share';
-import { Bold } from "lucide-react"
-import { Toggle } from "@/components/ui/toggle"
-export default function LocationPage() {
-  
-  const router = useRouter();
-   const paramss = useParams();
-  const locationId = paramss.id;
-     const totalphoto=data.images.length
-     const pro_step=100/(totalphoto-1)
-   const [progress, setProgress] = React.useState(0)
+} from "next-share";
 
+export default function LocationPage() {
+  const router = useRouter();
+  const paramss = useParams();
+  const locationId = paramss.id;
+  const totalphoto = data.images.length;
+  const pro_step = 100 / (totalphoto - 1);
+  const [progress, setProgress] = React.useState(0);
 
   return (
     <div className="a ">
-     
-       <div className="p-0 w-full max-w-md mx-auto my-0 pb-0">
+      <div className="p-0 w-full max-w-md mx-auto my-0 pb-0">
         {/* we need to add a bg image which is hardcoded for now */}
-         <Image
+        <Image
           src="https://www.iitk.ac.in/hall11/img/portfolio/02-large.jpg"
           alt="image"
           width={500}
           height={300}
           className="r"
         />
-        </div>
+      </div>
       <Card className="w-full max-w-md mx-auto bg-white ">
         <div className="absolute top-2 left-0 right-0 mx-auto w-fit flex justify-between">
-         <X
-              className="  w-7 h-7 m-1 mx-10 p-1 rounded-full bg-cyan-50 text-black  cursor-pointer hover:bg-cyan-200transition-colors hover:text-red-500"
-              onClick={() => router.back()}
-              aria-label="Close"
-            />
-             <AlertDialog>
-      <AlertDialogTrigger asChild>
-        <button className="w-7 h-7 m-1 mx-10 p-1 rounded-full bg-cyan-50 text-black cursor-pointer hover:bg-cyan-200 transition-colors hover:text-red-500">
-          <Share2 />
-        </button>
-      </AlertDialogTrigger>
+          <X
+            className="  w-7 h-7 m-1 mx-10 p-1 rounded-full bg-cyan-50 text-black  cursor-pointer hover:bg-cyan-200transition-colors hover:text-red-500"
+            onClick={() => router.back()}
+            aria-label="Close"
+          />
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <button className="w-7 h-7 m-1 mx-10 p-1 rounded-full bg-cyan-50 text-black cursor-pointer hover:bg-cyan-200 transition-colors hover:text-red-500">
+                <Share2 />
+              </button>
+            </AlertDialogTrigger>
 
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Social Share</AlertDialogTitle>
-        
-            <div className="p-2 max-w-sm mx-auto text-center bg-white rounded-lg">
-              <div className="flex justify-center gap-4 mt-2">
-                <FacebookShareButton url="http://localhost:3000">
-                  <FacebookIcon size={40} round />
-                </FacebookShareButton>
-                <RedditShareButton url="http://localhost:3000">
-                  <RedditIcon size={40} round />
-                </RedditShareButton>
-                <WhatsappShareButton url="http://localhost:3000">
-                  <WhatsappIcon size={40} round />
-                </WhatsappShareButton>
-                <LinkedinShareButton url="http://localhost:3000">
-                  <LinkedinIcon size={40} round />
-                </LinkedinShareButton>
-              </div>
-            </div>
-         
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Close</AlertDialogCancel>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-    
-              <Heart className="  hover:text-red-500 w-7 h-7 m-1 mx-10 p-1 rounded-full bg-cyan-50 text-black  cursor-pointer hover:bg-cyan-200transition-colors " /> </div>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Social Share</AlertDialogTitle>
+
+                <div className="p-2 max-w-sm mx-auto text-center bg-white rounded-lg">
+                  <div className="flex justify-center gap-4 mt-2">
+                    <FacebookShareButton url="http://localhost:3000">
+                      <FacebookIcon size={40} round />
+                    </FacebookShareButton>
+                    <RedditShareButton url="http://localhost:3000">
+                      <RedditIcon size={40} round />
+                    </RedditShareButton>
+                    <WhatsappShareButton url="http://localhost:3000">
+                      <WhatsappIcon size={40} round />
+                    </WhatsappShareButton>
+                    <LinkedinShareButton url="http://localhost:3000">
+                      <LinkedinIcon size={40} round />
+                    </LinkedinShareButton>
+                  </div>
+                </div>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Close</AlertDialogCancel>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+          <Heart className="  hover:text-red-500 w-7 h-7 m-1 mx-10 p-1 rounded-full bg-cyan-50 text-black  cursor-pointer hover:bg-cyan-200transition-colors " />{" "}
+        </div>
         <CardHeader>
-         
           {/* we need to change these dummy data using real data */}
           {/* <CardTitle>Location: {locationId}</CardTitle> */}
           <div className="flex content-center ">
             <p className="text-2xl">
               <b>{data.name}</b>
             </p>
-           
           </div>
           <div
             className="a
 "
           >
             <div className="flex">
-             <p className="mr-1">{data.ratting }/5</p>
+              <p className="mr-1">{data.ratting}/5</p>
               <div className="flex text-[#FFD700]">
                 {[...Array(fullStars)].map((_, i) => (
                   <Star key={`full-${i}`} fill="#FFD700" stroke="#FFD700" />
@@ -173,28 +170,24 @@ export default function LocationPage() {
             </div>
             <div className="flex justify-between my-4">
               <div>
-            <p className="text-gray-600">{data.tag}</p>
-            <p className="text-gray-600">{data.timing}</p>
-            </div>
-            <Popover >
-              <PopoverTrigger asChild>
-                {/* <Button className=" my-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold   rounded-lg w-28  ">
-                  Contact
-                </Button> */}
-                 <CircleUserRound className="font-semibold mt-2 cursor-pointer"  />
-              </PopoverTrigger>
-              <PopoverContent className="w-80">
-                <div className="grid gap-4">
-                  <div className="space-y-2">
-                    <h4 className="leading-none font-medium">Phone Number</h4>
-                    <p className="text-muted-foreground text-sm">
-                      {data.contact}
-                    </p>
+                <p className="text-gray-600">{data.tag}</p>
+                <p className="text-gray-600">{data.timing}</p>
+              </div>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <CircleUserRound className="font-semibold mt-2 cursor-pointer" />
+                </PopoverTrigger>
+                <PopoverContent className="w-80">
+                  <div className="grid gap-4">
+                    <div className="space-y-2">
+                      <h4 className="leading-none font-medium">Phone Number</h4>
+                      <p className="text-muted-foreground text-sm">
+                        {data.contact}
+                      </p>
+                    </div>
                   </div>
-              
-                </div>
-              </PopoverContent>
-            </Popover>
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
 
@@ -206,72 +199,73 @@ export default function LocationPage() {
         <CardContent>
           <Carousel className="w-full max-w-xs mx-auto h-auto">
             <CarouselContent>
-              {/* Array.from({ length: 5 }).map((_, index) */}
               {data.images.map((item, index) => (
                 <CarouselItem key={index}>
                   <div className="p-1">
                     <CardContent className="flex items-center justify-center p-6">
-                <div><Drawer key={index}>
-    <DrawerTrigger asChild>
-      <div className="relative cursor-pointer fill">
-        <Image
-          src={item.link}
-          alt={`Image ${index}`}
-          width={500}
-          height={500}
-          className="rounded-xl"
-        />
-        {/* <p className="absolute left-30 top-[-5] bg-black/60 text-white text-sm px-2 py-1 rounded-md shadow-md backdrop-blur-sm">
+                      <div>
+                        <Drawer key={index}>
+                          <DrawerTrigger asChild>
+                            <div className="relative cursor-pointer fill">
+                              <Image
+                                src={item.link}
+                                alt={`Image ${index}`}
+                                width={500}
+                                height={500}
+                                className="rounded-xl"
+                              />
+                              {/* <p className="absolute left-30 top-[-5] bg-black/60 text-white text-sm px-2 py-1 rounded-md shadow-md backdrop-blur-sm">
   {index + 1}-{data.images.length}
 </p> */}
-        <div className="absolute inset-0 bg-black/0 hover:bg-black/20 transition rounded-xl" />
-      </div>
-    </DrawerTrigger>
+                              <div className="absolute inset-0 bg-black/0 hover:bg-black/20 transition rounded-xl" />
+                            </div>
+                          </DrawerTrigger>
 
-    <DrawerContent className="h-screen p-0 overflow-hidden">
-      <DrawerHeader>
-        
-        <DrawerClose asChild className=" z-50 text-black bg-white hover:bg-white/50 p-2 rounded-full m-auto">
-          <Button variant="outline" >Cancel</Button>
-        </DrawerClose>
-        <DrawerTitle>
-
-
-           <Image
-          src={item.link}
-          alt={`Image ${index}`}
-           fill
-           className="object-contain bg-black m-auto"
-        />
-        </DrawerTitle>
-        <DrawerDescription>{"we can add details about photo"}</DrawerDescription>
-      </DrawerHeader>
-      <DrawerFooter>
-        
-      </DrawerFooter>
-    </DrawerContent>
-  </Drawer>
-</div>
+                          <DrawerContent className="h-screen p-0 overflow-hidden">
+                            <DrawerHeader>
+                              <DrawerClose
+                                asChild
+                                className=" z-50 text-black bg-white hover:bg-white/50 p-2 rounded-full m-auto"
+                              >
+                                <Button variant="outline">Cancel</Button>
+                              </DrawerClose>
+                              <DrawerTitle>
+                                <Image
+                                  src={item.link}
+                                  alt={`Image ${index}`}
+                                  fill
+                                  className="object-contain bg-black m-auto"
+                                />
+                              </DrawerTitle>
+                              <DrawerDescription>
+                                {"we can add details about photo"}
+                              </DrawerDescription>
+                            </DrawerHeader>
+                            <DrawerFooter></DrawerFooter>
+                          </DrawerContent>
+                        </Drawer>
+                      </div>
                     </CardContent>
                   </div>
                 </CarouselItem>
               ))}
             </CarouselContent>
-              {/* <Progress value={progress} className="w-[60%] m-auto" /> */}
-          <div
-  className="absolute top-1/2 -translate-y-1/2 left-[-1px]"
-  onClick={()=>{
-    setProgress(progress-pro_step)
-  }}
->
-            <CarouselPrevious className="absolute top-1/2 -translate-y-1/2 left-[-1px]" /></div>
+            {/* <Progress value={progress} className="w-[60%] m-auto" /> */}
             <div
-  className="absolute top-1/2 right-2 -translate-y-1/2 z-50"
-  onClick={()=>{
-    setProgress(progress+pro_step)
-  }}
->
-            <CarouselNext className="absolute top-1/2 -translate-y-1/2 right-[-1px]"/>
+              className="absolute top-1/2 -translate-y-1/2 left-[-1px]"
+              onClick={() => {
+                setProgress(progress - pro_step);
+              }}
+            >
+              <CarouselPrevious className="absolute top-1/2 -translate-y-1/2 left-[-1px]" />
+            </div>
+            <div
+              className="absolute top-1/2 right-2 -translate-y-1/2 z-50"
+              onClick={() => {
+                setProgress(progress + pro_step);
+              }}
+            >
+              <CarouselNext className="absolute top-1/2 -translate-y-1/2 right-[-1px]" />
             </div>
           </Carousel>
         </CardContent>
@@ -282,12 +276,10 @@ export default function LocationPage() {
               Add Review
             </button>
           </DrawerTrigger>
-          <p className="mx-5"><b>Review summary</b></p>
-      
+          <p className="mx-5">
+            <b>Review summary</b>
+          </p>
 
- 
-
-          
           <DrawerContent>
             <DrawerHeader>
               <DrawerTitle>Help Others by giving review</DrawerTitle>
@@ -402,7 +394,7 @@ export default function LocationPage() {
         <CardFooter>
           <div className="w-full max-w-xs mx-auto max-h-96 overflow-y-auto">
             {data.Comments.map((item, index) => {
-              const ratting = item.Rating; // corrected from 'ratting'
+              const ratting = item.Rating;
               const fullStars = Math.floor(ratting);
               const hasHalfStar = ratting % 1 >= 0.5;
               const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
