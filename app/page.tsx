@@ -109,3 +109,4 @@ export default function Page() {
 
 // have to apply IIT Kanpur area-based restrictions
 // might apply regex-based filters to filter out IITK
+// connect to iitk-sec and go to http://172.23.156.156:3000/
