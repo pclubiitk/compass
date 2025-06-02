@@ -1,5 +1,5 @@
 "use client";
-import data from "../../../dummy.json";
+import data from "../../dummy.json";
 import { use } from "react";
 import { useParams } from "react-router-dom";
 import {
@@ -45,7 +45,7 @@ const rating = data.ratting;
 const fullStars = Math.floor(rating);
 const hasHalfStar = rating % 1 >= 0.5;
 const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
-import { useRouter } from "next/navigation";
+// import { useRouter } from "next/navigation";
 
 import {
   AlertDialog,
@@ -81,7 +81,7 @@ import { Bold } from "lucide-react"
 import { Toggle } from "@/components/ui/toggle"
 export default function LocationPage() {
   
-  const router = useRouter();
+//   const router = useRouter();
    const paramss = useParams();
   const locationId = paramss.id;
      const totalphoto=data.images.length
@@ -106,7 +106,7 @@ export default function LocationPage() {
         <div className="absolute top-2 left-0 right-0 mx-auto w-fit flex justify-between">
          <X
               className="  w-7 h-7 m-1 mx-10 p-1 rounded-full bg-cyan-50 text-black  cursor-pointer hover:bg-cyan-200transition-colors hover:text-red-500"
-              onClick={() => router.back()}
+            //   onClick={() => router.back()}
               aria-label="Close"
             />
              <AlertDialog>
