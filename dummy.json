@@ -1,0 +1,29 @@
+ {
+    "name":"Student Activity Center", 
+    "discription":"sdsnjd dnn nmc ca ia ma dihunf ie sdja ana sc uia rnef fnfnufhnehfnuncsn d wnqu eni hrh wufwf",
+    "timing":"7:30-6:30",
+    "contact":"9353466456",
+    "ratting":4.5,
+    
+    "tag":"sports and outting",
+    "Comments":[{
+        
+            "user":"Rahul",
+            "Rating":4,
+            "time":"2 hours ago",
+            "description":"mbasbu weh ueh ehh khed weyebap0e  iehqeh qhffh iwh i i dndiwi io     isfhi rwrr wrwrr "
+        
+    },{
+       "user":"Rahul",
+            "Rating":4,
+            "description":"mbasbu weh ueh ehh khed weyebap0e  iehqeh qhffh iwh i i dndiwi io     isfhi rwrr wrwrr ",
+            "time":"2 hours ago" 
+    }],
+    "images":[
+        {"link":"https://th.bing.com/th/id/OIP.nVZAr5VIBjmt8YkgYXwE3AHaDa?rs=1&pid=ImgDetMain"},
+        {"link":"https://th.bing.com/th/id/OIP.nVZAr5VIBjmt8YkgYXwE3AHaDa?rs=1&pid=ImgDetMain"},
+        {"link":"https://www.iitk.ac.in/hall11/img/portfolio/02-large.jpg"}
+
+
+    ]
+}
