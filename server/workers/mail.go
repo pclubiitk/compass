@@ -11,7 +11,7 @@ func MailingWorker() error {
 	for {
 		// Connect to the mail queue in the message broker
 
-		// 
+		// working dir setup
 
 		// Process the mails
 
@@ -21,7 +21,6 @@ func MailingWorker() error {
 		//  3. Warning message if violating content is submitted by user
 		//  4. Notice publish verification message
 		//	5. Any other message if you feel its relevant
-
 
 		// for testing, simulate processing mail from a queue
 		time.Sleep(5 * time.Second)
