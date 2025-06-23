@@ -1,5 +1,3 @@
-//may be
-
 package maps
 
 import "github.com/gin-gonic/gin"

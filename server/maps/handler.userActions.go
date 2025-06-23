@@ -1,5 +1,3 @@
-//done review aya and moderation mai gaya,need to compress the image
-
 package maps
 
 import (
@@ -7,12 +5,16 @@ import (
 	"encoding/json"
 	"os"
 
+	"image"
+	"image/jpeg"
+	"image/png"
+
 	"github.com/gin-gonic/gin"
 	"github.com/rabbitmq/amqp091-go"
+	"strings"
 )
-//will implement the compress while testing
-func addReview(c *gin.Context) {
 
+func addReview(c *gin.Context) {
 	if err := c.Request.ParseMultipartForm(10 << 20); err != nil {
 		c.JSON(400, gin.H{"error": "Failed to parse form data"})
 		return
@@ -28,7 +30,7 @@ func addReview(c *gin.Context) {
 	if err == nil {
 		defer file.Close()
 
-		// Ensure the uploads/reviews directory exists
+
 		imageDir := "uploads/reviews/"
 		if err := ensureDir(imageDir); err != nil {
 			c.JSON(500, gin.H{"error": "Failed to create directory for image"})
@@ -36,8 +38,35 @@ func addReview(c *gin.Context) {
 		}
 
 		imagePath := imageDir + header.Filename
-		if err := c.SaveUploadedFile(header, imagePath); err != nil {
-			c.JSON(500, gin.H{"error": "Failed to save image"})
+
+
+		img, format, err := image.Decode(file)
+		if err != nil {
+			c.JSON(400, gin.H{"error": "Unsupported or invalid image format"})
+			return
+		}
+
+	
+		out, err := os.Create(imagePath)
+		if err != nil {
+			c.JSON(500, gin.H{"error": "Failed to create image file"})
+			return
+		}
+		defer out.Close()
+
+		switch strings.ToLower(format) {
+		case "jpeg", "jpg":
+			err = jpeg.Encode(out, img, &jpeg.Options{Quality: 80})
+		case "png":
+			encoder := png.Encoder{CompressionLevel: png.BestSpeed}
+			err = encoder.Encode(out, img)
+		default:
+			c.JSON(400, gin.H{"error": "Unsupported image format"})
+			return
+		}
+
+		if err != nil {
+			c.JSON(500, gin.H{"error": "Failed to compress and save image"})
 			return
 		}
 
