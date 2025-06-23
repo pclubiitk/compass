@@ -1,16 +1,57 @@
+//may be
+
 package maps
 
 import "github.com/gin-gonic/gin"
 
 func flagAction(c *gin.Context) {
-	// add the request model to the request.model.go file
 
-	// allow the admin to take the actions like approve, reject
+	reviewID := c.Param("id")
 
-	// if the review is rejected, then add the mail in the mail queue to notify the user add a warning to the user model and add one to that
+	var req FlagActionRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(400, gin.H{"error": "Invalid request"})
+		return
+	}
 
-	// Handle all the edge cases with suitable return http code, write them in the read me for later documentation
+	review, err := connections.DB.Model(&model.Review{}).Where("id = ?", reviewID).First(&model.Review{})
+	if err != nil {
+		c.JSON(404, gin.H{"error": "Review not found"})
+		return
+	}
 
+	if req.Action == "approved" {
+
+		review.Status = "approved"
+		c.JSON(200, gin.H{"message": "Review approved"})
+		return
+	}
+
+	if req.Action == "rejected" {
+		if req.Message == "" {
+			c.JSON(400, gin.H{"error": "Rejection message required"})
+			return
+		}
+
+		review.Status = "rejected"
+		if err := connections.DB.Save(&review).Error; err != nil {
+			c.JSON(500, gin.H{"error": "Failed to update review status"})
+			return
+		}
+  connections.MQChannel.Publish(
+			"", 
+			viper.GetString("rabbitmq.mailqueue"), // queue name	
+			false, // mandatory
+			false, // immediate
+			amqp.Publishing{
+				ContentType: "application/json",		
+				Body: []byte(`{"userId": "` + review.User + `", "message": "` + req.Message + `"}`),
+
+			},
+		)
+		c.JSON(200, gin.H{"message": "Review rejected", "details": req.Message})
+		return			
+	}
 }
 
 func locationAction(c *gin.Context) {

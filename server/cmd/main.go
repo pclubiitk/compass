@@ -5,7 +5,7 @@ import (
 	_ "compass/connections" // is a blank import and it runs the init() functions in the package
 	"compass/workers"
 	"time"
-
+"fmt"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
 )
@@ -16,6 +16,7 @@ const (
 )
 
 func main() {
+	fmt.Println("working")
 	// Create an error group to handle errors together
 	var g errgroup.Group
 
@@ -33,6 +34,7 @@ func main() {
 	g.Go(func() error { return authServer().ListenAndServe() })
 	g.Go(func() error { return mapsServer().ListenAndServe() })
 	logrus.Info("Main server is Starting...")
+	fmt.Println("before waiting")
 	if err := g.Wait(); err != nil {
 		logrus.Fatal("Some service failed with error: ", err)
 	}

@@ -44,4 +44,5 @@ type Review struct {
 	ContributedBy string  `json:"contributedBy"`                                                                       // This is the foreign key
 	LocationId    string  `json:"location_id"`
 	User          User    `gorm:"foreignKey:ContributedBy;references:UserID"`
+	ImageURL   string  `json:"image_url"`
 }
