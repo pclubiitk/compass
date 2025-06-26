@@ -1,4 +1,4 @@
-// File for connecting the application to the rabbitmq message broker 
+// File for connecting the application to the rabbitmq message broker
 // you may access the channel anywhere in the application using connections.MQChannel
 package connections
 
@@ -16,7 +16,7 @@ var MQChannel *amqp.Channel
 func initRabbitMQ() {
 	var err error
 	url := "amqp://" + viper.GetString("rabbitmq.user") + ":" + viper.GetString("rabbitmq.password")
-	url += "@" + viper.GetString("rabbitm1.host") + ":" + viper.GetString("rabbitmq.port") + "/"
+	url += "@" + viper.GetString("rabbitmq.host") + ":" + viper.GetString("rabbitmq.port") + "/"
 
 	MQConn, err = amqp.Dial(url)
 	if err != nil {

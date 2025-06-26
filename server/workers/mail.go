@@ -1,9 +1,8 @@
 package workers
 
 import (
-	"time"
-
 	"github.com/sirupsen/logrus"
+	"time"
 )
 
 func MailingWorker() error {

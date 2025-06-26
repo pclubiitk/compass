@@ -2,13 +2,10 @@ package middleware
 
 import (
 	"compass/model"
-
 	"github.com/gin-gonic/gin"
 )
 
 func UserAuthenticator(c *gin.Context) {
-	// Verify the token
-
 	// Set the user id here
 	c.Set("userID", 1234)
 
