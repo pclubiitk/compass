@@ -85,7 +85,7 @@ export function ThemeDD() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" className="group flex items-center gap-2">
-          Select Theme <IconChevronDown stroke={2} className="h-4 w-4 transition-transform duration-200 
+          Select Theme <IconChevronDown stroke={2} className="h-4 w-4 transition-transform duration-200
           group-data-[state=open]:rotate-180" />
         </Button>
       </DropdownMenuTrigger>

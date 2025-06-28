@@ -28,9 +28,11 @@ type Location struct {
 
 type Notice struct {
 	gorm.Model
-	NoticeId      string `gorm:"uniqueIndex" json:"notice_id"`
+	NoticeId      string `gorm:"type:uuid;uniqueIndex" json:"notice_id"`
 	Title         string `json:"title" binding:"required"`
-	Description   string `json:"description"`
+	Description   string `gorm:"type:text" json:"description"`
+	Preview   	  string `json:"preview"`
+	CardDescription	  string `json:"card_description"`
 	ContributedBy string `json:"contributedBy"` // This is the foreign key
 	User          User   `gorm:"foreignKey:ContributedBy;references:UserID"`
 	// we will expand to having images in the notice or urls to publicly hosted images
