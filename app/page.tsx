@@ -5,5 +5,7 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-  return <p>Home Screen, current location on the map will be shown here</p>;
-}
+  return (
+      <p>Home Screen, current location on the map will be shown here</p>
+  );
+  }
