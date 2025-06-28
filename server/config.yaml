@@ -19,3 +19,9 @@ rabbitmq:
 ports:
   auth: 8080
   maps: 8081
+
+smtp:
+  host: smtp.gmail.com
+  port: 587
+  user: test@gmail.com
+  pass: test-mail-password
