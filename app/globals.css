@@ -1,9 +1,230 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+
+/* @custom-variant dark (&:is(.dark *)); */
+@import "tw-animate-css";
 @plugin "daisyui";
 @custom-variant dark (&:is(.dark *));
 
+@layer base {
+  /* ===== Base Theme Variables ===== */
+  :root {
+    /* = Light Theme (Default) = */
+    --radius: 0.625rem;
+    --background: oklch(1 0 0);
+    --foreground: oklch(0.145 0 0);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.145 0 0);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.145 0 0);
+    --primary: oklch(0.205 0 0);
+    --primary-foreground: oklch(0.985 0 0);
+    --secondary: oklch(0.97 0 0);
+    --secondary-foreground: oklch(0.205 0 0);
+    --muted: oklch(0.97 0 0);
+    --muted-foreground: oklch(0.556 0 0);
+    --accent: oklch(0.97 0 0);
+    --accent-foreground: oklch(0.205 0 0);
+    --destructive: oklch(0.577 0.245 27.325);
+    --border: oklch(0.922 0 0);
+    --input: oklch(0.922 0 0 );
+    --ring: oklch(0.708 0 0);
+    --chart-1: oklch(0.646 0.222 41.116);
+    --chart-2: oklch(0.6 0.118 184.704);
+    --chart-3: oklch(0.398 0.07 227.392);
+    --chart-4: oklch(0.828 0.189 84.429);
+    --chart-5: oklch(0.769 0.188 70.08);
+    --sidebar: oklch(0.985 0 0);
+    --sidebar-foreground: oklch(0.145 0 0);
+    --sidebar-primary: oklch(0.205 0 0);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.97 0 0);
+    --sidebar-accent-foreground: oklch(0.205 0 0);
+    --sidebar-border: oklch(0.922 0 0);
+    --sidebar-ring: oklch(0.708 0 0);
+
+    /* Custom Variables */
+    --noticeboard-image: url('/grid-light.svg');
+    --header-gradient: linear-gradient(to right, #ffffff, #f3f4f6);
+    --icon-fill:oklch(0.205 0 0);
+  }
+
+  /* ===== Dark Theme ===== */
+  .dark {
+    --background: oklch(0.145 0 0);
+    --foreground: oklch(0.985 0 0);
+    --card: oklch(0.205 0 0);
+    --card-foreground: oklch(0.985 0 0);
+    --popover: oklch(0.205 0 0);
+    --popover-foreground: oklch(0.985 0 0);
+    --primary: oklch(0.922 0 0);
+    --primary-foreground: oklch(0.205 0 0);
+    --secondary: oklch(0.269 0 0);
+    --secondary-foreground: oklch(0.985 0 0);
+    --muted: oklch(0.269 0 0);
+    --muted-foreground: oklch(0.708 0 0);
+    --accent: oklch(0.269 0 0);
+    --accent-foreground: oklch(0.985 0 0);
+    --destructive: oklch(0.704 0.191 22.216);
+    --border: oklch(1 0 0 / 10%);
+    --input: oklch(1 0 0 / 15%);
+    --ring: oklch(0.556 0 0);
+    --chart-1: oklch(0.488 0.243 264.376);
+    --chart-2: oklch(0.696 0.17 162.48);
+    --chart-3: oklch(0.769 0.188 70.08);
+    --chart-4: oklch(0.627 0.265 303.9);
+    --chart-5: oklch(0.645 0.246 16.439);
+    --sidebar: oklch(0.205 0 0);
+    --sidebar-foreground: oklch(0.985 0 0);
+    --sidebar-primary: oklch(0.488 0.243 264.376);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.269 0 0);
+    --sidebar-accent-foreground: oklch(0.985 0 0);
+    --sidebar-border: oklch(1 0 0 / 10%);
+    --sidebar-ring: oklch(0.556 0 0);
+
+    /* Custom Variables */
+    --noticeboard-image: url('/grid-dark.svg');
+    --header-gradient: linear-gradient(to right, #1e293b, #0f172a);
+    --icon-fill:oklch(0.98 0.01 10);
+  }
+
+  /* ===== Rose Theme ===== */
+  .theme-rose {
+    --background: oklch(0.12 0.03 10); /* Darker base for better contrast */
+    --foreground: oklch(0.98 0.01 10); /* Soft white with subtle warmth */
+    --card: oklch(0.18 0.05 15); /* Slightly warmer dark card */
+    --card-foreground: oklch(0.98 0.01 10);
+    --popover: oklch(0.20 0.06 12); /* Warm dark popover */
+    --popover-foreground: oklch(0.98 0.01 10);
+    --primary: oklch(0.85 0.18 15); /* Rich rose color */
+    --primary-foreground: oklch(0.98 0.01 10);
+    --secondary: oklch(0.30 0.08 10); /* Warm muted secondary */
+    --secondary-foreground: oklch(0.98 0.01 10);
+    --muted: oklch(0.25 0.05 12); /* Soft muted background */
+    --muted-foreground: oklch(0.70 0.05 10);
+    --accent: oklch(0.35 0.12 15); /* Rose accent */
+    --accent-foreground: oklch(0.98 0.01 10);
+    --destructive: oklch(0.70 0.25 25); /* Warmer red */
+    --border: oklch(0.5913 0.05 10 / 30%);
+    --input: oklch(0.25 0.05 10 / 40%);
+    --ring: oklch(0.80 0.15 15); /* Rose ring color */
+
+    /* Chart colors with rose palette */
+    --chart-1: oklch(0.55 0.20 350); /* Deep rose */
+    --chart-2: oklch(0.65 0.18 20); /* Warm pink */
+    --chart-3: oklch(0.75 0.15 40); /* Soft coral */
+    --chart-4: oklch(0.60 0.22 320); /* Muted magenta */
+    --chart-5: oklch(0.70 0.18 10); /* Rosy pink */
+
+    /* Sidebar with cohesive colors */
+    --sidebar: oklch(0.18 0.05 12);
+    --sidebar-foreground: oklch(0.98 0.01 10);
+    --sidebar-primary: oklch(0.80 0.15 15);
+    --sidebar-primary-foreground: oklch(0.98 0.01 10);
+    --sidebar-accent: oklch(0.35 0.10 12);
+    --sidebar-accent-foreground: oklch(0.98 0.01 10);
+    --sidebar-border: oklch(0.30 0.05 10 / 30%);
+    --sidebar-ring: oklch(0.75 0.12 15);
+
+    /* Custom Variables */
+    --noticeboard-image: url('/grid-rose.svg');
+    --header-gradient: linear-gradient(to right, #fff1f2, #ffe4e6);
+    --icon-fill:oklch(0.98 0.01 10);
+  }
+
+  /* ===== Slate Theme ===== */
+  .theme-slate {
+    /* Base Colors */
+    --background: oklch(0.15 0.02 260); /* Dark slate background */
+    --foreground: oklch(0.95 0.01 260); /* Nearly pure white with cool undertone */
+
+    /* Card Colors */
+    --card: oklch(0.20 0.02 260); /* Slightly lighter slate for cards */
+    --card-foreground: oklch(0.95 0.01 260);
+
+    /* Popover Colors */
+    --popover: oklch(0.22 0.02 260);
+    --popover-foreground: oklch(0.95 0.01 260);
+
+    /* Primary Colors */
+    --primary: oklch(0.65 0.05 240); /* Cool blue-gray primary */
+    --primary-foreground: oklch(0.95 0.01 260);
+
+    /* Secondary Colors */
+    --secondary: oklch(0.25 0.02 260); /* Medium slate */
+    --secondary-foreground: oklch(0.95 0.01 260);
+
+    /* Muted Colors */
+    --muted: oklch(0.25 0.02 260);
+    --muted-foreground: oklch(0.70 0.02 260);
+
+    /* Accent Colors */
+    --accent: oklch(0.30 0.03 260); /* Slightly more saturated slate */
+    --accent-foreground: oklch(0.95 0.01 260);
+
+    /* Destructive Colors */
+    --destructive: oklch(0.70 0.15 25); /* Warm red for contrast */
+    --destructive-foreground: oklch(0.95 0.01 260);
+
+    /* Border & Input */
+    --border: oklch(0.6055 0.02 260 / 40%);
+    --input: oklch(0.25 0.02 260 / 50%);
+
+    /* Focus Ring */
+    --ring: oklch(0.55 0.05 240); /* Subtle blue-gray ring */
+
+    /* Chart Colors (cool slate variants) */
+    --chart-1: oklch(0.55 0.08 240); /* Blue slate */
+    --chart-2: oklch(0.60 0.06 220); /* Cool gray */
+    --chart-3: oklch(0.65 0.05 260); /* Light slate */
+    --chart-4: oklch(0.50 0.07 280); /* Purple slate */
+    --chart-5: oklch(0.70 0.04 230); /* Light gray-blue */
+
+    /* Sidebar Colors */
+    --sidebar: oklch(0.18 0.02 260); /* Slightly darker than card */
+    --sidebar-foreground: oklch(0.95 0.01 260);
+    --sidebar-primary: oklch(0.60 0.05 240);
+    --sidebar-primary-foreground: oklch(0.95 0.01 260);
+    --sidebar-accent: oklch(0.28 0.03 260);
+    --sidebar-accent-foreground: oklch(0.95 0.01 260);
+    --sidebar-border: oklch(0.25 0.02 260 / 40%);
+    --sidebar-ring: oklch(0.55 0.05 240);
+    /* Custom Variables */
+    --noticeboard-image: url('/grid-slate.svg');
+    --header-gradient: linear-gradient(to right, #1e293b, #334155);
+    --icon-fill:oklch(0.98 0.01 10);
+  }
+
+  /* ===== Base Styles ===== */
+  * {
+    @apply border-border; /* Applies border color globally */
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    background-image: var(--background);
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  #noticeboard {
+    background-image: var(--noticeboard-image);
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+  }
+}
+
+
+/*
+---break---
+*/
+
 @theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
@@ -162,3 +383,4 @@
     @apply bg-background text-foreground;
   }
 }
+
