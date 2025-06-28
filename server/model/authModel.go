@@ -17,6 +17,8 @@ type User struct {
 	Email                string     `json:"email"`
 	Password             string     `json:"password"`
 	Name                 string     `json:"name"`
+	IsVerified           bool       `json:"is_verified"`
+	VerificationToken    string     `json:"-"` //erased after verification
 	Role                 Role       `gorm:"type:varchar(10);check:role IN ('admin','bot','user')"`
 	ContributedLocations []Location `gorm:"foreignKey:ContributedBy;references:UserID"`
 	ContributedReview    []Review   `gorm:"foreignKey:ContributedBy;references:UserID"`

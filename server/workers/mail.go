@@ -94,7 +94,7 @@ func MailingWorker() error {
 	/*for {
 	// Connect to the mail queue in the message broker
 
-		//
+		// working dir setup
 
 		// Process the mails
 

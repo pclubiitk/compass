@@ -11,7 +11,7 @@ database:
 rabbitmq:
   host: "localhost"
   user: "guest"
-
+  password: "guest"
   mailqueue: "mail_queue"
   moderationqueue: "moderation_queue"
   port: 5672

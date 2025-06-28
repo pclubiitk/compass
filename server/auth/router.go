@@ -12,5 +12,6 @@ func Router(r *gin.Engine) {
 		auth.POST("/login", loginHandler)
 		auth.POST("/signup", signupHandler)
 		auth.GET("/logout", logoutHandler)
+		auth.GET("/verify", verificationHandler)
 	}
 }
