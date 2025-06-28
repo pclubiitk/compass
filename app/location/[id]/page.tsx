@@ -1,16 +1,15 @@
 "use client";
 import data from "../../../dummy.json";
-import { use } from "react";
+
 import { useParams } from "react-router-dom";
 import { useRouter } from "next/navigation";
-import { CircleX } from "lucide-react";
+
 import { X } from "lucide-react";
 import { Share2 } from "lucide-react";
-import { Progress } from "@/components/ui/progress";
+
 import { CircleUserRound } from "lucide-react";
 import * as React from "react";
-import { Bold } from "lucide-react";
-import { Toggle } from "@/components/ui/toggle";
+
 import { Button } from "@/components/ui/button";
 import { Star, StarHalf, StarOff } from "lucide-react";
 import Image from "next/image";
@@ -22,7 +21,7 @@ import {
   CardDescription,
   CardFooter,
   CardHeader,
-  CardTitle,
+
 } from "@/components/ui/card";
 import {
   Carousel,
@@ -43,9 +42,9 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer";
 
-type Props = {
-  params: { id: string };
-};
+// type Props = {
+//   params: { id: string };
+// };
 import {
   Popover,
   PopoverContent,
@@ -55,7 +54,7 @@ import {
 const rating = data.ratting;
 const fullStars = Math.floor(rating);
 const hasHalfStar = rating % 1 >= 0.5;
-const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+// const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
 
 import {
   AlertDialog,
@@ -72,8 +71,7 @@ import {
 import {
   FacebookShareButton,
   FacebookIcon,
-  PinterestShareButton,
-  PinterestIcon,
+
   RedditShareButton,
   RedditIcon,
   WhatsappShareButton,
@@ -85,7 +83,7 @@ import {
 export default function LocationPage() {
   const router = useRouter();
   const paramss = useParams();
-  const locationId = paramss.id;
+  // const locationId = paramss.id;
   const totalphoto = data.images.length;
   const pro_step = 100 / (totalphoto - 1);
   const [progress, setProgress] = React.useState(0);
@@ -149,7 +147,7 @@ export default function LocationPage() {
           {/* <CardTitle>Location: {locationId}</CardTitle> */}
           <div className="flex content-center ">
             <p className="text-2xl">
-              <b>{data.name}</b>
+              <b className="text-black">{data.name}</b>
             </p>
           </div>
           <div
@@ -214,9 +212,7 @@ export default function LocationPage() {
                                 height={500}
                                 className="rounded-xl"
                               />
-                              {/* <p className="absolute left-30 top-[-5] bg-black/60 text-white text-sm px-2 py-1 rounded-md shadow-md backdrop-blur-sm">
-  {index + 1}-{data.images.length}
-</p> */}
+  
                               <div className="absolute inset-0 bg-black/0 hover:bg-black/20 transition rounded-xl" />
                             </div>
                           </DrawerTrigger>
@@ -250,20 +246,14 @@ export default function LocationPage() {
                 </CarouselItem>
               ))}
             </CarouselContent>
-            {/* <Progress value={progress} className="w-[60%] m-auto" /> */}
+  
             <div
-              className="absolute top-1/2 -translate-y-1/2 left-[-1px]"
-              onClick={() => {
-                setProgress(progress - pro_step);
-              }}
-            >
+              className="absolute top-1/2 -translate-y-1/2 left-[-1px]">
               <CarouselPrevious className="absolute top-1/2 -translate-y-1/2 left-[-1px]" />
             </div>
             <div
               className="absolute top-1/2 right-2 -translate-y-1/2 z-50"
-              onClick={() => {
-                setProgress(progress + pro_step);
-              }}
+         
             >
               <CarouselNext className="absolute top-1/2 -translate-y-1/2 right-[-1px]" />
             </div>
@@ -352,12 +342,7 @@ export default function LocationPage() {
                   />
                 </div>
 
-                {/* <button
-    type="submit"
-    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md font-medium transition"
-  >
-    Submit Review
-  </button> */}
+      
                 <AlertDialog>
                   <AlertDialogTrigger className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md font-medium transition">
                     Submit Review

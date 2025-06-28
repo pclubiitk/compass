@@ -1,6 +1,6 @@
 "use client";
 import data from "../../dummy.json";
-import { use } from "react";
+
 import { useParams } from "react-router-dom";
 import {
   Card,
@@ -8,7 +8,7 @@ import {
   CardDescription,
   CardFooter,
   CardHeader,
-  CardTitle,
+
 } from "@/components/ui/card";
 import {
   Carousel,
@@ -32,9 +32,7 @@ import { Button } from "@/components/ui/button";
 import { Star, StarHalf, StarOff } from "lucide-react";
 import Image from "next/image";
 import { Heart } from 'lucide-react';
-type Props = {
-  params: { id: string };
-};
+
 import {
   Popover,
   PopoverContent,
@@ -44,7 +42,7 @@ import {
 const rating = data.ratting;
 const fullStars = Math.floor(rating);
 const hasHalfStar = rating % 1 >= 0.5;
-const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+
 // import { useRouter } from "next/navigation";
 
 import {
@@ -59,17 +57,16 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-import { CircleX } from "lucide-react";
+
 import { X } from "lucide-react";
 import { Share2 } from "lucide-react";
-import { Progress } from "@/components/ui/progress"
+
 import { CircleUserRound } from 'lucide-react';
 import * as React from "react"
 import {
   FacebookShareButton,
   FacebookIcon,
-  PinterestShareButton,
-  PinterestIcon,
+
   RedditShareButton,
   RedditIcon,
   WhatsappShareButton,
@@ -77,13 +74,12 @@ import {
   LinkedinShareButton,
   LinkedinIcon,
 } from 'next-share';
-import { Bold } from "lucide-react"
-import { Toggle } from "@/components/ui/toggle"
+
 export default function LocationPage() {
   
 //   const router = useRouter();
    const paramss = useParams();
-  const locationId = paramss.id;
+  // const locationId = paramss.id;
      const totalphoto=data.images.length
      const pro_step=100/(totalphoto-1)
    const [progress, setProgress] = React.useState(0)
@@ -151,7 +147,7 @@ export default function LocationPage() {
           {/* <CardTitle>Location: {locationId}</CardTitle> */}
           <div className="flex content-center ">
             <p className="text-2xl">
-              <b>{data.name}</b>
+              <b className="text-black">{data.name}</b>
             </p>
            
           </div>
