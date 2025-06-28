@@ -4,7 +4,6 @@ import (
 	_ "compass/connections" // is a blank import and it runs the init() functions in the package
 	"compass/workers"
 	"time"
-
 	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
 )
