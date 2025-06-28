@@ -5,7 +5,8 @@ package maps
 import (
 	"compass/connections"
 	"compass/model"
-	"fmt"
+	"strconv"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -55,7 +56,8 @@ func reviewProvider(c *gin.Context) {
 		return
 	}
 
-	hasMore := offset+len(reviews) < total
+	// hasMore := offset+len(reviews) < total
+
 	c.JSON(200, gin.H{
 		"reviews": reviews,
 		"page":    page,

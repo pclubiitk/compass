@@ -1,6 +1,13 @@
 package maps
 
-import "github.com/gin-gonic/gin"
+import (
+	"compass/connections"
+	"compass/model"
+
+	"github.com/gin-gonic/gin"
+	"github.com/spf13/viper"
+	amqp "github.com/rabbitmq/amqp091-go"
+)
 
 func flagAction(c *gin.Context) {
 
@@ -12,8 +19,8 @@ func flagAction(c *gin.Context) {
 		return
 	}
 
-	review, err := connections.DB.Model(&model.Review{}).Where("id = ?", reviewID).First(&model.Review{})
-	if err != nil {
+	var review model.Review
+	if err := connections.DB.Where("id = ?", reviewID).First(&review).Error; err != nil {
 		c.JSON(404, gin.H{"error": "Review not found"})
 		return
 	}
@@ -36,19 +43,18 @@ func flagAction(c *gin.Context) {
 			c.JSON(500, gin.H{"error": "Failed to update review status"})
 			return
 		}
-  connections.MQChannel.Publish(
-			"", 
-			viper.GetString("rabbitmq.mailqueue"), // queue name	
-			false, // mandatory
-			false, // immediate
+		connections.MQChannel.Publish(
+			"",
+			viper.GetString("rabbitmq.mailqueue"), // queue name
+			false,                                 // mandatory
+			false,                                 // immediate
 			amqp.Publishing{
-				ContentType: "application/json",		
-				Body: []byte(`{"userId": "` + review.User + `", "message": "` + req.Message + `"}`),
-
+				ContentType: "application/json",
+				Body:        []byte(`{"userId": "` + review.User.UserID + `", "message": "` + req.Message + `"}`),
 			},
 		)
 		c.JSON(200, gin.H{"message": "Review rejected", "details": req.Message})
-		return			
+		return
 	}
 }
 

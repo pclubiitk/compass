@@ -1,6 +1,11 @@
 package maps
 
-import "github.com/gin-gonic/gin"
+import (
+	"compass/connections"
+	"compass/model"
+
+	"github.com/gin-gonic/gin"
+)
 
 func systemLogsProvider(c *gin.Context) {
 	// static data, provide the logs, try to modify the route such that you enable pagination
