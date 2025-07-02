@@ -1,6 +1,7 @@
 package maps
 
 import (
+	"net/http"
 	"compass/connections"
 	"compass/model"
 	"github.com/gin-gonic/gin"
@@ -179,4 +180,40 @@ func addNotice(c *gin.Context) {
 	}
 
 	c.JSON(201, gin.H{"message": "New notice added successfully", "notice": notice})
+}
+
+func addNoticev2(c *gin.Context) {
+	
+	var noticeInput AddNotice
+
+
+	if err := c.ShouldBindJSON(&noticeInput); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input", "details": err.Error()})
+		return
+	}
+
+	userID, err := c.Cookie("user_id")
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User authentication required"})
+		return
+	}
+
+	newNotice := model.Notice{
+		NoticeId:      uuid.New().String(),
+		Title:         noticeInput.Title,
+		Description:   noticeInput.Description,
+		ContributedBy: userID,
+	}
+
+	if err := connections.DB.Create(&newNotice).Error; 
+	err != nil {
+		logrus.Printf("Database error while creating notice: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create notice"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"message": "Notice posted successfully",
+		"notice":  newNotice,
+	})
 }

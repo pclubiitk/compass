@@ -81,7 +81,7 @@ export default function Home() {
       <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 w-[90%] max-w-md bg-white px-4 py-2 rounded-full shadow-md flex items-center justify-between gap-1 border">
         {[
           { icon: BookOpen, label: "Official Docs", path: "/guide" },
-          { icon: Megaphone, label: "Noticeboard", path: "/noticeboard" },
+          { icon: Megaphone, label: "Noticeboard", path: "/noticeboard/v1" },
           { icon: Plus, label: "Add Location", path: "/findme" },
           { icon: User, label: "Profile", path: "/profile" },
         ].map(({ icon: Icon, label, path }) => (

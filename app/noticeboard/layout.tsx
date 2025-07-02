@@ -1,16 +1,22 @@
-import { Metadata } from 'next';
+// app/layout.tsx
+import { Inter } from 'next/font/google'
+import { ThemeProvider } from "@/components/ui/theme-provider"
 
-export const metadata: Metadata = {
-  title: 'Noticeboard',
-};
+const inter = Inter({ subsets: ['latin'] })
 
+export const metadata = {
+  title: 'Campus Notice Board',
+  description: 'Live updates from campus',
+}
 
-export default function RootLayout({children}: Readonly<{children: React.ReactNode;}>) {
-    return (
-        <div id="noticeboard" className={`antialiased relative min-h-screen`}>
-          <div className="relative z-0">
-            {children}
-          </div>
-        </div>
-  );
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en" suppressHydrationWarning>
+      <body className={inter.className}>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          {children}
+        </ThemeProvider>
+      </body>
+    </html>
+  )
 }

@@ -6,10 +6,12 @@ import (
 	"compass/connections"
 	"compass/model"
 	"fmt"
+	"net/http"
 	"strconv"
-
+	"github.com/spf13/viper"
 	"github.com/gin-gonic/gin"
 	"github.com/microcosm-cc/bluemonday"
+	"github.com/sirupsen/logrus"
 )
 
 func noticeProvider(c *gin.Context) {
@@ -65,6 +67,63 @@ func noticeProvider(c *gin.Context) {
 		"total": 			count,
 	})
 }
+
+func noticeProviderv2(c *gin.Context) {
+	pageStr := c.Query("page")
+
+	page, err := strconv.Atoi(pageStr)
+	if err != nil || page < 1 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid or missing 'page' query parameter"})
+		return
+	}
+
+	//It Loads noticesPerPage 
+	noticesPerPage := viper.GetInt("pagination.noticesPerPage")
+	if noticesPerPage <= 0 {
+		noticesPerPage = 10
+		logrus.Println("Warning: 'noticesPerPage' not set or invalid. Using default = 10")
+	}
+
+	offset := (page - 1) * noticesPerPage
+	var notices []model.Notice
+
+	query := connections.DB.Model(&model.Notice{})
+
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		logrus.Printf("Failed to count notices: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database count error"})
+		return
+	}
+
+	result := query.
+		Preload("User").
+		Order("created_at DESC").
+		Limit(noticesPerPage).
+		Offset(offset).
+		Find(&notices)
+
+	if result.Error != nil {
+		logrus.Printf("Failed to fetch notices: %v", result.Error)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database query failed"})
+		return
+	}
+
+	//This is for XSS protection
+	p := bluemonday.UGCPolicy()
+	for i := range notices {
+		notices[i].Description = p.Sanitize(notices[i].Description)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"currentPage": page,
+		"noticesPerPage": noticesPerPage,
+		"totalNotices": total,
+		"data": notices,
+	})
+	
+}
+
 
 func locationProvider(c *gin.Context) {
 	// Details in router.go
