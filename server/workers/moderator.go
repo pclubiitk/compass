@@ -2,10 +2,13 @@ package workers
 
 import (
 	"bytes"
+	"compass/connections"
+	"compass/model"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -208,12 +211,20 @@ func ModeratorWorker() error {
 
 		if safe {
 			logrus.Infof("ReviewID %d passed moderation", job.ReviewID)
-			// Update DB: Mark review as approved
-
+			err = connections.DB.Model(&model.Review{}).Where("id = ?", job.ReviewID).Update("status", "approved").Error
+			if err != nil {
+				log.Printf("Failed to update review status: %v", err)
+			}
+			//flagged as rejected by bot
 		} else {
 			logrus.Warnf("ReviewID %d failed moderation. Consider deleting or flagging.", job.ReviewID)
-			// Update DB: Mark review as rejected/rejected by Bot
-			// Remove Image from DB
+			err = connections.DB.Model(&model.Review{}).Where("id = ?", job.ReviewID).
+				Updates(map[string]interface{}{
+					"status": "rejectedByBot",
+				}).Error
+			if err != nil {
+				log.Printf("Failed to update rejected review: %v", err)
+			}
 		}
 	}
 

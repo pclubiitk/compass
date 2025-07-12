@@ -35,7 +35,6 @@ func addReview(c *gin.Context) {
 		return
 	} else if flagged {
 		reqModel.Status = "rejectedByBot"
-		reqModel.ImageURL = ""
 		connections.DB.Create(&reqModel)
 		c.JSON(403, gin.H{"error": "Text contains inappropriate content"})
 		return
