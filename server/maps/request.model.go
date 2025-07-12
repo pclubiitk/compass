@@ -1,7 +1,10 @@
 package maps
 
+import (
+	"compass/model"
+	"gorm.io/gorm"
+)
 
-import "compass/model"
 // Complete the following request models
 
 type User struct {
@@ -10,6 +13,7 @@ type User struct {
 }
 
 type AddReview struct {
+	gorm.Model
 	Rating     float32 `json:"rating"`
 	Status     string  `gorm:"type:varchar(20);check:status IN ('pending','approved','rejected', 'rejectedByBot')"`
 	LocationId string  `json:"location_id"`
@@ -17,18 +21,17 @@ type AddReview struct {
 	ImageURL   string  `json:"image_url"`
 }
 
-
 type RequestAddLocation struct {
-	Id int `json:"id"` // have to make unique or auto-increment
-	Title string `json:"title"`
-	Latitude float32 `json:"latitude"`
-	Longitude float32 `json:"longitude"`
-	Location_type string `json:"location_type"`
-	Contributor_id string `json:"contributor_id"` //contributedBy
-	Description string `json:"description"` // have to add ch limit
-	Image string `json:"image"` // image url
-	Status  model.Status `json:"action"`  // "approved" or "rejected"
-	Message string `json:"message"`
+	Id             int          `json:"id"` // have to make unique or auto-increment
+	Title          string       `json:"title"`
+	Latitude       float32      `json:"latitude"`
+	Longitude      float32      `json:"longitude"`
+	Location_type  string       `json:"location_type"`
+	Contributor_id string       `json:"contributor_id"` //contributedBy
+	Description    string       `json:"description"`    // have to add ch limit
+	Image          string       `json:"image"`          // image url
+	Status         model.Status `json:"action"`         // "approved" or "rejected"
+	Message        string       `json:"message"`
 }
 
 type AddNotice struct {

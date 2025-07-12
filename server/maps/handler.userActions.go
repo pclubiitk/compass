@@ -2,7 +2,11 @@ package maps
 
 import (
 	"compass/connections"
+	"compass/workers"
 	"encoding/json"
+	"fmt"
+	"github.com/rabbitmq/amqp091-go"
+	"github.com/spf13/viper"
 	"os"
 
 	"image"
@@ -10,7 +14,6 @@ import (
 	"image/png"
 
 	"github.com/gin-gonic/gin"
-	"github.com/rabbitmq/amqp091-go"
 	"strings"
 )
 
@@ -26,10 +29,10 @@ func addReview(c *gin.Context) {
 		return
 	}
 
-	file, header, err := c.Request.FormFile("image")
+	imagePath := ""
+	file, _, err := c.Request.FormFile("image")
 	if err == nil {
 		defer file.Close()
-
 
 		imageDir := "uploads/reviews/"
 		if err := ensureDir(imageDir); err != nil {
@@ -37,22 +40,30 @@ func addReview(c *gin.Context) {
 			return
 		}
 
-		imagePath := imageDir + header.Filename
-
-
 		img, format, err := image.Decode(file)
 		if err != nil {
 			c.JSON(400, gin.H{"error": "Unsupported or invalid image format"})
 			return
 		}
 
-	
+		//saving review to get ID
+		reqModel.Status = "pending"
+		reqModel.ImageURL = ""
+		reviewID := int(reqModel.ID)
+
+		imagePath = fmt.Sprintf("uploads/reviews/review-%d.png", reviewID)
 		out, err := os.Create(imagePath)
 		if err != nil {
 			c.JSON(500, gin.H{"error": "Failed to create image file"})
 			return
 		}
-		defer out.Close()
+		defer func(out *os.File) {
+			err := out.Close()
+			if err != nil {
+				c.JSON(500, gin.H{"error": "Could not close output file"})
+				return
+			}
+		}(out)
 
 		switch strings.ToLower(format) {
 		case "jpeg", "jpg":
@@ -70,35 +81,36 @@ func addReview(c *gin.Context) {
 			return
 		}
 
+		//Image moderation only if image is given
+		job := workers.ModerationJob{
+			ReviewID:  reviewID,
+			ImagePath: imagePath,
+		}
+		body, err := json.Marshal(job)
+		if err == nil {
+			err = connections.MQChannel.Publish(
+				"",
+				viper.GetString("rabbitmq.moderationqueue"),
+				false,
+				false,
+				amqp091.Publishing{
+					ContentType: "application/json",
+					Body:        body,
+				},
+			)
+			if err != nil {
+				c.JSON(500, gin.H{"error": "Failed to add task for moderation"})
+				return
+			}
+		}
 		reqModel.ImageURL = "/" + imagePath
 	} else {
 		reqModel.ImageURL = ""
 	}
 
 	reqModel.Status = "pending"
-
 	if err := connections.DB.Create(&reqModel).Error; err != nil {
 		c.JSON(500, gin.H{"error": "Failed to add review"})
-		return
-	}
-
-	body, err := json.Marshal(reqModel)
-	if err != nil {
-		c.JSON(500, gin.H{"error": "Failed to serialize review for moderation"})
-		return
-	}
-	err = connections.MQChannel.Publish(
-		"",
-		"moderate_review",
-		false,
-		false,
-		amqp091.Publishing{
-			ContentType: "application/json",
-			Body:        body,
-		},
-	)
-	if err != nil {
-		c.JSON(500, gin.H{"error": "Failed to add task for moderation"})
 		return
 	}
 

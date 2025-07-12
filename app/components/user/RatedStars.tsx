@@ -7,7 +7,7 @@ const DEFAULT_UNSELECTED = "grey";
 
 export default function RatingStars({count, rating, icon, color, iconSize}:{count:number, rating:number, iconSize:number, icon:string, color:string}) {
 
-    let stars = Array(count || DEFAULT_COUNT).fill(icon || DEFAULT_ICON);
+    const stars = Array(count || DEFAULT_COUNT).fill(icon || DEFAULT_ICON);
 
     return (
         <div className="flex">
