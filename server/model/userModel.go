@@ -2,7 +2,6 @@ package model
 
 import (
 	"gorm.io/gorm"
-	"time"
 )
 
 type Status string
@@ -43,12 +42,12 @@ type Notice struct {
 
 type Review struct {
 	gorm.Model
-	ReviewId      string    `gorm:"uniqueIndex" json:"review_id"`
-	Rating        float32   `json:"rating"`
-	Status        Status    `gorm:"type:varchar(20);check:status IN ('pending','approved','rejected', 'rejectedByBot')"` // as the user writes a review put the review in the database with pending
-	ContributedBy string    `json:"contributedBy"`                                                                       // This is the foreign key
-	LocationId    string    `json:"location_id"`
-	User          User      `gorm:"foreignKey:ContributedBy;references:UserID"`
-	ImageURL      string    `json:"image_url"`
-	CreatedAt     time.Time `json:"created_at"`
+	Description   string  `gorm:"type:text" json:"description"`
+	ReviewId      string  `gorm:"uniqueIndex" json:"review_id"`
+	Rating        float32 `json:"rating"`
+	Status        Status  `gorm:"type:varchar(20);check:status IN ('pending','approved','rejected', 'rejectedByBot')"` // as the user writes a review put the review in the database with pending
+	ContributedBy string  `json:"contributedBy"`                                                                       // This is the foreign key
+	LocationId    string  `json:"location_id"`
+	User          User    `gorm:"foreignKey:ContributedBy;references:UserID"`
+	ImageURL      string  `json:"image_url"`
 }

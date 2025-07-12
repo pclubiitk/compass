@@ -29,6 +29,18 @@ func addReview(c *gin.Context) {
 		return
 	}
 
+	// Text Moderation
+	if flagged, err := workers.ModerateText(reqModel.Description); err != nil {
+		c.JSON(500, gin.H{"error": "Text moderation failed"})
+		return
+	} else if flagged {
+		reqModel.Status = "rejectedByBot"
+		reqModel.ImageURL = ""
+		connections.DB.Create(&reqModel)
+		c.JSON(403, gin.H{"error": "Text contains inappropriate content"})
+		return
+	}
+
 	imagePath := ""
 	file, _, err := c.Request.FormFile("image")
 	if err == nil {
@@ -49,8 +61,12 @@ func addReview(c *gin.Context) {
 		//saving review to get ID
 		reqModel.Status = "pending"
 		reqModel.ImageURL = ""
-		reviewID := int(reqModel.ID)
+		if err := connections.DB.Create(&reqModel).Error; err != nil {
+			c.JSON(500, gin.H{"error": "Failed to add review"})
+			return
+		}
 
+		reviewID := int(reqModel.ID)
 		imagePath = fmt.Sprintf("uploads/reviews/review-%d.png", reviewID)
 		out, err := os.Create(imagePath)
 		if err != nil {
@@ -81,6 +97,9 @@ func addReview(c *gin.Context) {
 			return
 		}
 
+		reqModel.ImageURL = "/" + imagePath
+		connections.DB.Model(&AddReview{}).Where("id = ?", reviewID).Update("image_url", reqModel.ImageURL)
+
 		//Image moderation only if image is given
 		job := workers.ModerationJob{
 			ReviewID:  reviewID,
@@ -103,16 +122,15 @@ func addReview(c *gin.Context) {
 				return
 			}
 		}
-		reqModel.ImageURL = "/" + imagePath
 	} else {
 		reqModel.ImageURL = ""
+		if err := connections.DB.Create(&reqModel).Error; err != nil {
+			c.JSON(500, gin.H{"error": "Failed to add review"})
+			return
+		}
 	}
 
 	reqModel.Status = "pending"
-	if err := connections.DB.Create(&reqModel).Error; err != nil {
-		c.JSON(500, gin.H{"error": "Failed to add review"})
-		return
-	}
 
 	c.JSON(200, gin.H{"message": "Review submitted and pending moderation"})
 }

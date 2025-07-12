@@ -14,11 +14,12 @@ type User struct {
 
 type AddReview struct {
 	gorm.Model
-	Rating     float32 `json:"rating"`
-	Status     string  `gorm:"type:varchar(20);check:status IN ('pending','approved','rejected', 'rejectedByBot')"`
-	LocationId string  `json:"location_id"`
-	User       string  `json:"UserID"`
-	ImageURL   string  `json:"image_url"`
+	Description string  `gorm:"type:text" json:"description"`
+	Rating      float32 `json:"rating"`
+	Status      string  `gorm:"type:varchar(20);check:status IN ('pending','approved','rejected', 'rejectedByBot')"`
+	LocationId  string  `json:"location_id"`
+	User        string  `json:"UserID"`
+	ImageURL    string  `json:"image_url"`
 }
 
 type RequestAddLocation struct {

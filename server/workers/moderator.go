@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/sirupsen/logrus"
@@ -129,6 +130,51 @@ func ModerateImage(base64Image string) (bool, error) {
 	return !flagged, nil
 }
 
+func ModerateText(text string) (bool, error) {
+	if os.Getenv("OPENAI_API_KEY") == "" {
+		return false, fmt.Errorf("OPENAI_API_KEY not set")
+	}
+
+	type requestBody struct {
+		Input string `json:"input"`
+	}
+	type moderationResponse struct {
+		Results []struct {
+			Flagged bool `json:"flagged"`
+		} `json:"results"`
+	}
+
+	body, _ := json.Marshal(requestBody{Input: text})
+	req, err := http.NewRequest("POST", "https://api.openai.com/v1/moderations", strings.NewReader(string(body)))
+	if err != nil {
+		return false, err
+	}
+	req.Header.Set("Authorization", "Bearer "+os.Getenv("OPENAI_API_KEY"))
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return false, err
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return false, err
+	}
+
+	var result moderationResponse
+	if err := json.Unmarshal(respBody, &result); err != nil {
+		return false, err
+	}
+
+	if len(result.Results) > 0 && result.Results[0].Flagged {
+		return true, nil
+	}
+	return false, nil
+}
+
 // MAIN WORKER FUNCTION
 func ModeratorWorker() error {
 	logrus.Info("Moderator worker is up and running...")
@@ -162,11 +208,12 @@ func ModeratorWorker() error {
 
 		if safe {
 			logrus.Infof("ReviewID %d passed moderation", job.ReviewID)
-			// Update DB: mark as approved (if applicable)
+			// Update DB: Mark review as approved
+
 		} else {
 			logrus.Warnf("ReviewID %d failed moderation. Consider deleting or flagging.", job.ReviewID)
-			// Update DB: reject / delete image
-			// os.Remove(job.ImagePath)
+			// Update DB: Mark review as rejected/rejected by Bot
+			// Remove Image from DB
 		}
 	}
 
