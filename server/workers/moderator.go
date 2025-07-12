@@ -30,6 +30,8 @@ type ModerationResponse struct {
 
 var openaiKey = os.Getenv("OPENAI_API_KEY")
 
+//will have to create this env key, does not exist yet
+
 // Connect to RabbitMQ and return channel + queue
 func connectToQueue() (*amqp.Channel, <-chan amqp.Delivery, error) {
 	url := fmt.Sprintf("amqp://%s:%s@%s:%d/",
@@ -53,8 +55,8 @@ func connectToQueue() (*amqp.Channel, <-chan amqp.Delivery, error) {
 	msgs, err := ch.Consume(
 		qName,
 		"",
-		true,  // auto-ack
-		false, // not exclusive
+		true,
+		false,
 		false,
 		false,
 		nil,
@@ -82,7 +84,7 @@ func loadLocalImageAsBase64(path string) (string, error) {
 	return base64.StdEncoding.EncodeToString(buf.Bytes()), nil
 }
 
-// Call OpenAI Moderation API
+// ModerateImage Call OpenAI Moderation API
 func ModerateImage(base64Image string) (bool, error) {
 	if openaiKey == "" {
 		return false, fmt.Errorf("OPENAI_API_KEY not set")
