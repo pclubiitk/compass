@@ -27,21 +27,6 @@ pip install psycopg2-binary
 
 1. Create a `Locations` table in your PostgreSQL database (if not already done). Example schema:
 
-```sql
-CREATE TABLE locations (
-    id SERIAL PRIMARY KEY,
-    location_id UUID UNIQUE NOT NULL,
-    name TEXT NOT NULL,
-    description TEXT,
-    latitude FLOAT NOT NULL,
-    longitude FLOAT NOT NULL,
-    status VARCHAR(20) DEFAULT 'pending',
-    contributed_by TEXT,
-    average_rating FLOAT DEFAULT 0,
-    review_count BIGINT DEFAULT 0
-);
-```
-
 2. Edit the `psycopg2.connect()` parameters in `parse.py` to match your database credentials.
 
 3. Place your GeoJSON file as `locations.geojson` in the same directory as `parse.py`.
