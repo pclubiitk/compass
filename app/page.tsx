@@ -89,7 +89,10 @@ export default function Home() {
             key={label}
             variant="ghost"
             className="flex flex-col items-center justify-center gap-0.5 px-1 min-w-[58px] sm:min-w-[64px]"
-            onClick={() => router.push(path)}
+            onClick={() => {
+              router.push(path);
+              window.scrollTo(0, 0);
+            }}
           >
             <Icon className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600" />
             <span className="text-[9px] sm:text-[11px] text-gray-600 text-center leading-tight">
