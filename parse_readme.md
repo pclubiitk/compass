@@ -25,7 +25,7 @@ pip install psycopg2-binary
 
 ### Setup
 
-1. Create a `Locations` table in your PostgreSQL database (if not already done). Example schema:
+1. Create the `Locations` table in the PostgreSQL database.
 
 2. Edit the `psycopg2.connect()` parameters in `parse.py` to match your database credentials.
 
