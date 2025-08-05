@@ -44,3 +44,6 @@ next-env.d.ts
 
 # venv
 */venv
+
+# local settings
+.vscode
