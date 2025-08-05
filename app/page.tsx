@@ -1,134 +1,106 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
-import { Metadata } from "next";
-import { ThemeDD } from "./components/ThemeDD";
-import BottomNav from "./components/bottomnav";
-import maplibregl from "maplibre-gl";
-import "maplibre-gl/dist/maplibre-gl.css";
 
-// using --- https://ui.shadcn.com/docs/components/navigation-menu ---
-// for navigation bar
+import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Search, User, BookOpen, Megaphone, Plus } from "lucide-react";
 
-// see end for updates
+const Map = dynamic(() => import("./components/Map"), { ssr: false });
 
-// This meta data line is giving error when used along with 'use client'
-
-// export const metadata: Metadata = {
-//   title: 'Campus Compass',
-// };
-
-export default function Page() {
-  const mapRef = useRef<maplibregl.Map | null>(null);
-  const mapContainerRef = useRef<HTMLDivElement>(null);
+export default function Home() {
   const [query, setQuery] = useState("");
-  const [markers, setMarkers] = useState([]);
+  const router = useRouter();
 
-  useEffect(() => {
-    mapRef.current = new maplibregl.Map({
-      container: mapContainerRef.current!,
-      style:
-        "https://api.maptiler.com/maps/streets-v2/style.json?key=LlBgIboBwPwSOXm52XBf",
-      center: [80.2335, 26.5123],
-      zoom: 15,
-    });
+  const onMarkerClick = () => {
+    router.push("/location/review");
+  };
 
-    return () => {
-      if (mapRef.current) {
-        mapRef.current.remove();
-      }
-    }; // cleanup on unmount
-  }, []);
+  const handleSearch = async () => {
+    if (!window || !query.trim()) return;
 
-  const searchPlace = async () => {
-    console.log("Search function called");
-    if (!query) return;
-    console.log("query:", query);
+    const mapRef = (window as any).mapRef;
+    const markerRef = (window as any).markerRef;
 
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-        query
-      )}`
+    const coordMatch = query.match(
+      /^\s*(-?\d+(\.\d+)?),\s*(-?\d+(\.\d+)?)\s*$/
     );
-    const results = await res.json();
 
-    if (results.length === 0) {
-      alert("No results found");
-      return;
+    let lng: number, lat: number;
+
+    if (coordMatch) {
+      lng = parseFloat(coordMatch[1]);
+      lat = parseFloat(coordMatch[3]);
+    } else {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
+          query
+        )}&format=json`
+      );
+      const data = await res.json();
+      if (!data[0]) return alert("Location not found");
+      lat = parseFloat(data[0].lat);
+      lng = parseFloat(data[0].lon);
     }
 
-    const { lat, lon, display_name } = results[0];
+    if (mapRef && mapRef.current) {
+      mapRef.current.flyTo({ center: [lng, lat], zoom: 14 });
 
-    const coordinates = [parseFloat(lon), parseFloat(lat)];
-    console.log("Display Name:", display_name);
-    {
-      if (mapRef.current) {
-        mapRef.current.flyTo({ center: coordinates, zoom: 18 });
+      if (markerRef && markerRef.current) {
+        markerRef.current.setLngLat([lng, lat]);
+      } else {
+        const maplibregl = (await import("maplibre-gl")).default;
+        markerRef.current = new maplibregl.Marker({ color: "#f00" })
+          .setLngLat([lng, lat])
+          .addTo(mapRef.current);
       }
     }
-    // Remove previous markers if any
-    markers.forEach((marker) => marker.remove());
-
-    const newMarker = new maplibregl.Marker()
-      .setLngLat(coordinates)
-      .setPopup(
-        new maplibregl.Popup().setHTML(
-          `<div style="color:black;">${display_name}</div>`
-        )
-      )
-      .addTo(mapRef.current);
-    // Update the markers state with the new marker
-    setMarkers([newMarker]); // Add the new marker to the state
   };
 
   return (
-    <>
-      <ThemeDD></ThemeDD>
-      <div
-        ref={mapContainerRef}
-        className="w-full h-full"
-        style={{ height: "100vh", width: "100vw" }}
-      ></div>
-
-      <div
-        style={{
-          position: "absolute",
-          top: 10,
-          left: 10,
-          zIndex: 999,
-          background: "white",
-          padding: "10px",
-          borderRadius: "8px",
-        }}
-      >
-        <input
-          type="text"
-          placeholder="Search a place..."
+    <div className="relative h-screen w-screen overflow-hidden">
+      {/* Search Bar */}
+      <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 w-[90%] max-w-md flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-md">
+        <Input
+          placeholder="Search by name or coordinates"
+          className="flex-1 border-none text-black placeholder:text-gray-500 focus-visible:ring-0 focus-visible:ring-offset-0"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          style={{ padding: "6px", width: "200px", marginRight: "8px" }}
+          onKeyDown={(e) => e.key === "Enter" && handleSearch()}
         />
-        <button onClick={searchPlace} style={{ padding: "6px 12px" }}>
-          Search
-        </button>
+        <Button size="icon" variant="ghost" onClick={handleSearch}>
+          <Search className="h-5 w-5 text-gray-500" />
+        </Button>
       </div>
 
-      <div>
-        <main className="p-4">
-          <h1 className="text-2xl font-bold">Campus Compass</h1>
-          {/* <p>Welcome to the app!</p> */}
-        </main>
+      {/* Pass onMarkerClick */}
+      <Map onMarkerClick={onMarkerClick} />
 
-        <BottomNav />
+      {/* Bottom Navigation Bar */}
+      <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 w-[90%] max-w-md bg-white px-4 py-2 rounded-full shadow-md flex items-center justify-between gap-1 border">
+        {[
+          { icon: BookOpen, label: "Official Docs", path: "/guide" },
+          { icon: Megaphone, label: "Noticeboard", path: "/noticeboard/v1" },
+          { icon: Plus, label: "Add Location", path: "/findme" },
+          { icon: User, label: "Profile", path: "/profile" },
+        ].map(({ icon: Icon, label, path }) => (
+          <Button
+            key={label}
+            variant="ghost"
+            className="flex flex-col items-center justify-center gap-0.5 px-1 min-w-[58px] sm:min-w-[64px]"
+            onClick={() => {
+              router.push(path);
+              window.scrollTo(0, 0);
+            }}
+          >
+            <Icon className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600" />
+            <span className="text-[9px] sm:text-[11px] text-gray-600 text-center leading-tight">
+              {label}
+            </span>
+          </Button>
+        ))}
       </div>
-    </>
+    </div>
   );
 }
-// have to properly apply the bottom nav bar, have created the the links and buttons
-// specific links are to be done by respective members
-// rest done
-
-// eg, search: hall 2 canteen
-
-// have to apply IIT Kanpur area-based restrictions
-// might apply regex-based filters to filter out IITK
-// connect to iitk-sec and go to http://172.23.156.156:3000/
