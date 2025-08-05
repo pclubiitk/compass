@@ -1,6 +1,7 @@
 import json
 import psycopg2
 import uuid
+from datetime import datetime
 
 def extract_coords(coord_list):
     # Recursively extract [lon, lat] pairs from nested lists
@@ -20,10 +21,10 @@ def average_coords(coords): # Averages out the coordinates for Polygons, Lines e
 
 # Connect to PSQL
 conn = psycopg2.connect( # edit these to match the Locations table
-    dbname="campus",
-    user="postgres",
-    password="something",
-    host="localhost",
+    dbname="compass",
+    user="this_is_mjk",
+    password="",
+    host="",
     port=5432
 )
 cursor = conn.cursor()
@@ -52,9 +53,9 @@ for feature in features:
         location_id = str(uuid.uuid4())
 
         cursor.execute("""
-            INSERT INTO locations (location_id, name, latitude, longitude, status, contributed_by)
-            VALUES (%s, %s, %s, %s, %s, %s)
-        """, (location_id, name, lat, lon, 'approved', 'admin'))
+            INSERT INTO locations (created_at, updated_at, deleted_at, location_id, name, latitude, longitude, status, contributed_by)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """, (str(datetime.now()), str(datetime.now()), None, location_id, name, lat, lon, 'approved', ''))
         print("added location: ", name)
 
     except Exception as e:
