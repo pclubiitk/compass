@@ -19,7 +19,7 @@ func Router(r *gin.Engine) {
 	profile := r.Group("/profile")
 	{
 		profile.Use(middleware.UserAuthenticator)
-		profile.GET("/", getProfileHandler)
-		profile.POST("/", updateProfile)
+		profile.GET("", getProfileHandler)
+		profile.POST("", updateProfile)
 	}
 }

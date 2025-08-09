@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"compass/connections"
 	"compass/model"
 	"net/http"
 	"time"
@@ -21,7 +22,7 @@ var authConfig = AuthConfig{
 
 func UserAuthenticator(c *gin.Context) {
 	// Check for cookie
-	tokenString, err := c.Cookie("token")
+	tokenString, err := c.Cookie("auth_token")
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
@@ -47,12 +48,28 @@ func UserAuthenticator(c *gin.Context) {
 }
 
 func AdminAuthenticator(c *gin.Context) {
-	// UserAuthenticator to get the userid and role in the request
-	UserAuthenticator(c)
 	// verify the role
 	if role, exist := c.Get("userRole"); !exist || role != model.AdminRole {
 		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Insufficient permissions"})
-			return
+		return
+	}
+	c.Next()
+}
+
+func EmailVerified(c *gin.Context) {
+	// verified email ?
+	userID, exist := c.Get("userID")
+	if !exist {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized here"})
+		return
+	}
+	var user model.User
+	if err := connections.DB.
+		Select("is_verified").
+		Where("user_id = ?", userID).
+		First(&user).Error; err != nil || !user.IsVerified {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Please verify your email to continue"})
+		return
 	}
 	c.Next()
 }

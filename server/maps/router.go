@@ -19,9 +19,9 @@ func Router(r *gin.Engine) {
 
 		// User-protected routes
 		user := maps.Group("/")
-		user.Use(middleware.UserAuthenticator)
-		user.POST("/reviews", addReview)                 // add a review in the rabbit mq queue for processing
-		user.POST("/locations", requestLocationAddition) // add a location request in the table
+		user.Use(middleware.UserAuthenticator, middleware.EmailVerified)
+		user.POST("/review", addReview)                 // add a review in the rabbit mq queue for processing
+		user.POST("/location", requestLocationAddition) // add a location request in the table
 
 		// Next we will add user navigation, and location sharing feature
 		// ...
@@ -29,7 +29,7 @@ func Router(r *gin.Engine) {
 		// Admin-protected routes
 		admin := maps.Group("/")
 		// Static data on dashboard
-		admin.Use(middleware.AdminAuthenticator)
+		admin.Use(middleware.UserAuthenticator, middleware.AdminAuthenticator)
 		admin.GET("/logs", systemLogsProvider)
 		admin.GET("/flag", flaggedReviewsProvider)
 		admin.GET("/newLocation", locationRequestProvider)
