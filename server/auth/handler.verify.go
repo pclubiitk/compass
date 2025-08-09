@@ -3,9 +3,18 @@ package auth
 import (
 	"compass/connections"
 	"compass/model"
-	"github.com/gin-gonic/gin"
+	"crypto/rand"
+	"encoding/hex"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
+
+func generateVerificationToken() (string) {
+	b := make([]byte, 32)
+	rand.Read(b) // never returns an error and fills b completely
+	return hex.EncodeToString(b)
+}
 
 func verificationHandler(c *gin.Context) {
 	var db = connections.DB

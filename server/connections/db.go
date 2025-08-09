@@ -42,5 +42,7 @@ func dbConnection() {
 	if err := DB.AutoMigrate(models...); err != nil {
 		logrus.Fatal("Failed to auto-migrate models: ", err)
 	}
+	DB.Exec("CREATE EXTENSION IF NOT EXISTS pgcrypto")
+	DB.Exec("CREATE EXTENSION IF NOT EXISTS pg_trgm")
 	logrus.Info("Connected to database")
 }

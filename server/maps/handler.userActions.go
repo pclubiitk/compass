@@ -153,7 +153,7 @@ func requestLocationAddition(c *gin.Context) {
 	}
 
 	// Validate required fields
-	if req.Title == "" || req.Contributor_id == "" || req.Latitude == 0 || req.Longitude == 0 {
+	if req.Title == "" || req.Latitude == 0 || req.Longitude == 0 {
 		c.JSON(400, gin.H{"error": "Missing required fields"})
 		return
 	}

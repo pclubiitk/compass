@@ -2,6 +2,8 @@ package maps
 
 import (
 	"compass/model"
+
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -28,7 +30,7 @@ type RequestAddLocation struct {
 	Latitude       float32      `json:"latitude"`
 	Longitude      float32      `json:"longitude"`
 	Location_type  string       `json:"location_type"`
-	Contributor_id string       `json:"contributor_id"` //contributedBy
+	Contributor_id uuid.UUID       `json:"contributor_id"` //contributedBy
 	Description    string       `json:"description"`    // have to add ch limit
 	Image          string       `json:"image"`          // image url
 	Status         model.Status `json:"action"`         // "approved" or "rejected"

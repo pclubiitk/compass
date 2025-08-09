@@ -23,5 +23,5 @@ ports:
 smtp:
   host: smtp.gmail.com
   port: 587
-  user: test@gmail.com
-  pass: test-mail-password
+
+domain: localhost

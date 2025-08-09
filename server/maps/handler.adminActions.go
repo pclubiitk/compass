@@ -1,9 +1,10 @@
 package maps
 
 import (
-	"net/http"
 	"compass/connections"
 	"compass/model"
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -52,7 +53,7 @@ func flagAction(c *gin.Context) {
 			false,                                 // immediate
 			amqp.Publishing{
 				ContentType: "application/json",
-				Body:        []byte(`{"userId": "` + review.User.UserID + `", "message": "` + req.Message + `"}`),
+				Body:        []byte(`{"userId": "` + review.User.UserID.String() + `", "message": "` + req.Message + `"}`),
 			},
 		)
 		c.JSON(200, gin.H{"message": "Review rejected", "details": req.Message})
@@ -81,14 +82,14 @@ func locationAction(c *gin.Context) {
 	if req.Status == "approved" {
 		// Insert into final Location table (assuming model.Location exists)
 		final := model.Location{
-			Name:         loc.Title,
-			Latitude:      loc.Latitude,
-			Longitude:     loc.Longitude,
+			Name:      loc.Title,
+			Latitude:  loc.Latitude,
+			Longitude: loc.Longitude,
 			// LocationType:  loc.LocationType, // no locationType in Location
 			ContributedBy: loc.Contributor_id,
 			Description:   loc.Description,
 			// Image:         loc.Image, // no field for image in Location
-			Status: 	   "approved", //loc.status giving type error
+			Status: "approved", //loc.status giving type error
 		}
 		if err := connections.DB.Create(&final).Error; err != nil {
 			c.JSON(500, gin.H{"error": "Failed to add location"})
@@ -106,7 +107,7 @@ func locationAction(c *gin.Context) {
 			false,
 			amqp.Publishing{
 				ContentType: "application/json",
-				Body:        []byte(`{"userId": "` + loc.Contributor_id + `", "message": "Thanks for contributing a location! It's now live."}`),
+				Body:        []byte(`{"userId": "` + loc.Contributor_id.String() + `", "message": "Thanks for contributing a location! It's now live."}`),
 			},
 		)
 
@@ -131,14 +132,13 @@ func locationAction(c *gin.Context) {
 			false,
 			amqp.Publishing{
 				ContentType: "application/json",
-				Body:        []byte(`{"userId": "` + loc.Contributor_id + `", "message": "` + req.Message + `"}`),
+				Body:        []byte(`{"userId": "` + loc.Contributor_id.String() + `", "message": "` + req.Message + `"}`),
 			},
 		)
 
 		c.JSON(200, gin.H{"message": "Location rejected", "details": req.Message})
 		return
 	}
-//done
 	c.JSON(400, gin.H{"error": "Invalid action"})
 
 	// in both the cases notify the user with a mail, either thanking for contribution or saying sorry
@@ -147,73 +147,31 @@ func locationAction(c *gin.Context) {
 }
 
 func addNotice(c *gin.Context) {
-	// add the request model to the request.model.go file
-
-	// add the notice in the database
-
-	// publish a mail confirming notice published
-
-	// Handle all the edge cases with suitable return http code, write them in the read me for later documentation
 	var input AddNotice
 
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format"})
 		return
 	}
-
-	userID, err := c.Cookie("user_id")
-	if err != nil {
-		c.JSON(401, gin.H{"error": "Unauthorized - no session cookie"})
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
-
+	uid, ok := userID.(uuid.UUID)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID type"})
+		return
+	}
 	notice := model.Notice{
-		NoticeId:      uuid.NewString(), // generates a UUID string like "f47ac10b-58cc-4372-a567-0e02b2c3d479"
 		Title:         input.Title,
 		Description:   input.Description,
 		Preview:       input.Preview,
-		ContributedBy: userID, // user.UserID value
+		ContributedBy: uid, // user.UserID value
 	}
-
 	if err := connections.DB.Create(&notice).Error; err != nil {
 		logrus.Fatal("Failed to create notice:", err)
 	}
-
+	// TODO: publish a mail confirming notice published
 	c.JSON(201, gin.H{"message": "New notice added successfully", "notice": notice})
-}
-
-func addNoticev2(c *gin.Context) {
-	
-	var noticeInput AddNotice
-
-
-	if err := c.ShouldBindJSON(&noticeInput); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input", "details": err.Error()})
-		return
-	}
-
-	userID, err := c.Cookie("user_id")
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User authentication required"})
-		return
-	}
-
-	newNotice := model.Notice{
-		NoticeId:      uuid.New().String(),
-		Title:         noticeInput.Title,
-		Description:   noticeInput.Description,
-		ContributedBy: userID,
-	}
-
-	if err := connections.DB.Create(&newNotice).Error; 
-	err != nil {
-		logrus.Printf("Database error while creating notice: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create notice"})
-		return
-	}
-
-	c.JSON(http.StatusCreated, gin.H{
-		"message": "Notice posted successfully",
-		"notice":  newNotice,
-	})
 }

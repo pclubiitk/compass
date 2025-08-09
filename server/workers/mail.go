@@ -1,5 +1,8 @@
 package workers
 
+
+// TODO: If the request fails, then it keeps on trying
+
 import (
 	"compass/connections"
 	"encoding/json"
@@ -12,7 +15,6 @@ import (
 	// "time"
 )
 
-// SendMail sends an email based on the formatted MailContent
 func SendMail(content MailContent) error {
 	// Create a new email message
 	m := mail.NewMessage()
@@ -39,8 +41,6 @@ func SendMail(content MailContent) error {
 		logrus.Errorf("Failed to send email to %s: %v", content.To, err)
 		return fmt.Errorf("email send failed: %w", err)
 	}
-
-	logrus.Infof("Email successfully sent to %s [type: %s]", content.To, content.Subject)
 	return nil
 }
 

@@ -1,6 +1,9 @@
 // Load environment/config from YAML using Viper
 package connections
 
+// TODO: may be in run time i may need to change the configs,
+// or api keys how do i do it without again loading the envs
+
 import (
 	"github.com/sirupsen/logrus"
 

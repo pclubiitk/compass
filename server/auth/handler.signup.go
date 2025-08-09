@@ -4,59 +4,49 @@ import (
 	"compass/connections"
 	"compass/model"
 	"compass/workers"
-	"crypto/rand"
-	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/spf13/viper"
+	"golang.org/x/crypto/bcrypt"
 )
 
-func generateToken() (string, error) {
-	b := make([]byte, 32)
-	_, err := rand.Read(b)
-	if err != nil {
-		return "", err
-	}
-	return hex.EncodeToString(b), nil
-}
-
 func signupHandler(c *gin.Context) {
-
-	var db = connections.DB
-	var input struct {
-		Email string `json:"email" binding:"required,email"`
-		Name  string `json:"username" binding:"required"`
-	}
-	//take the input, will have to change later perhaps
-
+	var input SignUpRequest
+	// Request Validation
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format"})
 		return
 	}
-
-	// Checking if user already exists
-	var existing model.User
-	db.Where("email = ?", input.Email).First(&existing)
-	if existing.ID != 0 {
-		c.JSON(http.StatusConflict, gin.H{"error": "User already exists"})
-		return
-	}
-
 	// Generate token and the user
-	token, _ := generateToken()
-	user := model.User{
-		Email:             input.Email,
-		Name:              input.Name,
-		UserID:            strings.ReplaceAll(input.Email, "@", "_"),
-		VerificationToken: token,
+	token := generateVerificationToken()
+	if hashPass, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error creating user"})
+	} else {
+		user := model.User{
+			Email:             input.Email,
+			Password:          string(hashPass),
+			Name:              input.Name,
+			IsVerified:        false,
+			Role:              "user",
+			VerificationToken: token,
+		}
+		if err := connections.DB.Create(&user).Error; err != nil {
+			var pgErr *pgconn.PgError
+			if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+				// Unique violation
+				c.JSON(http.StatusConflict, gin.H{"error": "User already exists"})
+				return
+			}
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error creating user"})
+		}
 	}
-	db.Create(&user)
-
-	verifyLink := fmt.Sprintf("https://campus-compass.com/verify?token=%s", token)
-
+	// Add job to mail queue
+	verifyLink := fmt.Sprintf("http://%s/verify?token=%s", viper.GetString("domain"), token)
 	job := workers.MailJob{
 		Type: "user_verification",
 		To:   input.Email,
@@ -64,20 +54,11 @@ func signupHandler(c *gin.Context) {
 			"username": input.Name,
 			"link":     verifyLink,
 		},
-	} //this struct is in Aditya's PR
+	}
 	payload, _ := json.Marshal(job)
 	err := workers.PublishMailJob(payload)
 	if err != nil {
 		return
 	}
-
 	c.JSON(http.StatusOK, gin.H{"message": "Signup successful. Please check your email to verify."})
-
-	// define the signup request model in the request model as per need
-
-	// add the entry in the database
-
-	// add a message to the mail queue for welcome mail and email verification
-
-	// Handle all the edge cases with suitable return http code, write them in the read me for later documentation
 }

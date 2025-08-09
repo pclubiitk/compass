@@ -1,18 +1,44 @@
 package auth
 
-import "github.com/gin-gonic/gin"
+import (
+	"compass/connections"
+	"compass/middleware"
+	"compass/model"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
+)
 
 func loginHandler(c *gin.Context) {
-	// define the login request model in the request model as per need
-
-	// Verify the password hash with the provided password
-
-	// on verification create a valid jwt token having the role of the user, (admin, user)
-	// using the middleware token function, you are required to write the token generator and verifier code
-
-	// Save the token in cookie
-
-	// Handle all the edge cases with suitable return http code, write them in the read me for later documentation
-
-
+	var req LoginRequest
+	var dbUser model.User
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format"})
+		return
+	}
+	// TODO: If the user is already logged in ?
+	result := connections.DB.Select("email", "user_id", "password", "role").Where("email = ?", req.Email).First(&dbUser)
+	if result.Error != nil {
+		if result.Error == gorm.ErrRecordNotFound {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "User Not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": ""})
+		}
+		return
+	}
+	if err := bcrypt.CompareHashAndPassword([]byte(dbUser.Password), []byte(req.Password)); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+		return
+	}
+	// create a valid jwt token
+	token, err := middleware.GenerateToken(dbUser.UserID, string(dbUser.Role))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+		return
+	}
+	// set cookie
+	middleware.SetAuthCookie(c, token)
+	c.JSON(http.StatusOK, gin.H{"message": "Login Successful"})
 }
