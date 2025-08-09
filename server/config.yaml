@@ -24,4 +24,7 @@ smtp:
   host: smtp.gmail.com
   port: 587
 
-domain: localhost
+domain: localhost:8080
+
+expiry:
+  emailVerification: 3

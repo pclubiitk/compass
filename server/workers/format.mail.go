@@ -5,6 +5,8 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
+
+	"github.com/spf13/viper"
 )
 
 // MailJob defines the structure of a message pulled from RabbitMQ
@@ -49,11 +51,13 @@ func formatVerificationEmail(job MailJob) (MailContent, error) {
 	data := map[string]interface{}{
 		"Username": username,
 		"Link":     link,
+		"Expiry":   viper.GetInt("expiry.emailVerification"),
 	}
 	tmpl := `
 		<h2>Hello {{.Username}},</h2>
 		<p>Thank you for signing up! Please verify your email by clicking the link below:</p>
 		<p><a href="{{.Link}}">Verify Email</a></p>
+		<p>This link is valid for next {{.Expiry}} hours</p>
 	`
 	body, err := renderTemplate(tmpl, data)
 	if err != nil {
