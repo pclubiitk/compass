@@ -39,3 +39,15 @@ func SetAuthCookie(c *gin.Context, token string) {
 		authConfig.CookieHTTPOnly,
 	)
 }
+func ClearAuthCookie(c *gin.Context) {
+	c.SetSameSite(authConfig.SameSiteMode)
+	c.SetCookie(
+		"auth_token",
+		"",
+		-1,
+		"/",
+		authConfig.CookieDomain,
+		authConfig.CookieSecure,
+		authConfig.CookieHTTPOnly,
+	)
+}

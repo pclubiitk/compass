@@ -29,6 +29,7 @@ func loginHandler(c *gin.Context) {
 		return
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(dbUser.Password), []byte(req.Password)); err != nil {
+		middleware.ClearAuthCookie(c)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}

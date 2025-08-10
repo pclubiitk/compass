@@ -17,16 +17,19 @@ const (
 )
 
 type User struct {
-	CreatedAt            time.Time
-	UpdatedAt            time.Time
+	CreatedAt            time.Time      `json:"-"`
+	UpdatedAt            time.Time      `json:"-"`
 	DeletedAt            gorm.DeletedAt `gorm:"index"`
 	UserID               uuid.UUID      `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	Email                string         `gorm:"unique" json:"email"`
 	Password             string         `json:"password"`
 	Name                 string         `json:"name"`
-	IsVerified           bool           `json:"is_verified"`
+	IsVerified           bool           `json:"-"`
 	VerificationToken    string         `json:"-"` //erased after verification
 	Role                 Role           `json:"role" gorm:"type:varchar(10);check:role IN ('admin','bot','user')"`
 	ContributedLocations []Location     `gorm:"foreignKey:ContributedBy;references:UserID"`
 	ContributedReview    []Review       `gorm:"foreignKey:ContributedBy;references:UserID"`
+	ContributedNotice    []Notice       `gorm:"foreignKey:ContributedBy;references:UserID"`
+	ProfilePic           *Image         `gorm:"polymorphic:Owner;" json:"profilepic"` // here the * makes it a pointer and when it is null, it return null in json instead of a default values
+	BioPics              []Image        `gorm:"polymorphic:Owner;" json:"biopics"`
 }

@@ -8,10 +8,12 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"github.com/spf13/viper"
+
 	"github.com/gin-gonic/gin"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
+	"gorm.io/gorm"
 )
 
 func noticeProvider(c *gin.Context) {
@@ -51,8 +53,6 @@ func noticeProvider(c *gin.Context) {
 		noticeList[i].Description = p.Sanitize(noticeList[i].Description)
 	}
 
-
-
 	// Check DB error
 	if result.Error != nil {
 		c.JSON(500, gin.H{"error": "Failed to fetch notices"})
@@ -64,7 +64,7 @@ func noticeProvider(c *gin.Context) {
 		"page":             page,
 		"page_size":        pageSize,
 		"noticeboard_list": noticeList,
-		"total": 			count,
+		"total":            count,
 	})
 }
 
@@ -77,7 +77,7 @@ func noticeProviderv2(c *gin.Context) {
 		return
 	}
 
-	//It Loads noticesPerPage 
+	//It Loads noticesPerPage
 	noticesPerPage := viper.GetInt("pagination.noticesPerPage")
 	if noticesPerPage <= 0 {
 		noticesPerPage = 10
@@ -116,52 +116,54 @@ func noticeProviderv2(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"currentPage": page,
+		"currentPage":    page,
 		"noticesPerPage": noticesPerPage,
-		"totalNotices": total,
-		"data": notices,
+		"totalNotices":   total,
+		"data":           notices,
 	})
-	
+
 }
 
-
 func locationProvider(c *gin.Context) {
-	// Details in router.go
+	// TODO: write a pagination logic
 	var locations []model.Location
 
 	err := connections.DB.
 		Model(&model.Location{}).
-		Where("status = ?", "approved").
+		Where("status = ?", model.Approved).
 		Select("location_id", "name", "latitude", "longitude").
 		Find(&locations).Error
 
 	if err != nil {
-		c.JSON(500, gin.H{"error": "Failed to fetch locations"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch locations"})
 		return
 	}
 
-	c.JSON(200, gin.H{"locations": locations})
+	c.JSON(http.StatusOK, gin.H{"locations": locations})
 	// Handle all the edge cases with suitable return http code, write them in the read me for later documentation
 
 }
 
 func locationDetailProvider(c *gin.Context) {
-	// Details in router.go
 	id := c.Param("id")
-
 	var loc model.Location
 	err := connections.DB.
 		Model(&model.Location{}).
-		Where("location_id = ? AND status = ?", id, "approved").
+		Preload("User", connections.UserSelect). // Location contributor
+		Preload("Reviews", func(db *gorm.DB) *gorm.DB {
+			return db.Where("status = ?", model.Approved).
+				Order("created_at DESC").
+				Limit(5)
+		}).
+		Preload("Reviews.User", connections.UserSelect). // Review contributors
+		Where("location_id = ? AND status = ?", id, model.Approved).
 		First(&loc).Error
 
 	if err != nil {
-		c.JSON(404, gin.H{"error": "Location not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Location not found"})
 		return
 	}
-
-	c.JSON(200, gin.H{"location": loc})
-	// Handle all the edge cases with suitable return http code, write them in the read me for later documentation
+	c.JSON(http.StatusOK, gin.H{"location": loc})
 
 }
 

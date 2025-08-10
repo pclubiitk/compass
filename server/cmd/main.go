@@ -4,6 +4,8 @@ import (
 	_ "compass/connections" // is a blank import and it runs the init() functions in the package
 	"compass/workers"
 	"time"
+
+	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
 )
@@ -18,7 +20,7 @@ func main() {
 	var g errgroup.Group
 
 	// In Production mode, will not print the routes as done in debug mode
-	// gin.SetMode(gin.ReleaseMode)
+	gin.SetMode(gin.ReleaseMode)
 
 	// The concurrent workers running in background.
 	// For now we are keeping them as background workers, as we expand, we can later convert them in to independent services.
