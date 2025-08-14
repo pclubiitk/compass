@@ -30,6 +30,7 @@ func main() {
 	g.Go(func() error {
 		return workers.MailingWorker()
 	})
+	g.Go(func() error { return assetServer().ListenAndServe() })
 	g.Go(func() error { return authServer().ListenAndServe() })
 	g.Go(func() error { return mapsServer().ListenAndServe() })
 	logrus.Info("Main server is Starting...")

@@ -8,10 +8,11 @@ import (
 	"github.com/google/uuid"
 )
 
-func GenerateToken(userID uuid.UUID, role string) (string, error) {
+func GenerateToken(userID uuid.UUID, role int, verified bool) (string, error) {
 	claims := JWTClaims{
 		UserID: userID,
 		Role:   role,
+		Verified: verified,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject:   userID.String(),
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(authConfig.TokenExpiration)),
@@ -21,10 +22,6 @@ func GenerateToken(userID uuid.UUID, role string) (string, error) {
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(authConfig.JWTSecretKey))
-}
-
-func VerifyToken() {
-
 }
 
 func SetAuthCookie(c *gin.Context, token string) {

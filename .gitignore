@@ -47,3 +47,7 @@ next-env.d.ts
 
 # local settings
 .vscode
+
+# Public images
+/server/assets/public
+/server/assets/tmp

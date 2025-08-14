@@ -36,10 +36,10 @@ func signupHandler(c *gin.Context) {
 		Password:          string(hashPass),
 		Name:              input.Name,
 		IsVerified:        false,
-		Role:              "user",
+		Role:              model.UserRole,
 		VerificationToken: fmt.Sprintf("%s<>%s", token, expiry),
 	}
-	if err := connections.DB.Create(&user).Error; err != nil {
+	if err := connections.DB.Model(&model.User{}).Create(&user).Error; err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
 			// Unique violation

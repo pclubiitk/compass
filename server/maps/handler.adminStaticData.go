@@ -3,6 +3,7 @@ package maps
 import (
 	"compass/connections"
 	"compass/model"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
@@ -10,7 +11,6 @@ import (
 func systemLogsProvider(c *gin.Context) {
 	// static data, provide the logs, try to modify the route such that you enable pagination
 
-	// Handle all the edge cases with suitable return http code, write them in the read me for later documentation
 }
 
 func flaggedReviewsProvider(c *gin.Context) {
@@ -37,24 +37,24 @@ func flaggedReviewsProvider(c *gin.Context) {
 
 func locationRequestProvider(c *gin.Context) {
 	// filter the pending location requests
-	var pending []RequestAddLocation
+	var pending []model.Location
 
+	// Here only admin can accept or reject so just check pending
 	err := connections.DB.
-		Model(&RequestAddLocation{}).
+		Model(&model.Location{}).
+		Preload("User", connections.UserSelect).
+		Preload("CoverPic", connections.ImageSelect).
 		Where("status = ?", "pending").
 		Find(&pending).Error
 
 	if err != nil {
-		c.JSON(500, gin.H{"error": "Failed to fetch pending location requests"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch pending location requests"})
 		return
 	}
 
-	c.JSON(200, gin.H{
-		"requests": pending,
-	})
-	// Handle all the edge cases with suitable return http code, write them in the read me for later documentation
+	c.JSON(http.StatusOK, gin.H{"requests": pending})
 }
-//done
+
 func indicatorProvider(c *gin.Context) {
 	// add helper functions, and provide the indicators to the user
 }

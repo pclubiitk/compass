@@ -19,7 +19,7 @@ func loginHandler(c *gin.Context) {
 		return
 	}
 	// TODO: If the user is already logged in ?
-	result := connections.DB.Select("email", "user_id", "password", "role").Where("email = ?", req.Email).First(&dbUser)
+	result := connections.DB.Model(&model.User{}).Select("email", "user_id", "password", "role", "is_verified").Where("email = ?", req.Email).First(&dbUser)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "User Not found"})
@@ -34,7 +34,7 @@ func loginHandler(c *gin.Context) {
 		return
 	}
 	// create a valid jwt token
-	token, err := middleware.GenerateToken(dbUser.UserID, string(dbUser.Role))
+	token, err := middleware.GenerateToken(dbUser.UserID, int(dbUser.Role), dbUser.IsVerified)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
 		return

@@ -19,6 +19,7 @@ rabbitmq:
 ports:
   auth: 8080
   maps: 8081
+  assets: 8082
 
 smtp:
   host: smtp.gmail.com
@@ -28,3 +29,7 @@ domain: localhost:8080
 
 expiry:
   emailVerification: 3
+
+# TODO: Understand how can we change the configs in run time
+image:
+  quality: 40

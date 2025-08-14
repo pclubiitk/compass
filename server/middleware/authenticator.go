@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"compass/connections"
 	"compass/model"
 	"net/http"
 	"time"
@@ -20,6 +19,7 @@ var authConfig = AuthConfig{
 	SameSiteMode:    http.SameSiteLaxMode,
 }
 
+// TODO: Extract the basic token extraction and verification out and keep just the user part
 func UserAuthenticator(c *gin.Context) {
 	// Check for cookie
 	tokenString, err := c.Cookie("auth_token")
@@ -41,37 +41,44 @@ func UserAuthenticator(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token claims"})
 		return
 	}
-	// Set the user role here
+	// Set the role here
+	// TODO: Find better way, here whenever i extract i need to do a check if that thing exist or not
 	c.Set("userID", claims.UserID)
 	c.Set("userRole", claims.Role)
-	c.Next()
-}
+	c.Set("verified", claims.Verified)
 
-func AdminAuthenticator(c *gin.Context) {
-	// verify the role
-	if role, exist := c.Get("userRole"); !exist || role != model.AdminRole {
+	// Verify the user power
+	if role := c.GetInt("userRole"); role < int(model.UserRole) {
 		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Insufficient permissions"})
 		return
 	}
 	c.Next()
 }
 
-func EmailVerified(c *gin.Context) {
-	// verified email ?
-	userID, exist := c.Get("userID")
-	if !exist {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized here"})
-		return
-	}
-	var user model.User
-	if err := connections.DB.
-		Select("is_verified").
-		Where("user_id = ?", userID).
-		First(&user).Error; err != nil || !user.IsVerified {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Please verify your email to continue"})
+func AdminAuthenticator(c *gin.Context) {
+	// verify the role
+	if role := c.GetInt("userRole"); role < int(model.AdminRole) {
+		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Insufficient permissions"})
 		return
 	}
 	c.Next()
 }
 
-// TODO: Visitors Auth System
+// But once the user verifies the email, the cookie will remain same hence will need to login again
+func EmailVerified(c *gin.Context) {
+	// verified email ?
+	verified, exist := c.Get("verified")
+	if !exist {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized here"})
+		return
+	}
+	if !verified.(bool) {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Please verify your email to continue"})
+		return
+	}
+	// TODO: implement the refresh token login, can remove this then
+	ClearAuthCookie(c)
+	c.Next()
+}
+
+// TODO: Visitors Auth System, Need to define exact permission
