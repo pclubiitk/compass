@@ -1,6 +1,7 @@
 package maps
 
 import (
+	"compass/assets"
 	"compass/connections"
 	"compass/model"
 	"net/http"
@@ -10,6 +11,7 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
+	"gorm.io/gorm"
 )
 
 func flagAction(c *gin.Context) {
@@ -153,25 +155,59 @@ func addNotice(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format"})
 		return
 	}
-	userID, exists := c.Get("userID")
-	if !exists {
+	// TODO: Extract this logic out, need something more elegant
+	userID, exist := c.Get("userID")
+	if !exist {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
-	uid, ok := userID.(uuid.UUID)
-	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID type"})
+
+	if err := connections.DB.Transaction(func(tx *gorm.DB) error {
+		// Create notice
+		notice := model.Notice{
+			Title:         input.Title,
+			Description:   input.Description,
+			Body:          input.Body,
+			ContributedBy: userID.(uuid.UUID),
+		}
+		if err := tx.Create(&notice).Error; err != nil {
+			return err
+		}
+		// TODO: Can do sanitization of the text
+		// p := bluemonday.UGCPolicy() // User-Generated Content policy
+		// for i := range noticeList {
+		// 	noticeList[i].Description = p.Sanitize(noticeList[i].Description)
+		// }
+		//This is for XSS protection
+		// p := bluemonday.UGCPolicy()
+		// for i := range notices {
+		// 	notices[i].Description = p.Sanitize(notices[i].Description)
+		// }
+		//  Image exist in the request
+		// TODO: Security analysis, if somehow i know what is the uploded image id, then i can steal the image for the user.
+		if input.CoverPic != nil {
+			// Attach existing image to notice polymorphically
+			if err := tx.Model(&model.Image{}).
+				Where("image_id = ?", *input.CoverPic).
+				Updates(map[string]interface{}{
+					"ParentAssetID":   notice.NoticeId,
+					"ParentAssetType": "notices",
+					"Submitted":       true,
+					"Status":          "approved", // As notice is allowed by admin, hence no moderation
+				}).Error; err != nil {
+				return err
+			}
+			// Move image from tmp to public
+			if err := assets.MoveImageFromTmpToPublic(*input.CoverPic); err != nil {
+				return err
+			}
+		}
+		return nil
+	}); err != nil {
+		logrus.Error("Failed to create notice:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	notice := model.Notice{
-		Title:         input.Title,
-		Description:   input.Description,
-		Preview:       input.Preview,
-		ContributedBy: uid, // user.UserID value
-	}
-	if err := connections.DB.Create(&notice).Error; err != nil {
-		logrus.Fatal("Failed to create notice:", err)
-	}
 	// TODO: publish a mail confirming notice published
-	c.JSON(201, gin.H{"message": "New notice added successfully", "notice": notice})
+	c.JSON(201, gin.H{"message": "New notice added successfully"})
 }

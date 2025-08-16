@@ -10,4 +10,6 @@ func init() {
 	initRabbitMQ()
 	// Database connection
 	dbConnection()
+	// Connect to moderator ai client
+	aiConnection()
 }

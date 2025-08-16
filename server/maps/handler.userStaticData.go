@@ -5,123 +5,47 @@ package maps
 import (
 	"compass/connections"
 	"compass/model"
-	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/microcosm-cc/bluemonday"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"gorm.io/gorm"
 )
 
 func noticeProvider(c *gin.Context) {
-	pageSize := 10
-
-	// Get page number from path param
-	pageStr := c.Query("page")
-	start := c.Query("start")
-	end := c.Query("end")
-	page, err := strconv.Atoi(pageStr)
-	if err != nil || page < 1 {
-		// If conversion fails or page is less than 1
-		c.JSON(400, gin.H{"error": "Invalid page number"})
-		return
+	// Extract page number, if issue default to 1
+	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
+	if err != nil {
+		page = 1
 	}
+	offset := (page - 1) * viper.GetInt("noticeboard.limit")
 
-	offset := (page - 1) * pageSize
 	var noticeList []model.Notice
-
-	// Fetch from DB with limit and offset
-	result := connections.DB.
-		Where("created_at BETWEEN ? AND ?", start, end).
+	if connections.DB.
+		Model(&model.Notice{}).
+		Preload("User", connections.UserSelect).
 		Order("created_at DESC").
-		Limit(pageSize).
-		Offset(offset).
-		Find(&noticeList)
-
-	var count int64
+		Limit(viper.GetInt("noticeboard.limit")).
+		Offset(offset). // set page
+		Find(&noticeList).
+		Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch notices"})
+		return
+	}
+	// Count total pages
+	var count int64 = -1
 	if err := connections.DB.Model(&model.Notice{}).Count(&count).Error; err != nil {
-		// handle error
-		fmt.Println("Error counting users:", err)
+		logrus.Errorf("Failed to count notices: %v", err)
 		return
 	}
-
-	p := bluemonday.UGCPolicy() // User-Generated Content policy
-	for i := range noticeList {
-		noticeList[i].Description = p.Sanitize(noticeList[i].Description)
-	}
-
-	// Check DB error
-	if result.Error != nil {
-		c.JSON(500, gin.H{"error": "Failed to fetch notices"})
-		return
-	}
-
-	// Return the result
+	// TODO: handling if count is -1, then don't show the count field, there is some error
 	c.JSON(200, gin.H{
-		"page":             page,
-		"page_size":        pageSize,
 		"noticeboard_list": noticeList,
-		"total":            count,
+		"total_notices":    count,
+		"current_page":     page,
 	})
-}
-
-func noticeProviderv2(c *gin.Context) {
-	pageStr := c.Query("page")
-
-	page, err := strconv.Atoi(pageStr)
-	if err != nil || page < 1 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid or missing 'page' query parameter"})
-		return
-	}
-
-	//It Loads noticesPerPage
-	noticesPerPage := viper.GetInt("pagination.noticesPerPage")
-	if noticesPerPage <= 0 {
-		noticesPerPage = 10
-		logrus.Println("Warning: 'noticesPerPage' not set or invalid. Using default = 10")
-	}
-
-	offset := (page - 1) * noticesPerPage
-	var notices []model.Notice
-
-	query := connections.DB.Model(&model.Notice{})
-
-	var total int64
-	if err := query.Count(&total).Error; err != nil {
-		logrus.Printf("Failed to count notices: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database count error"})
-		return
-	}
-
-	result := query.
-		Preload("User").
-		Order("created_at DESC").
-		Limit(noticesPerPage).
-		Offset(offset).
-		Find(&notices)
-
-	if result.Error != nil {
-		logrus.Printf("Failed to fetch notices: %v", result.Error)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database query failed"})
-		return
-	}
-
-	//This is for XSS protection
-	p := bluemonday.UGCPolicy()
-	for i := range notices {
-		notices[i].Description = p.Sanitize(notices[i].Description)
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"currentPage":    page,
-		"noticesPerPage": noticesPerPage,
-		"totalNotices":   total,
-		"data":           notices,
-	})
-
 }
 
 func locationProvider(c *gin.Context) {

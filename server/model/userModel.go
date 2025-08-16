@@ -37,17 +37,16 @@ type Location struct {
 }
 
 type Notice struct {
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
-	DeletedAt       gorm.DeletedAt `gorm:"index"`
-	NoticeId        uuid.UUID      `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
-	Title           string         `json:"title" binding:"required"`
-	Description     string         `gorm:"type:text" json:"description"`
-	Preview         string         `json:"preview"`
-	CardDescription string         `json:"cardDescription"`
-	ContributedBy   uuid.UUID      `json:"contributedBy"`
-	User            *User          `gorm:"foreignKey:ContributedBy;references:UserID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
-	CoverPic        *Image         `gorm:"polymorphic:ParentAsset;" json:"coverpic"`
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
+	DeletedAt     gorm.DeletedAt `gorm:"index"`
+	NoticeId      uuid.UUID      `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	Title         string         `json:"title" binding:"required"`
+	Description   string         `gorm:"type:text" json:"description"`
+	Body          string         `json:"Body"`
+	ContributedBy uuid.UUID      `json:"contributedBy"`
+	User          *User          `gorm:"foreignKey:ContributedBy;references:UserID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
+	CoverPic      *Image         `gorm:"polymorphic:ParentAsset;" json:"coverpic"`
 }
 
 type Review struct {
@@ -56,10 +55,10 @@ type Review struct {
 	DeletedAt     gorm.DeletedAt `gorm:"index"`
 	ReviewId      uuid.UUID      `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	Description   string         `gorm:"type:text" json:"description"`
-	Rating        float32        `json:"rating"`
+	Rating        int8           `json:"rating"`
 	Status        Status         `gorm:"type:varchar(20);check:status IN ('pending','approved','rejected', 'rejectedByBot')"` // as the user writes a review put the review in the database with pending
 	ContributedBy uuid.UUID      `json:"contributedBy"`                                                                       // This is the foreign key
 	LocationId    uuid.UUID      `json:"locationId"`
 	User          *User          `gorm:"foreignKey:ContributedBy;references:UserID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
-	CoverPic      *Image         `gorm:"polymorphic:ParentAsset;ParentAsset" json:"coverpic"` // base name, parentAsset, it will attach the ID itself
+	Images        []Image        `gorm:"polymorphic:ParentAsset;" json:"images"` // base name, parentAsset, it will attach the ID itself
 }

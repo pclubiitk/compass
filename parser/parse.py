@@ -53,10 +53,39 @@ for feature in features:
         location_id = str(uuid.uuid4())
 
         cursor.execute("""
-            INSERT INTO locations (created_at, updated_at, deleted_at, location_id, name, latitude, longitude, status, contributed_by)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-        """, (str(datetime.now()), str(datetime.now()), None, location_id, name, lat, lon, 'approved', ''))
-        print("added location: ", name)
+            INSERT INTO locations (
+                created_at, 
+                updated_at, 
+                deleted_at, 
+                location_id, 
+                name, 
+                description, 
+                latitude, 
+                longitude, 
+                location_type, 
+                status, 
+                contributed_by, 
+                average_rating, 
+                review_count
+            )
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """, (
+            datetime.now(),           # created_at
+            datetime.now(),           # updated_at
+            None,                     # deleted_at
+            location_id,              # location_id (uuid.UUID)
+            name,                     # name
+            "description",              # description
+            lat,                      # latitude
+            lon,                      # longitude
+            "location_type",            # location_type
+            'approved',               # status
+            "31b0bc36-6fc3-4040-9590-fb5d579e77df", # contributed_by
+            0.0,                      # average_rating
+            0                         # review_count
+        ))
+        print("Added location:", name)
+
 
     except Exception as e:
         print("Error on feature:", e)

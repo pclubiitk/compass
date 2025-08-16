@@ -69,7 +69,7 @@ func getProfileHandler(c *gin.Context) {
 		Model(&model.User{}).
 		Preload("ContributedLocations", connections.RecentFive).
 		Preload("ContributedNotice", connections.RecentFive).
-		Preload("ContributedReview", connections.RecentFive).
+		Preload("ContributedReview", connections.RecentFiveReviews).
 		Where("user_id = ?", userID.(uuid.UUID)).Omit("password").Find(&user).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to fetch profile at the moment"})
 		return

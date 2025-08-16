@@ -23,6 +23,7 @@ func signupHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format"})
 		return
 	}
+	// TODO: extract out the user model generation into a single transaction
 	// Generate token and the user
 	token := generateVerificationToken()
 	hashPass, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
@@ -59,8 +60,7 @@ func signupHandler(c *gin.Context) {
 		},
 	}
 	payload, _ := json.Marshal(job)
-	err = workers.PublishMailJob(payload)
-	if err != nil {
+	if err := workers.PublishJob(payload, model.MailQueue); err != nil {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Signup successful. Please check your email to verify."})

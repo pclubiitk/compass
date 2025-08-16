@@ -12,7 +12,7 @@ func Router(r *gin.Engine) {
 	{
 		// Public routes, will not require login, static data providers
 		// use https://gin-gonic.com/en/docs/examples/param-in-path/ and structure the paths to support specific id, and pagination
-		maps.GET("/notice/:page", noticeProvider)         // each page will provide 10 notices (all the details about the notices)
+		maps.GET("/notice", noticeProvider)         // each page will provide 10 notices (all the details about the notices)
 		maps.GET("/location/:id", locationDetailProvider) // provide exact details about the location using the id
 		maps.GET("/locations", locationProvider)          // just the name and coordinate provider
 		maps.GET("/reviews/:id/:page", reviewProvider)    // provide the reviews of the location id, most recent 50, if there are more do the pagination
@@ -38,6 +38,7 @@ func Router(r *gin.Engine) {
 		admin.POST("/flag/:id", flagAction)         // Allow action like allow or declined, in case of negative action add a mail request in the queue for the mail worker to send a mail of rejection to the user
 		admin.POST("/location/:id", locationAction) // Allow the action of user like allow or declined
 		admin.POST("/notice", addNotice)
+		// TODO: add a env reload route for admin
 
 	}
 }

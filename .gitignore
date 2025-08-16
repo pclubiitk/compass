@@ -51,3 +51,6 @@ next-env.d.ts
 # Public images
 /server/assets/public
 /server/assets/tmp
+
+# secrets
+/server/secret.yml

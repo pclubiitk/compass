@@ -12,7 +12,7 @@ rabbitmq:
   host: "localhost"
   user: "guest"
   password: "guest"
-  mailqueue: "mail_queue"
+  mailqueue: "mail_queue" # Keep the names consistent <type>queue for protect the publish logic correct
   moderationqueue: "moderation_queue"
   port: 5672
 
@@ -25,7 +25,7 @@ smtp:
   host: smtp.gmail.com
   port: 587
 
-domain: localhost:8080
+domain: localhost
 
 expiry:
   emailVerification: 3
@@ -33,3 +33,6 @@ expiry:
 # TODO: Understand how can we change the configs in run time
 image:
   quality: 40
+
+noticeboard:
+  limit: 5

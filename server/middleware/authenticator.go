@@ -76,8 +76,8 @@ func EmailVerified(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Please verify your email to continue"})
 		return
 	}
-	// TODO: implement the refresh token login, can remove this then
-	ClearAuthCookie(c)
+	// TODO: implement the refresh the token, can remove this then, as the token will not have the verification update
+	// ClearAuthCookie(c)
 	c.Next()
 }
 

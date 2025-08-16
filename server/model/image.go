@@ -17,8 +17,8 @@ type Image struct {
 	DeletedAt       gorm.DeletedAt `gorm:"index" json:"-"`
 	ImageID         uuid.UUID      `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	OwnerID         uuid.UUID      `gorm:"index"`
-	ParentAssetID   uuid.UUID
+	ParentAssetID   *uuid.UUID
 	ParentAssetType string
-	Status          Status `gorm:"type:varchar(20);check:status IN ('pending','approved','rejected', 'rejectedByBot')"`
+	Status          Status `gorm:"type:varchar(20);check:status IN ('pending','approved','rejected','rejectedByBot')"`
 	Submitted       bool   `json:"-"`
 }

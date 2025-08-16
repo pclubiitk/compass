@@ -9,20 +9,13 @@ import (
 	"github.com/spf13/viper"
 )
 
-// MailJob defines the structure of a message pulled from RabbitMQ
-type MailJob struct {
-	Type string                 `json:"type"`
-	To   string                 `json:"to"`
-	Data map[string]interface{} `json:"data"` // dynamic fields based on mail type
-}
+// ========== Use cases ==========
 
-// MailContent represents the final email content
-type MailContent struct {
-	To      string
-	Subject string
-	Body    string
-	IsHTML  bool
-}
+//  1. For user verification
+//  2. Thanking message for contribution
+//  3. Warning message if violating content is submitted by user
+//  4. Notice publish verification message
+//	5. Any other message if you feel its relevant
 
 // Dispatcher: decides which mail to generate based on job type
 // job is a variable having the structure of MailJob, defined in the mail.go file
@@ -44,7 +37,6 @@ func FormatMail(job MailJob) (MailContent, error) {
 }
 
 // ========== Formatters ==========
-
 func formatVerificationEmail(job MailJob) (MailContent, error) {
 	username := job.Data["username"]
 	link := job.Data["link"]

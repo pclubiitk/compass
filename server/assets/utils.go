@@ -5,6 +5,7 @@ import (
 	"io"
 	"mime/multipart"
 	"os"
+	"path/filepath"
 
 	"github.com/google/uuid"
 	"github.com/h2non/bimg"
@@ -50,8 +51,20 @@ func saveImage(image []byte, path string, id uuid.UUID) (string, error) {
 }
 
 // Move form tmp to public
-func moveImage(id uuid.UUID) {
-
+// Assumption both public and tmp exist
+// TODO: ensure on server the folders are not deletable
+func MoveImageFromTmpToPublic(imageID uuid.UUID) error {
+	tmpPath := filepath.Join("./assets/tmp", fmt.Sprintf("%s.webp", imageID))
+	publicPath := filepath.Join("./assets/public", fmt.Sprintf("%s.webp", imageID))
+	// Ensure file exists
+	if _, err := os.Stat(tmpPath); os.IsNotExist(err) {
+		return fmt.Errorf("source image not found or already used")
+	}
+	// Move the file
+	if err := os.Rename(tmpPath, publicPath); err != nil {
+		return fmt.Errorf("failed to move image")
+	}
+	return nil
 }
 
 // Delete image
