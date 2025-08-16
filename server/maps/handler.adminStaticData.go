@@ -57,4 +57,5 @@ func locationRequestProvider(c *gin.Context) {
 
 func indicatorProvider(c *gin.Context) {
 	// add helper functions, and provide the indicators to the user
+	// TODO: Later extend it to the have websocket
 }
