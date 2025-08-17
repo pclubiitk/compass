@@ -1,3 +1,9 @@
+### Docker set up
+1. Make sure to have docker installed
+2. Change your directory to the server directory and do the required changes in the `secret.ymal, config.ymal, docker-compose.ymal` according to your user settings
+3. run `docker compose up --build` (the `--build` will ensure you rebuild each time)
+
+
 ### Installation
 1. Provision all required credentials and database
 2. Clone the repo
@@ -15,7 +21,7 @@
 8. Update the configs.yml, ensure you have the database initialize (just the database, no need to create tables) 
 7. Build the project
    ```sh
-   go build server -o ./cmd/.
+   go build -o server ./cmd/.
    ```
 8. Run the project
    ```sh

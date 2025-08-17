@@ -1,2 +1,53 @@
-# For running app + dependencies like Postgres, Redis
+# For running app + dependencies like Postgres, Rabbitmq ,Redis
 # Define services for app, db,
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq-1
+    ports:
+      - "5672:5672"
+      - "15672:15672" # for the ui
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  postgres:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: this_is_mjk
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: compass
+    ports:
+      - "5432:5432"
+    # in health check change the user (i have set it to the value above)
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U this_is_mjk -d compass"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  server:
+    build:
+      context: .
+      dockerfile: container/Dockerfile
+    # if set to yes it will restart the container if it crashers or when the docker restarts
+    restart: no
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+      - "8082:8082"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    # No use, as we just run the binary
+    # volumes:
+    #   - .:/app
+    environment:
+      POSTGRES_HOST: postgres
+      RABBITMQ_HOST: rabbitmq
+      # force Go to use go.mod/go.sum for dependency management
+      GO111MODULE: on
