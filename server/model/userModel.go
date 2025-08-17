@@ -33,21 +33,38 @@ type Location struct {
 	Reviews       []Review       `gorm:"foreignKey:LocationId;references:LocationId"` // one location to multi review binding
 	CoverPic      *Image         `gorm:"polymorphic:Owner;" json:"coverpic"`
 	BioPics       []Image        `gorm:"polymorphic:Owner;" json:"biopics"`
+	
 }
 
+// type Notice struct {
+// 	CreatedAt       time.Time
+// 	UpdatedAt       time.Time
+// 	DeletedAt       gorm.DeletedAt `gorm:"index"`
+// 	NoticeId        uuid.UUID      `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+// 	Title           string         `json:"title" binding:"required"`
+// 	Description     string         `gorm:"type:text" json:"description"`
+// 	Preview         string         `json:"preview"`
+// 	CardDescription string         `json:"card_description"`
+// 	ContributedBy   uuid.UUID      `json:"contributedBy"`
+// 	User            *User          `gorm:"foreignKey:ContributedBy;references:UserID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
+// 	CoverPic        *Image         `gorm:"polymorphic:Owner;" json:"coverpic"`
+// 	BioPics         []Image        `gorm:"polymorphic:Owner;" json:"biopics"`
+// }
+
 type Notice struct {
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
-	DeletedAt       gorm.DeletedAt `gorm:"index"`
-	NoticeId        uuid.UUID      `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
-	Title           string         `json:"title" binding:"required"`
-	Description     string         `gorm:"type:text" json:"description"`
-	Preview         string         `json:"preview"`
-	CardDescription string         `json:"card_description"`
-	ContributedBy   uuid.UUID      `json:"contributedBy"`
-	User            *User          `gorm:"foreignKey:ContributedBy;references:UserID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
-	CoverPic        *Image         `gorm:"polymorphic:Owner;" json:"coverpic"`
-	BioPics         []Image        `gorm:"polymorphic:Owner;" json:"biopics"`
+	ID          uuid.UUID      `gorm:"type:uuid;default:gen_random_uuid();primaryKey" json:"id"`
+	Title       string         `json:"title" binding:"required"`
+	Description string         `gorm:"type:text" json:"description"`
+	Entity      string         `json:"entity"`     // Department / Club / Cell
+	Publisher   string         `json:"publisher"`  // Person or org name
+	EventTime   time.Time      `json:"eventTime"`  // When the event/notice is relevant
+	Location    string         `json:"location"`   // Venue or online link
+	CoverPic        *Image      `gorm:"polymorphic:Owner;" json:"coverpic"`
+	BioPics         []Image     `gorm:"polymorphic:Owner;" json:"biopics"`
+	CreatedAt   time.Time      `json:"createdAt"`
+	UpdatedAt   time.Time      `json:"updatedAt"`
+	DeletedAt   gorm.DeletedAt `gorm:"index" json:"deletedAt,omitempty"`
+	ContributedBy uuid.UUID      `json:"contributedBy"`
 }
 
 type Review struct {
