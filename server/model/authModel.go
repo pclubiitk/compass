@@ -1,4 +1,3 @@
-// Define structs like User, global to all
 package model
 
 import (
@@ -8,12 +7,13 @@ import (
 	"gorm.io/gorm"
 )
 
-type Role string
+type Role int
 
 const (
-	AdminRole Role = "admin"
-	Bot       Role = "bot"
-	UserRole  Role = "user"
+	AdminRole Role = 100 // "admin"
+	Bot       Role = 99 // "bot"
+	UserRole  Role = 50 // "user"
+	// TODO: add roles like Super Admin, Visitors
 )
 
 type User struct {
@@ -26,10 +26,10 @@ type User struct {
 	Name                 string         `json:"name"`
 	IsVerified           bool           `json:"-"`
 	VerificationToken    string         `json:"-"` //erased after verification
-	Role                 Role           `json:"role" gorm:"type:varchar(10);check:role IN ('admin','bot','user')"`
+	Role                 Role           `json:"role" gorm:"type:int;"`
 	ContributedLocations []Location     `gorm:"foreignKey:ContributedBy;references:UserID"`
 	ContributedReview    []Review       `gorm:"foreignKey:ContributedBy;references:UserID"`
 	ContributedNotice    []Notice       `gorm:"foreignKey:ContributedBy;references:UserID"`
-	ProfilePic           *Image         `gorm:"polymorphic:Owner;" json:"profilepic"` // here the * makes it a pointer and when it is null, it return null in json instead of a default values
-	BioPics              []Image        `gorm:"polymorphic:Owner;" json:"biopics"`
+	ProfilePic           *Image         `gorm:"polymorphic:ParentAsset;" json:"profilepic"` // here the * makes it a pointer and when it is null, it return null in json instead of a default values
+	BioPics              []Image        `gorm:"polymorphic:ParentAsset;" json:"biopics"`
 }

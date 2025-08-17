@@ -4,7 +4,7 @@ import (
 	"compass/connections"
 	"compass/model"
 	"net/http"
-
+    "time"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -147,31 +147,53 @@ func locationAction(c *gin.Context) {
 }
 
 func addNotice(c *gin.Context) {
+	type AddNotice struct {
+		Title       string    `json:"title" binding:"required"`
+		Description string    `json:"description" binding:"required"`
+		Entity      string    `json:"entity"`
+		Publisher   string    `json:"publisher"`
+		EventTime   time.Time `json:"eventTime"`
+		Location    string    `json:"location"`
+	}
+
 	var input AddNotice
 
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format"})
 		return
 	}
+
 	userID, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
+
 	uid, ok := userID.(uuid.UUID)
 	if !ok {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID type"})
 		return
 	}
+
 	notice := model.Notice{
-		Title:         input.Title,
-		Description:   input.Description,
-		Preview:       input.Preview,
-		ContributedBy: uid, // user.UserID value
+		Title:       input.Title,
+		Description: input.Description,
+		Entity:      input.Entity,
+		Publisher:   input.Publisher,
+		EventTime:   input.EventTime,
+		Location:    input.Location,
+		ContributedBy: uid, 
+		// CoverPic and BioPics are optional, handled separately if uploading
 	}
+
 	if err := connections.DB.Create(&notice).Error; err != nil {
-		logrus.Fatal("Failed to create notice:", err)
+		logrus.Errorf("Failed to create notice: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create notice"})
+		return
 	}
-	// TODO: publish a mail confirming notice published
-	c.JSON(201, gin.H{"message": "New notice added successfully", "notice": notice})
+
+	c.JSON(http.StatusCreated, gin.H{
+		"message": "New notice added successfully",
+		"notice":  notice,
+	})
 }

@@ -1,4 +1,4 @@
-import { Notice } from '@/app/libv2/types';
+import { Notice } from '@/app/lib/types';
 
 export const notices: Notice[] = [
   {
