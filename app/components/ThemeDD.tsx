@@ -13,8 +13,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Laptop, Moon, Sun } from "lucide-react"
-import { RoseIcon } from "./icons/RoseIcon"
-import { StonesFloorIcon } from "./icons/StonesFloorIcon"
 import { useTheme } from "next-themes";
 
 // type Checked = DropdownMenuCheckboxItemProps["checked"]
@@ -36,16 +34,6 @@ export function ThemeDD() {
   <>
   <Moon className="mr-2 h-4 w-4" />
   <span>Dark</span>
-  </>
-  )},{theme:"theme-rose",children:(
-  <>
-  <RoseIcon  className="mr-2 h-4 w-4 fill-[var(--icon-fill)]" style={{}} />
-  <span>Rose</span>
-  </>
-  )},{theme:"theme-slate",children:(
-  <>
-    <StonesFloorIcon style={{}} className="mr-2 h-4 w-4 text-stone-600 fill-[var(--icon-fill)]" />
-    <span>Slate</span>
   </>
   )}]
 

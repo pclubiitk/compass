@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { CheckCircle, AlertTriangle, Ban } from 'lucide-react';
+import { ThemeDD } from '@/app/components/ThemeDD';
 
 export const metadata: Metadata = {
   title: 'Noticeboard',
@@ -65,18 +66,18 @@ export default function Page() {
   ];
 
   const typeStyles: Record<string, string> = {
-    Suggestion: 'bg-green-50 border-l-4 border-green-500',
-    Warning: 'bg-yellow-50 border-l-4 border-yellow-500',
-    Ban: 'bg-red-50 border-l-4 border-red-500',
+    Suggestion: 'bg-green-50 dark:bg-[lab(57_-74.16_60.86)] border-l-4 border-green-500 dark:border-[lab(27_-30.96_21.06))] ' ,
+    Warning: 'bg-yellow-50 dark:bg-[lab(63_-4.48_85.59)]  border-l-4 border-yellow-500 dark:border-[lab(47_11.01_70.73)]',
+    Ban: 'bg-red-50 dark:bg-[lab(31_58.3_49.03)] border-l-4 border-red-500 dark:border-[lab(22_36.71_21.81)]',
   };
 
   const getIcon = (type: string) => {
     const baseClass = 'w-6 h-6';
     switch (type) {
       case 'Suggestion':
-        return <div className="min-w-min flex items-center gap-2"><CheckCircle className={`${baseClass} text-green-600`} /></div>;
+        return <div className="min-w-min flex items-center gap-2"><CheckCircle className={`${baseClass} text-green-600 dark:text-[lab(87_-105.86_96.59)]`} /></div>;
       case 'Warning':
-        return <div className="min-w-min flex items-center gap-2"><AlertTriangle className={`${baseClass} text-yellow-600`} /></div>;
+        return <div className="min-w-min flex items-center gap-2"><AlertTriangle className={`${baseClass} text-yellow-600  dark:text-[lab(78_30.26_107.78)]`} /></div>;
       case 'Ban':
         return <div className="min-w-min flex items-center gap-2"><Ban className={`${baseClass} text-red-600`} /></div>;
       default:
@@ -85,10 +86,11 @@ export default function Page() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 px-6 py-10">
+    <>
+    <ThemeDD/>
       <div className="max-w-5xl mx-auto space-y-8">
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-blue-900">Published Notices</h1>
+          <h1 className="text-3xl font-bold text-blue-900 dark:text-[lab(49_18.52_-85.84)]">Published Notices</h1>
           <Link
             href="/admin/noticeboard/publishNotice"
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
@@ -105,11 +107,11 @@ export default function Page() {
             >
               <div className="flex items-center space-x-2">
                 {getIcon(notice.type)}
-                <span className="text-sm text-gray-600">({notice.type})</span>
+                <span className="text-sm">({notice.type})</span>
               </div>
               <h2 className="text-xl font-semibold">{notice.title}</h2>
-              <p className="text-gray-700 mt-1">{notice.description}</p>
-              <p className="text-sm text-gray-600 mt-2">
+              <p className=" mt-1">{notice.description}</p>
+              <p className="text-sm  mt-2">
                 <strong>Publisher:</strong> {notice.publisher} <br />
                 <strong>Time:</strong> {new Date(notice.time).toLocaleString()} <br />
                 <strong>Recipient:</strong> {notice.recipient} <br />
@@ -119,6 +121,6 @@ export default function Page() {
           ))}
         </div>
       </div>
-    </div>
+  </>
   );
 }
