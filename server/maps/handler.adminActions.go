@@ -179,7 +179,7 @@ func addNotice(c *gin.Context) {
 		Title:       input.Title,
 		Description: input.Description,
 		Entity:      input.Entity,
-		Publisher:   input.Publisher,
+		// Publisher:   input.Publisher,
 		EventTime:   input.EventTime,
 		Location:    input.Location,
 		ContributedBy: uid, 

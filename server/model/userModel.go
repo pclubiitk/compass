@@ -56,7 +56,7 @@ type Notice struct {
 	Title       string         `json:"title" binding:"required"`
 	Description string         `gorm:"type:text" json:"description"`
 	Entity      string         `json:"entity"`     // Department / Club / Cell
-	Publisher   string         `json:"publisher"`  // Person or org name
+	// Publisher   string         `json:"publisher"`  // Person or org name
 	EventTime   time.Time      `json:"eventTime"`  // When the event/notice is relevant
 	Location    string         `json:"location"`   // Venue or online link
 	CoverPic        *Image      `gorm:"polymorphic:Owner;" json:"coverpic"`
