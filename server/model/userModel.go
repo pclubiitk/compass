@@ -31,6 +31,10 @@ type Location struct {
 	User          *User          `gorm:"foreignKey:ContributedBy;references:UserID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"` // many location to single user binding
 	AverageRating float32        `json:"avgRating"`
 	ReviewCount   int64          `json:"ReviewCount"`
+	Tag string `json:"Tag"`
+	Contact string `json:"Contact"`
+	Time string `json:"Time"`
+
 	Reviews       []Review       `gorm:"foreignKey:LocationId;references:LocationId"` // one location to multi review binding
 	CoverPic      *Image         `gorm:"polymorphic:ParentAsset;" json:"coverpic"`
 	BioPics       []Image        `gorm:"polymorphic:ParentAsset;" json:"biopics"`
