@@ -9,12 +9,13 @@ type ReviewProps = {
     review_body: string,
     //once confirm why there was a never
     time: string,
-    img: string
+    img: string,
+    mode:string
 }
 
-export default function ReviewCard({author, rating, review_body, time, img}: ReviewProps) {
+export default function ReviewCard({author, rating, review_body, time, img,mode}: ReviewProps) {
     return (
-        <Card className="mx-3 my-3 py-0 gap-0">
+        <Card className={`mx-3 my-3 py-0 gap-0 ${mode == "dark"?"bg-black text-white":"bg-white text-black"}`}>
             <div className="mx-4 py-3">
                 <CardTitle className="text-lg py-1 my-0"> {author} </CardTitle>
                 <img src={img}></img>

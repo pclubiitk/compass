@@ -59,6 +59,9 @@ export default function LocationPage() {
     const [showSuccess, setShowSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
    const [drawerOpen, setDrawerOpen] = useState(false);
+   const [mode, setMode] = useState<"light" | "dark">("light");
+
+ 
 
   useEffect(() => {
     if (!id) return;
@@ -89,13 +92,51 @@ export default function LocationPage() {
 
 if (!id || !location) {
   return (
-    <div className="p-4 max-w-md mx-auto">
-      <div className="animate-pulse space-y-4">
-        <div className="h-48 bg-gray-200 rounded"></div>
-        <div className="h-6 bg-gray-200 rounded w-3/4"></div>
-        <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+  <div className="p-4 max-w-md mx-auto">
+  <div className="animate-pulse space-y-4">
+
+    <div className="flex justify-between items-center">
+      <div className="h-6 bg-gray-300 rounded w-1/3"></div>
+      <div className="flex space-x-2">
+        <div className="h-6 w-6 bg-gray-300 rounded-full"></div>
+        <div className="h-6 w-6 bg-gray-300 rounded-full"></div>
       </div>
     </div>
+
+    <div className="h-48 bg-gray-300 rounded-xl"></div>
+
+    <div className="flex items-center space-x-2">
+      <div className="h-4 w-10 bg-gray-300 rounded"></div>
+      <div className="h-4 w-24 bg-gray-300 rounded"></div>
+    </div>
+
+    <div className="space-y-2">
+      <div className="h-4 bg-gray-300 rounded w-full"></div>
+      <div className="h-4 bg-gray-300 rounded w-5/6"></div>
+      <div className="h-4 bg-gray-300 rounded w-2/3"></div>
+    </div>
+
+ 
+    <div className="flex space-x-2">
+      <div className="h-24 w-32 bg-gray-300 rounded-lg"></div>
+      <div className="h-24 w-32 bg-gray-300 rounded-lg"></div>
+    </div>
+
+    <div className="flex justify-between items-center mt-4">
+      <div className="h-5 w-20 bg-gray-300 rounded"></div>
+      <div className="h-8 w-24 bg-gray-300 rounded-lg"></div>
+    </div>
+
+    <div className="p-3 border rounded-xl bg-gray-100 space-y-2">
+      <div className="flex items-center space-x-2">
+        <div className="h-8 w-8 bg-gray-300 rounded-full"></div>
+        <div className="h-4 w-16 bg-gray-300 rounded"></div>
+      </div>
+      <div className="h-4 bg-gray-300 rounded w-2/3"></div>
+    </div>
+  </div>
+</div>
+
   );
 }
 
@@ -121,13 +162,13 @@ if (!id || !location) {
 
     const payload = new FormData();
     payload.append("rating", rating);
-    payload.append("contributed_by", "muragesh24");
     payload.append("location_id", id as string);
     payload.append("description", description);
     if (image) payload.append("image", image);
 
        try {
-      const res = await fetch("http://localhost:8081/api/maps/review", { method: "POST" });
+      const res = await fetch("http://localhost:8081/api/maps/review", { method: "POST" ,  body: payload,
+    credentials: "include"});
       const data = await res.json();
 
       if (res.ok) {
@@ -152,12 +193,17 @@ if (!id || !location) {
   };
 
 
-  const imagess=["https://images.unsplash.com/photo-1506744038136-46273834b3fb","https://images.unsplash.com/photo-1506744038136-46273834b3fb"]
+  // const imagess=["https://images.unsplash.com/photo-1506744038136-46273834b3fb","https://images.unsplash.com/photo-1506744038136-46273834b3fb"]
+  const imagess=location.biopics
   return (
-<div className="min-h-screen w-[100vw] bg-gray-200 flex justify-center ">
+<div   className={`min-h-screen w-[100vw] flex justify-center ${
+    mode === "dark" ? "bg-gray-600" : "bg-gray-200"
+  }`}>
   
 
-        <div className="w-full  max-w-md mx-auto flex flex-col  bg-gray-100 ">
+        <div className={`w-full  max-w-md mx-auto flex flex-col  ${
+    mode === "dark" ? "bg-black" : "bg-gray-200"
+  } `}>
   <div className="fixed top-4 right-4 space-y-2 transition-all">
         {showSuccess && (
           <Alert
@@ -187,7 +233,9 @@ if (!id || !location) {
           
           <div>
    <div className="flex items-center justify-between px-4 py-3 border-b">
-  <h1 className="text-2xl font-bold text-gray-900">{location.name}</h1>
+  <h1 className={`text-2xl font-bold ${
+    mode === "dark" ? "text-white" : "text-gray-900"
+  }`}>{location.name}</h1>
   <div className="flex items-center gap-2">
     <button 
       onClick={() => router.back()} 
@@ -233,7 +281,7 @@ if (!id || !location) {
 <div className="w-full relative h-64">
   <Image
   //just replace link with location...
-    src="https://images.unsplash.com/photo-1506744038136-46273834b3fb"
+    src={location.coverpic}
     alt="back"
     fill
     className=" object-cover"
@@ -243,31 +291,52 @@ if (!id || !location) {
 
 
           <div className="px-4 py-3">
-  <div className="flex items-center gap-2">
-    <span className="text-gray-800 font-medium">{rating}/5</span>
-    <div className="flex text-yellow-500">
-      {[...Array(fullStars)].map((_, i) => (
-        <Star key={i} fill="#FFD700" stroke="#FFD700" />
-      ))}
-      {hasHalfStar && <StarHalf fill="#FFD700" stroke="#FFD700" />}
-    </div>
-    <span className="text-sm text-gray-500">({location.ReviewCount})</span>
+<div className="flex items-center gap-3">
+  {/* Rating Value */}
+<span
+  className={`text-lg font-semibold ${
+    mode === "dark" ? "text-white" : "text-gray-900"
+  }`}
+>{rating.toFixed(1)}</span>
+
+  {/* Stars */}
+  <div className="flex items-center">
+    {[...Array(fullStars)].map((_, i) => (
+      <Star key={i} className="w-5 h-5 text-yellow-400 fill-yellow-400" />
+    ))}
+    {hasHalfStar && <StarHalf className="w-5 h-5 text-yellow-400 fill-yellow-400" />}
+    {[...Array(5 - fullStars - (hasHalfStar ? 1 : 0))].map((_, i) => (
+      <Star key={`empty-${i}`} className="w-5 h-5 text-gray-300" />
+    ))}
   </div>
+  <span className="text-sm text-gray-500">({location.ReviewCount} reviews)</span>
+</div>
+
 
   <div className="flex justify-between mt-2 text-sm text-gray-600">
 <div className="flex items-center gap-4 text-gray-700">
-  <div className="flex items-center gap-1">
-    <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-      <path d="M6 3v2H3v12h14V5h-3V3h5v16H1V3h5z"/>
-    </svg>
-    <span className="font-medium">Sports</span>
-  </div>
-  <div className="flex items-center gap-1">
-    <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-      <path d="M10 2a8 8 0 100 16 8 8 0 000-16zm.75 8.25V5h-1.5v5h5V8.5h-3.5z"/>
-    </svg>
-    <span>7:30 - 8:30</span>
-  </div>
+<div className="flex items-center gap-2">
+  <span
+    className={`px-2 py-1 text-sm rounded-full font-medium ${
+      mode === "dark"
+        ? "bg-gray-300 text-gray-200"
+        : "bg-gray-300 text-gray-700"
+    }`}
+  >
+    {location.Tag}
+  </span>
+
+  <span
+    className={`px-2 py-1 text-sm rounded-full font-medium ${
+      mode === "dark"
+        ? "bg-gray-800 text-gray-200"
+        : "bg-gray-300 text-gray-700"
+    }`}
+  >
+    {location.Time}
+  </span>
+</div>
+
 </div>
 
 
@@ -277,7 +346,7 @@ if (!id || !location) {
         <CircleUserRound className="cursor-pointer text-gray-700" />
       </PopoverTrigger>
       <PopoverContent className="w-64">
-        <h4 className="font-semibold mb-1">Phone Number</h4>
+        <h4 className="font-semibold mb-1">{location.Contact}</h4>
         <p className="text-gray-500">{location.contact}</p>
       </PopoverContent>
     </Popover>
@@ -286,8 +355,10 @@ if (!id || !location) {
 
             <CardDescription>
        <div className="px-4 py-3 border-t">
-  <div className="bg-white rounded-lg  p-3 border">
-    <p className="text-gray-700 leading-relaxed">
+  <div className={`{
+    ${mode === "dark" ? "bg-gray-800" : "bg-gray-200"
+  }  rounded-lg  p-3 border`}>
+    <p className={`${mode=="dark"?"text-white" :"text-gray-700"} leading-relaxed`}>
       {location.description}
     </p>
   </div>
@@ -350,7 +421,9 @@ if (!id || !location) {
 
         <div className="px-4 w-full py-3 border-t">
   <div className="flex justify-between items-center mb-3">
-    <h2 className="text-lg font-semibold text-gray-900">Reviews</h2>
+    <h2 className={`text-lg font-semibold ${
+    mode === "dark" ? "text-white" : "text-gray-900"
+  } `}>Reviews</h2>
     <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
       <DrawerTrigger asChild>
         <Button className="bg-blue-600 hover:bg-blue-700 text-white">
@@ -359,9 +432,9 @@ if (!id || !location) {
       </DrawerTrigger>
          
 
-            <DrawerContent className="bg-white">
+            <DrawerContent className={`${mode=="dark"?"bg-black":"bg-white"}`}>
               <DrawerHeader>
-                <DrawerTitle className="text-black">Share your experience to help others</DrawerTitle>
+                <DrawerTitle className={` ${mode=="dark"?"text-white":"text-black"}`}>Share your experience to help others</DrawerTitle>
 
                 <form className="space-y-4 mt-4">
                   <div>
@@ -369,63 +442,30 @@ if (!id || !location) {
 
                   </div>
 
-                  {/* <div className="rating">
-                    <input
-                        type="radio"
-                        name="rating-2"
-                        className="mask mask-star-2 bg-orange-400"
-                        aria-label="1 star"
-                    />
-                    <input
-                        type="radio"
-                        name="rating-2"
-                        className="mask mask-star-2 bg-orange-400"
-                        aria-label="2 star"
-                        defaultChecked
-                    />
-                    <input
-                        type="radio"
-                        name="rating-2"
-                        className="mask mask-star-2 bg-orange-400"
-                        aria-label="3 star"
-                    />
-                    <input
-                        type="radio"
-                        name="rating-2"
-                        className="mask mask-star-2 bg-orange-400"
-                        aria-label="4 star"
-                    />
-                    <input
-                        type="radio"
-                        name="rating-2"
-                        className="mask mask-star-2 bg-orange-400"
-                        aria-label="5 star"
-                    />
-                  </div> */}
              <StarRating
   initialRating={3}
   onChange={(value) =>setRatting(value)} 
 />
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className={`block text-sm font-medium ${mode=="dark"?"text-white":"text-gray-700"} mb-1`}>
                       Your Review
                     </label>
                     <textarea
                         rows={4}
                         placeholder="Write your experience..."
-                        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none text-black"
+                        className={`w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none ${mode=="dark"?"text-white":"text-gray-700"} `}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className={`block text-sm font-medium  ${mode=="dark"?"text-white":"text-gray-700"} mb-1`}>
                       Upload Image (optional)
                     </label>
                     <input
                         type="file"
                         accept="image/*"
-                        className="block w-full text-sm text-gray-600"
+                        className={`block w-full text-sm  ${mode=="dark"?"text-white":"text-gray-700"}`}
                     />
                   </div>
 
@@ -474,6 +514,7 @@ if (!id || !location) {
                           rating={review.rating}
                           review_body={review.description}
                           time={review.CreatedAt}
+                          mode={mode}
                           // img={review.image_url ? `http://localhost:8081${review.image_url}` : null}
                           img={review.image_url ? review.image_url : null}
                       />
