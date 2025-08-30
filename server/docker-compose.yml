@@ -17,14 +17,14 @@ services:
     image: postgres:15
     restart: always
     environment:
-      POSTGRES_USER: this_is_mjk
+      POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: compass
     ports:
       - "5432:5432"
     # in health check change the user (i have set it to the value above)
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U this_is_mjk -d compass"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d compass"]
       interval: 10s
       timeout: 5s
       retries: 5

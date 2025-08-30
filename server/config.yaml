@@ -4,7 +4,7 @@
 database:
   host: "localhost"
   name: "compass"
-  user: "this_is_mjk"
+  user: "postgres"
 
   port: 5432
 
