@@ -1,4 +1,3 @@
-// Define structs like User, global to all
 package model
 
 import (
@@ -12,8 +11,8 @@ type Role int
 
 const (
 	AdminRole Role = 100 // "admin"
-	Bot       Role = 99 // "bot"
-	UserRole  Role = 50 // "user"
+	Bot       Role = 99  // "bot"
+	UserRole  Role = 50  // "user"
 	// TODO: add roles like Super Admin, Visitors
 )
 

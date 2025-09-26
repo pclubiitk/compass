@@ -2,6 +2,7 @@ package maps
 
 import (
 	"compass/model"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -33,9 +34,12 @@ func (r AddLocationRequest) ToLocation(userID uuid.UUID) model.Location {
 
 type AddNoticeRequest struct {
 	Title       string     `json:"title" binding:"required"`
-	Description string     `json:"description"`
+	Description string     `json:"description" binding:"required"`
 	Body        string     `json:"body"`
 	CoverPic    *uuid.UUID `json:"coverPic"`
+	Entity      string     `json:"entity"`
+	EventTime   time.Time  `json:"eventTime"`
+	Location    string     `json:"location"`
 }
 
 type AddReviewRequest struct {

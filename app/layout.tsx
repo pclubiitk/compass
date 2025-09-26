@@ -2,6 +2,7 @@ import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 import { GlobalContextProvider } from "@/components/ContextProvider";
 import { GlobalLoader } from "@/components/GlobalLoader";
+import { ThemeProvider } from "@/components/ui/theme-provider";
 
 export const metadata = {
   title: "Next.js",
@@ -16,12 +17,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <GlobalContextProvider>
-          <main>
-            <GlobalLoader />
-            {children}
-          </main>
-        </GlobalContextProvider>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <GlobalContextProvider>
+            <main>
+              <GlobalLoader />
+              {children}
+            </main>
+          </GlobalContextProvider>
+        </ThemeProvider>
         <Toaster />
       </body>
     </html>

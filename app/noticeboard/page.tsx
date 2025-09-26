@@ -1,30 +1,88 @@
-'use client';
+"use client";
 
-import React, { useState, useMemo } from 'react';
-import {
-  Search,
-  ArrowLeft,
-} from 'lucide-react';
-import Link from 'next/link';
-import { notices } from '@/app/lib/notice';
-import { Notice } from '@/app/lib/types';
-import ShareDialog from './ShareDialog'; 
-import NoticeCard from '@/components/ui/NoticeCard';
-
+import React, {
+  useState,
+  useMemo,
+  useEffect,
+  useRef,
+  useCallback,
+} from "react";
+import { Search } from "lucide-react";
+import { Notice } from "@/lib/types";
+import NoticeCard from "@/components/ui/NoticeCard";
+import ShareDialog from "./ShareDialog";
 
 export default function NoticeBoardPage() {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [expandedCards, setExpandedCards] = useState(new Set<string>());
   const [shareNotice, setShareNotice] = useState<Notice | null>(null);
+  const [notices, setNotices] = useState<Notice[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+
+  // TODO: Enable the search query in the page so the id of the notice can be directly shared
+
+  const loaderRef = useRef<HTMLDivElement | null>(null);
+
+  const fetchNotices = useCallback(async () => {
+    if (!hasMore || loading) return;
+    setLoading(true);
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_MAPS_URL}/api/maps/notice?page=${page}`
+      );
+      if (!res.ok) throw new Error(`Failed (status: ${res.status})`);
+      const json = await res.json();
+
+      if (json?.noticeboard_list?.length > 0) {
+        setNotices((prev) => {
+          const newNotices = [...prev, ...json.noticeboard_list];
+          setHasMore(newNotices.length < json.total_notices);
+          return newNotices;
+        });
+      } else {
+        setHasMore(false);
+      }
+    } catch (err) {
+      console.error("Error fetching notices:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [page, hasMore, loading]);
+
+  // this triggers fetch when page changes
+  useEffect(() => {
+    fetchNotices();
+  }, [page]);
+
+  // this is intersectionObserver to detect scroll bottom
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loading) {
+          setPage((prev) => prev + 1); // increment only when visible and fetch done
+        }
+      },
+      { threshold: 1.0 }
+    );
+
+    const current = loaderRef.current;
+    if (current) observer.observe(current);
+
+    return () => {
+      if (current) observer.unobserve(current);
+    };
+  }, [hasMore, loading]);
 
   const filteredNotices = useMemo(() => {
     return notices.filter((notice) =>
-      [notice.title, notice.description, notice.entity, notice.publisher]
-        .join(' ')
+      [notice.title, notice.description, notice.entity]
+        .join(" ")
         .toLowerCase()
         .includes(searchTerm.toLowerCase())
     );
-  }, [searchTerm]);
+  }, [searchTerm, notices]);
 
   const toggleExpand = (noticeId: string) => {
     setExpandedCards((prev) => {
@@ -39,14 +97,14 @@ export default function NoticeBoardPage() {
   };
 
   const handleCopy = async (notice: Notice) => {
-    const text = `${notice.title}\n\n${notice.description}\n\nPublisher: ${notice.publisher}\nTime: ${new Date(
+    const text = `${notice.title}\n\n${notice.description}\n\nTime: ${new Date(
       notice.eventTime
     ).toLocaleString()}\nLocation: ${notice.location}`;
     try {
       await navigator.clipboard.writeText(text);
-      alert('Notice copied to clipboard!');
+      alert("Notice copied to clipboard!");
     } catch (err) {
-      alert('Failed to copy notice. Please try manually.');
+      alert("Failed to copy notice. Please try manually.");
       console.error(err);
     }
   };
@@ -54,42 +112,10 @@ export default function NoticeBoardPage() {
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-8">
       <div className="max-w-5xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-blue-600 hover:underline mb-2"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Home
-          </Link>
-          <h1 className="text-4xl font-bold text-gray-900 mb-1">Campus Notices</h1>
-          <p className="text-gray-600 text-base">
-            Stay updated with the latest announcements and events
-          </p>
-        </div>
+        <h1 className="text-4xl font-bold text-gray-900 mb-8">
+          Campus Notices
+        </h1>
 
-        {/* Search Bar */}
-        <div className="relative mb-6">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-5 w-5 text-gray-400" />
-          </div>
-          <input
-            type="text"
-            placeholder="Search notices by title, content, or department..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="block w-full pl-10 pr-4 py-3 rounded-xl bg-gradient-to-r from-indigo-50 via-white to-indigo-50 border border-indigo-200 focus:ring-2 focus:ring-indigo-400 shadow focus:shadow-lg text-gray-800 placeholder-gray-500 transition-all"
-          />
-        </div>
-
-        {searchTerm && (
-          <p className="text-sm text-gray-500 mb-4">
-            {filteredNotices.length} result{filteredNotices.length !== 1 ? 's' : ''} found
-          </p>
-        )}
-
-        {/* Notice List */}
         <div className="space-y-6">
           {filteredNotices.length > 0 ? (
             filteredNotices.map((notice) => (
@@ -102,20 +128,25 @@ export default function NoticeBoardPage() {
                 onCopy={handleCopy}
               />
             ))
-          ) : (
-            <div className="text-center text-gray-500 py-12">
-              <Search className="mx-auto h-10 w-10 opacity-40 mb-2" />
-              <p>No notices found. Try adjusting your search terms.</p>
-            </div>
-          )}
+          ) : loading ? (
+            <p className="text-center text-gray-500 py-12">
+              No notices available at the moment.
+            </p>
+          ) : null}
         </div>
 
-        <div className="mt-10 text-center text-sm text-gray-400">
-          {`>>| Total ${notices.length} notices |<<`}
-        </div>
+        {/* this is loader for infinite scroll */}
+        {filteredNotices.length > 0 && (
+          <div ref={loaderRef} className="text-center py-6 text-gray-500">
+            {loading
+              ? "Loading more notices..."
+              : hasMore
+              ? "Scroll down to load more"
+              : "No more notices"}
+          </div>
+        )}
       </div>
 
-      {/* Share Dialog */}
       {shareNotice && (
         <ShareDialog
           url={`${window.location.origin}/noticeboard#${shareNotice.id}`}

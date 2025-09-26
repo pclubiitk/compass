@@ -167,7 +167,10 @@ func addNotice(c *gin.Context) {
 		notice := model.Notice{
 			Title:         input.Title,
 			Description:   input.Description,
+			Entity:        input.Entity,
+			EventTime:     input.EventTime,
 			Body:          input.Body,
+			Location:      input.Location,
 			ContributedBy: userID.(uuid.UUID),
 		}
 		if err := tx.Create(&notice).Error; err != nil {

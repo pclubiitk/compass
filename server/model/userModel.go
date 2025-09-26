@@ -42,8 +42,11 @@ type Notice struct {
 	DeletedAt     gorm.DeletedAt `gorm:"index"`
 	NoticeId      uuid.UUID      `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	Title         string         `json:"title" binding:"required"`
+	Entity        string         `json:"entity"`
 	Description   string         `gorm:"type:text" json:"description"`
 	Body          string         `json:"Body"`
+	EventTime     time.Time      `json:"eventTime"` // When the event/notice is relevant
+	Location      string         `json:"location"`  // Venue or online link
 	ContributedBy uuid.UUID      `json:"contributedBy"`
 	User          *User          `gorm:"foreignKey:ContributedBy;references:UserID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 	CoverPic      *Image         `gorm:"polymorphic:ParentAsset;" json:"coverpic"`

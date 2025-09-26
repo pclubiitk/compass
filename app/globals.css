@@ -14,7 +14,7 @@ body,
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: oklch(1 0 0);
+  --background:  oklch(0.95 0 0);/* light gray instead of white */
   --foreground: oklch(0.145 0 0);
   --radius: 0.625rem;
   --card: oklch(1 0 0);
@@ -36,7 +36,7 @@ body,
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-4:  oklch(0.645 0.246 16.439);
   --chart-5: oklch(0.769 0.188 70.08);
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
@@ -97,14 +97,15 @@ body,
 /*}*/
 
 body {
-  background: var(--background);
+    background: var(--background) !important;
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
   height: 100%;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
+  --background:  oklch(0.205 0 0);
+  /* oklch(0.145 0 0); */
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
   --card-foreground: oklch(0.985 0 0);
@@ -135,6 +136,12 @@ body {
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+}
+
+/* Force light mode background for normal mode */
+html:not(.dark) {
+  --background:  oklch(0.95 0 0);
+  --foreground: oklch(0.145 0 0);
 }
 
 @layer base {

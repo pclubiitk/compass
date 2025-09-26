@@ -16,6 +16,8 @@ export default function Home() {
   const [locations, setLocations] = useState<any[]>([]);
   const [user, setUser] = useState<any>(null);
 
+
+
   // TODO:
   // 1. Design it using shadcn components
   // 2. Default image handling
