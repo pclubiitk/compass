@@ -17,7 +17,7 @@ services:
     image: postgres:15
     restart: always
     environment:
-      POSTGRES_USER: this_is_mjk
+      POSTGRES_USER: this_is_mjk 
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: compass
     ports:

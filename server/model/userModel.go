@@ -36,17 +36,17 @@ type Location struct {
 	BioPics       []Image        `gorm:"polymorphic:ParentAsset;" json:"biopics"`
 }
 
-type Notice struct {
+type Notice struct { // change this to ritika's PR, can remove the contributedBy field
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 	DeletedAt     gorm.DeletedAt `gorm:"index"`
-	NoticeId      uuid.UUID      `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
-	Title         string         `json:"title" binding:"required"`
-	Entity        string         `json:"entity"`
-	Description   string         `gorm:"type:text" json:"description"`
-	Body          string         `json:"Body"`
+	Entity        string         `json:"entity"`    // Department / Club / Cell
 	EventTime     time.Time      `json:"eventTime"` // When the event/notice is relevant
 	Location      string         `json:"location"`  // Venue or online link
+	NoticeId      uuid.UUID      `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	Title         string         `json:"title" binding:"required"`
+	Description   string         `gorm:"type:text" json:"description"`
+	Body          string         `json:"Body"`
 	ContributedBy uuid.UUID      `json:"contributedBy"`
 	User          *User          `gorm:"foreignKey:ContributedBy;references:UserID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 	CoverPic      *Image         `gorm:"polymorphic:ParentAsset;" json:"coverpic"`

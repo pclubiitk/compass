@@ -156,11 +156,13 @@ func addNotice(c *gin.Context) {
 		return
 	}
 	// TODO: Extract this logic out, need something more elegant
-	userID, exist := c.Get("userID")
+
+	userID, exist := c.Get("userID") // means api requests must be authenticated
 	if !exist {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
+	// Removing this for now, HAVE TO ADD
 
 	if err := connections.DB.Transaction(func(tx *gorm.DB) error {
 		// Create notice
