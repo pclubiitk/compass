@@ -39,7 +39,7 @@ export default function Page() {
       case 'Event':
         return <div className="min-w-min flex items-center gap-2"><CheckCircle className={`${baseClass} text-green-600`} /></div>;
       case 'Warning':
-        return <div className="min-w-min flex items-center gap-2"><AlertTriangle className={`${baseClass} text-yellow-600`} /></div>;
+        return <div className="min-w-min flex items-center gap-2"><AlertTriangle className={`${baseClass} text-yellow-600  dark:text-[lab(78_30.26_107.78)]`} /></div>;
       case 'Ban':
         return <div className="min-w-min flex items-center gap-2"><Ban className={`${baseClass} text-red-600`} /></div>;
       default:
@@ -79,10 +79,11 @@ export default function Page() {
 
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 px-6 py-10">
+    <>
+    <ThemeDD/>
       <div className="max-w-5xl mx-auto space-y-8">
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-blue-900">Published Notices</h1>
+          <h1 className="text-3xl font-bold text-blue-900 dark:text-[lab(49_18.52_-85.84)]">Published Notices</h1>
           <Link
             href="/admin/noticeboard/publishNotice"
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
@@ -105,7 +106,7 @@ export default function Page() {
             >
               <div className="flex items-center space-x-2">
                 {getIcon(notice.type)}
-                <span className="text-sm text-gray-600">({notice.type})</span>
+                <span className="text-sm">({notice.type})</span>
               </div>
               <h2 className="text-xl font-semibold text-gray-700 placeholder:text-gray-400">{notice.title}</h2>
               <p className="text-gray-700 mt-1">{notice.description}</p>
@@ -120,6 +121,6 @@ export default function Page() {
         )}
         </div>
       </div>
-    </div>
+  </>
   );
 }

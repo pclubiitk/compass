@@ -91,19 +91,10 @@ const config={
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
       },
-      backgroundImage: {
-        "noticeboard": "var(--noticeboard-image)",
-        "header-gradient": "var(--header-gradient)",
-      },
     },
   },
   plugins: [
     animate,
-    // Custom plugin as ES Module
-    function({ addVariant }) {
-      addVariant("theme-rose", ".theme-rose &");
-      addVariant("theme-slate", ".theme-slate &");
-    }
   ],
 }
 

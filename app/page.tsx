@@ -76,9 +76,7 @@ export default function Home() {
 
       {/* Pass onMarkerClick */}
       <Map onMarkerClick={onMarkerClick} />
-
-      {/* Bottom Navigation Bar */}
-      {/* now present in app layout.tsx */}
+     
     </div>
   );
 }
