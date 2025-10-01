@@ -92,7 +92,10 @@ func locationDetailProvider(c *gin.Context) {
 }
 
 func reviewProvider(c *gin.Context) {
-	locationID := c.Query("location_id")
+    locationID := c.Param("id")
+
+
+	
 	if locationID == "" {
 		c.JSON(400, gin.H{"error": "location_id is required"})
 		return
@@ -100,7 +103,7 @@ func reviewProvider(c *gin.Context) {
 
 	page := 1
 	limit := 50
-	if p := c.Query("page"); p != "" {
+	if     p := c.Param("page"); p != "" {
 		if parsedPage, err := strconv.Atoi(p); err != nil || parsedPage < 1 {
 			c.JSON(400, gin.H{"error": "invalid page parameter"})
 			return
@@ -135,7 +138,7 @@ func fetchReviewsByLocationID(locationID string, limit, offset int) ([]model.Rev
 		return nil, 0, err
 	}
 
-	if err := db.Where("location_id = ?", locationID).
+	if err := db.Preload("User").Where("location_id = ?", locationID).
 		Order("created_at DESC").
 		Limit(limit).
 		Offset(offset).

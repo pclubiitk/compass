@@ -33,7 +33,19 @@ func flagAction(c *gin.Context) {
 	if req.Action == "approved" {
 
 		review.Status = "approved"
+		//update ratting of the location
+		var location model.Location
+		if err := connections.DB.Where("id = ?", review.LocationId).First(&location); err != nil {
+			c.JSON(400, gin.H{"error": "error while updating the location review count"})
+		}
+		location.ReviewCount += 1
+		location.AverageRating = ((location.AverageRating * float32(location.ReviewCount-1)) + float32(review.Rating)) / float32(location.ReviewCount)
+
+		if err := connections.DB.Save(&location).Error; err != nil {
+			c.JSON(400, gin.H{"error": "error while updating the location review count"})
+		}
 		c.JSON(200, gin.H{"message": "Review approved"})
+
 		return
 	}
 
