@@ -11,7 +11,7 @@ import {
 
 import DialogBuilt from "./dialogbuilt";
 import DynamicIcon from "./dynamicon";
-import { TableRowModel } from "@/app/lib/types";
+import { TableRowModel } from "@/app/components/lib/types";
 
 interface TableProps {
   data: TableRowModel[];

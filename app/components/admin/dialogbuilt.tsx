@@ -5,7 +5,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "./dialog";
-import { DescriptionDetails } from "@/app/lib/types";
+import { DescriptionDetails } from "@/app/components/lib/types";
 
 interface DialogProps{
     details: DescriptionDetails

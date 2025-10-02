@@ -4,6 +4,7 @@ import { GlobalContextProvider } from "@/components/ContextProvider";
 import { GlobalLoader } from "@/components/GlobalLoader";
 import { ThemeProvider } from "@/components/ui/theme-provider";
 // TODO: combine the two components folders
+import { BottomNav } from "@/app/components/BottomNavbar";
 
 export default function RootLayout({
   children,
@@ -11,18 +12,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <GlobalContextProvider>
-            <main>
-              <GlobalLoader />
-              {children}
-            </main>
-          </GlobalContextProvider>
-        </ThemeProvider>
-        <Toaster />
-      </body>
-    </html>
+    <>
+      {children}
+      <BottomNav />
+    </>
   );
 }

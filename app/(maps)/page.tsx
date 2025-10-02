@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, User, BookOpen, Megaphone, Plus } from "lucide-react";
 
-const Map = dynamic(() => import("./components/Map"), { ssr: false });
+const Map = dynamic(() => import("@/app/components/Map"), { ssr: false });
 
 export default function Home() {
   const [query, setQuery] = useState("");

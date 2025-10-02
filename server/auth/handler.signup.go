@@ -35,10 +35,10 @@ func signupHandler(c *gin.Context) {
 	user := model.User{
 		Email:             input.Email,
 		Password:          string(hashPass),
-		Name:              input.Name,
 		IsVerified:        false,
 		Role:              model.UserRole,
 		VerificationToken: fmt.Sprintf("%s<>%s", token, expiry),
+		Profile:           model.Profile{Email: input.Email},
 	}
 	if err := connections.DB.Model(&model.User{}).Create(&user).Error; err != nil {
 		var pgErr *pgconn.PgError
@@ -48,20 +48,32 @@ func signupHandler(c *gin.Context) {
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error creating user"})
+		return
 	}
 	// Add job to mail queue
-	verifyLink := fmt.Sprintf("http://%s/api/auth/verify?token=%s&userID=%s", viper.GetString("domain"), token, user.UserID)
+	verifyLink := fmt.Sprintf("http://%s/signup?token=%s&userID=%s",
+		// Dev Mode, call the anonymous function
+		func() string {
+			if viper.GetString("domain") == "" {
+				return "localhost:3000"
+			}
+			return viper.GetString("domain")
+		}(),
+		token,
+		user.UserID)
 	job := workers.MailJob{
 		Type: "user_verification",
 		To:   input.Email,
 		Data: map[string]interface{}{
-			"username": input.Name,
-			"link":     verifyLink,
+			// To match the format in the UI, kB1-2Cd etc.
+			"token": fmt.Sprintf("%s-%s", token[:3], token[3:]),
+			// "username": input.Name,
+			"link": verifyLink,
 		},
 	}
 	payload, _ := json.Marshal(job)
 	if err := workers.PublishJob(payload, model.MailQueue); err != nil {
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "Signup successful. Please check your email to verify."})
+	c.JSON(http.StatusOK, gin.H{"message": "Signup successful. Please check your email to verify.", "userID": user.UserID})
 }

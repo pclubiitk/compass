@@ -38,6 +38,8 @@ func dbConnection() {
 		&model.Review{},
 		&model.Logs{},
 		&model.Image{},
+		&model.Profile{},
+		&model.ChangeLog{},
 	}
 
 	if err := DB.AutoMigrate(models...); err != nil {

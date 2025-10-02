@@ -2,6 +2,7 @@ package auth
 
 import (
 	"compass/connections"
+	"compass/middleware"
 	"compass/model"
 	"crypto/rand"
 	"encoding/hex"
@@ -15,7 +16,7 @@ import (
 )
 
 func generateVerificationToken() string {
-	b := make([]byte, 32)
+	b := make([]byte, 3)
 	rand.Read(b) // never returns an error and fills b completely
 	return hex.EncodeToString(b)
 }
@@ -35,7 +36,7 @@ func verificationHandler(c *gin.Context) {
 	}
 	tokenSplit := strings.Split(user.VerificationToken, "<>")
 	if len(tokenSplit) != 2 {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Token not generated or Invalid token"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Token not generated properly"})
 		return
 	}
 	// TODO: better way to fix the formate for time.Parse
@@ -49,11 +50,24 @@ func verificationHandler(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Token expired"})
 		return
 	}
+	if tokenSplit[0] != token {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid OTP"})
+		return
+	}
 	user.IsVerified = true
 	user.VerificationToken = ""
 	if db.Save(&user).Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Request Failed, Please try again later"})
+		return
 	}
-	// TODO: once the route is ready redirect it there
-	// c.Redirect(http.StatusSeeOther, fmt.Sprintf("http://%s/verified", viper.GetString("domain")))
+	jwtToken, err := middleware.GenerateToken(user.UserID, int(user.Role), user.IsVerified)
+	if err != nil {
+		// TODO: Redirect to login page
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token, you will need to login!"})
+		return
+	}
+	// set cookie
+	middleware.ClearAuthCookie(c) // Clear the previous cookie
+	middleware.SetAuthCookie(c, jwtToken)
+	c.JSON(http.StatusOK, gin.H{"message": "Email verification successful."})
 }

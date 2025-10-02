@@ -9,6 +9,13 @@ import Image from "next/image";
 import { toast } from "sonner";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useGContext } from "@/components/ContextProvider";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -59,71 +66,67 @@ export default function LoginPage() {
 
   // Extract the form component into other
   return (
-    <div className="bg-background flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
-      <div className="w-full max-w-sm">
-        <div className={cn("flex flex-col gap-6")}>
-          <form onSubmit={onSubmit} method="post">
-            <div className="flex flex-col gap-6">
-              <div className="flex flex-col items-center gap-2">
-                <a
-                  href="#"
-                  className="flex flex-col items-center gap-2 font-medium"
-                >
-                  <div className="flex size-8 items-center justify-center rounded-md">
-                    <Image
-                      src="/pclub.png"
-                      alt="Programming Club Logo"
-                      className="rounded-2xl"
-                      width={60}
-                      height={60}
-                    ></Image>
-                  </div>
-                  <span className="sr-only">Programming Club</span>
-                </a>
-                <h1 className="text-xl font-bold">
-                  Welcome to PClub IIT Kanpur
-                </h1>
-                <div className="text-center text-sm">
-                  Please log in to continue. Don&apos;t have an account?{" "}
-                  <a href="#" className="underline underline-offset-4">
-                    Sign up
-                  </a>
-                </div>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-4">
+      <Card className="w-full max-w-sm">
+        <CardHeader>
+          <CardTitle className="flex flex-col items-center gap-2">
+            <a
+              href="https://pclub.in"
+              className="flex flex-col items-center gap-2 font-medium"
+            >
+              <div className="flex size-8 items-center justify-center rounded-md">
+                <Image
+                  src="/pclub.png"
+                  alt="Programming Club Logo"
+                  className="rounded-2xl"
+                  width={60}
+                  height={60}
+                ></Image>
               </div>
-              <div className="flex flex-col gap-6">
-                <div className="grid gap-3">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    placeholder="pclubiik@gmail.com or @iik.ac.in"
-                    required
-                  />
-                </div>
-                <div className="grid gap-3">
-                  <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    name="password"
-                    type="password"
-                    placeholder="no one is watching you..."
-                    required
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? "Verifying.." : "Login"}
-                </Button>
-              </div>
+              <span className="sr-only">Programming Club</span>
+            </a>
+          </CardTitle>
+          <CardDescription className="flex flex-col items-center gap-2">
+            <p>Programming Club IIT Kanpur</p>
+          </CardDescription>
+          <CardTitle className="text-2xl">Log In</CardTitle>
+          <CardDescription>
+            Please Login to continue, Don&apos;t have an account?{" "}
+            <a href="/signup" className="underline underline-offset-4">
+              Sign up
+            </a>{" "}
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent>
+          <form onSubmit={onSubmit} method="post" className="grid gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                placeholder="@iik.ac.in"
+                minLength={8}
+                required
+              />
             </div>
+            <div className="grid gap-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                placeholder="no one is watching..."
+                required
+              />
+            </div>
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? "Verifying.." : "Login"}
+            </Button>
           </form>
-          <div className="text-muted-foreground *:[a]:hover:text-primary text-center text-xs text-balance *:[a]:underline *:[a]:underline-offset-4">
-            By clicking continue, you agree to our{" "}
-            <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.
-            {/* TODO: Add TnC and Privacy Policy page */}
-          </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

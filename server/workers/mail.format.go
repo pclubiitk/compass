@@ -38,18 +38,25 @@ func FormatMail(job MailJob) (MailContent, error) {
 
 // ========== Formatters ==========
 func formatVerificationEmail(job MailJob) (MailContent, error) {
-	username := job.Data["username"]
+	// username := job.Data["username"]
+	token := job.Data["token"]
 	link := job.Data["link"]
 	data := map[string]interface{}{
-		"Username": username,
+		// "Username": username,
+		"Token":  	token,
 		"Link":     link,
 		"Expiry":   viper.GetInt("expiry.emailVerification"),
 	}
+	// <h2>Hello {{.Username}},</h2>
 	tmpl := `
-		<h2>Hello {{.Username}},</h2>
-		<p>Thank you for signing up! Please verify your email by clicking the link below:</p>
+		<h2>Thank you for signing up!</h2> 
+		<p>Bellow is your otp for verification:</p>
+		<h2>{{.Token}}</h2>
+		<p>or</p>
+		<p>you may directly verify your email by clicking the link below:</p>
 		<p><a href="{{.Link}}">Verify Email</a></p>
 		<p>This link is valid for next {{.Expiry}} hours</p>
+		<p>If this action was not taken by you, please ignore this mail, and do not share this opt with anyone</p>
 	`
 	body, err := renderTemplate(tmpl, data)
 	if err != nil {
