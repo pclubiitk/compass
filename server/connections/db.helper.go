@@ -3,7 +3,7 @@ package connections
 import "gorm.io/gorm"
 
 func UserSelect(db *gorm.DB) *gorm.DB {
-	return db.Select("user_id", "name")
+	return db.Omit("profile").Select("user_id")
 }
 // Specially for reviews
 // TODO: Correct the logic, after completing the upload and moderation logic once

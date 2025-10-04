@@ -30,7 +30,7 @@ type User struct {
 	Role              Role      `json:"role" gorm:"type:int;"`
 
 	// Search Profile
-	Profile Profile
+	Profile Profile `json:"profile"`
 
 	// Compass Fields
 	ContributedLocations []Location `gorm:"foreignKey:ContributedBy;references:UserID"`

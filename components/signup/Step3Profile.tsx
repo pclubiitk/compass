@@ -20,38 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-
-// TODO: Update the data
-const departments = [
-  "CSE",
-  "EE",
-  "ME",
-  "MTH",
-  "SDS",
-  "ES",
-  "AE",
-  "CHM",
-  "CHE",
-  "BSBE",
-];
-const courses = ["B.Tech", "BS", "M.Tech", "MS", "PhD"];
-const halls = [
-  "Hall 1",
-  "Hall 2",
-  "Hall 3",
-  "Hall 4",
-  "Hall 5",
-  "Hall 6",
-  "Hall 7",
-  "Hall 8",
-  "Hall 9",
-  "Hall 10",
-  "Hall 11",
-  "Hall 12",
-  "Hall 13",
-  "Hall 14",
-  "GH 1",
-];
+import { departments, courses, halls } from "@/components/Constant";
 
 export function Step3Profile() {
   const router = useRouter();
@@ -140,6 +109,7 @@ export function Step3Profile() {
               value={profileData.name}
               onChange={handleChange}
               required
+              className="capitalize"
             />
           </div>
           <div className="grid gap-2">
@@ -152,6 +122,7 @@ export function Step3Profile() {
               value={profileData.rollNo}
               onChange={handleChange}
               required
+              className="uppercase"
             />
           </div>
           <div className="grid gap-2">
@@ -209,7 +180,7 @@ export function Step3Profile() {
           <div className="grid gap-2">
             <Label>Hall & Room Number</Label>
             <div className="flex gap-2">
-              <div className="w-2/3">
+              <div>
                 <Select onValueChange={handleSelectChange("hall")}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select hall" />
@@ -223,12 +194,13 @@ export function Step3Profile() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="w-1/3">
+              <div>
                 <Input
                   name="roomNo"
                   placeholder="D123"
                   value={profileData.roomNo}
                   onChange={handleChange}
+                  className="uppercase"
                 />
               </div>
             </div>
@@ -241,6 +213,7 @@ export function Step3Profile() {
               name="homeTown"
               value={profileData.homeTown}
               onChange={handleChange}
+              className="capitalize"
             />
           </div>
 

@@ -20,21 +20,20 @@ type Location struct {
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 	DeletedAt     gorm.DeletedAt `gorm:"index"`
-	LocationId    uuid.UUID      `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	LocationId    uuid.UUID      `json:"locationId" gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	Name          string         `json:"name" binding:"required"`
 	Description   string         `json:"description"`
 	Latitude      float32        `json:"latitude" binding:"required"`
 	Longitude     float32        `json:"longitude" binding:"required"`
 	LocationType  string         `json:"locationType"`
-	Status        Status         `gorm:"type:varchar(20);check:status IN ('pending','approved','rejected')"`                        // once the location is approved by the admin it will be publicly available
+	Status        Status         `json:"status" gorm:"type:varchar(20);check:status IN ('pending','approved','rejected')"`          // once the location is approved by the admin it will be publicly available
 	ContributedBy uuid.UUID      `json:"contributedBy"`                                                                             // This is the foreign key
 	User          *User          `gorm:"foreignKey:ContributedBy;references:UserID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"` // many location to single user binding
 	AverageRating float32        `json:"avgRating"`
-	ReviewCount   int64          `json:"ReviewCount"`
-	Tag string `json:"Tag"`
-	Contact string `json:"Contact"`
-	Time string `json:"Time"`
-
+	ReviewCount   int64          `json:"reviewCount"`
+	Tag           string         `json:"tag"`
+	Contact       string         `json:"contact"`
+	Time          string         `json:"time"`
 	Reviews       []Review       `gorm:"foreignKey:LocationId;references:LocationId"` // one location to multi review binding
 	CoverPic      *Image         `gorm:"polymorphic:ParentAsset;" json:"coverpic"`
 	BioPics       []Image        `gorm:"polymorphic:ParentAsset;" json:"biopics"`
@@ -50,7 +49,7 @@ type Notice struct { // change this to ritika's PR, can remove the contributedBy
 	NoticeId      uuid.UUID      `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	Title         string         `json:"title" binding:"required"`
 	Description   string         `gorm:"type:text" json:"description"`
-	Body          string         `json:"Body"`
+	Body          string         `json:"body"`
 	ContributedBy uuid.UUID      `json:"contributedBy"`
 	User          *User          `gorm:"foreignKey:ContributedBy;references:UserID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 	CoverPic      *Image         `gorm:"polymorphic:ParentAsset;" json:"coverpic"`

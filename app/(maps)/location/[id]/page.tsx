@@ -17,13 +17,7 @@ import {
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { CircleUserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-} from "@/components/ui/card";
+import { CardContent, CardDescription } from "@/components/ui/card";
 import {
   Drawer,
   DrawerClose,

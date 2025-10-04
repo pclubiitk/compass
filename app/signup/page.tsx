@@ -66,7 +66,11 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-4">
+    <div
+      className="flex flex-col items-center justify-center min-h-screen p-4 bg-gradient-to-r 
+  from-blue-100 to-teal-100 
+  dark:from-slate-800 dark:to-slate-900"
+    >
       <div className="w-full max-w-2xl mb-8">
         <SignupStepper activeStep={activeStep} steps={steps} />
       </div>

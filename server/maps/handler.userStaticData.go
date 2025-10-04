@@ -1,5 +1,3 @@
-//mytask done
-
 package maps
 
 import (
@@ -71,7 +69,7 @@ func locationProvider(c *gin.Context) {
 func locationDetailProvider(c *gin.Context) {
 	id := c.Param("id")
 	var loc model.Location
-	err := connections.DB.
+	if err := connections.DB.
 		Model(&model.Location{}).
 		Preload("User", connections.UserSelect). // Location contributor
 		Preload("Reviews", func(db *gorm.DB) *gorm.DB {
@@ -81,10 +79,8 @@ func locationDetailProvider(c *gin.Context) {
 		}).
 		Preload("Reviews.User", connections.UserSelect). // Review contributors
 		Where("location_id = ? AND status = ?", id, model.Approved).
-		First(&loc).Error
-
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Location not found"})
+		First(&loc).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Error Fetching location"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"location": loc})
@@ -92,10 +88,8 @@ func locationDetailProvider(c *gin.Context) {
 }
 
 func reviewProvider(c *gin.Context) {
-    locationID := c.Param("id")
+	locationID := c.Param("id")
 
-
-	
 	if locationID == "" {
 		c.JSON(400, gin.H{"error": "location_id is required"})
 		return
@@ -103,7 +97,7 @@ func reviewProvider(c *gin.Context) {
 
 	page := 1
 	limit := 50
-	if     p := c.Param("page"); p != "" {
+	if p := c.Param("page"); p != "" {
 		if parsedPage, err := strconv.Atoi(p); err != nil || parsedPage < 1 {
 			c.JSON(400, gin.H{"error": "invalid page parameter"})
 			return

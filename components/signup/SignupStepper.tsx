@@ -18,7 +18,7 @@ export function SignupStepper({ activeStep, steps }: SignupStepperProps) {
           return (
             <li key={step.title}>
               <div className="relative flex items-center">
-                {index < steps.length - 1 && (
+                {index < activeStep && (
                   <div className="absolute left-6 top-4 -ml-px mt-0.5 h-0.5 w-12 bg-gray-300" />
                 )}
                 <div className="relative flex h-8 w-8 items-center justify-center rounded-full bg-gray-200">
