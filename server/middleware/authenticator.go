@@ -65,6 +65,7 @@ func AdminAuthenticator(c *gin.Context) {
 }
 
 // But once the user verifies the email, the cookie will remain same hence will need to login again
+// TODO: I can fetch db and check if it is false and update it
 func EmailVerified(c *gin.Context) {
 	// verified email ?
 	verified, exist := c.Get("verified")

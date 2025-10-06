@@ -33,6 +33,7 @@ func main() {
 	g.Go(func() error { return assetServer().ListenAndServe() })
 	g.Go(func() error { return authServer().ListenAndServe() })
 	g.Go(func() error { return mapsServer().ListenAndServe() })
+	g.Go(func() error { return searchServer().ListenAndServe() })
 	logrus.Info("Main server is Starting...")
 	if err := g.Wait(); err != nil {
 		logrus.Fatal("Some service failed with error: ", err)

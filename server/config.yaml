@@ -20,6 +20,7 @@ ports:
   auth: 8080
   maps: 8081
   assets: 8082
+  search: 8083
 
 smtp:
   host: smtp.gmail.com

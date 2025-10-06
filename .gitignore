@@ -54,3 +54,7 @@ next-env.d.ts
 
 # secrets
 /server/secret.yml
+
+# Data
+/server/parser/*.csv
+/server/parser/*.sql
