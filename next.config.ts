@@ -6,6 +6,9 @@ const nextConfig: NextConfig = {
   images: {
     domains: ["th.bing.com", "www.iitk.ac.in", "localhost"],
   },
+  experimental: {
+    serverActions: {},
+  },
 };
 
 export default nextConfig;

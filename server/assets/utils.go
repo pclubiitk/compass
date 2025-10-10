@@ -8,7 +8,8 @@ import (
 	"path/filepath"
 
 	"github.com/google/uuid"
-	"github.com/h2non/bimg"
+	 "github.com/h2non/bimg"
+
 	"github.com/spf13/viper"
 )
 

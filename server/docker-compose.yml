@@ -51,3 +51,4 @@ services:
       RABBITMQ_HOST: rabbitmq
       # force Go to use go.mod/go.sum for dependency management
       GO111MODULE: on
+      RECAPTCHA_SECRET_KEY: "the secret key from google admin console"
