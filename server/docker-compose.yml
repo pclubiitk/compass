@@ -38,14 +38,13 @@ services:
       - "8080:8080"
       - "8081:8081"
       - "8082:8082"
+      - "8083:8083"
     depends_on:
       rabbitmq:
         condition: service_healthy
       postgres:
         condition: service_healthy
     # No use, as we just run the binary
-    volumes:
-      - .:/app
     environment:
       POSTGRES_HOST: postgres
       RABBITMQ_HOST: rabbitmq

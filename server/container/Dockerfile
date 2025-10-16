@@ -35,7 +35,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --from=builder /app/server /server
 COPY ./config.yaml /config.yaml
 COPY ./secret.yml /secret.yml
+COPY ./assets/public /assets/public
+COPY ./assets/tmp /assets/tmp
 
-EXPOSE 8080 8081 8082
+EXPOSE 8080 8081 8082 8083
 
 ENTRYPOINT ["/server"]
