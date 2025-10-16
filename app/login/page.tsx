@@ -138,11 +138,11 @@ export default function LoginPage() {
             </div>
 
             {/* Invisible v3 reCAPTCHA */}
-            <ReCAPTCHA
+            {/* <ReCAPTCHA
               sitekey={siteKey}
               ref={recaptchaRef}
               size="invisible"
-            />
+            /> */}
 
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? "Verifying..." : "Login"}
