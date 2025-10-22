@@ -33,18 +33,17 @@ export function Step1Register({ onSuccess }: Step1RegisterProps) {
     setIsLoading(true);
 
     try {
-      if (!formRef.current) throw new Error("Form not found");
+      
 
       // Executing invisible reCAPTCHA
       const token = await recaptchaRef.current?.executeAsync();
       if (!token) throw new Error("Captcha failed");
       setCaptchaToken(token);
 
-      const formData = new FormData(formRef.current);
+      const formData = new FormData(formRef.current!);
       const email = formData.get("email");
       const password = formData.get("password");
-    
-      console.log(token);
+
       const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL}/api/auth/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

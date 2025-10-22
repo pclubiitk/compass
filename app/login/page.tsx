@@ -22,6 +22,8 @@ export default function LoginPage() {
 
   const router = useRouter();
   const { isLoggedIn, setLoggedIn } = useGContext();
+
+  // To redirect to the initiator page setup, extract the url of previous page
   const searchParams = useSearchParams();
   const callbackUrl =
     searchParams.get("callbackUrl") ||
@@ -34,15 +36,16 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (isLoggedIn) router.replace(callbackUrl);
+   // The dependency array ensures effect only runs once on mount,
+   // unless the router or callbackUrl changes.
   }, [callbackUrl, router, isLoggedIn]);
+
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
     setIsLoading(true);
 
     try {
-      
-      if (!formRef.current) throw new Error("Form not found");
 
       // executing invisible v2 reCAPTCHA
       const token = await recaptchaRef.current?.executeAsync();
@@ -50,12 +53,10 @@ export default function LoginPage() {
       setCaptchaToken(token);
 
       // Getting form values
-      const formData = new FormData(formRef.current);
+      const formData = new FormData(formRef.current!);
       const email = formData.get("email");
       const password = formData.get("password");
-
-      console.log(email);
-      console.log(token);
+      
       const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -67,13 +68,14 @@ export default function LoginPage() {
 
       if (response.ok) {
         toast.success(data.message);
-        setLoggedIn(true);
+        setLoggedIn(true);// global context
+        // From where ever you redirect use router.push(`/login?callbackUrl=${encodeURIComponent(router.asPath)}`);
         router.replace(callbackUrl);
       } else {
         toast.error(data.error || "Login failed");
       }
     } catch (err) {
-      console.error(err);
+      
       toast.error("Something went wrong. Try again later.");
     } finally {
       setIsLoading(false);
@@ -81,6 +83,7 @@ export default function LoginPage() {
     }
   }
 
+  // Extract the form component into other
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-gradient-to-r from-blue-100 to-teal-100 dark:from-slate-800 dark:to-slate-900">
       <Card className="w-full max-w-sm">
@@ -137,7 +140,7 @@ export default function LoginPage() {
               />
             </div>
 
-            {/* Invisible v3 reCAPTCHA */}
+            {/* Invisible v2 reCAPTCHA */}
             <ReCAPTCHA
               sitekey={siteKey}
               ref={recaptchaRef}

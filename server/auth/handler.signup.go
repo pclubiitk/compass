@@ -24,7 +24,7 @@ func signupHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format"})
 		return
 	}
-
+    // TODO: extract out the user model generation into a single transaction
 	//throws error if captcha verification fails and registers the user in the DB only when the captcha is passed.
 	if !verifyRecaptcha(input.Token) {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Failed captcha verification"})
