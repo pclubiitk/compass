@@ -14,6 +14,7 @@ import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import Link from "next/link";
 
 interface Step1RegisterProps {
   onSuccess: (data: { userID: string }) => void;
@@ -21,6 +22,7 @@ interface Step1RegisterProps {
 
 export function Step1Register({ onSuccess }: Step1RegisterProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [agreedToTnC , setAgreedToTnC]= useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -28,6 +30,11 @@ export function Step1Register({ onSuccess }: Step1RegisterProps) {
     const formData = new FormData(event.currentTarget);
     const email = formData.get("email");
     const password = formData.get("password");
+    
+     if (!agreedToTnC) {
+      toast.error("You must agree to the Privacy Policy to register.");
+      return;
+    }
 
     try {
       const response = await fetch(
@@ -115,11 +122,22 @@ export function Step1Register({ onSuccess }: Step1RegisterProps) {
         </form>
       </CardContent>
       <CardFooter>
-        <div className="text-muted-foreground *:[a]:hover:text-primary text-center text-xs text-balance *:[a]:underline *:[a]:underline-offset-4">
-          By clicking continue, you agree to our{" "}
-          <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.
-          {/* TODO: Add TnC and Privacy Policy page */}
-        </div>
+              
+<div className="flex items-start space-x-2 text-sm text-gray-600 dark:text-gray-400">
+  <input
+    id="privacy"
+    type="checkbox"
+    checked={agreedToTnC}
+    onChange={(e) => setAgreedToTnC(e.target.checked)}
+    className="mt-1"
+  />
+  <label htmlFor="privacy">
+    I agree to the{" "}
+    <Link href="/privacy-policy" className="text-blue-600 hover:underline" target="_blank">
+      Privacy Policy
+    </Link>
+  </label>
+</div>
       </CardFooter>
     </Card>
   );
