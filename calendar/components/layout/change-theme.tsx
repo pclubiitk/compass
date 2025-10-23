@@ -6,9 +6,13 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
-import { setTheme } from "@/cookies/set";
+// import { setTheme } from "@/lib/theme";
+import { useTheme } from "next-themes";
 
 export function ToggleTheme() {
+
+    const { setTheme } = useTheme()
+
   const [currentTheme, setCurrentTheme] = useState<"light" | "dark">();
 
   useEffect(() => {

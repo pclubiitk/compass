@@ -39,6 +39,7 @@ type AddNoticeRequest struct {
 	CoverPic    *uuid.UUID `json:"coverPic"`
 	Entity      string     `json:"entity"`
 	EventTime   time.Time  `json:"eventTime"`
+	EventEndTime time.Time  `json:"eventEndTime"`
 	Location    string     `json:"location"`
 }
 

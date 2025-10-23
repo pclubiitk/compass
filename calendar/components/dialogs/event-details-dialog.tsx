@@ -30,9 +30,9 @@ export function EventDetailsDialog({ event, children }: IProps) {
 
           <div className="space-y-4">
             <div className="flex items-start gap-2">
-              <User className="mt-1 size-4 shrink-0" />
+             
               <div>
-                <p className="text-sm font-medium">Responsible</p>
+               
                
               </div>
             </div>
@@ -58,6 +58,10 @@ export function EventDetailsDialog({ event, children }: IProps) {
               <div>
                 <p className="text-sm font-medium">Description</p>
                 <p className="text-sm text-muted-foreground">{event.description}</p>
+                {event.location && (<span className="text-xs text-muted-foreground">
+                  📍 {event.location}
+                </span>
+                )}
               </div>
             </div>
           </div>

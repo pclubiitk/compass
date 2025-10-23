@@ -1,6 +1,6 @@
 import { useCalendar } from "@/calendar/contexts/calendar-context";
 
-import { AvatarGroup } from "@/components/ui/avatar-group";
+import { AvatarGroup } from "@/calendar/components/ui/avatar-group";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 

@@ -12,7 +12,10 @@ import { CalendarProvider } from "@/calendar/contexts/calendar-context";
 import { ClientContainer } from "@/calendar/components/client-container";
 
 import { IEvent } from "@/calendar/interfaces";
+import { Notice } from "@/lib/types";
+import { env } from "process";
 
+const mapServer = env.NEXT_PUBLIC_MAP_SERVER; 
 // Data Type
 export type Profile = {
   name: string;
@@ -39,70 +42,67 @@ export default function ProfilePage() {
   const [calendarEvents, setCalendarEvents] = useState<IEvent[]>([]);
   const [calendarType, setCalendarType] = useState<'year' | 'week' | 'day' | 'month'>('day');
   const [isLoading, setIsLoading] = useState(true);
+  const [notices, setNotices] = useState<Notice[]>([]);
  
   //hardcoded events for demo
-    const eventss: IEvent[] = [
-    {
-      id: 1,
-      title: "Team Standup Meeting",
-      description: "Daily sync-up with the development team.",
-      startDate: "2025-10-10T00:00:00.000Z",
-      endDate: "2025-10-10T09:30:00.000Z",
-      color: "blue",
-    },
-    {
-      id: 2,
-      title: "Project Planning",
-      description: "Sprint planning and backlog refinement.",
-      startDate: "2025-10-10T09:00:00.000Z",
-      endDate: "2025-10-11T12:30:00.000Z",
-      color: "green",
-    },
-    {
-      id: 3,
-      title: "Design Review",
-      description: "UI/UX review for the upcoming release.",
-      startDate: "2025-10-10T15:00:00.000Z",
-      endDate: "2025-10-10T16:00:00.000Z",
-      color: "purple",
-    },
-    {
-      id: 4,
-      title: "Client Presentation",
-      description: "Presenting the project demo to the client.",
-      startDate: "2025-10-10T10:00:00.000Z",
-      endDate: "2025-10-10T11:30:00.000Z",
-      color: "red",
-    },
-    {
-      id: 5,
-      title: "Team Lunch",
-      description: "Casual lunch with the product and design teams.",
-      startDate: "2025-10-14T13:00:00.000Z",
-      endDate: "2025-10-14T14:00:00.000Z",
-      color: "yellow",
-    },
-    {
-      id: 6,
-      title: "Code Review Session",
-      description: "Reviewing pull requests for sprint tasks.",
-      startDate: "2025-10-15T16:00:00.000Z",
-      endDate: "2025-10-15T17:00:00.000Z",
-      color: "orange",
-    },
-    {
-      id: 7,
-      title: "Hackathon",
-      description: "Company-wide internal hackathon event.",
-      startDate: "2025-10-16T09:00:00.000Z",
-      endDate: "2025-10-17T17:00:00.000Z",
-      color: "blue",
-    },
-  ];
-  
-useEffect(() => {
-  setCalendarEvents(eventss);
-}, []); //
+   useEffect(() => {
+  const fetchNotices = async () => {
+    try {
+      const res = await fetch(`${mapServer}/api/maps/notice?page=1`);
+      const data = await res.json();
+
+      const formatted: Notice[] = data.noticeboard_list.map((n: any) => ({
+        id: n.id,
+        title: n.title,
+        description: n.description,
+        type: n.type || "Event",
+        recipient: n.recipient || "All",
+        location: n.location || "Campus",
+        eventTime: n.eventTime || n.time, 
+        eventEndTime: n.eventEndTime || n.endTime,
+      }));
+
+      setNotices(formatted);
+
+      // build calendar events *after* data is fetched
+      const eventss: IEvent[] = formatted
+
+        .map((notice, index) => {
+          const start = new Date(notice.eventTime);
+          const end= new Date(notice.eventEndTime)
+          if (isNaN(start.getTime())) {
+            console.warn("Invalid date in notice:", notice);
+            return null;
+          }
+
+          // Add a small offset for uniqueness
+        
+
+          return {
+            id: index + 1,
+            title: notice.title,
+            description: notice.description,
+      
+            startDate: start.toISOString(),
+            endDate: end.toISOString(),
+            location: notice.location || "Campus",
+            color: "blue",
+          };
+        })
+        .filter(Boolean) as unknown as IEvent[];
+
+      setCalendarEvents(eventss);
+    } catch (err) {
+      console.error("Failed to fetch notices:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  fetchNotices();
+}, []);
+
+
   
   const fetchProfile = async () => {
     // We don't reset loading to true on refetch to avoid skeleton flashes
@@ -171,9 +171,13 @@ useEffect(() => {
             notices={userData.ContributedNotice}
           />
    
+    <div className="h-80">
+     
   <CalendarProvider events={calendarEvents}>
+
           <CalendarInner />
         </CalendarProvider>
+    </div>
 </div>
 
 

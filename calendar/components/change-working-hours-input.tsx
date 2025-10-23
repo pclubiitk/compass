@@ -5,13 +5,13 @@ import { Info, Moon } from "lucide-react";
 import { useCalendar } from "@/calendar/contexts/calendar-context";
 
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { TimeInput } from "@/components/ui/time-input";
+import { Switch } from "@/calendar/components/ui/switch";
+import { TimeInput } from "@/calendar/components/ui/time-input";
 
 import type { TimeValue } from "react-aria-components";
-import { TooltipContent } from "@/components/ui/tooltip";
-import { Tooltip, TooltipTrigger } from "@/components/ui/tooltip";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { TooltipContent } from "@/calendar/components/ui/tooltip";
+import { Tooltip, TooltipTrigger } from "@/calendar/components/ui/tooltip";
+import { TooltipProvider } from "@/calendar/components/ui/tooltip";
 
 const DAYS_OF_WEEK = [
   { index: 0, name: "Sunday" },

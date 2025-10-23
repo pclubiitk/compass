@@ -1,9 +1,9 @@
 import { format } from "date-fns";
 
-import { useDisclosure } from "@/hooks/use-disclosure";
+import { useDisclosure } from "@/calendar/components/hooks/use-disclosure";
 
 import { Button } from "@/components/ui/button";
-import { SingleCalendar } from "@/components/ui/single-calendar";
+import { SingleCalendar } from "@/calendar/components/ui/single-calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 import { cn } from "@/lib/utils";

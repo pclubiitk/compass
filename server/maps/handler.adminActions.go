@@ -183,6 +183,7 @@ func addNotice(c *gin.Context) {
 			Description:   input.Description,
 			Entity:        input.Entity,
 			EventTime:     input.EventTime,
+			EventEndTime:  input.EventEndTime,
 			Body:          input.Body,
 			Location:      input.Location,
 			ContributedBy: userID.(uuid.UUID),

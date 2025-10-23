@@ -115,6 +115,12 @@ export function DayCell({ cell, events, eventPositions }: IProps) {
       {event.description}
     </span>
   )}
+  {
+    event.location && (<span className="text-xs text-muted-foreground">
+      📍 {event.location}
+    </span>
+    )
+  }
 </div>
 
               </div>

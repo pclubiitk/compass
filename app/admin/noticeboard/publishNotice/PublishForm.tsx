@@ -15,6 +15,7 @@ export default function NoticeboardForm() {
     title: '',
     location: '',
     time: '',
+    eventEndTime: '',
     description: '**hello world!**\n\nstart writing your notice here.', // Initial markdown content
   });
 
@@ -102,6 +103,18 @@ export default function NoticeboardForm() {
           name="time"
           type="datetime-local"
           value={formData.time}
+          onChange={handleChange}
+          className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder:text-gray-400"
+          required
+        />
+      </div>
+      <div>
+        <label htmlFor="eventEndTime" className="block text-sm font-semibold font-medium text-gray-700">Event End Time</label>
+        <input
+          id="eventEndTime"
+          name="eventEndTime"
+          type="datetime-local"
+          value={formData.eventEndTime}
           onChange={handleChange}
           className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder:text-gray-400"
           required

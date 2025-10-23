@@ -6,8 +6,8 @@ import { Info } from "lucide-react";
 import { useCalendar } from "@/calendar/contexts/calendar-context";
 
 import { Button } from "@/components/ui/button";
-import { TimeInput } from "@/components/ui/time-input";
-import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
+import { TimeInput } from "@/calendar/components/ui/time-input";
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/calendar/components/ui/tooltip";
 
 import type { TimeValue } from "react-aria-components";
 

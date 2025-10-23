@@ -1,10 +1,11 @@
 import { Calendar, Clock, User } from "lucide-react";
 import { parseISO, areIntervalsOverlapping, format } from "date-fns";
+import { getHours } from "date-fns";
 
 import { useCalendar } from "@/calendar/contexts/calendar-context";
 
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { SingleCalendar } from "@/components/ui/single-calendar";
+// import { SingleCalendar } from "@/components/ui/single-calendar";
 
 // import { AddEventDialog } from "@/calendar/components/dialogs/add-event-dialog";
 import { EventBlock } from "@/calendar/components/week-and-day-view/event-block";
@@ -25,7 +26,17 @@ interface IProps {
 export function CalendarDayView({ singleDayEvents, multiDayEvents }: IProps) {
   const { selectedDate, setSelectedDate, visibleHours, workingHours } = useCalendar();
 
-  const { hours, earliestEventHour, latestEventHour } = getVisibleHours(visibleHours, singleDayEvents);
+
+const now = new Date();
+const currentHour = getHours(now);
+
+// Clamp to valid 0–23 range
+const startHour = Math.max(0, currentHour - 5);
+const endHour = Math.min(23, currentHour + 5);
+
+// Generate array of visible hours
+const hours = Array.from({ length: endHour - startHour + 1 }, (_, i) => startHour + i);
+
 
   const currentEvents = getCurrentEvents(singleDayEvents);
 
@@ -55,17 +66,28 @@ export function CalendarDayView({ singleDayEvents, multiDayEvents }: IProps) {
           </div>
         </div>
 
-        <ScrollArea className="h-[800px]" type="always">
+    <div className="flex-1 overflow-hidden">
           <div className="flex">
             {/* Hours column */}
             <div className="relative w-18">
-              {hours.map((hour, index) => (
-                <div key={hour} className="relative" style={{ height: "96px" }}>
-                  <div className="absolute -top-3 right-2 flex h-6 items-center">
-                    {index !== 0 && <span className="text-xs text-muted-foreground">{format(new Date().setHours(hour, 0, 0, 0), "hh a")}</span>}
-                  </div>
-                </div>
-              ))}
+             {hours.map((hour, index) => {
+  const isDisabled = !isWorkingHour(selectedDate, hour, workingHours);
+  return (
+    <div
+      key={hour}
+      className={cn("relative border-b", isDisabled && "bg-calendar-disabled-hour")}
+      style={{ height: "80px" }} // smaller height = better fit
+    >
+      {index !== 0 && (
+        <div className="absolute -top-3 right-2 text-xs text-muted-foreground">
+          {format(new Date().setHours(hour, 0, 0, 0), "hh a")}
+        </div>
+      )}
+      <div className="pointer-events-none absolute inset-x-0 top-1/2 border-b border-dashed"></div>
+    </div>
+  );
+})}
+
             </div>
 
             {/* Day grid */}
@@ -109,7 +131,7 @@ export function CalendarDayView({ singleDayEvents, multiDayEvents }: IProps) {
 
                 {groupedEvents.map((group, groupIndex) =>
                   group.map(event => {
-                    let style = getEventBlockStyle(event, selectedDate, groupIndex, groupedEvents.length, { from: earliestEventHour, to: latestEventHour });
+                    let style = getEventBlockStyle(event, selectedDate, groupIndex, groupedEvents.length, { from: startHour, to: endHour });
                     const hasOverlap = groupedEvents.some(
                       (otherGroup, otherIndex) =>
                         otherIndex !== groupIndex &&
@@ -132,10 +154,10 @@ export function CalendarDayView({ singleDayEvents, multiDayEvents }: IProps) {
                 )}
               </div>
 
-              <CalendarTimeline firstVisibleHour={earliestEventHour} lastVisibleHour={latestEventHour} />
+              <CalendarTimeline firstVisibleHour={startHour} lastVisibleHour={endHour} />
             </div>
           </div>
-        </ScrollArea>
+        </div>
       </div>
 
    

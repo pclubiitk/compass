@@ -15,6 +15,7 @@ export interface Notice {
   entity: string;       //to represent department / Club / Cell
   // publisher: string;    // Person or org name
   eventTime: string;    // ISO date string
+  eventEndTime: string;  // ISO date string
   location: string;
   coverpic?: Image;     // single image
   biopics: Image[];     // multiple images

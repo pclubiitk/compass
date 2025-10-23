@@ -44,7 +44,7 @@ export function CalendarHeader({ view, events }: CalendarHeaderProps) {
             >
               <List strokeWidth={1.8} />
             </Button>
-
+{/* 
             <Button
               aria-label="View by week"
               size="icon"
@@ -53,7 +53,7 @@ export function CalendarHeader({ view, events }: CalendarHeaderProps) {
               onClick={() => setView("week")}
             >
               <Columns strokeWidth={1.8} />
-            </Button>
+            </Button> */}
 
             <Button
               aria-label="View by month"
