@@ -1,12 +1,11 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useState, useRef, FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -15,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import Link from "next/link";
+import ReCAPTCHA from "react-google-recaptcha";
 
 interface Step1RegisterProps {
   onSuccess: (data: { userID: string }) => void;
@@ -22,27 +22,33 @@ interface Step1RegisterProps {
 
 export function Step1Register({ onSuccess }: Step1RegisterProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY!;
+  const formRef = useRef<HTMLFormElement>(null);
+  const recaptchaRef = useRef<ReCAPTCHA>(null);
   const [agreedToTnC, setAgreedToTnC] = useState(false);
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setIsLoading(true);
-    const formData = new FormData(event.currentTarget);
-    const email = formData.get("email");
-    const password = formData.get("password");
-
-    if (!agreedToTnC) {
-      toast.error("You must agree to the Privacy Policy to register.");
-      return;
-    }
 
     try {
+      // Executing invisible reCAPTCHA
+      const token = await recaptchaRef.current?.executeAsync();
+      if (!token) {
+        toast.error("Error in captcha validation");
+        return;
+      }
+
+      const formData = new FormData(formRef.current!);
+      const email = formData.get("email");
+      const password = formData.get("password");
+
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_AUTH_URL}/api/auth/signup`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password }),
+          body: JSON.stringify({ email, password, token }),
         }
       );
 
@@ -52,12 +58,13 @@ export function Step1Register({ onSuccess }: Step1RegisterProps) {
         toast.success(data.message);
         onSuccess({ userID: data.userID });
       } else {
-        toast.error(data.error);
+        toast.error(data.error || "Signup failed");
       }
     } catch {
       toast.error("An unexpected error occurred.");
     } finally {
       setIsLoading(false);
+      recaptchaRef.current?.reset();
     }
   }
 
@@ -76,7 +83,7 @@ export function Step1Register({ onSuccess }: Step1RegisterProps) {
                 className="rounded-2xl"
                 width={60}
                 height={60}
-              ></Image>
+              />
             </div>
             <span className="sr-only">Programming Club</span>
           </a>
@@ -93,8 +100,9 @@ export function Step1Register({ onSuccess }: Step1RegisterProps) {
           </a>{" "}
         </CardDescription>
       </CardHeader>
+
       <CardContent>
-        <form onSubmit={handleSubmit} className="grid gap-4">
+        <form ref={formRef} onSubmit={handleSubmit} className="grid gap-4">
           <div className="grid gap-2">
             <Label htmlFor="email">Email</Label>
             <Input
@@ -116,6 +124,7 @@ export function Step1Register({ onSuccess }: Step1RegisterProps) {
               required
             />
           </div>
+
           <div className="flex items-start space-x-2 text-sm text-gray-600 dark:text-gray-400">
             <input
               id="privacy"
@@ -139,9 +148,10 @@ export function Step1Register({ onSuccess }: Step1RegisterProps) {
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? "Creating Account..." : "Continue"}
           </Button>
+          {/* Invisible reCAPTCHA v3 */}
+          <ReCAPTCHA sitekey={siteKey} ref={recaptchaRef} size="invisible" />
         </form>
       </CardContent>
-      <CardFooter></CardFooter>
     </Card>
   );
 }
