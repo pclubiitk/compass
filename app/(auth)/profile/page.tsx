@@ -23,9 +23,9 @@ export type Profile = {
 export type UserData = {
   role: number;
   profile: Profile;
-  ContributedLocations: any[];
-  ContributedReview: any[];
-  ContributedNotice: any[];
+  ContributedLocations: [];
+  ContributedReview: [];
+  ContributedNotice: [];
 };
 
 export default function ProfilePage() {
@@ -48,7 +48,7 @@ export default function ProfilePage() {
         router.push("/login?callbackUrl%2Fprofile");
       }
     } catch (err) {
-      console.log(err)
+      console.log(err);
       toast.error("An error occurred while fetching your profile.");
     } finally {
       setIsLoading(false);

@@ -23,7 +23,7 @@ export function AlertDeleteProfileInfo() {
     try {
       setGlobalLoading(true);
       await delay(10000);
-    } catch (error) {
+    } catch {
       toast(
         "Unable to toggle visibility at the moment, please try again later."
       );
@@ -74,7 +74,7 @@ export function AlertDeleteProfileInfo() {
             fill in complete profile data again.
             <br />
             <br />
-            Please don't go! Let us know how we can improve and why are you
+            Please don&apos;t go! Let us know how we can improve and why are you
             leaving 😞 over{" "}
             <a
               className="underline"
@@ -122,7 +122,7 @@ export function AlertVisibilityProfileInfo({
       setGlobalLoading(true);
       // Add your logic to toggle visibility here
       setVisibility((prev) => !prev);
-    } catch (error) {
+    } catch {
       toast(
         "Unable to toggle visibility at the moment, please try again later."
       );

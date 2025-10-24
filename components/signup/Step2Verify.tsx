@@ -57,7 +57,7 @@ export function Step2Verify({ userID, onSuccess }: Step2VerifyProps) {
       } else {
         toast.error(data.error);
       }
-    } catch (error) {
+    } catch {
       toast.error("An unexpected error occurred during verification.");
     } finally {
       setIsLoading(false);

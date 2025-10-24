@@ -22,7 +22,7 @@ interface Step1RegisterProps {
 
 export function Step1Register({ onSuccess }: Step1RegisterProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const [agreedToTnC , setAgreedToTnC]= useState(false);
+  const [agreedToTnC, setAgreedToTnC] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -30,8 +30,8 @@ export function Step1Register({ onSuccess }: Step1RegisterProps) {
     const formData = new FormData(event.currentTarget);
     const email = formData.get("email");
     const password = formData.get("password");
-    
-     if (!agreedToTnC) {
+
+    if (!agreedToTnC) {
       toast.error("You must agree to the Privacy Policy to register.");
       return;
     }
@@ -54,7 +54,7 @@ export function Step1Register({ onSuccess }: Step1RegisterProps) {
       } else {
         toast.error(data.error);
       }
-    } catch (error) {
+    } catch {
       toast.error("An unexpected error occurred.");
     } finally {
       setIsLoading(false);
@@ -116,29 +116,32 @@ export function Step1Register({ onSuccess }: Step1RegisterProps) {
               required
             />
           </div>
+          <div className="flex items-start space-x-2 text-sm text-gray-600 dark:text-gray-400">
+            <input
+              id="privacy"
+              type="checkbox"
+              checked={agreedToTnC}
+              onChange={(e) => setAgreedToTnC(e.target.checked)}
+              className="mt-1"
+            />
+            <label htmlFor="privacy">
+              I have read and agree to the{" "}
+              <Link
+                href="/privacy-policy"
+                className="text-blue-600 hover:underline"
+                target="_blank"
+              >
+                Data handling & Privacy Policy
+              </Link>{" "}
+              followed by Programming Club.
+            </label>
+          </div>
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? "Creating Account..." : "Continue"}
           </Button>
         </form>
       </CardContent>
-      <CardFooter>
-              
-<div className="flex items-start space-x-2 text-sm text-gray-600 dark:text-gray-400">
-  <input
-    id="privacy"
-    type="checkbox"
-    checked={agreedToTnC}
-    onChange={(e) => setAgreedToTnC(e.target.checked)}
-    className="mt-1"
-  />
-  <label htmlFor="privacy">
-    I agree to the{" "}
-    <Link href="/privacy-policy" className="text-blue-600 hover:underline" target="_blank">
-      Privacy Policy
-    </Link>
-  </label>
-</div>
-      </CardFooter>
+      <CardFooter></CardFooter>
     </Card>
   );
 }

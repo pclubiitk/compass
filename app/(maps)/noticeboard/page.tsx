@@ -7,7 +7,6 @@ import React, {
   useRef,
   useCallback,
 } from "react";
-import { Search } from "lucide-react";
 import { Notice } from "@/lib/types";
 import NoticeCard from "@/components/ui/NoticeCard";
 import ShareDialog from "./ShareDialog";

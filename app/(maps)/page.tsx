@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, User, BookOpen, Megaphone, Plus } from "lucide-react";
+import { Search } from "lucide-react";
 
 const Map = dynamic(() => import("@/app/components/Map"), { ssr: false });
 
@@ -76,7 +76,6 @@ export default function Home() {
 
       {/* Pass onMarkerClick */}
       <Map onMarkerClick={onMarkerClick} />
-     
     </div>
   );
 }

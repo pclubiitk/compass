@@ -1,4 +1,3 @@
-import { Metadata } from "next";
 import { ThemeProvider } from "next-themes";
 
 export const metadata = {

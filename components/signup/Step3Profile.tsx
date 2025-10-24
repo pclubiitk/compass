@@ -77,7 +77,7 @@ export function Step3Profile() {
       } else {
         toast.error(data.error || "Failed to update profile.");
       }
-    } catch (error) {
+    } catch {
       toast.error("An unexpected error occurred.");
     } finally {
       setIsLoading(false);
