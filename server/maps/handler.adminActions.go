@@ -5,6 +5,7 @@ import (
 	"compass/connections"
 	"compass/model"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -160,14 +161,23 @@ func locationAction(c *gin.Context) {
 	// // Handle all the edge cases with suitable return http code, write them in the read me for later documentation
 }
 
+
 func addNotice(c *gin.Context) {
 	var input AddNoticeRequest
 
 	if err := c.ShouldBindJSON(&input); err != nil {
+		logrus.WithError(err).Warn("JSON binding failed")
+
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format"})
 		return
 	}
 	// TODO: Extract this logic out, need something more elegant
+
+	eventTime, err := time.Parse("2006-01-02T15:04", input.EventTime)
+    if err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid eventTime format. Please use YYYY-MM-DDTHH:MM"})
+        return
+    }
 
 	userID, exist := c.Get("userID") // means api requests must be authenticated
 	if !exist {
@@ -176,13 +186,14 @@ func addNotice(c *gin.Context) {
 	}
 	// Removing this for now, HAVE TO ADD
 
+
 	if err := connections.DB.Transaction(func(tx *gorm.DB) error {
 		// Create notice
 		notice := model.Notice{
 			Title:         input.Title,
 			Description:   input.Description,
 			Entity:        input.Entity,
-			EventTime:     input.EventTime,
+			EventTime:     eventTime,
 			Body:          input.Body,
 			Location:      input.Location,
 			ContributedBy: userID.(uuid.UUID),
