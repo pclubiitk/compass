@@ -37,3 +37,12 @@ type ProfileUpdateRequest struct {
 	RoomNumber string `json:"roomNo"`
 	HomeTown   string `json:"homeTown"`
 }
+
+type CCResponse struct {
+	RollNumber *string `json:"rollNumber"`
+	Name       *string `json:"name"`
+	Email      *string `json:"email"`
+	Status     *string `json:"status"`
+	Timestamp  *string `json:"timestamp"`
+	Message    *string `json:"message"`
+}
