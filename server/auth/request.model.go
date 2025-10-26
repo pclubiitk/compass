@@ -1,16 +1,10 @@
 package auth
 
-type SignUpRequest struct {
-	// Name     string `json:"name" binding:"required"`
-	Email    string `json:"email" binding:"required"`
-	Password string `json:"password" binding:"required,min=8"`
-	Token    string `json:"token" binding:"required"`
-}
-
-type LoginRequest struct {
+type LoginSignupRequest struct {
 	Email    string `form:"email" binding:"required,email"`
 	Password string `form:"password" binding:"required,min=8"`
-	Token    string `json:"token" binding:"required"`
+	// FOR DEV: BYPASS
+	Token string `json:"token" binding:"required"`
 }
 
 type UpdatePasswordRequest struct {

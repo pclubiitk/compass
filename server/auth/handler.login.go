@@ -42,7 +42,7 @@ func verifyRecaptcha(token string) bool {
 }
 
 func loginHandler(c *gin.Context) {
-	var req LoginRequest
+	var req LoginSignupRequest
 	var dbUser model.User
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -50,11 +50,13 @@ func loginHandler(c *gin.Context) {
 		return
 	}
 
-	//  Verify reCAPTCHA v3 token
+	// FOR DEV: BYPASS RE-CAPTCHA
+	// ----------------------------------------------------------------------------- //
 	if !verifyRecaptcha(req.Token) {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Failed captcha verification"})
 		return
 	}
+	// ----------------------------------------------------------------------------- //
 
 	//  Fetch user from DB
 	result := connections.DB.Model(&model.User{}).Select("email", "user_id", "password", "role", "is_verified").

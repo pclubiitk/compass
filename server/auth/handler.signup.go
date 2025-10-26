@@ -18,18 +18,22 @@ import (
 )
 
 func signupHandler(c *gin.Context) {
-	var input SignUpRequest
-	// Request Validation
+	var input LoginSignupRequest
+
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format"})
 		return
 	}
+	// FOR DEV: BYPASS RECAPTCHA
+	// ----------------------------------------------------------------------------- //
 	// Throws error if captcha verification fails
 	// registers the user in the DB only when the captcha is passed
+
 	if !verifyRecaptcha(input.Token) {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Failed captcha verification"})
 		return
 	}
+	// ----------------------------------------------------------------------------- //
 
 	// TODO: extract out the user model generation into a single transaction
 	// Generate token and the user
