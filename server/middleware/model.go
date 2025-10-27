@@ -20,6 +20,7 @@ type JWTClaims struct {
 type AuthConfig struct {
 	JWTSecretKey    string
 	TokenExpiration time.Duration
+	RefreshTokenExpiry time.Duration
 	CookieDomain    string
 	CookieSecure    bool
 	CookieHTTPOnly  bool

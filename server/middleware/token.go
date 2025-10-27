@@ -8,10 +8,44 @@ import (
 	"github.com/google/uuid"
 )
 
-func GenerateToken(userID uuid.UUID, role int, verified bool) (string, error) {
+
+func GenerateToken(userID uuid.UUID, role int, verified bool) (accessToken, refreshToken string, err error) {
+	// Access token
+	accessClaims := JWTClaims{
+		UserID:   userID,
+		Role:     role,
+		Verified: verified,
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject:   userID.String(),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(authConfig.TokenExpiration)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			Issuer:    "pclub",
+		},
+	}
+	access := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
+	accessToken, err = access.SignedString([]byte(authConfig.JWTSecretKey))
+	if err != nil {
+		return
+	}
+
+	// Refresh token
+	refreshClaims := jwt.RegisteredClaims{
+		Subject:   userID.String(),
+		ExpiresAt: jwt.NewNumericDate(time.Now().Add(authConfig.RefreshTokenExpiry)),
+		IssuedAt:  jwt.NewNumericDate(time.Now()),
+		Issuer:    "pclub",
+	}
+	refresh := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)
+	refreshToken, err = refresh.SignedString([]byte(authConfig.JWTSecretKey))
+	return
+}
+
+
+
+func generateAccessToken(userID uuid.UUID, role int, verified bool) (string, error) {
 	claims := JWTClaims{
-		UserID: userID,
-		Role:   role,
+		UserID:   userID,
+		Role:     role,
 		Verified: verified,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject:   userID.String(),
@@ -22,7 +56,7 @@ func GenerateToken(userID uuid.UUID, role int, verified bool) (string, error) {
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(authConfig.JWTSecretKey))
-}
+}	
 
 func SetAuthCookie(c *gin.Context, token string) {
 	c.SetSameSite(authConfig.SameSiteMode)
@@ -36,10 +70,33 @@ func SetAuthCookie(c *gin.Context, token string) {
 		authConfig.CookieHTTPOnly,
 	)
 }
+
+func SetRefreshCookie(c *gin.Context, token string) {
+	c.SetSameSite(authConfig.SameSiteMode)
+	c.SetCookie(
+		"refresh_token",
+		token,
+		int(authConfig.RefreshTokenExpiry.Seconds()),
+		"/",
+		authConfig.CookieDomain,
+		authConfig.CookieSecure,
+		authConfig.CookieHTTPOnly,
+	)
+}
+
 func ClearAuthCookie(c *gin.Context) {
 	c.SetSameSite(authConfig.SameSiteMode)
 	c.SetCookie(
 		"auth_token",
+		"",
+		-1,
+		"/",
+		authConfig.CookieDomain,
+		authConfig.CookieSecure,
+		authConfig.CookieHTTPOnly,
+	)
+	c.SetCookie(
+		"refresh_token",
 		"",
 		-1,
 		"/",
