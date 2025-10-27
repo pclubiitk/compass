@@ -76,7 +76,7 @@ func loginHandler(c *gin.Context) {
 	}
 
 	// Creating JWT token
-	token, err := middleware.GenerateToken(dbUser.UserID, int(dbUser.Role), dbUser.IsVerified)
+	accessToken, refreshToken, err := middleware.GenerateToken(dbUser.UserID, int(dbUser.Role), dbUser.IsVerified)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
 		return
@@ -85,7 +85,8 @@ func loginHandler(c *gin.Context) {
 	// Clear the previous cookie
 	middleware.ClearAuthCookie(c)
 	// Set cookie
-	middleware.SetAuthCookie(c, token)
+middleware.SetAuthCookie(c, accessToken)
+middleware.SetRefreshCookie(c, refreshToken)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Login successful"})
 }

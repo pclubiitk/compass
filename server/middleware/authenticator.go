@@ -7,12 +7,14 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"github.com/spf13/viper"
 )
 
 var authConfig = AuthConfig{
 	JWTSecretKey:    viper.GetString("jwt.secret"),
-	TokenExpiration: 24 * time.Hour,
+	TokenExpiration: 5 * time.Minute,
+	RefreshTokenExpiry: 24 * 7 * time.Hour, // 7 days
 	CookieDomain:    viper.GetString("domain"),
 	CookieSecure:    false, // Set to false in development
 	CookieHTTPOnly:  true,  // Prevent XSS
@@ -24,7 +26,8 @@ func UserAuthenticator(c *gin.Context) {
 	// Check for cookie
 	tokenString, err := c.Cookie("auth_token")
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		tryRefresh(c)
+	
 		return
 	}
 	// extract token
@@ -32,7 +35,7 @@ func UserAuthenticator(c *gin.Context) {
 		return []byte(authConfig.JWTSecretKey), nil
 	})
 	if err != nil || !token.Valid {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+	tryRefresh(c)
 		return
 	}
 	// Type conversion to *JWTClaims
@@ -54,6 +57,55 @@ func UserAuthenticator(c *gin.Context) {
 	}
 	c.Next()
 }
+func tryRefresh(c *gin.Context) {
+	refreshToken, err := c.Cookie("refresh_token")
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	// Parse refresh token
+	token, err := jwt.Parse(refreshToken, func(token *jwt.Token) (interface{}, error) {
+		return []byte(authConfig.JWTSecretKey), nil
+	})
+	if err != nil || !token.Valid {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid refresh token"})
+		return
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid refresh token claims"})
+		return
+	}
+
+	userID, err := uuid.Parse(claims["sub"].(string))
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	// Ideally fetch role + verified from DB
+	role := int(model.UserRole)
+	verified := true
+
+	//geneate new access token
+	newAccessToken, err := generateAccessToken(userID, role, verified)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate access token"})
+		return
+	}
+	SetAuthCookie(c, newAccessToken)
+	// Set context values
+
+
+	c.Set("userID", userID)
+	c.Set("userRole", role)
+	c.Set("verified", verified)
+
+	c.Next()
+}
+
 
 func AdminAuthenticator(c *gin.Context) {
 	// verify the role

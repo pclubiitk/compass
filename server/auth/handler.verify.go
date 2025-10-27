@@ -60,7 +60,7 @@ func verificationHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Request Failed, Please try again later"})
 		return
 	}
-	jwtToken, err := middleware.GenerateToken(user.UserID, int(user.Role), user.IsVerified)
+	accessToken, refreshToken, err := middleware.GenerateToken(user.UserID, int(user.Role), user.IsVerified)
 	if err != nil {
 		// TODO: Redirect to login page
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token, you will need to login!"})
@@ -68,6 +68,7 @@ func verificationHandler(c *gin.Context) {
 	}
 	// set cookie
 	middleware.ClearAuthCookie(c) // Clear the previous cookie
-	middleware.SetAuthCookie(c, jwtToken)
+middleware.SetAuthCookie(c, accessToken)
+middleware.SetRefreshCookie(c, refreshToken)
 	c.JSON(http.StatusOK, gin.H{"message": "Email verification successful."})
 }
