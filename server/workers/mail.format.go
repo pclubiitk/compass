@@ -77,8 +77,9 @@ func formatThanksEmail(job MailJob) (MailContent, error) {
 		"Username":     username,
 		"ContentTitle": contentTitle,
 	}
+	//<h2>Hi {{.Username}},</h2>
 	tmpl := `
-		<h2>Hi {{.Username}},</h2>
+		<h2>Hi</h2>
 		<p>Thank you for your contribution: <strong>{{.ContentTitle}}</strong>.</p>
 		<p>We appreciate your involvement in the community!</p>
 	`
@@ -102,7 +103,7 @@ func formatWarningEmail(job MailJob) (MailContent, error) {
 		"Reason":   reason,
 	}
 	tmpl := `
-		<h2>Hello {{.Username}},</h2>
+		<h2>Hi</h2>
 		<p>We've found that one of your recent submissions violated our community guidelines.</p>
 		<p>Reason: {{.Reason}}</p>
 		<p>Please make sure to follow the rules to avoid further action.</p>

@@ -4,9 +4,10 @@ import (
 	"compass/connections"
 	"compass/model"
 	"net/http"
-
+    "compass/workers"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"encoding/json"
 )
 
 func uploadAsset(c *gin.Context) {
@@ -41,7 +42,16 @@ func uploadAsset(c *gin.Context) {
 	} else {
 		// TODO: Pass the image for moderation
 		// respond with the id
+	moderationJob := workers.ModerationJob{
+    AssetID: image.ImageID,
+    Type:    model.ModerationTypeImage,
+}
+
+payload, _ := json.Marshal(moderationJob)
+if err := workers.PublishJob(payload, "moderation"); err != nil {
+    c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to queue moderation job"})
+    return
+       }
 		c.JSON(http.StatusOK, gin.H{"ImageID": image.ImageID})
 	}
-
 }
