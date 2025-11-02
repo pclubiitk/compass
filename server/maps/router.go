@@ -15,6 +15,7 @@ func Router(r *gin.Engine) {
 		maps.GET("/notice", noticeProvider)         // each page will provide 10 notices (all the details about the notices)
 		maps.GET("/location/:id", locationDetailProvider) // provide exact details about the location using the id
 		maps.GET("/locations", locationProvider)          // just the name and coordinate provider
+		maps.GET("/locations/incremental", incrementalLocationProvider) // incremental location updates
 		maps.GET("/reviews/:id/:page", reviewProvider)    // provide the reviews of the location id, most recent 50, if there are more do the pagination
 
 		// User-protected routes

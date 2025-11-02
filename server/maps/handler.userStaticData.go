@@ -5,7 +5,8 @@ import (
 	"compass/model"
 	"net/http"
 	"strconv"
-
+	"time"
+	"github.com/google/uuid"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -53,7 +54,7 @@ func locationProvider(c *gin.Context) {
 	err := connections.DB.
 		Model(&model.Location{}).
 		Where("status = ?", model.Approved).
-		Select("location_id", "name", "latitude", "longitude").
+		Select("location_id", "name", "latitude", "longitude", "location_type").
 		Find(&locations).Error
 
 	if err != nil {
@@ -65,6 +66,84 @@ func locationProvider(c *gin.Context) {
 	// Handle all the edge cases with suitable return http code, write them in the read me for later documentation
 
 }
+func incrementalLocationProvider(c *gin.Context) {
+	sinceStr := c.Query("since")
+
+	type deletedLocationResp struct {
+		LocationId uuid.UUID `json:"locationId"`
+		DeletedAt  time.Time `json:"deletedAt"`
+	}
+
+	if sinceStr == "" {
+		var locs []model.Location
+		if err := connections.DB.
+			Model(&model.Location{}).
+			Where("status = ?", model.Approved).
+			Select("location_id", "name", "latitude", "longitude", "updated_at", "location_type").
+			Find(&locs).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch locations"})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"locations":     locs,
+			"deleted":       []deletedLocationResp{},
+			"lastFetchTime": time.Now().UTC().Format(time.RFC3339),
+		})
+		return
+	}
+
+	since, err := time.Parse(time.RFC3339, sinceStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid since timestamp"})
+		return
+	}
+
+	var (
+		updated []model.Location
+		deleted []deletedLocationResp
+	)
+
+	if err := connections.DB.
+		Model(&model.Location{}).
+		Where("status = ? AND updated_at > ?", model.Approved, since).
+		Select("location_id", "name", "latitude", "longitude", "updated_at", "location_type").
+		Find(&updated).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch updated locations"})
+		return
+	}
+
+	if err := connections.DB.Unscoped().
+		Model(&model.Location{}).
+		Where("deleted_at > ?", since).
+		Select("location_id", "deleted_at").
+		Scan(&deleted).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch deleted locations"})
+		return
+	}
+
+	maxTime := since
+	for _, loc := range updated {
+		if loc.UpdatedAt.After(maxTime) {
+			maxTime = loc.UpdatedAt
+		}
+	}
+	for _, del := range deleted {
+		if del.DeletedAt.After(maxTime) {
+			maxTime = del.DeletedAt
+		}
+	}
+	if maxTime.Equal(since) {
+		maxTime = time.Now().UTC()
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"locations":     updated,                
+		"deleted":       deleted,
+		"lastFetchTime": maxTime.Format(time.RFC3339),
+	})
+}
+
 
 func locationDetailProvider(c *gin.Context) {
 	id := c.Param("id")

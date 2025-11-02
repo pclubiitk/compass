@@ -3,7 +3,7 @@ import "@/app/globals.css";
 import { GlobalContextProvider } from "@/components/ContextProvider";
 import { GlobalLoader } from "@/components/GlobalLoader";
 import { ThemeProvider } from "@/components/theme-provider";
-// TODO: combine the two components folders
+import SWRProvider from "./SWRProvider";
 
 export default function RootLayout({
   children,
@@ -13,20 +13,22 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <GlobalContextProvider>
-            <main>
-              <GlobalLoader />
-              {children}
-            </main>
-          </GlobalContextProvider>
-        </ThemeProvider>
-        <Toaster />
+        <SWRProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <GlobalContextProvider>
+              <main>
+                <GlobalLoader />
+                {children}
+              </main>
+            </GlobalContextProvider>
+          </ThemeProvider>
+          <Toaster />
+        </SWRProvider>
       </body>
     </html>
   );

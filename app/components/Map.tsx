@@ -1,210 +1,371 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Plus, Minus, LocateFixed } from "lucide-react";
+import {
+  Plus,
+  Minus,
+  LocateFixed,
+  UtensilsCrossed,
+  GraduationCap,
+  Home,
+  Building2,
+  TreePalm,
+  MapPin,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
+import { createRoot } from "react-dom/client";
 
 type MapProps = {
   onMarkerClick: () => void;
+  locations: any[];
 };
-export default function Map({ onMarkerClick }: MapProps) {
-  const mapContainer = useRef<HTMLDivElement | null>(null);
+
+// Colors + Icons 
+const colorMap: Record<string, string> = {
+  food: "#ef4444",
+  lecturehall: "#3b82f6",
+  hostel: "#22c55e",
+  admin: "#f97316",
+  recreation: "#14b8a6",
+  default: "#6b7280",
+};
+
+const iconMap: Record<string, any> = {
+  food: UtensilsCrossed,
+  lecturehall: GraduationCap,
+  hostel: Home,
+  admin: Building2,
+  recreation: TreePalm,
+  default: MapPin,
+};
+
+const formatCount = (n?: number) => (typeof n === "number" ? n : 0);
+
+
+// Main Map
+export default function Map({ onMarkerClick, locations }: MapProps) {
+  const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
-  const markerRef = useRef<maplibregl.Marker | null>(null);
-  const [isReady, setIsReady] = useState(false);
+  const userMarkerRef = useRef<maplibregl.Marker | null>(null);
+  const locationMarkers = useRef<maplibregl.Marker[]>([]);
+  const router = useRouter();
+  const [mapLoaded, setMapLoaded] = useState(false);
 
+  //  Initialize map once
   useEffect(() => {
-    if (typeof window !== "undefined" && "permissions" in navigator) {
-      navigator.permissions
-        .query({ name: "geolocation" as PermissionName })
-        .then((result) => {
-          if (result.state === "prompt") {
-            navigator.geolocation.getCurrentPosition(
-              () => {},
-              () => {}
-            );
-          }
-        })
-        .catch(() => {});
-    }
-    setIsReady(true);
-  }, []);
+    if (!mapContainer.current || mapRef.current) return;
 
-  useEffect(() => {
-    if (!isReady || !mapContainer.current || mapRef.current) return;
+    // Add keyframes for pulsing marker animation
+    const styleSheet = document.createElement("style");
+    styleSheet.type = "text/css";
+    styleSheet.innerText = `
+      @keyframes pulse {
+        0% { transform: scale(1); opacity: 0.6; }
+        100% { transform: scale(2.5); opacity: 0; }
+      }
+    `;
+    document.head.appendChild(styleSheet);
+
+    const savedCenter = JSON.parse(localStorage.getItem("map_center") || "null");
+    const savedZoom = Number(localStorage.getItem("map_zoom")) || 14;
 
     navigator.geolocation.getCurrentPosition(
       ({ coords }) => {
+        const startCenter = savedCenter || [coords.longitude, coords.latitude];
+
         const map = new maplibregl.Map({
           container: mapContainer.current!,
-          style:
-            "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
-          center: [coords.longitude, coords.latitude],
-          zoom: 14,
+          style: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
+          center: startCenter,
+          zoom: savedZoom,
         });
 
-        // Allow map double click zoom (no disabling needed)
+        mapRef.current = map;
+        (window as any).mapRef = mapRef;
 
-        const marker = new maplibregl.Marker({ color: "#f00" })
-          .setLngLat([coords.longitude, coords.latitude])
+        //  Create a custom pulsating marker for the user
+        const userMarkerEl = document.createElement("div");
+        userMarkerEl.style.cssText = `
+          width: 20px; height: 20px;
+          display: flex; align-items: center; justify-content: center;
+          position: relative;
+          cursor: pointer;
+        `;
+        const pulseEl = document.createElement("div");
+        pulseEl.style.cssText = `
+          width: 100%; height: 100%;
+          border-radius: 50%;
+          background: #ef4444;
+          opacity: 0.6;
+          transform-origin: center;
+          animation: pulse 1.75s infinite cubic-bezier(0.66, 0, 0, 1);
+          position: absolute;
+        `;
+        const dotEl = document.createElement("div");
+        dotEl.style.cssText = `
+          position: absolute;
+          width: 14px; height: 14px;
+          border-radius: 50%;
+          background: #ef4444;
+          border: 2px solid white;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+        `;
+        userMarkerEl.appendChild(pulseEl);
+        userMarkerEl.appendChild(dotEl);
+
+        const userMarker = new maplibregl.Marker({
+          element: userMarkerEl,
+          anchor: "center", 
+        })
+          .setLngLat(startCenter)
           .addTo(map);
 
-        // Add single click event on marker element
-        const markerEl = marker.getElement();
-        markerEl.style.cursor = "pointer";
-        markerEl.addEventListener("click", (e) => {
+        userMarkerRef.current = userMarker;
+        (window as any).markerRef = userMarkerRef;
+
+        //  Click to open Add Drawer
+        userMarker.getElement().addEventListener("click", (e) => {
           e.stopPropagation();
           onMarkerClick();
         });
 
-        mapRef.current = map;
-        markerRef.current = marker;
-
-        window.mapRef = mapRef;
-        window.markerRef = markerRef;
-
+        //  Handle map click to move marker
         map.on("click", (e) => {
           const { lng, lat } = e.lngLat;
-          map.flyTo({ center: [lng, lat], zoom: 14 });
+          if (!userMarkerRef.current) return;
 
-          if (markerRef.current) {
-            markerRef.current.setLngLat([lng, lat]);
-            // Reattach single click listener on moved marker element
-            const el = markerRef.current.getElement();
-            el.style.cursor = "pointer";
-            el.addEventListener("click", (ev) => {
-              ev.stopPropagation();
-              onMarkerClick();
-            });
-          } else {
-            const newMarker = new maplibregl.Marker({ color: "#f00" })
-              .setLngLat([lng, lat])
-              .addTo(map);
-            const el = newMarker.getElement();
-            el.style.cursor = "pointer";
-            el.addEventListener("click", (ev) => {
-              ev.stopPropagation();
-              onMarkerClick();
-            });
-            markerRef.current = newMarker;
-          }
+          userMarkerRef.current.setLngLat([lng, lat]);
+          localStorage.setItem("selected_lat", lat.toString());
+          localStorage.setItem("selected_lon", lng.toString());
+          map.flyTo({ center: [lng, lat], zoom: 14 });
+          window.dispatchEvent(
+            new CustomEvent("marker-selected", { detail: { lat, lng } })
+          );
         });
 
-        window.addEventListener("search-location", (e: any) => {
-          const { lng, lat } = e.detail;
-          map.flyTo({ center: [lng, lat], zoom: 14 });
-
-          if (markerRef.current) {
-            markerRef.current.setLngLat([lng, lat]);
-            const el = markerRef.current.getElement();
-            el.style.cursor = "pointer";
-            el.addEventListener("click", (ev) => {
-              ev.stopPropagation();
-              onMarkerClick();
-            });
-          } else {
-            const newMarker = new maplibregl.Marker({ color: "#f00" })
-              .setLngLat([lng, lat])
-              .addTo(map);
-            const el = newMarker.getElement();
-            el.style.cursor = "pointer";
-            el.addEventListener("click", (ev) => {
-              ev.stopPropagation();
-              onMarkerClick();
-            });
-            markerRef.current = newMarker;
-          }
+        // Handle trigger from Add button
+        window.addEventListener("trigger-add-location", () => {
+          if (!mapRef.current || !userMarkerRef.current) return;
+          const center = mapRef.current.getCenter();
+          userMarkerRef.current.setLngLat(center);
+          localStorage.setItem("selected_lat", center.lat.toString());
+          localStorage.setItem("selected_lon", center.lng.toString());
+          onMarkerClick();
         });
 
-        setTimeout(() => {
+        //  Save camera position on move
+        map.on("moveend", () => {
+          localStorage.setItem(
+            "map_center",
+            JSON.stringify(map.getCenter().toArray())
+          );
+          localStorage.setItem("map_zoom", map.getZoom().toString());
+        });
+
+        map.on("load", () => {
+          setMapLoaded(true);
           map.resize();
-        }, 200);
+          window.dispatchEvent(new Event("map-ready"));
+        });
       },
       (err) => console.error("Geolocation error:", err)
     );
 
     return () => {
-      if (mapRef.current) {
-        mapRef.current.remove();
-        mapRef.current = null;
-      }
+      mapRef.current?.remove();
+      mapRef.current = null;
+      document.head.removeChild(styleSheet);
     };
-  }, [isReady, onMarkerClick]);
+  }, [onMarkerClick]);
 
-  const handleZoomIn = () => {
-    if (mapRef.current) mapRef.current.zoomIn();
-  };
+  // Marker rendering
+  const renderMarkers = useCallback(
+    (force = false) => {
+      if (!mapLoaded || !mapRef.current) return;
+      const map = mapRef.current;
 
-  const handleZoomOut = () => {
-    if (mapRef.current) mapRef.current.zoomOut();
-  };
+      // Clear previous markers
+      locationMarkers.current.forEach((m) => m.remove());
+      locationMarkers.current = [];
 
-  const handleLocateUser = () => {
-    navigator.geolocation.getCurrentPosition(
-      ({ coords }) => {
-        const lng = coords.longitude;
-        const lat = coords.latitude;
-        if (mapRef.current) {
-          mapRef.current.flyTo({ center: [lng, lat], zoom: 14 });
-          if (markerRef.current) {
-            markerRef.current.setLngLat([lng, lat]);
-            const el = markerRef.current.getElement();
-            el.style.cursor = "pointer";
-            el.addEventListener("click", (ev) => {
-              ev.stopPropagation();
-              onMarkerClick();
-            });
-          } else {
-            const newMarker = new maplibregl.Marker({ color: "#f00" })
-              .setLngLat([lng, lat])
-              .addTo(mapRef.current);
-            const el = newMarker.getElement();
-            el.style.cursor = "pointer";
-            el.addEventListener("click", (ev) => {
-              ev.stopPropagation();
-              onMarkerClick();
-            });
-            markerRef.current = newMarker;
-          }
-        }
-      },
-      (err) => {
-        console.error("Geolocation error:", err);
-        alert("Location access denied or unavailable.");
+      if (!locations?.length) {
+        console.log("⚠️ No locations to render");
+        return;
       }
-    );
+
+      for (const loc of locations) {
+        if (!loc.latitude || !loc.longitude) continue;
+
+        const rawType = (
+          loc.locationType ||
+          loc.location_type ||
+          ""
+        ).toLowerCase().trim();
+        const Icon = iconMap[rawType] || iconMap.default;
+        const color = colorMap[rawType] || colorMap.default;
+
+        const el = document.createElement("div");
+        // UPDATED: Markers are now color-coded with a matching glow
+        el.style.cssText = `
+          width: 28px; height: 28px;
+          display: flex; align-items: center; justify-content: center;
+          background: ${color};
+          color: white;
+          border-radius: 50%;
+          box-shadow: 0 4px 10px ${color}70, 0 2px 4px rgba(0,0,0,0.1);
+          cursor: pointer;
+          transition: transform 140ms ease;
+          border: 2px solid white;
+        `;
+        const root = createRoot(el);
+        //  UPDATED: Icon is white for contrast, and slightly smaller
+        root.render(<Icon size={16} color="white" />);
+
+        const marker = new maplibregl.Marker({ element: el, anchor: "center" }) // ✨ NEW: Center anchor
+          .setLngLat([loc.longitude, loc.latitude])
+          .addTo(map);
+
+        el.addEventListener("click", (e) => {
+          e.stopPropagation();
+
+          //  fly to marker position
+          map.flyTo({
+            center: [loc.longitude, loc.latitude],
+            zoom: Math.max(map.getZoom(), 16),
+            speed: 1.2,
+            curve: 1.5,
+            essential: true,
+          });
+
+          //  bounce animation (CSS scale)
+          const markerEl = el;
+          markerEl.animate(
+            [
+              { transform: "scale(1)" },
+              { transform: "scale(1.3)" },
+              { transform: "scale(1)" },
+            ],
+            { duration: 300, easing: "ease-out" }
+          );
+
+          //  Then navigate after small delay
+          setTimeout(() => {
+            router.push(`/location/${loc.locationId || loc.id}`);
+          }, 400);
+        });
+
+        locationMarkers.current.push(marker);
+      }
+
+      console.log(` Rendered ${locations.length} markers`);
+    },
+    [locations, mapLoaded, router]
+  );
+
+  useEffect(() => {
+    if (mapLoaded) renderMarkers();
+  }, [locations, mapLoaded, renderMarkers]);
+
+  // Refresh markers when drawer closes (No changes)
+  useEffect(() => {
+    const handler = () => {
+      setTimeout(() => {
+        mapRef.current?.resize();
+        renderMarkers(true);
+      }, 350);
+    };
+    window.addEventListener("drawer-close", handler);
+    return () => window.removeEventListener("drawer-close", handler);
+  }, [renderMarkers]);
+
+  // Refresh markers externally (No changes)
+  useEffect(() => {
+    const handler = () => renderMarkers();
+    window.addEventListener("refresh-markers", handler);
+    return () => window.removeEventListener("refresh-markers", handler);
+  }, [renderMarkers]);
+
+  // Zoom scaling (No changes)
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const handleZoom = () => {
+      const zoom = map.getZoom();
+      const scale = Math.min(Math.max((zoom - 12) / 6 + 0.9, 0.9), 1.4);
+      locationMarkers.current.forEach((m) => {
+        const el = m.getElement();
+        el.style.width = `${28 * scale}px`;
+        el.style.height = `${28 * scale}px`;
+      });
+    };
+    map.on("zoom", handleZoom);
+    return () => map.off("zoom", handleZoom);
+  }, [mapLoaded]);
+
+  // Controls
+  const handleZoomIn = () => mapRef.current?.zoomIn();
+  const handleZoomOut = () => mapRef.current?.zoomOut();
+  const handleLocateUser = () => {
+    navigator.geolocation.getCurrentPosition(({ coords }) => {
+      const { longitude, latitude } = coords;
+      mapRef.current?.flyTo({ center: [longitude, latitude], zoom: 14 });
+      userMarkerRef.current?.setLngLat([longitude, latitude]);
+    });
   };
 
   return (
-    <div className="relative h-full w-full" style={{ minHeight: "97vh" }}>
+    <div className="relative h-full w-full min-h-[97vh]">
       <div ref={mapContainer} className="h-full w-full" />
 
-      {/* Custom Controller Buttons */}
-      <div className="absolute top-20 right-4 z-50 flex flex-col gap-2">
-        <Button
-          size="icon"
-          className="bg-white text-black hover:bg-gray-100 shadow-md rounded-xl"
-          onClick={handleZoomIn}
-        >
-          <Plus className="h-5 w-5" />
-        </Button>
-        <Button
-          size="icon"
-          className="bg-white text-black hover:bg-gray-100 shadow-md rounded-xl"
-          onClick={handleZoomOut}
-        >
-          <Minus className="h-5 w-5" />
-        </Button>
-        <Button
-          size="icon"
-          className="bg-white text-black hover:bg-gray-100 shadow-md rounded-xl"
-          onClick={handleLocateUser}
-        >
-          <LocateFixed className="h-5 w-5" />
-        </Button>
+      {/* Map loading overlay (No changes) */}
+      {!mapLoaded && (
+        <div className="absolute inset-0 z-40 flex items-center justify-center pointer-events-none">
+          <div className="flex flex-col items-center gap-2 bg-white/70 backdrop-blur rounded-2xl p-4 shadow-md">
+            <div className="w-10 h-10 rounded-full border-4 border-gray-200 border-t-blue-500 animate-spin" />
+            <div className="text-sm text-gray-700">Loading map…</div>
+          </div>
+        </div>
+      )}
+
+
+      <div className="absolute top-4 right-4 z-50 flex flex-col gap-2">
+        <div className="flex flex-col gap-1 p-1 rounded-xl bg-white/80 backdrop-blur-lg border border-gray-200 shadow-lg">
+          <Button
+            size="icon"
+            //  UPDATED: Cleaner button styling
+            className="bg-transparent text-gray-800 hover:bg-gray-100 rounded-lg"
+            onClick={handleZoomIn}
+            aria-label="Zoom in"
+            title="Zoom in"
+          >
+            <Plus className="h-5 w-5" />
+          </Button>
+
+          <Button
+            size="icon"
+            className="bg-transparent text-gray-800 hover:bg-gray-100 rounded-lg"
+            onClick={handleZoomOut}
+            aria-label="Zoom out"
+            title="Zoom out"
+          >
+            <Minus className="h-5 w-5" />
+          </Button>
+
+          <Button
+            size="icon"
+            className="bg-transparent text-gray-800 hover:bg-gray-100 rounded-lg"
+            onClick={handleLocateUser}
+            aria-label="Locate me"
+            title="Locate me"
+          >
+            <LocateFixed className="h-5 w-5" />
+          </Button>
+        </div>
       </div>
     </div>
   );

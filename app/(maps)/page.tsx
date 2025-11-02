@@ -1,66 +1,82 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, User, BookOpen, Megaphone, Plus } from "lucide-react";
-
-const Map = dynamic(() => import("@/app/components/Map"), { ssr: false });
+import { Search } from "lucide-react";
+import { useGContext } from "@/components/ContextProvider";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
+import { useLocations } from "@/app/hooks/useLocations";
 
 export default function Home() {
-  const [query, setQuery] = useState("");
+  const { isLoggedIn, isGlobalLoading } = useGContext();
+  const { isValidating } = useLocations();
   const router = useRouter();
 
-  const onMarkerClick = () => {
-    router.push("/location/review");
-  };
+  const [query, setQuery] = useState("");
+  const [loginDialogOpen, setLoginDialogOpen] = useState(false);
 
+  // Search handler
   const handleSearch = async () => {
-    if (!window || !query.trim()) return;
+    if (!query.trim()) return;
+    const mapRef = (window as any).mapRef;
+    if (!mapRef?.current) return;
 
-    const mapRef = window.mapRef;
-    const markerRef = window.markerRef;
-
-    const coordMatch = query.match(
-      /^\s*(-?\d+(\.\d+)?),\s*(-?\d+(\.\d+)?)\s*$/
-    );
-
-    let lng: number, lat: number;
+    const coordMatch = query.match(/^\s*(-?\d+(\.\d+)?),\s*(-?\d+(\.\d+)?)\s*$/);
+    let lng, lat;
 
     if (coordMatch) {
       lng = parseFloat(coordMatch[1]);
       lat = parseFloat(coordMatch[3]);
     } else {
       const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
-          query
-        )}&format=json`
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json`
       );
       const data = await res.json();
-      if (!data[0]) return alert("Location not found");
+      if (!data[0]) return alert("❌ Location not found");
       lat = parseFloat(data[0].lat);
       lng = parseFloat(data[0].lon);
     }
 
-    if (mapRef && mapRef.current) {
-      mapRef.current.flyTo({ center: [lng, lat], zoom: 14 });
-
-      if (markerRef && markerRef.current) {
-        markerRef.current.setLngLat([lng, lat]);
-      } else {
-        const maplibregl = (await import("maplibre-gl")).default;
-        markerRef.current = new maplibregl.Marker({ color: "#f00" })
-          .setLngLat([lng, lat])
-          .addTo(mapRef.current);
-      }
-    }
+    mapRef.current.flyTo({ center: [lng, lat], zoom: 14 });
   };
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden">
-      {/* Search Bar */}
+    <>
+      {/* Login Required Dialog */}
+      <AlertDialog open={loginDialogOpen} onOpenChange={setLoginDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Login Required</AlertDialogTitle>
+            <AlertDialogDescription>
+              You need to log in to add a new location.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setLoginDialogOpen(false);
+                router.push("/login?next=/");
+              }}
+            >
+              Log In
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Search Bar Overlay */}
       <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 w-[90%] max-w-md flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-md">
         <Input
           placeholder="Search by name or coordinates"
@@ -74,9 +90,12 @@ export default function Home() {
         </Button>
       </div>
 
-      {/* Pass onMarkerClick */}
-      <Map onMarkerClick={onMarkerClick} />
-     
-    </div>
+      {/* Sync indicator */}
+      {isValidating && (
+        <div className="absolute bottom-4 right-4 text-xs text-gray-600 bg-white/80 px-3 py-1 rounded-md shadow">
+          Syncing latest data…
+        </div>
+      )}
+    </>
   );
 }
