@@ -30,7 +30,7 @@ export default function UserNoticeDetailPage() {
       setLoading(true);
       try {
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_MAPS_URL || 'http://localhost:8081'}/api/maps/notice/${id}`
+          `${process.env.NEXT_PUBLIC_MAPS_URL}/api/maps/notice/${id}`
         );
         if (!res.ok) throw new Error("Notice not found");
         

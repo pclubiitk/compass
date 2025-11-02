@@ -4,7 +4,7 @@ const nextConfig: NextConfig = {
   /* config options here */
 
   images: {
-    domains: ["th.bing.com", "www.iitk.ac.in", "localhost"],
+    domains: ["th.bing.com", "www.iitk.ac.in", "localhost", "shantsagar"],
   },
 };
 

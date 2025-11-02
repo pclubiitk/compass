@@ -77,7 +77,7 @@ export default function NoticeboardForm() {
       try{
         const imageFormData = new FormData();
         imageFormData.append('file', image.file);
-        const response = await fetch('http://localhost:8082/assets', {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_ASSET_URL}/assets`, {
           method: 'POST',
           body: imageFormData,
           credentials: 'include',
@@ -116,7 +116,7 @@ export default function NoticeboardForm() {
     const imageToCopy = images.find(img => img.previewUrl === previewUrlToCopy);
     if (!imageToCopy || !imageToCopy.id) return;
 
-    navigator.clipboard.writeText(`http://localhost:8082/assets/${imageToCopy.id}.webp`);
+    navigator.clipboard.writeText(`${process.env.NEXT_PUBLIC_ASSET_URL}/${imageToCopy.id}.webp`);
     setImages(prev => prev.map(img => 
         img.previewUrl === previewUrlToCopy ? { ...img, copySuccess: true } : img
     ));
@@ -136,7 +136,7 @@ export default function NoticeboardForm() {
 
     try {
       
-      const response = await fetch('http://localhost:8081/api/maps/notice', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_MAPS_URL}/api/maps/notice`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

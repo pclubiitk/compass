@@ -19,7 +19,7 @@ interface Notice {
   time: string;
 }
 
-const mapServer = "http://localhost:8081";
+const mapServer = process.env.NEXT_PUBLIC_MAPS_URL;
 
 export default function NoticeDetailPage() {
   const params = useParams();

@@ -12,7 +12,7 @@ import removeMd from 'remove-markdown'; // <--- 1. IMPORT REMOVE-MARKDOWN
 //   title: 'Noticeboard',
 // };
 
-const mapServer = "http://localhost:8081"; //edit this, why tho?
+const mapServer = process.env.NEXT_PUBLIC_MAPS_URL; //edit this, why tho?
 
 interface Notice {
   id: string;
