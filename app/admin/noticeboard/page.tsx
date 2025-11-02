@@ -1,13 +1,18 @@
-"use client";
-import Link from "next/link";
-import { CheckCircle, AlertTriangle, Ban } from "lucide-react";
-import { useEffect, useState } from "react";
+"use client"
+import { Metadata } from 'next';
+import Link from 'next/link';
+import { CheckCircle, AlertTriangle, Ban } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+
+import removeMd from 'remove-markdown'; // <--- 1. IMPORT REMOVE-MARKDOWN
+
 
 // export const metadata: Metadata = {
 //   title: 'Noticeboard',
 // };
 
-const mapServer = "http://localhost:8081"; //edit this
+const mapServer = "http://localhost:8081"; //edit this, why tho?
 
 interface Notice {
   id: string;
@@ -21,16 +26,19 @@ interface Notice {
 }
 
 export default function Page() {
-  // const mockNotices = [];
-  const [notices, setNotices] = useState<Notice[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [notices, setNotices] = useState<Notice[]>([])
+  const [loading, setLoading] = useState(true)
+  const [currentPage, setCurrentPage] = useState(1); // added this - SS
+  // const [totalPages, setTotalPages] = useState(1); // removing this | where is api backend ToT
+  const [hasMorePages, setHasMorePages] = useState(true);
 
+  // this too needs to be corrected
   const typeStyles: Record<string, string> = {
     Event: "bg-green-50 border-l-4 border-green-500",
     Warning: "bg-yellow-50 border-l-4 border-yellow-500",
     Ban: "bg-red-50 border-l-4 border-red-500",
   };
-
+  // have to correct this logic --- ye category vaala
   const getIcon = (type: string) => {
     const baseClass = "w-6 h-6";
     switch (type) {
@@ -59,33 +67,61 @@ export default function Page() {
     }
   };
 
+  // prevoew helper fxn
+  const createPreview = (markdown: string, length: number = 100) => {
+    const plainText = removeMd(markdown);
+    if (plainText.length <= length) {
+      return plainText;
+    }
+    return `${plainText.substring(0, length)}...`;
+  };
+
   useEffect(() => {
     const fetchNotices = async () => {
+      setLoading(true); // to ensure loading is true at the start of fetch
       try {
-        const res = await fetch(`${mapServer}/api/maps/notice?page=1`);
-        const data = await res.json();
+        const res = await fetch(
+          `${mapServer}/api/maps/notice?page=${currentPage}` // have to change this to avoid vuln
+        )
+        const data = await res.json()
 
         // adapt based on backend response shape
         const formatted: Notice[] = data.noticeboard_list.map((n: any) => ({
-          id: n.id,
+          id: n.NoticeId,
           title: n.title,
           description: n.description,
-          type: n.type || "Event", // fallback until backend provides
+          type: n.entity || "Event", // fallback until backend provides
           // publisher: n.user?.name || "Admin",
           recipient: n.recipient || "All",
           location: n.location || "Campus",
-          time: n.created_at,
-        }));
+          time: n.CreatedAt,
+        }))
 
-        setNotices(formatted);
+        setNotices(formatted)
+
+        // setTotalPages(data.totalPages||1); // to match the actual API response key.
+        setHasMorePages(formatted.length >= 5);
+
       } catch (err) {
         console.error("Failed to fetch notices:", err);
       } finally {
         setLoading(false);
       }
-    };
-    fetchNotices();
-  }, []);
+    }
+    fetchNotices()
+  }, [currentPage]) // add currentPage to dependency array
+
+  // --- Button Handlers ---
+  const handleNextPage = () => {
+    setCurrentPage(prevPage => prevPage + 1);
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(prevPage => prevPage - 1);
+    }
+  };
+
 
   return (
     <>
@@ -107,34 +143,80 @@ export default function Page() {
           {loading ? (
             <p>Loading notices...</p>
           ) : notices.length === 0 ? (
-            <p>No notices found.</p>
+            <p className="text-gray-500 text-center py-4">
+              {currentPage > 1 ? "You've reached the end." : "No notices found."}
+            </p> // changed - SS
           ) : (
+            // aaply the link and preview fxn
             notices.map((notice) => (
-              <div
-                key={notice.id}
-                className={`p-4 rounded-xl shadow-sm ${
-                  typeStyles[notice.type]
-                }`}
+            <Link
+            href={`/admin/noticeboard/${notice.id}`}
+            
+            // For each notice, a unique link is created.
+            // If notice.id is "abc-123", the URL becomes "/admin/noticeboard/abc-123"
+              key={notice.id}
+              // className={`p-4 rounded-xl shadow-sm ${typeStyles[notice.type]}`}
+              className='block' // makes the area clickable
+            >
+              <Card
+                className={`cursor-pointer border-2 rounded-2xl shadow-sm transition-all hover:shadow-md ${typeStyles[notice.type]}`}
               >
-                <div className="flex items-center space-x-2">
+                <CardHeader className="flex flex-row items-center gap-2 pb-1">
                   {getIcon(notice.type)}
-                  <span className="text-sm">({notice.type})</span>
-                </div>
-                <h2 className="text-xl font-semibold text-gray-700 placeholder:text-gray-400">
-                  {notice.title}
-                </h2>
-                <p className="text-gray-700 mt-1">{notice.description}</p>
-                <p className="text-sm text-gray-600 mt-2">
-                  {/* <strong>Publisher:</strong> {notice.publisher} <br /> */}
-                  <strong>Time:</strong>{" "}
-                  {new Date(notice.time).toLocaleString()} <br />
-                  <strong>Recipient:</strong> {notice.recipient} <br />
-                  <strong>Location:</strong> {notice.location}
-                </p>
-              </div>
-            ))
-          )}
+                  <span className="text-sm font-semibold text-gray-700">
+                    ({notice.type})
+                  </span>
+                </CardHeader>
+
+                <CardContent className="pt-0">
+                  <CardTitle className="text-xl font-bold text-gray-800 mb-1">
+                    {notice.title}
+                  </CardTitle>
+
+                  <CardDescription className="text-gray-700 mb-2">
+                    {createPreview(notice.description, 150)}
+                  </CardDescription>
+
+                  <div className="text-sm text-gray-700 space-y-1">
+                    <p> 
+                      {/* shows invalid date for now */}
+                      <strong>Time:</strong> {new Date(notice.time).toLocaleString()}
+                    </p>
+                    <p>
+                      <strong>Recipient:</strong> {notice.recipient}
+                    </p>
+                    <p>
+                      <strong>Location:</strong> {notice.location}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+          ))
+        )}
+        </div> 
+
+        <div className="flex justify-center items-center space-x-4 mt-8">
+          <button
+            onClick={handlePrevPage}
+            disabled={currentPage === 1 || loading}
+            className="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-400 transition"
+          >
+            Previous
+          </button>
+          <span className="text-lg font-medium text-gray-700">
+            Page {currentPage}
+          </span>
+          <button
+            onClick={handleNextPage}
+            // button is disabled if we know there are no more pages or if it's loading
+            disabled={!hasMorePages || loading}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+          >
+            Next
+          </button>
         </div>
+
       </div>
     </>
   );

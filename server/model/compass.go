@@ -40,19 +40,19 @@ type Location struct {
 }
 
 type Notice struct { // change this to ritika's PR, can remove the contributedBy field
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
-	DeletedAt     gorm.DeletedAt `gorm:"index"`
+	CreatedAt     time.Time		 `json:"created_at"`
+	UpdatedAt     time.Time		 `json:"-"`
+	DeletedAt     gorm.DeletedAt `gorm:"index" json:"-"`
 	Entity        string         `json:"entity"`    // Department / Club / Cell
 	EventTime     time.Time      `json:"eventTime"` // When the event/notice is relevant
 	Location      string         `json:"location"`  // Venue or online link
 	NoticeId      uuid.UUID      `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	Title         string         `json:"title" binding:"required"`
 	Description   string         `gorm:"type:text" json:"description"`
-	Body          string         `json:"body"`
+	Body          string         `json:"body,omitempty"` // added omitempty
 	ContributedBy uuid.UUID      `json:"contributedBy"`
-	User          *User          `gorm:"foreignKey:ContributedBy;references:UserID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
-	CoverPic      *Image         `gorm:"polymorphic:ParentAsset;" json:"coverpic"`
+	User          *User          `gorm:"foreignKey:ContributedBy;references:UserID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"user,omitempty"`
+	CoverPic      *Image         `gorm:"polymorphic:ParentAsset;" json:"coverpic,omitempty"`
 }
 
 type Review struct {

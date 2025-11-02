@@ -5,6 +5,10 @@ import (
 	"compass/model"
 	"net/http"
 	"strconv"
+	"errors"
+	"github.com/google/uuid"
+	// "log"
+	
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -44,6 +48,59 @@ func noticeProvider(c *gin.Context) {
 		"total_notices":    count,
 		"current_page":     page,
 	})
+}
+
+// noticeDetailProvider fetches a single notice by its ID using GORM.
+func noticeDetailProvider(c *gin.Context) {
+
+	logrus.Info("--- Handler was called ---")
+
+    // Get and validate the ID from the URL
+    noticeIDStr := c.Param("id")
+    noticeID, err := uuid.Parse(noticeIDStr)
+    if err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid notice ID format"})
+        return
+    }
+
+    // Query the database for the notice, preloading the User
+    var notice model.Notice
+    result := connections.DB.
+        Model(&model.Notice{}).
+        Preload("User", connections.UserSelect). // Preload user data, just like in noticeProvider
+        Where("notice_id = ?", noticeID).
+        First(&notice) // Use First() to get a single record
+
+	logrus.WithFields(logrus.Fields{
+		"title":       notice.Title,
+		"description": notice.Description,
+	}).Info("fetching description")
+
+	// Check for DB error
+	if result.Error != nil {
+		logrus.WithFields(logrus.Fields{
+			"title": notice.Title,
+		}).WithError(result.Error).Error("fetch failed")
+	} else {
+		logrus.WithFields(logrus.Fields{
+			"id":    noticeID,
+			"title": notice.Title,
+		}).Info("fetched xd")
+	}
+
+    // Handle any errors from the database query
+    if result.Error != nil {
+        if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+            c.JSON(http.StatusNotFound, gin.H{"error": "Notice not found"})
+            return
+        }
+
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch notice"})
+        return
+    }
+
+    // Return the complete notice object
+    c.JSON(http.StatusOK, notice)
 }
 
 func locationProvider(c *gin.Context) {

@@ -2,7 +2,7 @@ package maps
 
 import (
 	"compass/model"
-	"time"
+	// "time"
 
 	"github.com/google/uuid"
 )
@@ -38,7 +38,7 @@ type AddNoticeRequest struct {
 	Body        string     `json:"body"`
 	CoverPic    *uuid.UUID `json:"coverPic"`
 	Entity      string     `json:"entity"`
-	EventTime   time.Time  `json:"eventTime"`
+	EventTime   string  `json:"eventTime"` // changed time to string - SS
 	Location    string     `json:"location"`
 }
 
