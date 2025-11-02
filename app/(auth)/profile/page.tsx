@@ -36,7 +36,7 @@ export default function ProfilePage() {
   const fetchProfile = async () => {
     // We don't reset loading to true on refetch to avoid skeleton flashes
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL}/profile`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL}/api/profile`, {
         credentials: "include",
       });
       if (res.ok) {
