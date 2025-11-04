@@ -4,8 +4,7 @@ package connections
 
 import (
 	"compass/model"
-	"fmt"
-	
+	"fmt"	
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"gorm.io/driver/postgres"

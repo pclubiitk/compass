@@ -53,8 +53,6 @@ func noticeProvider(c *gin.Context) {
 // noticeDetailProvider fetches a single notice by its ID using GORM.
 func noticeDetailProvider(c *gin.Context) {
 
-	logrus.Info("--- Handler was called ---")
-
     // Get and validate the ID from the URL
     noticeIDStr := c.Param("id")
     noticeID, err := uuid.Parse(noticeIDStr)
@@ -70,23 +68,6 @@ func noticeDetailProvider(c *gin.Context) {
         Preload("User", connections.UserSelect). // Preload user data, just like in noticeProvider
         Where("notice_id = ?", noticeID).
         First(&notice) // Use First() to get a single record
-
-	logrus.WithFields(logrus.Fields{
-		"title":       notice.Title,
-		"description": notice.Description,
-	}).Info("fetching description")
-
-	// Check for DB error
-	if result.Error != nil {
-		logrus.WithFields(logrus.Fields{
-			"title": notice.Title,
-		}).WithError(result.Error).Error("fetch failed")
-	} else {
-		logrus.WithFields(logrus.Fields{
-			"id":    noticeID,
-			"title": notice.Title,
-		}).Info("fetched xd")
-	}
 
     // Handle any errors from the database query
     if result.Error != nil {
