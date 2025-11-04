@@ -78,7 +78,7 @@ export default function NoticeBoardPage() {
     setLoading(true);
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_MAPS_URL || 'http://localhost:8081'}/api/maps/notice?page=${page}`
+        `${process.env.NEXT_PUBLIC_MAPS_URL}/api/maps/notice?page=${page}`
       );
       if (!res.ok) throw new Error(`Failed (status: ${res.status})`);
       const json = await res.json();

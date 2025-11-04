@@ -2,12 +2,21 @@ package auth
 
 import (
 	"compass/connections"
+	"compass/middleware"
 	"compass/model"
+	"errors"
 	"net/http"
+
+	"encoding/json"
+	"fmt"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 func updatePassword(c *gin.Context) {
@@ -48,6 +57,65 @@ func updatePassword(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Password updated successfully"})
 }
 
+// func updateProfileImage(){
+// 	// TODO: set up for images, for image upload, if the similarity is > 90,can ignore it (can think)
+// }
+
+func verifyProfile(c *gin.Context, profileData model.Profile) bool {
+	// OA's verification route, do not take name input, but returns name upon verification
+	// Creating the paramkey string
+	paramkey := fmt.Sprintf("%s:%s:%s:%s", profileData.RollNo, profileData.Course, profileData.Dept, profileData.Email)
+
+	// Send request to verify student data
+	client := &http.Client{Timeout: 10 * time.Second}
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s?paramkey=%s", viper.GetString("oa.url"), paramkey), nil)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create verification request"})
+		return false
+	}
+	req.Header.Set("x-api-key", viper.GetString("oa.key"))
+	req.Header.Set("Accept", "application/json")
+	resp, err := client.Do(req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to call OA API"})
+		return false
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		if resp.StatusCode == http.StatusForbidden {
+			logrus.Errorf("OA Token expired or missing, Urgent action required, request new or check viper env")
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Programming club's oa token expired, we are working to resolve it as soon as possible"})
+		} else {
+			logrus.Error("OA API ERROR, with status code: ", resp.StatusCode)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Some error occurred in profile verification, please try again later."})
+		}
+		return false
+	}
+
+	var apiResp CCResponse
+	if err := json.NewDecoder(resp.Body).Decode(&apiResp); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse OA API response"})
+		return false
+	}
+
+	// Checking Status of verification
+	if apiResp.Status != nil {
+		if *apiResp.Status != "true" || (profileData.Name != *apiResp.Name) {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "Please once verify you data. It should be exactly same as printed on your ID card or displayed in IITK APP",
+			})
+			return false
+		}
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Student data not verified",
+		})
+		return false
+	}
+	return true
+}
+
 func updateProfile(c *gin.Context) {
 	var input ProfileUpdateRequest
 
@@ -58,6 +126,15 @@ func updateProfile(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
+	var user model.User
+	if connections.DB.
+		Model(&model.User{}).
+		Select("user_id, email").
+		Preload("Profile").
+		First(&user, "user_id = ?", userID.(uuid.UUID)).Error != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "User does not exist"})
+		return
+	}
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format"})
 		return
@@ -66,6 +143,7 @@ func updateProfile(c *gin.Context) {
 	profileData := model.Profile{
 		// We set the UserID from the authenticated user's token, not from the input
 		UserID:     userID.(uuid.UUID),
+		Email:      user.Email,
 		Name:       input.Name,
 		RollNo:     input.RollNo,
 		Dept:       input.Dept,
@@ -76,19 +154,18 @@ func updateProfile(c *gin.Context) {
 		HomeTown:   input.HomeTown,
 	}
 
-	// store updates in map
-	// updates := make(map[string]interface{})
-	// inputMap := structs.Map(input)
-	// println(inputMap)
+	// Check if verification request is needed, email should be same, it can't be changed
+	if user.Profile.Name != profileData.Name ||
+		user.Profile.RollNo != profileData.RollNo ||
+		user.Profile.Dept != profileData.Dept ||
+		user.Profile.Course != profileData.Course {
+		// Verify from oa
+		if !verifyProfile(c, profileData) {
+			return
+		}
 
-	//  TODO: Check if any change or not, and what is the structure of the input map
+	}
 
-	// TODO: verification login request to CC
-
-	// if len(updates) == 0 {
-	// 	c.JSON(http.StatusBadRequest, gin.H{"error": "No fields to update"})
-	// 	return
-	// }
 	// Update into db
 	if err := connections.DB.
 		// Look for a profile with this user_id
@@ -101,26 +178,31 @@ func updateProfile(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Profile updated successfully"})
-	// TODO: set up for images, for image upload, if the similarity is > 90,can ignore it (can think)
+
 }
 
 func getProfileHandler(c *gin.Context) {
-	// TODO: If i delete the user, userId do not exist but the token still exists hence the issue of null user.
 	var user model.User
 	userID, exist := c.Get("userID")
 	if !exist {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
-	if err := connections.DB.
+	err := connections.DB.
 		Model(&model.User{}).
 		Preload("Profile").
 		Preload("ContributedLocations", connections.RecentFiveLocations).
 		Preload("ContributedNotice", connections.RecentFiveNotices).
 		Preload("ContributedReview", connections.RecentFiveReviews).
 		Omit("password").
-		Where("user_id = ?", userID.(uuid.UUID)).Omit("password").Find(&user).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to fetch profile at the moment"})
+		Where("user_id = ?", userID.(uuid.UUID)).Omit("password").First(&user).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "User does not exist"})
+			middleware.ClearAuthCookie(c)
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to fetch profile at the moment"})
+		}
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"profile": user})

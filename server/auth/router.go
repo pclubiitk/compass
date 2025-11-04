@@ -20,7 +20,7 @@ func Router(r *gin.Engine) {
 			c.JSON(200, gin.H{"success": true})
 		})
 	}
-	profile := r.Group("/profile")
+	profile := r.Group("/api/profile")
 	{
 		profile.Use(middleware.UserAuthenticator)
 		profile.GET("", getProfileHandler)

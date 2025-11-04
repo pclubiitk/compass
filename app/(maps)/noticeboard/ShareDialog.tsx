@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState } from 'react';
-import { Copy, Check, X, Facebook, Mail, Send, Twitter } from 'lucide-react';
+import React, { useEffect, useState } from "react";
+import { Copy, Check, X } from "lucide-react";
 
 type ShareDialogProps = {
   url: string;
@@ -47,19 +47,18 @@ export default function ShareDialog({ url, title, onClose }: ShareDialogProps) {
   const [copied, setCopied] = useState(false);
 
   const shareText = encodeURIComponent(title);
-const shareUrl = `${window.location.origin}/noticeboard/v1`; 
+  const shareUrl = `${window.location.origin}/noticeboard/v1`;
 
-// Copy link handler
-const handleCopy = async () => {
-  try {
-    await navigator.clipboard.writeText(shareUrl); 
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  } catch {
-    alert("Copy failed");
-  }
-};
-
+  // Copy link handler
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      alert("Copy failed");
+    }
+  };
 
   const handleNativeShare = async () => {
     if (navigator.share) {
@@ -69,20 +68,19 @@ const handleCopy = async () => {
           text: title,
           url,
         });
-      } catch {
-      }
+      } catch {}
     } else {
-      alert('Sharing not supported on this device');
+      alert("Sharing not supported on this device");
     }
   };
 
   // Close on ESC
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === "Escape") onClose();
     };
-    document.addEventListener('keydown', handleEsc);
-    return () => document.removeEventListener('keydown', handleEsc);
+    document.addEventListener("keydown", handleEsc);
+    return () => document.removeEventListener("keydown", handleEsc);
   }, [onClose]);
 
   return (
@@ -92,7 +90,6 @@ const handleCopy = async () => {
       aria-modal="true"
     >
       <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-sm space-y-5 relative">
-        
         <button
           onClick={onClose}
           className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 transition"
@@ -104,7 +101,6 @@ const handleCopy = async () => {
         <h2 className="text-xl font-semibold text-gray-800">Share Notice</h2>
 
         <div className="flex flex-col gap-3">
-
           <ShareButton
             onClick={handleCopy}
             className="bg-gray-100 text-gray-800 hover:bg-gray-200"
@@ -124,7 +120,7 @@ const handleCopy = async () => {
             onClick={handleNativeShare}
             className="bg-indigo-50 text-indigo-700 hover:bg-indigo-100"
           >
-             Share
+            Share
           </ShareButton>
         </div>
       </div>

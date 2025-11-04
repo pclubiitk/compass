@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/select";
 import { Edit, Save, X } from "lucide-react";
 import { toast } from "sonner";
-import type { Profile } from "@/app/profile/page";
+import type { Profile } from "@/app/(auth)/profile/page";
 import { courses, departments, halls } from "@/components/Constant";
 import {
   AlertDeleteProfileInfo,
@@ -64,7 +64,7 @@ export function EditableProfileCard({
     setIsSaving(true);
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_AUTH_URL}/profile`,
+        `${process.env.NEXT_PUBLIC_AUTH_URL}/api/profile`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -80,7 +80,7 @@ export function EditableProfileCard({
       } else {
         toast.error(data.error || "Failed to update.");
       }
-    } catch (error) {
+    } catch {
       toast.error("An unexpected error occurred.");
     } finally {
       setIsSaving(false);

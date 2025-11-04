@@ -1,6 +1,11 @@
 # For running app + dependencies like Postgres, Rabbitmq ,Redis
 # Define services for app, db,
 
+# TODO: Race condition resolution the rabbitmq server starts on port don't accept the conections for some time,
+# But server tries for the connection hence causing it to crash
+# So later add a retry logic for few attempts with 5 sec delay assuming it will eventually connect
+# For now i wil add the restart condition in the docker compose file itself, the restart condition
+
 services:
   rabbitmq:
     image: rabbitmq:3-management
@@ -32,8 +37,8 @@ services:
     build:
       context: .
       dockerfile: container/Dockerfile
-    # if set to yes it will restart the container if it crashers or when the docker restarts
-    restart: no
+    # it will restart the container if it crashers (due to rabbit mq or any other issue)
+    restart: on-failure
     ports:
       - "8080:8080"
       - "8081:8081"

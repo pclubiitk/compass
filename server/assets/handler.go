@@ -30,7 +30,8 @@ func uploadAsset(c *gin.Context) {
 	// Compress and convert the image to webp
 	if img, err := cncImage(file); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error in compressing the image"})
-	} else if path, err := saveImage(img, "./assets/public", image.ImageID); err != nil { // ./ vs no // change this back to /tmp
+		// TODO: // ./ vs no
+	} else if path, err := saveImage(img, "./assets/tmp", image.ImageID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error in saving image"})
 	} else if err := connections.DB.Model(&model.Image{}).Create(&image).Error; err != nil {
 		// Add entry in the table and save the image in the server

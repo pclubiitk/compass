@@ -23,9 +23,9 @@ export type Profile = {
 export type UserData = {
   role: number;
   profile: Profile;
-  ContributedLocations: any[];
-  ContributedReview: any[];
-  ContributedNotice: any[];
+  ContributedLocations: [];
+  ContributedReview: [];
+  ContributedNotice: [];
 };
 
 export default function ProfilePage() {
@@ -36,7 +36,7 @@ export default function ProfilePage() {
   const fetchProfile = async () => {
     // We don't reset loading to true on refetch to avoid skeleton flashes
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL}/profile`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL}/api/profile`, {
         credentials: "include",
       });
       if (res.ok) {
@@ -48,7 +48,7 @@ export default function ProfilePage() {
         router.push("/login?callbackUrl%2Fprofile");
       }
     } catch (err) {
-      console.log(err)
+      console.log(err);
       toast.error("An error occurred while fetching your profile.");
     } finally {
       setIsLoading(false);
