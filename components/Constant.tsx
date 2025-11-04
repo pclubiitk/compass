@@ -1,5 +1,5 @@
 // TODO: Update the data
-export const departments = [
+export const courses = [
   "BTech",
   "MSc(Int)",
   "MSc(2 yr)",
@@ -22,7 +22,7 @@ export const departments = [
   "PhD-M.Des",
   "PhD-MS(Research)",
 ];
-export const courses = [
+export const departments = [
   "AE",
   "CHE",
   "CE",
