@@ -52,7 +52,7 @@ func signupHandler(c *gin.Context) {
 		IsVerified:        false,
 		Role:              model.UserRole,
 		VerificationToken: fmt.Sprintf("%s<>%s", token, expiry),
-		Profile:           model.Profile{Email: input.Email},
+		Profile:           model.Profile{Email: input.Email, Visibility: true},
 	}
 
 	// Saving user in DB
@@ -67,13 +67,13 @@ func signupHandler(c *gin.Context) {
 	}
 
 	//  Add mail job to queue
-	verifyLink := fmt.Sprintf("http://%s/signup?token=%s&userID=%s",
+	verifyLink := fmt.Sprintf("%s/signup?token=%s&userID=%s",
 		// Dev Mode, call the anonymous function
 		func() string {
 			if viper.GetString("domain") == "" {
-				return "localhost:3000"
+				return "http://localhost:3000"
 			}
-			return viper.GetString("domain")
+			return fmt.Sprintf("https://%s.%s", "auth", viper.GetString("domain"))
 		}(),
 		token,
 		user.UserID)

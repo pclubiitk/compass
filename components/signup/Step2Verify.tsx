@@ -17,6 +17,7 @@ import {
   InputOTPSeparator,
 } from "@/components/ui/input-otp";
 import { toast } from "sonner";
+import { REGEXP_ONLY_DIGITS_AND_CHARS } from "input-otp";
 
 interface Step2VerifyProps {
   userID: string;
@@ -84,7 +85,13 @@ export function Step2Verify({ userID, onSuccess }: Step2VerifyProps) {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="grid gap-4 justify-center">
-          <InputOTP maxLength={6} value={otp} onChange={setOtp}>
+          <InputOTP
+            maxLength={6}
+            value={otp}
+            onChange={setOtp}
+            pattern={REGEXP_ONLY_DIGITS_AND_CHARS}
+            inputMode="text"
+          >
             <InputOTPGroup>
               <InputOTPSlot index={0} />
               <InputOTPSlot index={1} />
