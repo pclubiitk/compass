@@ -9,40 +9,20 @@ import (
 )
 
 
-func GenerateToken(userID uuid.UUID, role int, verified bool) (accessToken, refreshToken string, err error) {
-	// Access token
-	accessClaims := JWTClaims{
-		UserID:   userID,
-		Role:     role,
-		Verified: verified,
-		RegisteredClaims: jwt.RegisteredClaims{
-			Subject:   userID.String(),
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(authConfig.TokenExpiration)),
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
-			Issuer:    "pclub",
-		},
-	}
-	access := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
-	accessToken, err = access.SignedString([]byte(authConfig.JWTSecretKey))
-	if err != nil {
-		return
-	}
 
-	// Refresh token
-	refreshClaims := jwt.RegisteredClaims{
+
+func GenerateRefreshToken(userID uuid.UUID) (string, error) {
+	claims := jwt.RegisteredClaims{
 		Subject:   userID.String(),
 		ExpiresAt: jwt.NewNumericDate(time.Now().Add(authConfig.RefreshTokenExpiry)),
 		IssuedAt:  jwt.NewNumericDate(time.Now()),
 		Issuer:    "pclub",
 	}
-	refresh := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)
-	refreshToken, err = refresh.SignedString([]byte(authConfig.JWTSecretKey))
-	return
-}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(authConfig.JWTSecretKey))
+}		
 
-
-
-func generateAccessToken(userID uuid.UUID, role int, verified bool) (string, error) {
+func GenerateAccessToken(userID uuid.UUID, role int, verified bool) (string, error) {
 	claims := JWTClaims{
 		UserID:   userID,
 		Role:     role,

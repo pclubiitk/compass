@@ -87,10 +87,10 @@ func tryRefresh(c *gin.Context) {
 
 	// Ideally fetch role + verified from DB
 	role := int(model.UserRole)
-	verified := true
+	verified := claims["verified"].(bool)
 
 	//geneate new access token
-	newAccessToken, err := generateAccessToken(userID, role, verified)
+	newAccessToken, err := GenerateAccessToken(userID, role, verified)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate access token"})
 		return
