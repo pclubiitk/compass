@@ -73,13 +73,20 @@ func tryRefresh(c *gin.Context) {
 		return
 	}
 
-	claims, ok := token.Claims.(jwt.MapClaims)
-	if !ok {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid refresh token claims"})
-		return
-	}
+	// claims, ok := token.Claims.(jwt.MapClaims)
+	// if !ok {
+	// 	c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid refresh token claims"})
+	// 	return
+	// }
 
-	userID, err := uuid.Parse(claims["sub"].(string))
+
+	claims, ok := token.Claims.(*JWTClaims)
+if !ok {
+	c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token claims"})
+	return
+}
+
+	userID, err := uuid.Parse(claims.UserID.String())
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid user ID"})
 		return
@@ -87,7 +94,7 @@ func tryRefresh(c *gin.Context) {
 
 	// Ideally fetch role + verified from DB
 	role := int(model.UserRole)
-	verified := claims["verified"].(bool)
+	verified := claims.Verified
 
 	//geneate new access token
 	newAccessToken, err := GenerateAccessToken(userID, role, verified)
