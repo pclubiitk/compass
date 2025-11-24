@@ -16,8 +16,11 @@ export default function Map({ onMarkerClick }: MapProps) {
   const markerRef = useRef<maplibregl.Marker | null>(null);
   const [isReady, setIsReady] = useState(false);
 
-  // Store the click handler to enable proper cleanup
-  const markerClickHandlerRef = useRef<((e: Event) => void) | null>(null);
+  // Store the click handler and element to enable proper cleanup
+  const markerClickHandlerRef = useRef<{
+    handler: (e: Event) => void;
+    element: HTMLElement;
+  } | null>(null);
 
   // Helper function to attach click handler to marker element
   const attachMarkerClickHandler = useCallback((marker: maplibregl.Marker) => {
@@ -26,7 +29,10 @@ export default function Map({ onMarkerClick }: MapProps) {
     
     // Remove previous listener if it exists
     if (markerClickHandlerRef.current) {
-      el.removeEventListener("click", markerClickHandlerRef.current);
+      markerClickHandlerRef.current.element.removeEventListener(
+        "click",
+        markerClickHandlerRef.current.handler
+      );
     }
     
     // Create and store new handler
@@ -34,7 +40,7 @@ export default function Map({ onMarkerClick }: MapProps) {
       e.stopPropagation();
       onMarkerClick();
     };
-    markerClickHandlerRef.current = handler;
+    markerClickHandlerRef.current = { handler, element: el };
     el.addEventListener("click", handler);
   }, [onMarkerClick]);
 
@@ -123,15 +129,19 @@ export default function Map({ onMarkerClick }: MapProps) {
       if (handleSearchLocation) {
         window.removeEventListener("search-location", handleSearchLocation);
       }
+      if (markerClickHandlerRef.current) {
+        markerClickHandlerRef.current.element.removeEventListener(
+          "click",
+          markerClickHandlerRef.current.handler
+        );
+        markerClickHandlerRef.current = null;
+      }
       if (mapRef.current) {
         mapRef.current.remove();
         mapRef.current = null;
       }
       if (markerRef.current) {
         markerRef.current = null;
-      }
-      if (markerClickHandlerRef.current) {
-        markerClickHandlerRef.current = null;
       }
     };
   }, [isReady, attachMarkerClickHandler, updateMarker]);
