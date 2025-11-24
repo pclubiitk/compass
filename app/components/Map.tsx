@@ -16,15 +16,25 @@ export default function Map({ onMarkerClick }: MapProps) {
   const markerRef = useRef<maplibregl.Marker | null>(null);
   const [isReady, setIsReady] = useState(false);
 
+  // Store the click handler to enable proper cleanup
+  const markerClickHandlerRef = useRef<((e: Event) => void) | null>(null);
+
   // Helper function to attach click handler to marker element
   const attachMarkerClickHandler = useCallback((marker: maplibregl.Marker) => {
     const el = marker.getElement();
     el.style.cursor = "pointer";
-    // Remove existing listener before adding new one to prevent duplicates
+    
+    // Remove previous listener if it exists
+    if (markerClickHandlerRef.current) {
+      el.removeEventListener("click", markerClickHandlerRef.current);
+    }
+    
+    // Create and store new handler
     const handler = (e: Event) => {
       e.stopPropagation();
       onMarkerClick();
     };
+    markerClickHandlerRef.current = handler;
     el.addEventListener("click", handler);
   }, [onMarkerClick]);
 
@@ -62,6 +72,8 @@ export default function Map({ onMarkerClick }: MapProps) {
   useEffect(() => {
     if (!isReady || !mapContainer.current || mapRef.current) return;
 
+    let handleSearchLocation: ((e: any) => void) | null = null;
+
     navigator.geolocation.getCurrentPosition(
       ({ coords }) => {
         const map = new maplibregl.Map({
@@ -92,7 +104,7 @@ export default function Map({ onMarkerClick }: MapProps) {
         });
 
         // Handle search location events
-        const handleSearchLocation = (e: any) => {
+        handleSearchLocation = (e: any) => {
           const { lng, lat } = e.detail;
           map.flyTo({ center: [lng, lat], zoom: 14 });
           updateMarker(map, lng, lat);
@@ -102,19 +114,24 @@ export default function Map({ onMarkerClick }: MapProps) {
         setTimeout(() => {
           map.resize();
         }, 200);
-
-        // Cleanup function
-        return () => {
-          window.removeEventListener("search-location", handleSearchLocation);
-        };
       },
       (err) => console.error("Geolocation error:", err)
     );
 
+    // Cleanup function for the effect
     return () => {
+      if (handleSearchLocation) {
+        window.removeEventListener("search-location", handleSearchLocation);
+      }
       if (mapRef.current) {
         mapRef.current.remove();
         mapRef.current = null;
+      }
+      if (markerRef.current) {
+        markerRef.current = null;
+      }
+      if (markerClickHandlerRef.current) {
+        markerClickHandlerRef.current = null;
       }
     };
   }, [isReady, attachMarkerClickHandler, updateMarker]);
