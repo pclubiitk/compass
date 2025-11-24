@@ -23,11 +23,11 @@ type User struct {
 
 	// Internal fields
 	UserID            uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
-	Email             string    `gorm:"unique" json:"email"`
+	Email             string    `gorm:"unique;index" json:"email"`
 	Password          string    `json:"password"`
 	IsVerified        bool      `json:"-"`
 	VerificationToken string    `json:"-"` //erased after verification
-	Role              Role      `json:"role" gorm:"type:int;"`
+	Role              Role      `json:"role" gorm:"type:int;index"`
 
 	// Search Profile
 	Profile Profile `json:"profile"`

@@ -104,13 +104,24 @@ func noticeDetailProvider(c *gin.Context) {
 }
 
 func locationProvider(c *gin.Context) {
-	// TODO: write a pagination logic
+	// Extract page number, if issue default to 1
+	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
+	if err != nil || page < 1 {
+		page = 1
+	}
+
+	// Use a reasonable limit for locations
+	limit := 100
+	offset := (page - 1) * limit
+
 	var locations []model.Location
 
-	err := connections.DB.
+	err = connections.DB.
 		Model(&model.Location{}).
 		Where("status = ?", model.Approved).
 		Select("location_id", "name", "latitude", "longitude").
+		Limit(limit).
+		Offset(offset).
 		Find(&locations).Error
 
 	if err != nil {
@@ -118,7 +129,21 @@ func locationProvider(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"locations": locations})
+	// Count total locations for pagination info
+	var total int64
+	if err := connections.DB.Model(&model.Location{}).Where("status = ?", model.Approved).Count(&total).Error; err != nil {
+		logrus.Errorf("Failed to count locations: %v", err)
+		// Still return locations even if count fails
+		c.JSON(http.StatusOK, gin.H{"locations": locations})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"locations":    locations,
+		"total":        total,
+		"current_page": page,
+		"per_page":     limit,
+	})
 	// Handle all the edge cases with suitable return http code, write them in the read me for later documentation
 
 }

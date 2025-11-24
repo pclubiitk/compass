@@ -26,8 +26,8 @@ type Location struct {
 	Latitude      float32        `json:"latitude" binding:"required"`
 	Longitude     float32        `json:"longitude" binding:"required"`
 	LocationType  string         `json:"locationType"`
-	Status        Status         `json:"status" gorm:"type:varchar(20);check:status IN ('pending','approved','rejected')"`          // once the location is approved by the admin it will be publicly available
-	ContributedBy uuid.UUID      `json:"contributedBy"`                                                                             // This is the foreign key
+	Status        Status         `json:"status" gorm:"type:varchar(20);check:status IN ('pending','approved','rejected');index"`          // once the location is approved by the admin it will be publicly available
+	ContributedBy uuid.UUID      `json:"contributedBy" gorm:"index"`                                                                             // This is the foreign key
 	User          *User          `gorm:"foreignKey:ContributedBy;references:UserID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"` // many location to single user binding
 	AverageRating float32        `json:"avgRating"`
 	ReviewCount   int64          `json:"reviewCount"`
@@ -40,7 +40,7 @@ type Location struct {
 }
 
 type Notice struct { // change this to ritika's PR, can remove the contributedBy field
-	CreatedAt     time.Time		 `json:"created_at"`
+	CreatedAt     time.Time		 `json:"created_at" gorm:"index"`
 	UpdatedAt     time.Time		 `json:"-"`
 	DeletedAt     gorm.DeletedAt `gorm:"index" json:"-"`
 	Entity        string         `json:"entity"`    // Department / Club / Cell
@@ -50,21 +50,21 @@ type Notice struct { // change this to ritika's PR, can remove the contributedBy
 	Title         string         `json:"title" binding:"required"`
 	Description   string         `gorm:"type:text" json:"description"`
 	Body          string         `json:"body,omitempty"` // added omitempty
-	ContributedBy uuid.UUID      `json:"contributedBy"`
+	ContributedBy uuid.UUID      `json:"contributedBy" gorm:"index"`
 	User          *User          `gorm:"foreignKey:ContributedBy;references:UserID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"user,omitempty"`
 	CoverPic      *Image         `gorm:"polymorphic:ParentAsset;" json:"coverpic,omitempty"`
 }
 
 type Review struct {
-	CreatedAt     time.Time
+	CreatedAt     time.Time      `gorm:"index"`
 	UpdatedAt     time.Time
 	DeletedAt     gorm.DeletedAt `gorm:"index"`
 	ReviewId      uuid.UUID      `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	Description   string         `gorm:"type:text" json:"description"`
 	Rating        int8           `json:"rating"`
-	Status        Status         `gorm:"type:varchar(20);check:status IN ('pending','approved','rejected', 'rejectedByBot')"` // as the user writes a review put the review in the database with pending
-	ContributedBy uuid.UUID      `json:"contributedBy"`                                                                       // This is the foreign key
-	LocationId    uuid.UUID      `json:"locationId"`
+	Status        Status         `gorm:"type:varchar(20);check:status IN ('pending','approved','rejected', 'rejectedByBot');index"` // as the user writes a review put the review in the database with pending
+	ContributedBy uuid.UUID      `json:"contributedBy" gorm:"index"`                                                                       // This is the foreign key
+	LocationId    uuid.UUID      `json:"locationId" gorm:"index"`
 	User          *User          `gorm:"foreignKey:ContributedBy;references:UserID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 	Images        []Image        `gorm:"polymorphic:ParentAsset;" json:"images"` // base name, parentAsset, it will attach the ID itself
 }

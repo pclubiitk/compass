@@ -9,7 +9,7 @@ import (
 
 type Profile struct {
 	gorm.Model
-	UserID uuid.UUID
+	UserID uuid.UUID `gorm:"index"`
 	// Student Search Data, Personal Data
 	Name       string `json:"name"`
 	Email      string `json:"email"`
@@ -20,7 +20,7 @@ type Profile struct {
 	Hall       string `json:"hall"`
 	RoomNumber string `json:"roomNo"`
 	HomeTown   string `json:"homeTown"`
-	Visibility bool   `json:"visibility"`
+	Visibility bool   `json:"visibility" gorm:"index"`
 	Bapu       string `json:"bapu"`
 	Bachhas    string `json:"bachhas"`
 }
@@ -34,6 +34,6 @@ const (
 
 type ChangeLog struct {
 	UserID    uuid.UUID `gorm:"primarykey"`
-	CreatedAt time.Time `json:"-"`
-	Action    Action    `json:"action" gorm:"type:varchar(20);check:action IN ('add','delete')"`
+	CreatedAt time.Time `json:"-" gorm:"index"`
+	Action    Action    `json:"action" gorm:"type:varchar(20);check:action IN ('add','delete');index"`
 }
