@@ -114,20 +114,19 @@ func locationProvider(c *gin.Context) {
 	limit := 100
 	offset := (page - 1) * limit
 
-	// Create base query to avoid duplication
-	baseQuery := connections.DB.Model(&model.Location{}).Where("status = ?", model.Approved)
-
 	// Count total locations for pagination info
 	var total int64
-	if err := baseQuery.Count(&total).Error; err != nil {
+	if err := connections.DB.Model(&model.Location{}).Where("status = ?", model.Approved).Count(&total).Error; err != nil {
 		logrus.Errorf("Failed to count locations: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to count locations"})
 		return
 	}
 
-	// Fetch paginated locations
+	// Fetch paginated locations using a separate query
 	var locations []model.Location
-	err = baseQuery.
+	err = connections.DB.
+		Model(&model.Location{}).
+		Where("status = ?", model.Approved).
 		Select("location_id", "name", "latitude", "longitude").
 		Limit(limit).
 		Offset(offset).
