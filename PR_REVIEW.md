@@ -164,7 +164,7 @@ Major refactor of the maps feature with SWR caching, incremental API fetching, a
 #### 🔴 Critical Issues
 1. **Gitignore Corruption**
    - File: `.gitignore`
-   - Last line changed from `/server/parser/*.sql` to `/server/parser/*.sqlpackage-lock.json`
+   - Last line changed from `/server/parser/*.sql` to `/server/parser/*.sql package-lock.json`
    - This looks like an accidental merge/edit
    - **Action Required:** Fix this immediately
 
