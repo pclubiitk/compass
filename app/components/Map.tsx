@@ -136,13 +136,13 @@ export default function Map({ onMarkerClick }: MapProps) {
     };
   }, [isReady, attachMarkerClickHandler, updateMarker]);
 
-  const handleZoomIn = () => {
+  const handleZoomIn = useCallback(() => {
     if (mapRef.current) mapRef.current.zoomIn();
-  };
+  }, []);
 
-  const handleZoomOut = () => {
+  const handleZoomOut = useCallback(() => {
     if (mapRef.current) mapRef.current.zoomOut();
-  };
+  }, []);
 
   const handleLocateUser = useCallback(() => {
     navigator.geolocation.getCurrentPosition(
