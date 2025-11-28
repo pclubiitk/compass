@@ -10,7 +10,6 @@ type ReviewProps = {
   //once confirm why there was a never
   time: string;
   img: string;
-  mode: string;
 };
 
 export default function ReviewCard({
@@ -19,17 +18,20 @@ export default function ReviewCard({
   review_body,
   time,
   img,
-  mode,
-}: ReviewProps) {
+}: Omit<ReviewProps, "mode">) {
   return (
-    <Card
-      className={`mx-3 my-3 py-0 gap-0 ${
-        mode == "dark" ? "bg-black text-white" : "bg-white text-black"
-      }`}
-    >
+    <Card className="mx-3 my-3 py-0 gap-0 bg-white dark:bg-black text-black dark:text-white">
       <div className="mx-4 py-3">
         <CardTitle className="text-lg py-1 my-0"> {author} </CardTitle>
-        <img src={img}></img>
+        {img && (
+          <div className="relative w-full h-48 my-2 rounded-md overflow-hidden">
+            <img
+              src={img}
+              alt="Review attachment"
+              className="w-full h-full object-cover"
+            />
+          </div>
+        )}
         <div className="flex items-center justify-between mb-3">
           <RatedStars
             count={5}
@@ -38,11 +40,11 @@ export default function ReviewCard({
             icon={""}
             color={"yellow"}
           />
-          <p className="my-1">{format(time)}</p>
+          <p className="my-1 text-sm text-muted-foreground">{format(time)}</p>
         </div>
         <Separator />
 
-        <p className="my-3">{review_body}</p>
+        <p className="my-3 text-sm leading-relaxed">{review_body}</p>
       </div>
     </Card>
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import { useGContext } from "@/components/ContextProvider";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useRouter } from "next/navigation";
@@ -55,10 +56,13 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
   const locationMarkers = useRef<maplibregl.Marker[]>([]);
   const router = useRouter();
   const [mapLoaded, setMapLoaded] = useState(false);
+  const { setGlobalLoading } = useGContext();
 
   //  Initialize map once
   useEffect(() => {
     if (!mapContainer.current || mapRef.current) return;
+
+    setGlobalLoading(true);
 
     // Add keyframes for pulsing marker animation
     const styleSheet = document.createElement("style");
@@ -67,6 +71,11 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
       @keyframes pulse {
         0% { transform: scale(1); opacity: 0.6; }
         100% { transform: scale(2.5); opacity: 0; }
+      }
+      @keyframes popIn {
+        0% { transform: scale(0); opacity: 0; }
+        60% { transform: scale(1.1); opacity: 1; }
+        100% { transform: scale(1); opacity: 1; }
       }
     `;
     document.head.appendChild(styleSheet);
@@ -89,38 +98,45 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
         (window as any).mapRef = mapRef;
 
         //  Create a custom pulsating marker for the user
-        const userMarkerEl = document.createElement("div");
-        userMarkerEl.style.cssText = `
-          width: 20px; height: 20px;
+        const userWrapper = document.createElement("div");
+        userWrapper.style.cursor = "pointer";
+
+        // Inner element for visual styling
+        const userInner = document.createElement("div");
+        userInner.style.cssText = `
           display: flex; align-items: center; justify-content: center;
-          position: relative;
-          cursor: pointer;
+          filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
         `;
-        const pulseEl = document.createElement("div");
-        pulseEl.style.cssText = `
-          width: 100%; height: 100%;
-          border-radius: 50%;
-          background: #ef4444;
-          opacity: 0.6;
-          transform-origin: center;
-          animation: pulse 1.75s infinite cubic-bezier(0.66, 0, 0, 1);
-          position: absolute;
-        `;
-        const dotEl = document.createElement("div");
-        dotEl.style.cssText = `
-          position: absolute;
-          width: 14px; height: 14px;
-          border-radius: 50%;
-          background: #ef4444;
-          border: 2px solid white;
-          box-shadow: 0 1px 4px rgba(0,0,0,0.2);
-        `;
-        userMarkerEl.appendChild(pulseEl);
-        userMarkerEl.appendChild(dotEl);
+
+        userWrapper.appendChild(userInner);
+
+        // Render Custom SVG Marker (Teardrop shape)
+        const userRoot = createRoot(userInner);
+        userRoot.render(
+          <div className="relative flex flex-col items-center justify-center -mt-10">
+            {/* Custom SVG Marker */}
+            <div className="relative z-10 filter drop-shadow-md transform transition-transform hover:scale-110">
+              <svg
+                width="33"
+                height="37"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M12 0C7.58 0 4 3.58 4 8C4 13.5 12 24 12 24C12 24 20 13.5 20 8C20 3.58 16.42 0 12 0Z"
+                  fill="#EF4444"
+                />
+                <circle cx="12" cy="8" r="3.5" fill="white" />
+              </svg>
+            </div>
+          </div>
+        );
 
         const userMarker = new maplibregl.Marker({
-          element: userMarkerEl,
-          anchor: "center", 
+          element: userWrapper,
+          anchor: "bottom", // Pin tip is at the bottom
+          offset: [0, 0]
         })
           .setLngLat(startCenter)
           .addTo(map);
@@ -169,11 +185,15 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
 
         map.on("load", () => {
           setMapLoaded(true);
+          setGlobalLoading(false);
           map.resize();
           window.dispatchEvent(new Event("map-ready"));
         });
       },
-      (err) => console.error("Geolocation error:", err)
+      (err) => {
+        console.error("Geolocation error:", err);
+        setGlobalLoading(false);
+      }
     );
 
     return () => {
@@ -198,8 +218,8 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
         return;
       }
 
-      for (const loc of locations) {
-        if (!loc.latitude || !loc.longitude) continue;
+      locations.forEach((loc, index) => {
+        if (!loc.latitude || !loc.longitude) return;
 
         const rawType = (
           loc.locationType ||
@@ -209,24 +229,32 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
         const Icon = iconMap[rawType] || iconMap.default;
         const color = colorMap[rawType] || colorMap.default;
 
+        // Wrapper element for MapLibre positioning (no transforms here!)
         const el = document.createElement("div");
-        // UPDATED: Markers are now color-coded with a matching glow
-        el.style.cssText = `
+        el.style.cursor = "pointer";
+
+        // Inner element for visual styling and animation
+        const inner = document.createElement("div");
+        inner.style.cssText = `
           width: 28px; height: 28px;
           display: flex; align-items: center; justify-content: center;
           background: ${color};
           color: white;
           border-radius: 50%;
           box-shadow: 0 4px 10px ${color}70, 0 2px 4px rgba(0,0,0,0.1);
-          cursor: pointer;
           transition: transform 140ms ease;
           border: 2px solid white;
+          animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+          opacity: 0;
+          animation-delay: ${index * 0.03}s;
         `;
-        const root = createRoot(el);
-        //  UPDATED: Icon is white for contrast, and slightly smaller
+
+        el.appendChild(inner);
+
+        const root = createRoot(inner);
         root.render(<Icon size={16} color="white" />);
 
-        const marker = new maplibregl.Marker({ element: el, anchor: "center" }) // ✨ NEW: Center anchor
+        const marker = new maplibregl.Marker({ element: el, anchor: "center" })
           .setLngLat([loc.longitude, loc.latitude])
           .addTo(map);
 
@@ -242,9 +270,8 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
             essential: true,
           });
 
-          //  bounce animation (CSS scale)
-          const markerEl = el;
-          markerEl.animate(
+          //  bounce animation (CSS scale) - Animate INNER element
+          inner.animate(
             [
               { transform: "scale(1)" },
               { transform: "scale(1.3)" },
@@ -260,7 +287,7 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
         });
 
         locationMarkers.current.push(marker);
-      }
+      });
 
       console.log(` Rendered ${locations.length} markers`);
     },
@@ -299,12 +326,18 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
       const scale = Math.min(Math.max((zoom - 12) / 6 + 0.9, 0.9), 1.4);
       locationMarkers.current.forEach((m) => {
         const el = m.getElement();
-        el.style.width = `${28 * scale}px`;
-        el.style.height = `${28 * scale}px`;
+        // The inner element is the first child
+        const inner = el.firstElementChild as HTMLElement;
+        if (inner) {
+          inner.style.width = `${28 * scale}px`;
+          inner.style.height = `${28 * scale}px`;
+        }
       });
     };
     map.on("zoom", handleZoom);
-    return () => map.off("zoom", handleZoom);
+    return () => {
+      map.off("zoom", handleZoom);
+    };
   }, [mapLoaded]);
 
   // Controls
@@ -322,18 +355,10 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
     <div className="relative h-full w-full min-h-[97vh]">
       <div ref={mapContainer} className="h-full w-full" />
 
-      {/* Map loading overlay (No changes) */}
-      {!mapLoaded && (
-        <div className="absolute inset-0 z-40 flex items-center justify-center pointer-events-none">
-          <div className="flex flex-col items-center gap-2 bg-white/70 backdrop-blur rounded-2xl p-4 shadow-md">
-            <div className="w-10 h-10 rounded-full border-4 border-gray-200 border-t-blue-500 animate-spin" />
-            <div className="text-sm text-gray-700">Loading map…</div>
-          </div>
-        </div>
-      )}
 
 
-      <div className="absolute top-4 right-4 z-50 flex flex-col gap-2">
+
+      <div className="absolute top-4 right-4 z-20 flex flex-col gap-2">
         <div className="flex flex-col gap-1 p-1 rounded-xl bg-white/80 backdrop-blur-lg border border-gray-200 shadow-lg">
           <Button
             size="icon"

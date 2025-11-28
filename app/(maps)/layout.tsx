@@ -6,6 +6,7 @@ import { createPortal } from "react-dom";
 import AddLocationDrawer from "@/components/AddLocationDrawer";
 import { BottomNav } from "@/components/BottomNavbar";
 import { useLocations } from "@/app/hooks/useLocations";
+import { usePathname } from "next/navigation";
 
 const Map = dynamic(() => import("@/app/components/Map"), {
   ssr: false,
@@ -15,6 +16,8 @@ const Map = dynamic(() => import("@/app/components/Map"), {
 export default function MapsLayout({ children }: { children: React.ReactNode }) {
   const { locations } = useLocations();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const pathname = usePathname();
+  const isLocationPage = pathname?.startsWith("/location");
 
   // Trigger drawer open globally when "Add Location" pressed
   useEffect(() => {
@@ -61,8 +64,15 @@ export default function MapsLayout({ children }: { children: React.ReactNode }) 
           document.body
         )}
 
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="pointer-events-auto">{children}</div>
+      <div
+        className={`absolute inset-0 z-30 ${isLocationPage
+            ? "overflow-y-auto pointer-events-auto bg-gray-50/50 dark:bg-zinc-950/50"
+            : "pointer-events-none"
+          }`}
+      >
+        <div className={isLocationPage ? "min-h-full" : "pointer-events-auto"}>
+          {children}
+        </div>
       </div>
 
       <BottomNav />

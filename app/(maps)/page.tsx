@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
@@ -25,6 +25,12 @@ export default function Home() {
 
   const [query, setQuery] = useState("");
   const [loginDialogOpen, setLoginDialogOpen] = useState(false);
+
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Search handler
   const handleSearch = async () => {
@@ -91,7 +97,7 @@ export default function Home() {
       </div>
 
       {/* Sync indicator */}
-      {isValidating && (
+      {mounted && isValidating && (
         <div className="absolute bottom-4 right-4 text-xs text-gray-600 bg-white/80 px-3 py-1 rounded-md shadow">
           Syncing latest data…
         </div>

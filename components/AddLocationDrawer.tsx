@@ -10,6 +10,15 @@ import {
   DrawerFooter,
   DrawerClose,
 } from "@/components/ui/drawer";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -23,6 +32,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  ImagePlus,
+  MapPin,
+  AlignLeft,
+  Navigation,
+  X,
+  UploadCloud,
+} from "lucide-react";
+import { useMediaQuery } from "@/app/hooks/use-media-query";
 
 export default function AddLocationDrawer({
   open,
@@ -39,8 +57,11 @@ export default function AddLocationDrawer({
     latitude: "",
     longitude: "",
   });
+  const [coverPic, setCoverPic] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const isDesktop = useMediaQuery("(min-width: 768px)");
 
-  // 🧭 Auto-fill lat/lon + trigger open when event fired
+  // Auto-fill lat/lon + trigger open
   useEffect(() => {
     const lat = localStorage.getItem("selected_lat");
     const lon = localStorage.getItem("selected_lon");
@@ -59,6 +80,7 @@ export default function AddLocationDrawer({
       onOpenChange(true);
     };
 
+    window.dispatchEvent(new Event("refresh-markers")); // Optional: Ensure map state is consistent
     window.addEventListener("trigger-add-location", handler);
     return () => window.removeEventListener("trigger-add-location", handler);
   }, [onOpenChange]);
@@ -70,6 +92,21 @@ export default function AddLocationDrawer({
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setCoverPic(file);
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
+    }
+  };
+
+  const removeImage = () => {
+    setCoverPic(null);
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewUrl(null);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -78,15 +115,15 @@ export default function AddLocationDrawer({
         ? formData.customType.trim() || "other"
         : formData.locationType;
 
-    const payload = {
-      name: formData.name.trim(),
-      latitude: parseFloat(formData.latitude),
-      longitude: parseFloat(formData.longitude),
-      locationType: type.trim(),
-      description: formData.description.trim(),
-      coverpic: null,
-      biopics: [],
-    };
+    const payload = new FormData();
+    payload.append("name", formData.name.trim());
+    payload.append("latitude", formData.latitude);
+    payload.append("longitude", formData.longitude);
+    payload.append("locationType", type.trim());
+    payload.append("description", formData.description.trim());
+    if (coverPic) {
+      payload.append("coverpic", coverPic);
+    }
 
     try {
       const res = await fetch(
@@ -94,15 +131,14 @@ export default function AddLocationDrawer({
         {
           method: "POST",
           credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+          body: payload,
         }
       );
 
       const data = await res.json().catch(() => ({}));
 
       if (res.ok) {
-        toast.success(data.message || "✅ Location added successfully!");
+        toast.success(data.message || "Location added successfully.");
         localStorage.removeItem("selected_lat");
         localStorage.removeItem("selected_lon");
         setFormData({
@@ -113,54 +149,47 @@ export default function AddLocationDrawer({
           latitude: "",
           longitude: "",
         });
+        removeImage();
         onOpenChange(false);
         window.dispatchEvent(new Event("refresh-markers"));
-      }
-       else {
-        toast.error(data.error || "❌ Failed to add location.");
+      } else {
+        toast.error(data.error || "Failed to add location.");
       }
     } catch (err) {
       console.error(err);
-      toast.error("Something went wrong, please try again.");
+      toast.error("Network error. Please try again.");
     }
   };
-  
 
-  return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="h-[85vh] sm:h-[70vh] bg-background border-t border-border rounded-t-3xl overflow-y-auto">
-        <DrawerHeader>
-          <DrawerTitle className="text-xl font-semibold text-foreground">
-            Add New Location
-          </DrawerTitle>
-          <DrawerDescription className="text-muted-foreground">
-            Fill in details of your selected point.
-          </DrawerDescription>
-        </DrawerHeader>
-
-        <motion.form
-          onSubmit={handleSubmit}
-          className="p-6 pt-2 space-y-5"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25 }}
-        >
-          {/* 🏷️ Name */}
+  const FormContent = (
+    <motion.form
+      onSubmit={handleSubmit}
+      className="space-y-6"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.2 }}
+    >
+      <div className="space-y-4">
+        {/* Name & Type Group */}
+        <div className="grid gap-4">
           <div className="space-y-2">
             <Label htmlFor="name">Location Name</Label>
-            <Input
-              id="name"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              placeholder="Ex: Lecture Hall Complex"
-              required
-            />
+            <div className="relative">
+              <MapPin className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                id="name"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                placeholder="e.g. Main Auditorium"
+                className="pl-9"
+                required
+              />
+            </div>
           </div>
 
-          {/* 🧭 Type dropdown + custom */}
           <div className="space-y-2">
-            <Label htmlFor="locationType">Type</Label>
+            <Label htmlFor="locationType">Category</Label>
             <Select
               value={formData.locationType}
               onValueChange={(value) =>
@@ -172,81 +201,182 @@ export default function AddLocationDrawer({
               }
             >
               <SelectTrigger id="locationType">
-                <SelectValue placeholder="Select location type" />
+                <SelectValue placeholder="Select a category" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="lecturehall">Lecture Hall</SelectItem>
                 <SelectItem value="hostel">Hostel</SelectItem>
-                <SelectItem value="food">Food</SelectItem>
-                <SelectItem value="admin">Admin</SelectItem>
+                <SelectItem value="food">Food & Dining</SelectItem>
+                <SelectItem value="admin">Admin Block</SelectItem>
                 <SelectItem value="recreation">Recreation</SelectItem>
-                <SelectItem value="other">Other (Custom)</SelectItem>
+                <SelectItem value="other">Other</SelectItem>
               </SelectContent>
             </Select>
 
-            {/* 🧠 If 'Other', show input */}
             {formData.locationType === "other" && (
               <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.2 }}
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="pt-1"
               >
                 <Input
                   id="customType"
                   name="customType"
                   value={formData.customType}
                   onChange={handleChange}
-                  placeholder="Enter custom type (e.g. Library, Gym)"
+                  placeholder="Specify category..."
                   required
                 />
               </motion.div>
             )}
           </div>
+        </div>
 
-          {/* 📝 Description */}
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
+        {/* Description */}
+        <div className="space-y-2">
+          <Label htmlFor="description">Description</Label>
+          <div className="relative">
+            <AlignLeft className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Textarea
               id="description"
               name="description"
               value={formData.description}
               onChange={handleChange}
-              placeholder="Describe this location (max 250 chars)"
+              placeholder="Add details about this location..."
+              className="pl-9 min-h-[100px] resize-none"
               maxLength={250}
             />
-            <p className="text-xs text-muted-foreground text-right">
-              {formData.description.length}/250
-            </p>
           </div>
+          <p className="text-xs text-muted-foreground text-right">
+            {formData.description.length}/250
+          </p>
+        </div>
 
-          {/* 🌍 Coordinates */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label htmlFor="latitude">Latitude</Label>
-              <Input id="latitude" value={formData.latitude} readOnly />
-            </div>
-            <div>
-              <Label htmlFor="longitude">Longitude</Label>
-              <Input id="longitude" value={formData.longitude} readOnly />
-            </div>
-          </div>
-
-          {/* 🚀 Submit */}
-          <motion.div whileTap={{ scale: 0.97 }}>
-            <Button
-              type="submit"
-              className="w-full py-3 font-medium bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700 rounded-xl shadow-md"
+        {/* Cover Image Upload - Clean & Minimal */}
+        <div className="space-y-2">
+          <Label>Cover Image</Label>
+          {!previewUrl ? (
+            <div
+              onClick={() => document.getElementById("location-cover-image")?.click()}
+              className="border border-dashed border-muted-foreground/30 rounded-lg p-8 flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-muted/50 transition-colors"
             >
-              Submit Location
-            </Button>
-          </motion.div>
-        </motion.form>
+              <div className="p-2.5 rounded-full bg-muted text-muted-foreground">
+                <UploadCloud className="h-5 w-5" />
+              </div>
+              <div className="text-center space-y-1">
+                <p className="text-sm font-medium text-foreground">
+                  Click to upload image
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Max 5MB (PNG, JPG)
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="relative rounded-lg overflow-hidden border bg-muted">
+              <img
+                src={previewUrl}
+                alt="Preview"
+                className="w-full h-48 object-cover"
+              />
+              <div className="absolute top-2 right-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="icon"
+                  className="h-8 w-8 rounded-full bg-background/80 hover:bg-background shadow-sm backdrop-blur-sm"
+                  onClick={removeImage}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+          <input
+            id="location-cover-image"
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleImageChange}
+          />
+        </div>
 
-        <DrawerFooter>
+        {/* Coordinates - Technical/Data Look */}
+        <div className="space-y-2">
+          <Label className="flex items-center gap-2">
+            <Navigation className="h-3.5 w-3.5" />
+            Coordinates
+          </Label>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-muted/40 border rounded-md px-3 py-2">
+              <span className="text-[10px] uppercase text-muted-foreground font-semibold tracking-wider block mb-0.5">
+                Latitude
+              </span>
+              <div className="font-mono text-sm text-foreground">
+                {formData.latitude || "—"}
+              </div>
+            </div>
+            <div className="bg-muted/40 border rounded-md px-3 py-2">
+              <span className="text-[10px] uppercase text-muted-foreground font-semibold tracking-wider block mb-0.5">
+                Longitude
+              </span>
+              <div className="font-mono text-sm text-foreground">
+                {formData.longitude || "—"}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="pt-2">
+        <Button type="submit" className="w-full">
+          Confirm Location
+        </Button>
+      </div>
+    </motion.form>
+  );
+
+  // 🖥️ Desktop Dialog
+  if (isDesktop) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[480px] p-0 gap-0 overflow-hidden">
+          <DialogHeader className="px-6 py-4 border-b">
+            <DialogTitle className="text-lg font-semibold">
+              Add New Location
+            </DialogTitle>
+            <DialogDescription>
+              Fill in the details to add a marker to the map.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="px-6 py-6 max-h-[70vh] overflow-y-auto">
+            {FormContent}
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  // 📱 Mobile Drawer
+  return (
+    <Drawer open={open} onOpenChange={onOpenChange}>
+      <DrawerContent className="max-h-[90vh]">
+        <DrawerHeader className="text-left border-b pb-4">
+          <DrawerTitle>Add New Location</DrawerTitle>
+          <DrawerDescription>
+            Tap a point on the map to set coordinates.
+          </DrawerDescription>
+        </DrawerHeader>
+
+        <div className="px-6 py-6 overflow-y-auto">
+          {FormContent}
+        </div>
+
+        <DrawerFooter className="border-t pt-4">
           <DrawerClose asChild>
-            <Button variant="outline" className="w-full">
-              Cancel
-            </Button>
+            <Button variant="outline">Cancel</Button>
           </DrawerClose>
         </DrawerFooter>
       </DrawerContent>
