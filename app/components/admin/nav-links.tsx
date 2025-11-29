@@ -21,7 +21,7 @@ const links = [
     icon: Bars3Icon,
   },
   { name: 'Flagged', href: '/admin/flagged', icon: FlagIcon },
-  {name: 'Noticeboard', href: '/admin/noticeboard', icon: EnvelopeIcon},
+  {name: 'Publish Notice', href: '/admin/noticeboard/publishNotice', icon: EnvelopeIcon},
   {name: 'Requests', href: '/admin/requests', icon: FolderPlusIcon}
 ];
 
