@@ -13,6 +13,7 @@ type JWTClaims struct {
 	UserID   uuid.UUID `json:"user_id"`
 	Role     int       `json:"role"`
 	Verified bool      `json:"verified"`
+	Visibility bool    `json:"visibility"`
 	jwt.RegisteredClaims
 }
 

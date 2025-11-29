@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"compass/connections"
 	"compass/model"
 	"net/http"
 	"time"
@@ -49,6 +50,7 @@ func UserAuthenticator(c *gin.Context) {
 	c.Set("userID", claims.UserID)
 	c.Set("userRole", claims.Role)
 	c.Set("verified", claims.Verified)
+	c.Set("visibility", claims.Visibility)
 
 	// Verify the user power
 	if role := c.GetInt("userRole"); role < int(model.UserRole) {
@@ -92,12 +94,24 @@ if !ok {
 		return
 	}
 
+
+	//fetch user details from db
+
+	var modelUser model.User
+	result := connections.DB.Model(&model.User{}).Select("role", "is_verified", "visibility").
+		Where("user_id = ?", userID).First(&modelUser)
+	
+	if result.Error != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
+		return
+	}
 	// Ideally fetch role + verified from DB
-	role := int(model.UserRole)
-	verified := claims.Verified
+	role := int(modelUser.Role)
+	verified := modelUser.IsVerified
+	visibility := modelUser.Profile.Visibility
 
 	//geneate new access token
-	newAccessToken, err := GenerateAccessToken(userID, role, verified)
+	newAccessToken, err := GenerateAccessToken(userID)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate access token"})
 		return
@@ -109,6 +123,7 @@ if !ok {
 	c.Set("userID", userID)
 	c.Set("userRole", role)
 	c.Set("verified", verified)
+	c.Set("visibility", visibility)
 
 	c.Next()
 }

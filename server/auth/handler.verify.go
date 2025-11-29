@@ -60,7 +60,7 @@ func verificationHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Request Failed, Please try again later"})
 		return
 	}
-	accessToken, err := middleware.GenerateAccessToken(user.UserID, int(user.Role), user.IsVerified);
+	accessToken, err := middleware.GenerateAccessToken(user.UserID);
 	refreshToken, err := middleware.GenerateRefreshToken(user.UserID);
 	if err != nil {
 		// TODO: Redirect to login page
