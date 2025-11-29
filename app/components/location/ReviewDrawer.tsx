@@ -55,16 +55,57 @@ export function ReviewDrawer({
         }
 
         setIsSubmitting(true);
-        const payload = new FormData();
-        payload.append("rating", rating.toString());
-        payload.append("location_id", locationId);
-        payload.append("description", description);
-        if (image) payload.append("image", image);
 
         try {
+            let imageId = null;
+
+            // 1. Upload Image if present
+            if (image) {
+                try {
+                    const imagePayload = new FormData();
+                    imagePayload.append("file", image);
+
+                    // Asset server is on port 8082, Maps is on 8081
+                    const assetUrl = process.env.NEXT_PUBLIC_MAPS_URL?.replace(":8081", ":8082") || "http://localhost:8082";
+                    const imgRes = await fetch(`${assetUrl}/assets`, {
+                        method: "POST",
+                        credentials: "include",
+                        body: imagePayload,
+                    });
+
+                    if (!imgRes.ok) {
+                        const errorText = await imgRes.text();
+                        console.error("Image upload failed:", imgRes.status, imgRes.statusText, errorText);
+                        throw new Error(`Failed to upload image: ${imgRes.status} ${errorText}`);
+                    }
+
+                    const imgData = await imgRes.json();
+                    imageId = imgData.ImageID;
+                } catch (uploadErr) {
+                    console.error("Image upload error:", uploadErr);
+                    toast.warning("Image upload failed. Submitting review without image.");
+                    imageId = null;
+                }
+            }
+
+            // 2. Submit Review Data
+            const reviewPayload = {
+                rating: rating,
+                locationId: locationId,
+                description: description,
+                images: imageId ? [imageId] : [],
+            };
+
             const res = await fetch(
                 `${process.env.NEXT_PUBLIC_MAPS_URL}/api/maps/review`,
-                { method: "POST", body: payload, credentials: "include" }
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(reviewPayload),
+                    credentials: "include"
+                }
             );
             const data = await res.json();
 

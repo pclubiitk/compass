@@ -39,6 +39,7 @@ import {
   Navigation,
   X,
   UploadCloud,
+  Loader2,
 } from "lucide-react";
 import { useMediaQuery } from "@/app/hooks/use-media-query";
 
@@ -59,6 +60,7 @@ export default function AddLocationDrawer({
   });
   const [coverPic, setCoverPic] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const isDesktop = useMediaQuery("(min-width: 768px)");
 
   // Auto-fill lat/lon + trigger open
@@ -109,36 +111,69 @@ export default function AddLocationDrawer({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
 
     const type =
       formData.locationType === "other"
         ? formData.customType.trim() || "other"
         : formData.locationType;
 
-    const payload = new FormData();
-    payload.append("name", formData.name.trim());
-    payload.append("latitude", formData.latitude);
-    payload.append("longitude", formData.longitude);
-    payload.append("locationType", type.trim());
-    payload.append("description", formData.description.trim());
-    if (coverPic) {
-      payload.append("coverpic", coverPic);
-    }
-
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_MAPS_URL}/api/maps/location`,
-        {
-          method: "POST",
-          credentials: "include",
-          body: payload,
+      let coverPicId = null;
+
+      // 1. Upload Image (Optional)
+      if (coverPic) {
+        try {
+          const imagePayload = new FormData();
+          imagePayload.append("file", coverPic);
+
+          // Asset server is on port 8082
+          const assetUrl = process.env.NEXT_PUBLIC_ASSET;
+          const imgRes = await fetch(`${assetUrl}/assets`, {
+            method: "POST",
+            credentials: "include",
+            body: imagePayload,
+          });
+
+          if (!imgRes.ok) {
+            const errorText = await imgRes.text();
+            console.error("Image upload failed:", imgRes.status, errorText);
+            toast.warning("Image upload failed. Submitting without image.");
+          } else {
+            const imgData = await imgRes.json();
+            coverPicId = imgData.ImageID;
+          }
+        } catch (uploadErr) {
+          console.error("Image upload network error:", uploadErr);
+          toast.warning("Image upload failed. Submitting without image.");
         }
-      );
+      }
+
+      // 2. Submit Location
+      const payload = {
+        name: formData.name.trim(),
+        latitude: parseFloat(formData.latitude),
+        longitude: parseFloat(formData.longitude),
+        locationType: type.trim(),
+        description: formData.description.trim(),
+        coverpic: coverPicId,
+        biopics: [],
+      };
+
+      const apiUrl = `${process.env.NEXT_PUBLIC_MAPS_URL}/api/maps/location`;
+      console.log("Submitting location to:", apiUrl);
+
+      const res = await fetch(apiUrl, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
       const data = await res.json().catch(() => ({}));
 
       if (res.ok) {
-        toast.success(data.message || "Location added successfully.");
+        toast.success(data.message || "Location added successfully!");
         localStorage.removeItem("selected_lat");
         localStorage.removeItem("selected_lon");
         setFormData({
@@ -157,7 +192,9 @@ export default function AddLocationDrawer({
       }
     } catch (err) {
       console.error(err);
-      toast.error("Network error. Please try again.");
+      toast.error("Something went wrong, please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -330,8 +367,15 @@ export default function AddLocationDrawer({
       </div>
 
       <div className="pt-2">
-        <Button type="submit" className="w-full">
-          Confirm Location
+        <Button type="submit" className="w-full" disabled={isSubmitting}>
+          {isSubmitting ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Submitting...
+            </>
+          ) : (
+            "Confirm Location"
+          )}
         </Button>
       </div>
     </motion.form>

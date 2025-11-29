@@ -26,14 +26,17 @@ export default function MapsLayout({ children }: { children: React.ReactNode }) 
     return () => window.removeEventListener("trigger-add-location", handler);
   }, []);
 
-  // Keep the map stable — no rerender when locations update
+  // Memoize the handler to prevent Map re-initialization
+  const handleMarkerClick = useMemo(() => () => setDrawerOpen(true), []);
+
+  // Keep the map stable — only update when locations change
   const memoMap = useMemo(
     () => (
       <div id="map-wrapper" className="h-full w-full">
-        <Map onMarkerClick={() => setDrawerOpen(true)} locations={locations} />
+        <Map onMarkerClick={handleMarkerClick} locations={locations} />
       </div>
     ),
-    [] //  do NOT depend on locations (we’ll refresh markers manually)
+    [locations, handleMarkerClick]
   );
 
   // Trigger refresh-markers event when new data fetched
@@ -66,8 +69,8 @@ export default function MapsLayout({ children }: { children: React.ReactNode }) 
 
       <div
         className={`absolute inset-0 z-30 ${isLocationPage
-            ? "overflow-y-auto pointer-events-auto bg-gray-50/50 dark:bg-zinc-950/50"
-            : "pointer-events-none"
+          ? "overflow-y-auto pointer-events-auto bg-gray-50/50 dark:bg-zinc-950/50"
+          : "pointer-events-none"
           }`}
       >
         <div className={isLocationPage ? "min-h-full" : "pointer-events-auto"}>
