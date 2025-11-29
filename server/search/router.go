@@ -11,7 +11,7 @@ func Router(r *gin.Engine) {
 	{
 		search.Use(middleware.UserAuthenticator)
 		search.GET("/", getAllProfiles)
-		search.GET("/changeLog", getChangeLog)
+		search.POST("/changeLog", getChangeLog)
 		search.POST("/toggleVisibility", toggleVisibility)
 		search.DELETE("/", deleteProfileData)
 	}
