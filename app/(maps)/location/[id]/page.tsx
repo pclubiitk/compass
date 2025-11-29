@@ -47,6 +47,8 @@ import { LocationSkeleton } from "@/app/components/location/LocationSkeleton";
 import { PhotoGallery } from "@/app/components/location/PhotoGallery";
 import { ReviewDrawer } from "@/app/components/location/ReviewDrawer";
 
+import { toast } from "sonner";
+
 // Types
 interface LocationData {
   id: string;
@@ -85,16 +87,30 @@ export default function LocationPage() {
   const [reviews, setReviews] = useState<ReviewData[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // ... existing imports ...
+
   const fetchLocation = async () => {
     if (!id) return;
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_MAPS_URL}/api/maps/location/${id}`
       );
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch location");
+      }
+
       const data = await res.json();
+
+      if (!data.location) {
+        throw new Error("Location not found");
+      }
+
       setLocation(data.location);
     } catch (err) {
       console.error("Failed to fetch location:", err);
+      toast.error("Wrong location id");
+      router.push("/");
     }
   };
 
