@@ -10,6 +10,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/spf13/viper"
+	"gorm.io/gorm"
 )
 
 var authConfig = AuthConfig{
@@ -65,30 +66,26 @@ func tryRefresh(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
-
-	// Parse refresh token
-	token, err := jwt.Parse(refreshToken, func(token *jwt.Token) (interface{}, error) {
+token, err := jwt.ParseWithClaims(
+	refreshToken,
+	&JWTClaimsRefresh{},
+	func(token *jwt.Token) (interface{}, error) {
 		return []byte(authConfig.JWTSecretKey), nil
-	})
-	if err != nil || !token.Valid {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid refresh token"})
-		return
-	}
+	},
+)
 
-	// claims, ok := token.Claims.(jwt.MapClaims)
-	// if !ok {
-	// 	c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid refresh token claims"})
-	// 	return
-	// }
+if err != nil {
+	c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+	return
+}
 
-
-	claims, ok := token.Claims.(*JWTClaims)
-if !ok {
+claims, ok := token.Claims.(*JWTClaimsRefresh)
+if !ok || !token.Valid {
 	c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token claims"})
 	return
 }
 
-	userID, err := uuid.Parse(claims.UserID.String())
+	userID, err := uuid.Parse(claims.UserID)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid user ID"})
 		return
@@ -98,9 +95,14 @@ if !ok {
 	//fetch user details from db
 
 	var modelUser model.User
-	result := connections.DB.Model(&model.User{}).Select("role", "is_verified", "visibility").
-		Where("user_id = ?", userID).First(&modelUser)
-	
+	result := connections.DB.
+    Model(&model.User{}).
+    Select("role", "is_verified").
+    Preload("Profile", func(db *gorm.DB) *gorm.DB {
+        return db.Select("visibility")
+    }).
+    Where("user_id = ?", userID).
+    First(&modelUser)
 	if result.Error != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
 		return
