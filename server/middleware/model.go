@@ -17,6 +17,12 @@ type JWTClaims struct {
 	jwt.RegisteredClaims
 }
 
+type JWTClaimsRefresh struct {
+	UserID string `json:"user_id"`
+	jwt.RegisteredClaims
+}
+
+
 // AuthConfig holds authentication configuration
 type AuthConfig struct {
 	JWTSecretKey    string
