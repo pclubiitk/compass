@@ -5,7 +5,6 @@ database:
   host: "localhost"
   name: "compass"
   user: "this_is_mjk"
-
   port: 5432
 
 rabbitmq:

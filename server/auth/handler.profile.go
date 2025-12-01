@@ -208,3 +208,79 @@ func getProfileHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"profile": user})
 
 }
+
+func autoC(c *gin.Context) {
+	userID, exist := c.Get("userID")
+	if !exist {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	var user model.User
+	if err := connections.DB.
+		Model(&model.User{}).
+		Select("email").
+		Where("user_id = ?", userID.(uuid.UUID)).
+		First(&user).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch user details"})
+		}
+		return
+	}
+
+	automationServerURL := viper.GetString("automation.url")
+	if automationServerURL == "" {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Auth server configuration missing"})
+		return
+	}
+	client := &http.Client{Timeout: 10 * time.Second}
+	reqURL := fmt.Sprintf("%s/getDetails?email=%s", automationServerURL, user.Email)
+
+	req, err := http.NewRequest("GET", reqURL, nil)
+	if err != nil {
+		logrus.WithError(err).Error("Failed to create automation request")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create request"})
+		return
+	}
+
+	if authCookie, err := c.Cookie("auth"); err == nil {
+		req.AddCookie(&http.Cookie{
+			Name:  "auth",
+			Value: authCookie,
+		})
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		logrus.WithError(err).Error("Failed to call automation server")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to call automation server"})
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		switch resp.StatusCode {
+		case http.StatusUnauthorized:
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authentication failed"})
+		case http.StatusNotFound:
+			c.JSON(http.StatusNotFound, gin.H{"error": "Not Found."})
+		default:
+			logrus.WithField("status", resp.StatusCode).Error("Automation server returned error")
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Automation Server returned error"})
+		}
+		return
+	}
+
+	var studentDetails StudentDetails
+	if err := json.NewDecoder(resp.Body).Decode(&studentDetails); err != nil {
+		logrus.WithError(err).Error("Failed to parse auth server response")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse student details"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"automation": studentDetails,
+	})
+}
