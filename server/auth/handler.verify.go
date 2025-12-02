@@ -73,7 +73,9 @@ func verificationHandler(c *gin.Context) {
 	}
 	// set cookie
 	middleware.ClearAuthCookie(c) // Clear the previous cookie
+
+	// TODO: Make sure both cookies are set properly, i observed previously that only auth cookie was being set after otp verification
+	middleware.SetRefreshCookie(c, refreshToken)
 middleware.SetAuthCookie(c, accessToken)
-middleware.SetRefreshCookie(c, refreshToken)
 	c.JSON(http.StatusOK, gin.H{"message": "Email verification successful."})
 }
