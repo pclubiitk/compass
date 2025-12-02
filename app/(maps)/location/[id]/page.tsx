@@ -55,14 +55,16 @@ export default function LocationPage() {
   const searchParams = useSearchParams();
   const page = searchParams.get("page") || "1";
   const router = useRouter();
-
+  //TODO: add correct interface for location and review
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [location, setLocation] = useState<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [reviews, setReviews] = useState<any[]>([]);
   const [ratting, setRatting] = useState<number>(0);
   const [showSuccess, setShowSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [mode, setMode] = useState<"light" | "dark">("light");
+  const [mode] = useState<"light" | "dark">("light");
 
   useEffect(() => {
     if (!id) return;
@@ -187,7 +189,7 @@ export default function LocationPage() {
 
         setTimeout(() => setErrorMessage(""), 2000);
       }
-    } catch (err) {
+    } catch  {
       setErrorMessage("Submission failed. Try again.");
       setShowSuccess(false);
       setDrawerOpen(false);

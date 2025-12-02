@@ -85,6 +85,8 @@ export default function Page() {
         const data = await res.json()
 
         // adapt based on backend response shape
+        //TODO: add correct interface for noticeboard_list
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const formatted: Notice[] = data.noticeboard_list.map((n: any) => ({
           id: n.NoticeId,
           title: n.title,

@@ -93,7 +93,7 @@ export default function Map({ onMarkerClick }: MapProps) {
           }
         });
 
-        window.addEventListener("search-location", (e: any) => {
+        window.addEventListener("search-location", (e: CustomEvent<{ lng: number; lat: number }>) => {
           const { lng, lat } = e.detail;
           map.flyTo({ center: [lng, lat], zoom: 14 });
 

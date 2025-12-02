@@ -157,7 +157,7 @@ export default function NoticeboardForm() {
       console.log('Notice submitted successfully!');
       router.push('/admin/noticeboard');
 
-    } catch (err: any) {
+    } catch (err) {
       console.error("Failed to submit notice:", err);
       // setError(err.message);
     } finally {
@@ -186,6 +186,8 @@ export default function NoticeboardForm() {
             name={field}
             placeholder={field}
             type="text"
+            //TODO: add correct interface NoticeFormData
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             value={(formData as any)[field]}
             onChange={handleChange}
             className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder:text-gray-400"

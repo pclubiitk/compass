@@ -85,6 +85,8 @@ export default function NoticeBoardPage() {
 
       if (json?.noticeboard_list?.length > 0) {
         setNotices((prev) => {
+          //TODO: add correct interface for noticeboard_list
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const newNotices = [...prev, ...json.noticeboard_list.map((n: any) => ({...n, id: n.NoticeId || n.id}))];
           setHasMore(newNotices.length < json.total_notices);
           return newNotices;

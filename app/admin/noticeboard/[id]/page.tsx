@@ -54,7 +54,7 @@ export default function NoticeDetailPage() {
           location: data.location,
           time: data.eventTime,
         });
-      } catch (err: any) {
+      } catch (err) {
         console.error("Failed to fetch notice:", err);
       } finally {
         setLoading(false);
