@@ -175,7 +175,7 @@ export default function NoticeBoardPage() {
               >
                 <NoticeCard 
                   notice={notice}
-                  onShare={handleShare}
+                  onShare={() => handleShare(notice)}
                   onCopy={handleCopy} />
               </Link>
             ))
@@ -199,7 +199,7 @@ export default function NoticeBoardPage() {
 
       {shareNotice && (
         <ShareDialog
-          url={`${window.location.href.split('#')[0]}#${shareNotice.id}`}
+          url={`${shareNotice.id}`}
           title={shareNotice.title}
           onClose={() => setShareNotice(null)}
         />
