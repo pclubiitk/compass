@@ -67,11 +67,11 @@ func signupHandler(c *gin.Context) {
 	}
 
 	//  Add mail job to queue
-	verifyLink := fmt.Sprintf("http://%s/signup?token=%s&userID=%s",
+	verifyLink := fmt.Sprintf("http://%s/api/auth/signup?token=%s&userID=%s",
 		// Dev Mode, call the anonymous function
 		func() string {
 			if viper.GetString("domain") == "" {
-			return fmt.Sprintf("%s/api/auth", viper.GetString("NEXT_PUBLIC_AUTH_URL"))
+				return "localhost:3000"
 			}
 			return viper.GetString("domain")
 		}(),
