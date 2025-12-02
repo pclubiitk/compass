@@ -107,9 +107,12 @@ export function SocialProfileCard({
           <Avatar className="w-full h-full border-4 border-card cursor-pointer">
             <AvatarImage
               src={
-                `http://localhost:8080/public/${profilePic}` ||
-                (email ? `https://home.iitk.ac.in/~${email.split("@")[0]}/dp` : "")
-              }
+    profilePic
+      ? `http://localhost:8080/public/${profilePic}`
+      : email
+      ? `https://home.iitk.ac.in/~${email.split("@")[0]}/dp`
+      : ""
+  }
             />
             <AvatarFallback>
               {email ? email.slice(0, 2).toUpperCase() : "NA"}
