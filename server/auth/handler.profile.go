@@ -166,14 +166,35 @@ func updateProfile(c *gin.Context) {
 
 	}
 
-	// Update into db
-	if err := connections.DB.
-		// Look for a profile with this user_id
-		Where(model.Profile{UserID: userID.(uuid.UUID)}).
-		// If found, update it with the new data. If not found, these values will be used for creation.
-		Assign(profileData).
-		// Executes the find, update, or create.
-		FirstOrCreate(&model.Profile{}).Error; err != nil {
+	// Update into db // haven't tested
+	if err := connections.DB.Transaction(func(tx *gorm.DB) error {
+		// Update or Create the Profile
+		// 'tx' here instead of 'connections.DB'
+		if err := tx.
+			Where(model.Profile{UserID: userID.(uuid.UUID)}).
+			Assign(profileData).
+			FirstOrCreate(&model.Profile{}).Error; err != nil {
+			return err
+		}
+
+		// Delete any pre-existing log for this user
+		// (as it is syncing data based on change_logs table)
+		if err := tx.Where("user_id = ?", userID).Delete(&model.ChangeLog{}).Error; err != nil {
+			return err
+		}
+
+		// Create the new Log Entry
+		logEntry := model.ChangeLog{
+			UserID: userID.(uuid.UUID),
+			Action: "update",
+		}
+		
+		if err := tx.Create(&logEntry).Error; err != nil {
+			return err
+		}
+
+		return nil
+	}); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update profile"})
 		return
 	}
