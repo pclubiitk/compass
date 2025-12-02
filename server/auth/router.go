@@ -9,6 +9,7 @@ import (
 )
 
 func Router(r *gin.Engine) {
+	r.Static("/public", "./public") //added for addition of profile images in public folder
 	auth := r.Group("/api/auth")
 	{
 		auth.POST("/login", loginHandler)
@@ -25,5 +26,6 @@ func Router(r *gin.Engine) {
 		profile.Use(middleware.UserAuthenticator)
 		profile.GET("", getProfileHandler)
 		profile.POST("", updateProfile)
+		profile.POST("/upload-image", UploadProfileImage)
 	}
 }

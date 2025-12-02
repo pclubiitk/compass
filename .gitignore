@@ -57,4 +57,7 @@ next-env.d.ts
 
 # Data
 /server/parser/*.csv
-/server/parser/*.sql
+/server/parser/*.sqlapp/login/page.tsx
+components/profile/ContributionsCard.tsx
+components/profile/EditableProfileCard.tsx
+components/signup/Step1Register.tsx

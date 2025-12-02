@@ -14,7 +14,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   libvips-dev \
   && rm -rf /var/lib/apt/lists/*
 
-# Build latest libheif (v1.18.2)
+#Building latest libheif (v1.18.2)
+#Installs HEIF and video codec development libraries: libde265-dev, libx265-dev.
+#clones and builds libheif v1.18.2 from source. This is essential for HEIF binding
 RUN git clone --depth 1 --branch v1.18.2 https://github.com/strukturag/libheif.git /tmp/libheif \
   && cd /tmp/libheif \
   && mkdir build && cd build \

@@ -8,7 +8,7 @@ import { SocialProfileCard } from "@/components/profile/SocialProfileCard";
 import { EditableProfileCard } from "@/components/profile/EditableProfileCard";
 import { ContributionsCard } from "@/components/profile/ContributionsCard";
 
-// Data Type
+// Data Types
 export type Profile = {
   name: string;
   email: string;
@@ -19,7 +19,9 @@ export type Profile = {
   hall: string;
   roomNo: string;
   homeTown: string;
+  profilePic?: string;
 };
+
 export type UserData = {
   role: number;
   profile: Profile;
@@ -34,22 +36,32 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchProfile = async () => {
-    // We don't reset loading to true on refetch to avoid skeleton flashes
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL}/profile`, {
         credentials: "include",
       });
       if (res.ok) {
         const data = await res.json();
-        setUserData(data.profile);
+        console.log("Raw API Data:", data);
+
+        const normalized = {
+          ...data,
+          profile: {
+            ...data.profile,
+            profilePic: data.profile.profilepic ?? data.profile.profilePic,
+          },
+        };
+
+        console.log("Normalized profilePic:", normalized.profile.profilePic);
+
+        setUserData(normalized);
       } else {
         toast.error("Invalid Session. Redirecting to login.");
-        // After login again direct to profile
-        router.push("/login?callbackUrl%2Fprofile");
+        router.push("/login?callbackUrl=%2Fprofile");
       }
     } catch (err) {
-      console.log(err)
-      toast.error("An error occurred while fetching your profile.");
+      console.log(err);
+      toast.error("Error fetching profile.");
     } finally {
       setIsLoading(false);
     }
@@ -59,6 +71,7 @@ export default function ProfilePage() {
     fetchProfile();
   }, []);
 
+  // Loading Skeleton
   if (isLoading) {
     return (
       <div className="flex flex-col lg:flex-row min-h-screen bg-muted/40">
@@ -73,33 +86,36 @@ export default function ProfilePage() {
     );
   }
 
+  // Failed to load
   if (!userData) {
     return <div className="text-center p-12">Could not load profile data.</div>;
   }
 
+  const profile = userData.profile;
+
   return (
     <div className="flex flex-col lg:flex-row min-h-screen bg-muted/40">
-      {/* --- Left Column (Fixed) --- */}
       <aside className="w-full lg:w-1/3 xl:w-1/3 p-4 sm:p-6 lg:p-8">
         <div className="lg:sticky lg:top-8">
-          <SocialProfileCard profile={userData.profile} />
+          <SocialProfileCard
+            email={profile.email}
+            profilePic={userData.profile.profilePic}
+            onProfileUpdate={fetchProfile}
+          />
         </div>
       </aside>
 
-      {/* --- Right Column (Scrollable) --- */}
       <main className="flex-1 lg:h-screen lg:overflow-y-auto p-4 sm:p-6 lg:p-8 lg:pl-0">
-        <div className="space-y-8">
-          <EditableProfileCard
-            profile={userData.profile}
-            onUpdate={fetchProfile}
-          />
+        <EditableProfileCard profile={userData.profile} onUpdate={fetchProfile} />
+
+        <div className="mt-8">
           <ContributionsCard
             locations={userData.ContributedLocations}
             reviews={userData.ContributedReview}
             notices={userData.ContributedNotice}
           />
         </div>
-      </main>
+        </main>
     </div>
   );
 }

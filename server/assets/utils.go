@@ -63,11 +63,16 @@ if imgType == "heic" || imgType == "heif" || imgType == "HEIC" || imgType == "HE
 			return nil, fmt.Errorf("failed to get primary image handle: %w", err)
 		}
 
-		decodingOpts := heif.NewDecodingOptions()
-		heifImg, err := handle.DecodeImage(heif.ColorspaceRGB, heif.ChromaInterleavedRGBA, decodingOpts)
-		if err != nil {
-			return nil, fmt.Errorf("failed to decode HEIC image: %w", err)
-		}
+		//this was showing an error due to depreciated syntax..now cleared as NewDecodingOptions function returns two values , not one.
+		decodingOpts, err := heif.NewDecodingOptions()
+if err != nil {
+    return nil, fmt.Errorf("failed to create HEIF decoding options: %w", err)
+}
+heifImg, err := handle.DecodeImage(heif.ColorspaceRGB, heif.ChromaInterleavedRGBA, decodingOpts)
+if err != nil {
+    return nil, fmt.Errorf("failed to decode HEIC image: %w", err)
+}
+
 
 		// Convert *heif.Image → Go image.Image
 		rgbaImg, err := heifImg.GetImage()

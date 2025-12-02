@@ -11,7 +11,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"compass/assets"
+	
 )
 
 func ModeratorWorker() error {
@@ -107,7 +107,8 @@ func ModeratorWorker() error {
 		} else {
 			logrus.Infof("Moderation bot found it right\nID: %s\nType: %s", job.AssetID, job.Type)
 
-	if err := assets.MoveImageFromTmpToPublic(job.AssetID); err != nil {    //moving img to public if approved
+//changed from assests.MoveImageFromTmpToPublic to MoveImageFromTmpToPublic [TO AVOID IMPORT LOOP WHICH STOPS the server]
+	if err := MoveImageFromTmpToPublic(job.AssetID); err != nil {    //moving img to public if approved
         logrus.Errorf("Failed to move image %s to public: %v", job.AssetID, err)
     } else {
         logrus.Infof("Image %s successfully moved from tmp to public", job.AssetID)
