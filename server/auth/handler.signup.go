@@ -71,7 +71,7 @@ func signupHandler(c *gin.Context) {
 		// Dev Mode, call the anonymous function
 		func() string {
 			if viper.GetString("domain") == "" {
-				return "localhost:3000"
+			return fmt.Sprintf("%s/api/auth", viper.GetString("NEXT_PUBLIC_AUTH_URL"))
 			}
 			return viper.GetString("domain")
 		}(),
