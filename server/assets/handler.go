@@ -50,6 +50,7 @@ func uploadAsset(c *gin.Context) {
 payload, _ := json.Marshal(moderationJob)
 if err := workers.PublishJob(payload, "moderation"); err != nil {
     c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to queue moderation job"})
+	deleteImage(path)
     return
        }
 		c.JSON(http.StatusOK, gin.H{"ImageID": image.ImageID})

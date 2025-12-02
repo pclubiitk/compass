@@ -37,16 +37,7 @@ func cncImage(image *multipart.FileHeader) ([]byte, error) {
 	// Image format converter
 	
 newImage := bimg.NewImage(imgBytes)
-fmt.Print(newImage.Type())
 imgType := newImage.Type()
-// 	if newImage.Type() == "heif" {
-// 		return nil, fmt.Errorf("we currently do not support heic format")
-// 	} else if processedImage, err := newImage.Process(options); err != nil {
-// 		return nil, err
-// 	} else {
-// 		return processedImage, nil
-// 	}
-// }
 
 if imgType == "heic" || imgType == "heif" || imgType == "HEIC" || imgType == "HEIF" {
 		ctx, err := heif.NewContext()
