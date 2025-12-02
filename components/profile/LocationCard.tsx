@@ -35,7 +35,7 @@ type Location = {
   biopics: string[];
 };
 
-interface LocationCardProps {
+export interface LocationCardProps {
   location: Location;
 }
 
