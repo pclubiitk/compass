@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
-import { Result } from 'postcss';
+
 
 const CopyIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
@@ -25,8 +25,10 @@ interface UploadedImage {
 export default function NoticeboardForm() {
 
   const router = useRouter();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+//28:10  Error: 'isSubmitting' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+//29:10  Error: 'error' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+  // const [isSubmitting, setIsSubmitting] = useState(false);
+  // const [error, setError] = useState<string | null>(null);
 
   const [images, setImages] = useState<UploadedImage[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null); // To trigger file input click
@@ -94,8 +96,8 @@ export default function NoticeboardForm() {
           ?{...img, id: result.ImageID, isUploadingImage: false}
           : img
         ));
-      } catch (err: any){
-        setError(err.message);
+      } catch {
+        //setError(err.message);
         setImages(prev => prev.filter(img => img.previewUrl !== image.previewUrl));
         // removed the failed uploads
       }
@@ -129,8 +131,8 @@ export default function NoticeboardForm() {
   // -- changes -- 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
-    setError(null);
+    // setIsSubmitting(true);
+    // setError(null);
     console.log('Submitted notice:', formData);
     // --------------
 
@@ -157,9 +159,9 @@ export default function NoticeboardForm() {
 
     } catch (err: any) {
       console.error("Failed to submit notice:", err);
-      setError(err.message);
+      // setError(err.message);
     } finally {
-      setIsSubmitting(false);
+      // setIsSubmitting(false);
     }
   
     // router.push('/admin/noticeboard');

@@ -1,5 +1,4 @@
 "use client"
-import { Metadata } from 'next';
 import Link from 'next/link';
 import { CheckCircle, AlertTriangle, Ban } from 'lucide-react';
 import { useEffect, useState } from 'react';

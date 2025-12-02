@@ -46,7 +46,7 @@ function ShareButton({
 export default function ShareDialog({ url, title, onClose }: ShareDialogProps) {
   const [copied, setCopied] = useState(false);
 
-  const shareText = encodeURIComponent(title);
+  // const shareText = encodeURIComponent(title);
   const shareUrl = `${window.location.origin}/noticeboard/v1`;
 
   // Copy link handler
