@@ -6,7 +6,18 @@ import { createPortal } from "react-dom";
 import AddLocationDrawer from "@/components/AddLocationDrawer";
 import { BottomNav } from "@/components/BottomNavbar";
 import { useLocations } from "@/app/hooks/useLocations";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useGContext } from "@/components/ContextProvider";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
 
 const Map = dynamic(() => import("@/app/components/Map"), {
   ssr: false,
@@ -16,7 +27,10 @@ const Map = dynamic(() => import("@/app/components/Map"), {
 export default function MapsLayout({ children }: { children: React.ReactNode }) {
   const { locations } = useLocations();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [loginDialogOpen, setLoginDialogOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
+  const { isLoggedIn } = useGContext();
   const isLocationPage = pathname?.startsWith("/location");
 
   // Trigger drawer open globally when "Add Location" pressed
@@ -27,7 +41,13 @@ export default function MapsLayout({ children }: { children: React.ReactNode }) 
   }, []);
 
   // Memoize the handler to prevent Map re-initialization
-  const handleMarkerClick = useMemo(() => () => setDrawerOpen(true), []);
+  const handleMarkerClick = useMemo(() => () => {
+    if (!isLoggedIn) {
+      setLoginDialogOpen(true);
+      return;
+    }
+    setDrawerOpen(true);
+  }, [isLoggedIn]);
 
   // Keep the map stable — only update when locations change
   const memoMap = useMemo(
@@ -79,6 +99,28 @@ export default function MapsLayout({ children }: { children: React.ReactNode }) 
       </div>
 
       <BottomNav />
+
+      <AlertDialog open={loginDialogOpen} onOpenChange={setLoginDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Login Required</AlertDialogTitle>
+            <AlertDialogDescription>
+              You need to log in to add a new location.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setLoginDialogOpen(false);
+                router.push("/login?next=/");
+              }}
+            >
+              Log In
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

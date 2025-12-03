@@ -16,17 +16,25 @@ import {
   Building2,
   TreePalm,
   MapPin,
-  ChevronDown,
-  ChevronUp,
 } from "lucide-react";
 import { createRoot } from "react-dom/client";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
 
 type MapProps = {
   onMarkerClick: () => void;
   locations: any[];
 };
 
-// Colors + Icons 
+// Colors + Icons
 const colorMap: Record<string, string> = {
   food: "#ef4444",
   lecturehall: "#3b82f6",
@@ -47,6 +55,11 @@ const iconMap: Record<string, any> = {
 
 const formatCount = (n?: number) => (typeof n === "number" ? n : 0);
 
+// IITK fallback center (lng, lat)
+const FALLBACK_CENTER: [number, number] = [
+  80.23273232675717, // longitude
+  26.50939610022435, // latitude
+];
 
 // Main Map
 export default function Map({ onMarkerClick, locations }: MapProps) {
@@ -56,15 +69,33 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
   const locationMarkers = useRef<maplibregl.Marker[]>([]);
   const router = useRouter();
   const [mapLoaded, setMapLoaded] = useState(false);
+  const [locationDenied, setLocationDenied] = useState(false);
+  const [geoState, setGeoState] = useState<PermissionState | null>(null);
   const { setGlobalLoading } = useGContext();
 
-  //  Initialize map once
+  // Track geolocation permission state (if browser supports it)
+  useEffect(() => {
+    if (typeof navigator === "undefined" || !("permissions" in navigator)) return;
+
+    // @ts-ignore - TS lib sometimes doesn’t include geolocation here
+    navigator.permissions
+      .query({ name: "geolocation" })
+      .then((status: PermissionStatus) => {
+        setGeoState(status.state);
+        status.onchange = () => setGeoState(status.state);
+      })
+      .catch(() => {
+        // ignore if not supported
+      });
+  }, []);
+
+  // Initialize map once
   useEffect(() => {
     if (!mapContainer.current || mapRef.current) return;
 
     setGlobalLoading(true);
 
-    // Add keyframes for pulsing marker animation
+    // Add keyframes for animations
     const styleSheet = document.createElement("style");
     styleSheet.type = "text/css";
     styleSheet.innerText = `
@@ -83,116 +114,121 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
     const savedCenter = JSON.parse(localStorage.getItem("map_center") || "null");
     const savedZoom = Number(localStorage.getItem("map_zoom")) || 14;
 
+    // Helper to set up the map for BOTH success + fallback
+    const setupMap = (startCenter: [number, number]) => {
+      const map = new maplibregl.Map({
+        container: mapContainer.current!,
+        style: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
+        center: startCenter,
+        zoom: savedZoom,
+      });
+
+      mapRef.current = map;
+      (window as any).mapRef = mapRef;
+
+      // Custom user marker
+      const userWrapper = document.createElement("div");
+      userWrapper.style.cursor = "pointer";
+
+      const userInner = document.createElement("div");
+      userInner.style.cssText = `
+        display: flex; align-items: center; justify-content: center;
+        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+      `;
+
+      userWrapper.appendChild(userInner);
+
+      const userRoot = createRoot(userInner);
+      userRoot.render(
+        <div className="relative flex flex-col items-center justify-center -mt-10">
+          <div className="relative z-10 filter drop-shadow-md transform transition-transform hover:scale-110">
+            <svg
+              width="33"
+              height="37"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M12 0C7.58 0 4 3.58 4 8C4 13.5 12 24 12 24C12 24 20 13.5 20 8C20 3.58 16.42 0 12 0Z"
+                fill="#EF4444"
+              />
+              <circle cx="12" cy="8" r="3.5" fill="white" />
+            </svg>
+          </div>
+        </div>
+      );
+
+      const userMarker = new maplibregl.Marker({
+        element: userWrapper,
+        anchor: "bottom",
+        offset: [0, 0],
+      })
+        .setLngLat(startCenter)
+        .addTo(map);
+
+      userMarkerRef.current = userMarker;
+      (window as any).markerRef = userMarkerRef;
+
+      // Click to open Add Drawer
+      userMarker.getElement().addEventListener("click", (e) => {
+        e.stopPropagation();
+        onMarkerClick();
+      });
+
+      // Handle map click to move marker
+      map.on("click", (e) => {
+        const { lng, lat } = e.lngLat;
+        if (!userMarkerRef.current) return;
+
+        userMarkerRef.current.setLngLat([lng, lat]);
+        localStorage.setItem("selected_lat", lat.toString());
+        localStorage.setItem("selected_lon", lng.toString());
+        map.flyTo({ center: [lng, lat], zoom: 14 });
+        window.dispatchEvent(
+          new CustomEvent("marker-selected", { detail: { lat, lng } })
+        );
+      });
+
+      // Handle trigger from Add button
+      window.addEventListener("trigger-add-location", () => {
+        if (!mapRef.current || !userMarkerRef.current) return;
+        const center = mapRef.current.getCenter();
+        userMarkerRef.current.setLngLat(center);
+        localStorage.setItem("selected_lat", center.lat.toString());
+        localStorage.setItem("selected_lon", center.lng.toString());
+        onMarkerClick();
+      });
+
+      // Save camera position on move
+      map.on("moveend", () => {
+        localStorage.setItem(
+          "map_center",
+          JSON.stringify(map.getCenter().toArray())
+        );
+        localStorage.setItem("map_zoom", map.getZoom().toString());
+      });
+
+      map.on("load", () => {
+        setMapLoaded(true);
+        setGlobalLoading(false);
+        map.resize();
+        window.dispatchEvent(new Event("map-ready"));
+      });
+    };
+
     navigator.geolocation.getCurrentPosition(
       ({ coords }) => {
-        const startCenter = savedCenter || [coords.longitude, coords.latitude];
-
-        const map = new maplibregl.Map({
-          container: mapContainer.current!,
-          style: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
-          center: startCenter,
-          zoom: savedZoom,
-        });
-
-        mapRef.current = map;
-        (window as any).mapRef = mapRef;
-
-        //  Create a custom pulsating marker for the user
-        const userWrapper = document.createElement("div");
-        userWrapper.style.cursor = "pointer";
-
-        // Inner element for visual styling
-        const userInner = document.createElement("div");
-        userInner.style.cssText = `
-          display: flex; align-items: center; justify-content: center;
-          filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
-        `;
-
-        userWrapper.appendChild(userInner);
-
-        // Render Custom SVG Marker (Teardrop shape)
-        const userRoot = createRoot(userInner);
-        userRoot.render(
-          <div className="relative flex flex-col items-center justify-center -mt-10">
-            {/* Custom SVG Marker */}
-            <div className="relative z-10 filter drop-shadow-md transform transition-transform hover:scale-110">
-              <svg
-                width="33"
-                height="37"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M12 0C7.58 0 4 3.58 4 8C4 13.5 12 24 12 24C12 24 20 13.5 20 8C20 3.58 16.42 0 12 0Z"
-                  fill="#EF4444"
-                />
-                <circle cx="12" cy="8" r="3.5" fill="white" />
-              </svg>
-            </div>
-          </div>
-        );
-
-        const userMarker = new maplibregl.Marker({
-          element: userWrapper,
-          anchor: "bottom", // Pin tip is at the bottom
-          offset: [0, 0]
-        })
-          .setLngLat(startCenter)
-          .addTo(map);
-
-        userMarkerRef.current = userMarker;
-        (window as any).markerRef = userMarkerRef;
-
-        //  Click to open Add Drawer
-        userMarker.getElement().addEventListener("click", (e) => {
-          e.stopPropagation();
-          onMarkerClick();
-        });
-
-        //  Handle map click to move marker
-        map.on("click", (e) => {
-          const { lng, lat } = e.lngLat;
-          if (!userMarkerRef.current) return;
-
-          userMarkerRef.current.setLngLat([lng, lat]);
-          localStorage.setItem("selected_lat", lat.toString());
-          localStorage.setItem("selected_lon", lng.toString());
-          map.flyTo({ center: [lng, lat], zoom: 14 });
-          window.dispatchEvent(
-            new CustomEvent("marker-selected", { detail: { lat, lng } })
-          );
-        });
-
-        // Handle trigger from Add button
-        window.addEventListener("trigger-add-location", () => {
-          if (!mapRef.current || !userMarkerRef.current) return;
-          const center = mapRef.current.getCenter();
-          userMarkerRef.current.setLngLat(center);
-          localStorage.setItem("selected_lat", center.lat.toString());
-          localStorage.setItem("selected_lon", center.lng.toString());
-          onMarkerClick();
-        });
-
-        //  Save camera position on move
-        map.on("moveend", () => {
-          localStorage.setItem(
-            "map_center",
-            JSON.stringify(map.getCenter().toArray())
-          );
-          localStorage.setItem("map_zoom", map.getZoom().toString());
-        });
-
-        map.on("load", () => {
-          setMapLoaded(true);
-          setGlobalLoading(false);
-          map.resize();
-          window.dispatchEvent(new Event("map-ready"));
-        });
+        const startCenter = (savedCenter ||
+          [coords.longitude, coords.latitude]) as [number, number];
+        setupMap(startCenter);
       },
       (err) => {
-        console.error("Geolocation error:", err);
-        setGlobalLoading(false);
+        // console.error("Geolocation error:", err);
+        setLocationDenied(true);
+
+        const startCenter = (savedCenter || FALLBACK_CENTER) as [number, number];
+        setupMap(startCenter);
       }
     );
 
@@ -201,7 +237,7 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
       mapRef.current = null;
       document.head.removeChild(styleSheet);
     };
-  }, [onMarkerClick]);
+  }, [onMarkerClick, setGlobalLoading]);
 
   // Marker rendering
   const renderMarkers = useCallback(
@@ -229,11 +265,9 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
         const Icon = iconMap[rawType] || iconMap.default;
         const color = colorMap[rawType] || colorMap.default;
 
-        // Wrapper element for MapLibre positioning (no transforms here!)
         const el = document.createElement("div");
         el.style.cursor = "pointer";
 
-        // Inner element for visual styling and animation
         const inner = document.createElement("div");
         inner.style.cssText = `
           width: 28px; height: 28px;
@@ -261,7 +295,6 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
         el.addEventListener("click", (e) => {
           e.stopPropagation();
 
-          //  fly to marker position
           map.flyTo({
             center: [loc.longitude, loc.latitude],
             zoom: Math.max(map.getZoom(), 16),
@@ -270,7 +303,6 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
             essential: true,
           });
 
-          //  bounce animation (CSS scale) - Animate INNER element
           inner.animate(
             [
               { transform: "scale(1)" },
@@ -280,7 +312,6 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
             { duration: 300, easing: "ease-out" }
           );
 
-          //  Then navigate after small delay
           setTimeout(() => {
             router.push(`/location/${loc.locationId || loc.id}`);
           }, 400);
@@ -289,7 +320,7 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
         locationMarkers.current.push(marker);
       });
 
-      console.log(` Rendered ${locations.length} markers`);
+      console.log(`Rendered ${locations.length} markers`);
     },
     [locations, mapLoaded, router]
   );
@@ -298,7 +329,7 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
     if (mapLoaded) renderMarkers();
   }, [locations, mapLoaded, renderMarkers]);
 
-  // Refresh markers when drawer closes (No changes)
+  // Refresh markers when drawer closes
   useEffect(() => {
     const handler = () => {
       setTimeout(() => {
@@ -310,14 +341,14 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
     return () => window.removeEventListener("drawer-close", handler);
   }, [renderMarkers]);
 
-  // Refresh markers externally (No changes)
+  // Refresh markers externally
   useEffect(() => {
     const handler = () => renderMarkers();
     window.addEventListener("refresh-markers", handler);
     return () => window.removeEventListener("refresh-markers", handler);
   }, [renderMarkers]);
 
-  // Zoom scaling (No changes)
+  // Zoom scaling
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -326,7 +357,6 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
       const scale = Math.min(Math.max((zoom - 12) / 6 + 0.9, 0.9), 1.4);
       locationMarkers.current.forEach((m) => {
         const el = m.getElement();
-        // The inner element is the first child
         const inner = el.firstElementChild as HTMLElement;
         if (inner) {
           inner.style.width = `${28 * scale}px`;
@@ -340,29 +370,92 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
     };
   }, [mapLoaded]);
 
+  // Retry function for the dialog
+  const retryLocateUser = () => {
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        const { longitude, latitude } = coords;
+        setLocationDenied(false);
+
+        mapRef.current?.flyTo({ center: [longitude, latitude], zoom: 14 });
+        userMarkerRef.current?.setLngLat([longitude, latitude]);
+      },
+      (err) => {
+        console.error("Geolocation retry error:", err);
+        if (err.code === err.PERMISSION_DENIED) {
+          setLocationDenied(true);
+        }
+      }
+    );
+  };
+
   // Controls
   const handleZoomIn = () => mapRef.current?.zoomIn();
   const handleZoomOut = () => mapRef.current?.zoomOut();
   const handleLocateUser = () => {
-    navigator.geolocation.getCurrentPosition(({ coords }) => {
-      const { longitude, latitude } = coords;
-      mapRef.current?.flyTo({ center: [longitude, latitude], zoom: 14 });
-      userMarkerRef.current?.setLngLat([longitude, latitude]);
-    });
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        const { longitude, latitude } = coords;
+        mapRef.current?.flyTo({ center: [longitude, latitude], zoom: 14 });
+        userMarkerRef.current?.setLngLat([longitude, latitude]);
+      },
+      (err) => {
+        console.error("Geolocation error from Locate button:", err);
+        if (err.code === err.PERMISSION_DENIED) {
+          setLocationDenied(true);
+        }
+      }
+    );
   };
+
+  const isHardDenied = geoState === "denied";
 
   return (
     <div className="relative h-full w-full min-h-[97vh]">
       <div ref={mapContainer} className="h-full w-full" />
 
+      {/* Location error dialog */}
+      <AlertDialog open={locationDenied} onOpenChange={setLocationDenied}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {isHardDenied ? "Location access is blocked" : "Location permission needed"}
+            </AlertDialogTitle>
+            {/* IMPORTANT: keep this to plain text only (AlertDialogDescription renders a <p>) */}
+            <AlertDialogDescription>
+              {isHardDenied
+                ? 'You previously blocked location for this site. To use "Locate me", allow location in your browser settings, then tap Try again.'
+                : "We couldn't access your location. Check if location / GPS is turned on and that the browser has permission."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
 
+          {/* Extra content outside Description to avoid <p> nesting */}
+          <div className="mt-2 text-sm text-muted-foreground">
+            <ul className="list-disc pl-5">
+              <li>Click the lock icon in the address bar.</li>
+              <li>Open site settings / permissions.</li>
+              <li>
+                Set &quot;Location&quot; to <strong>Allow</strong>.
+              </li>
+            </ul>
+          </div>
 
+          <AlertDialogFooter>
+            <AlertDialogCancel asChild>
+              <Button variant="outline">Continue without location</Button>
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={retryLocateUser}>
+              Try again
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
+      {/* Controls */}
       <div className="absolute top-4 right-4 z-20 flex flex-col gap-2">
         <div className="flex flex-col gap-1 p-1 rounded-xl bg-white/80 backdrop-blur-lg border border-gray-200 shadow-lg">
           <Button
             size="icon"
-            //  UPDATED: Cleaner button styling
             className="bg-transparent text-gray-800 hover:bg-gray-100 rounded-lg"
             onClick={handleZoomIn}
             aria-label="Zoom in"
