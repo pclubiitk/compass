@@ -1,5 +1,5 @@
 "use client";
-import { FormEvent, useEffect, useState, useRef } from "react";
+import { FormEvent, useEffect, useState, useRef, Suspense } from "react";
 import ReCAPTCHA from "react-google-recaptcha";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,7 +16,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-export default function LoginPage() {
+ function LoginPageHolder() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { isLoggedIn, setLoggedIn } = useGContext();
@@ -86,6 +86,7 @@ export default function LoginPage() {
 
   // Extract the form component into other
   return (
+
     <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-gradient-to-r from-blue-100 to-teal-100 dark:from-slate-800 dark:to-slate-900">
       <Card className="w-full max-w-sm">
         <CardHeader>
@@ -151,5 +152,25 @@ export default function LoginPage() {
         </CardContent>
       </Card>
     </div>
+
+  );
+}
+
+function LoaderFallback() {
+ const { setGlobalLoading } = useGContext();
+
+  useEffect(() => {
+    setGlobalLoading(true); 
+    return () => setGlobalLoading(false); // turn off when done
+  }, [setGlobalLoading]);
+
+  return null; // nothing visible — loader runs globally
+}
+// why Suspense here? To allow for potential future asynchronous operations within the SignupPageHolder component without blocking the initial render.
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoaderFallback />}>
+      <LoginPageHolder />
+    </Suspense>
   );
 }

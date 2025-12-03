@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { SignupStepper } from "@/components/signup/SignupStepper";
 import { Step1Register } from "@/components/signup/Step1Register";
 import { Step2Verify } from "@/components/signup/Step2Verify";
 import { Step3Profile } from "@/components/signup/Step3Profile";
 import { useSearchParams } from "next/navigation";
+import { useGContext } from "@/components/ContextProvider";
 
 // Define the steps for the stepper component
 const steps = [
@@ -14,7 +15,7 @@ const steps = [
   { title: "Complete", description: "your profile" },
 ];
 
-export default function SignupPage() {
+ function SignupPageHolder() {
   const [activeStep, setActiveStep] = useState(0);
   const [formData, setFormData] = useState({
     email: "",
@@ -76,5 +77,24 @@ export default function SignupPage() {
       </div>
       {renderStepContent()}
     </div>
+  );
+}
+
+function LoaderFallback() {
+ const { setGlobalLoading } = useGContext();
+
+  useEffect(() => {
+    setGlobalLoading(true); 
+    return () => setGlobalLoading(false); // turn off when done
+  }, [setGlobalLoading]);
+
+  return null; // nothing visible — loader runs globally
+}
+// why Suspense here? To allow for potential future asynchronous operations within the SignupPageHolder component without blocking the initial render.
+export default function SignupPage() {
+  return (
+    <Suspense fallback={<LoaderFallback />}>
+      <SignupPageHolder />
+    </Suspense>
   );
 }
