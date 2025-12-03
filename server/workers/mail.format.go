@@ -31,6 +31,8 @@ func FormatMail(job MailJob) (MailContent, error) {
 		return formatPublishNotice(job)
 	case "generic_notice":
 		return formatGenericNotice(job)
+	case "account_deletion":
+		return formatAccountDeletionEmail(job)
 	default:
 		return MailContent{}, fmt.Errorf("unknown mail type: %s", job.Type)
 	}
@@ -159,6 +161,28 @@ func formatGenericNotice(job MailJob) (MailContent, error) {
 	return MailContent{
 		To:      job.To,
 		Subject: "Notification from Campus Compass",
+		Body:    body,
+		IsHTML:  true,
+	}, nil
+}
+
+func formatAccountDeletionEmail(job MailJob) (MailContent, error) {
+	username := job.Data["username"]
+	data := map[string]interface{}{
+		"Username": username,
+	}
+	tmpl := `
+		<h2>Hello {{.Username}},</h2>
+		<p>Your account has been deleted because it was not verified within 24 hours of creation.</p>
+		<p>If you wish to use our services, please sign up again.</p>
+	`
+	body, err := renderTemplate(tmpl, data)
+	if err != nil {
+		return MailContent{}, err
+	}
+	return MailContent{
+		To:      job.To,
+		Subject: "Account Deleted - Verification Timeout",
 		Body:    body,
 		IsHTML:  true,
 	}, nil
