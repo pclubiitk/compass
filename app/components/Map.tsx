@@ -132,7 +132,7 @@ export default function Map({ onMarkerClick }: MapProps) {
         mapRef.current = null;
       }
     };
-  }, [isReady, onMarkerClick]);
+  }, [isReady]);
 
   const handleZoomIn = () => {
     if (mapRef.current) mapRef.current.zoomIn();

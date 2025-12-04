@@ -71,6 +71,7 @@ export default function NoticeBoardPage() {
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [isSearching, setIsSearching] = useState(false);
   const loaderRef = useRef<HTMLDivElement | null>(null);
 
   const fetchNotices = useCallback(async () => {
@@ -106,7 +107,7 @@ export default function NoticeBoardPage() {
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasMore && !loading) {
+        if (!isSearching && entries[0].isIntersecting && hasMore && !loading) {
           setPage((prev) => prev + 1);
         }
       },
@@ -119,14 +120,61 @@ export default function NoticeBoardPage() {
     };
   }, [hasMore, loading]);
 
-  const filteredNotices = useMemo(() => {
-    return notices.filter((notice) =>
-      [notice.title, notice.description, notice.entity]
-        .join(" ")
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase())
-    );
-  }, [searchTerm, notices]);
+  //cache and fuzzy search effect
+  useEffect(() => {
+    const timeout = setTimeout(async () => {
+      const query = searchTerm.trim();
+      if (!query) {
+        setIsSearching(false);
+        setPage(1);
+        setNotices([]);
+        return;
+      }
+
+      setIsSearching(true);
+
+      const CACHE_KEY = "notice_search_cache";
+      const rawCache = localStorage.getItem(CACHE_KEY);
+      const cache = rawCache ? JSON.parse(rawCache) : {};
+
+      // Checking cache first
+      if (cache[query]) {
+        setNotices(cache[query]);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_MAPS_URL}/api/maps/notice/fuzzy?query=${encodeURIComponent(query)}&limit=20`
+        );
+        if (!res.ok) throw new Error(`Failed (status: ${res.status})`);
+        const data = await res.json();
+        const results = data.notices || [];
+
+        setNotices(results);
+
+        // Saving to cache
+        cache[query] = results;
+        localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+
+        // Auto-clearing if cache exceeds 5 MB
+        const cacheSize = new Blob([JSON.stringify(cache)]).size;
+        const MAX_SIZE = 5 * 1024 * 1024; // 5 MB
+        if (cacheSize > MAX_SIZE) {
+          console.warn("Cache exceeded 5 MB. Clearing localStorage cache.");
+          localStorage.removeItem(CACHE_KEY);
+        }
+      } catch (err) {
+        console.error("Fuzzy search error:", err);
+      } finally {
+        setLoading(false);
+      }
+    }, 300); // debounce delay
+
+    return () => clearTimeout(timeout);
+  }, [searchTerm]);
 
   const handleShare = (notice: Notice) => {
     setShareNotice(notice);
@@ -165,28 +213,30 @@ export default function NoticeBoardPage() {
           />
         </div>
 
-        <div className="space-y-6">
-          {filteredNotices.length > 0 ? (
-            filteredNotices.map((notice) => (
-              <Link
-                href={`/noticeboard/${notice.id}`}
-                key={notice.id}
-                className="block no-underline"
-              >
-                <NoticeCard 
-                  notice={notice}
-                  onShare={handleShare}
-                  onCopy={handleCopy} />
-              </Link>
-            ))
-          ) : !loading ? (
-            <p className="text-center text-gray-500 py-12">
-              No notices available at the moment.
-            </p>
-          ) : null}
-        </div>
+       <div className="space-y-6">
+  {notices.length > 0 ? (
+    notices.map((notice) => (
+      <Link
+        href={`/noticeboard/${notice.id}`}
+        key={notice.id}
+        className="block no-underline"
+      >
+        <NoticeCard
+          notice={notice}
+          onShare={handleShare}
+          onCopy={handleCopy}
+        />
+      </Link>
+    ))
+  ) : !loading ? (
+    <p className="text-center text-gray-500 py-12">
+      No notices available at the moment.
+    </p>
+  ) : null}
+</div>
 
-        {filteredNotices.length > 0 && (
+
+        {notices.length > 0 && (
           <div ref={loaderRef} className="text-center py-6 text-gray-500">
             {loading
               ? "Loading more notices..."
