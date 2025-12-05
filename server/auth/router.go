@@ -25,7 +25,7 @@ func Router(r *gin.Engine) {
 		profile.Use(middleware.UserAuthenticator)
 		profile.GET("", getProfileHandler)
 		profile.POST("", updateProfile)
-		profile.GET("/cc", autoC)
+		profile.GET("/oa", autoC)
 	}
 
 }
