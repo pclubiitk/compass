@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, FormEvent, ChangeEvent, useEffect } from "react";
+import { useState, FormEvent, ChangeEvent, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { departments, courses, halls } from "@/components/Constant";
+import {  courses, halls, departmentNameMap } from "@/components/Constant";
 
 export function Step3Profile() {
   const router = useRouter();
@@ -36,70 +36,74 @@ export function Step3Profile() {
     roomNo: "",
     homeTown: "",
   });
+ const fetchAutomationData = useCallback(async () => {
+    try {
+      setIsFetchingData(true);
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_AUTH_URL}/api/profile/cc`,
+        {
+          method: "GET",
+          credentials: "include",
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        const automation = data.automation;
+
+        if (automation) {
+          // Parse hostel info (format: "HALL13, C-106")
+          let hall = "";
+          let roomNo = "";
+          if (automation.hostel_info) {
+            const hostelParts = automation.hostel_info.split(",").map((s: string) => s.trim());
+            hall = hostelParts[0] || "";
+            roomNo = hostelParts[1] || "";
+          }
+
+          // Map gender (M -> Male, F -> Female)
+          let gender = "";
+          if (automation.gender === "M") {
+            gender = "Male";
+          } else if (automation.gender === "F") {
+            gender = "Female";
+          } else {
+            gender = "Other";
+          }
+          let homeTown = ""
+
+          if (automation.location) {
+            homeTown = automation.location
+          }
+          
+
+          // Set the profile data
+          setProfileData({
+            name: automation.name || "",
+            rollNo: automation.roll_no || "",
+            dept: departmentNameMap[automation.department as keyof typeof departmentNameMap] || "",
+            course: automation.program || "",
+            gender: gender,
+            hall: hall,
+            roomNo: roomNo,
+            homeTown: homeTown || "",
+          });
+
+        }
+      } else {
+        console.warn("Could not fetch automation data");
+      }
+    } catch (error) {
+      console.error("Error fetching automation data:", error);
+    } finally {
+      setIsFetchingData(false);
+    }
+  }, []);
 
   // Fetch automation data on component mount
   useEffect(() => {
-    const fetchAutomationData = async () => {
-      try {
-        setIsFetchingData(true);
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_AUTH_URL}/api/profile/cc`,
-          {
-            method: "GET",
-            credentials: "include",
-          }
-        );
-
-        if (response.ok) {
-          const data = await response.json();
-          const automation = data.automation;
-
-          if (automation) {
-            // Parse hostel info (format: "HALL13, C-106")
-            let hall = "";
-            let roomNo = "";
-            if (automation.hostel_info) {
-              const hostelParts = automation.hostel_info.split(",").map((s: string) => s.trim());
-              hall = hostelParts[0] || "";
-              roomNo = hostelParts[1] || "";
-            }
-
-            // Map gender (M -> Male, F -> Female)
-            let gender = "";
-            if (automation.gender === "M") {
-              gender = "Male";
-            } else if (automation.gender === "F") {
-              gender = "Female";
-            } else {
-              gender = "Other";
-            }
-
-            // Set the profile data
-            setProfileData({
-              name: automation.name || "",
-              rollNo: automation.roll_no || "",
-              dept: automation.department || "",
-              course: automation.program || "",
-              gender: gender,
-              hall: hall,
-              roomNo: roomNo,
-              homeTown: "",
-            });
-
-          }
-        } else {
-          console.warn("Could not fetch automation data, user will fill manually");
-        }
-      } catch (error) {
-        console.error("Error fetching automation data:", error);
-        // Silent fail - user can still fill the form manually
-      } finally {
-        setIsFetchingData(false);
-      }
-    };
-
     fetchAutomationData();
-  }, []);
+  }, [fetchAutomationData]);
 
   // Handles changes for all text inputs
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -193,7 +197,7 @@ export function Step3Profile() {
               disabled={isFetchingData}
             />
           </div>
-          <div className="grid gap-2">
+          <div className="grid gap-2 md:col-span-2">
             <Label>
               Department <span className="text-red-500">*</span>
             </Label>
@@ -203,15 +207,20 @@ export function Step3Profile() {
               disabled={isFetchingData}
               required
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select department" />
               </SelectTrigger>
               <SelectContent>
-                {departments.map((d) => (
-                  <SelectItem key={d} value={d}>
-                    {d}
-                  </SelectItem>
-                ))}
+                {
+                  Object.entries(departmentNameMap).map(([fullName, Code]) => (
+                    <SelectItem key={Code} value={Code}>
+                      <div className="flex items-center justify-between gap-4 w-full">
+                        <span className="truncate">{fullName}</span>
+                        <span className="text-muted-foreground text-xs font-mono shrink-0">{Code}</span>
+                      </div>
+                    </SelectItem>
+                  ))
+                }
               </SelectContent>
             </Select>
           </div>

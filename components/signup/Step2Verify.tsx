@@ -71,7 +71,7 @@ export function Step2Verify({ userID, onSuccess }: Step2VerifyProps) {
       // Assuming OTP is 6 digits
       handleVerify(otp, userID);
     } else {
-      toast.error("Please enter a valid 6-character alphanumeric OTP.");
+      toast.error("Please enter a valid 6-digit OTP.");
     }
   };
 
@@ -80,7 +80,7 @@ export function Step2Verify({ userID, onSuccess }: Step2VerifyProps) {
       <CardHeader>
         <CardTitle className="text-2xl">Verify Your Account</CardTitle>
         <CardDescription>
-          Enter the 6-character code sent to your email.
+          Enter the 6-digit code sent to your email.
         </CardDescription>
       </CardHeader>
       <CardContent>

@@ -52,9 +52,11 @@ func loginHandler(c *gin.Context) {
 
 	// FOR DEV: BYPASS RE-CAPTCHA
 	// ----------------------------------------------------------------------------- //
-	if !verifyRecaptcha(req.Token) {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Failed captcha verification"})
-		return
+	if (viper.GetString("env") == "prod"){
+		if !verifyRecaptcha(req.Token) {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Failed captcha verification"})
+			return
+		}
 	}
 	// ----------------------------------------------------------------------------- //
 
