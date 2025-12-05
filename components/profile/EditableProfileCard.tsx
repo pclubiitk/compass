@@ -21,7 +21,7 @@ import {
 import { Edit, Save, X } from "lucide-react";
 import { toast } from "sonner";
 import type { Profile } from "@/app/(auth)/profile/page";
-import { courses, departments, halls } from "@/components/Constant";
+import { courses, departmentNameMap, halls } from "@/components/Constant";
 import {
   AlertDeleteProfileInfo,
   AlertVisibilityProfileInfo,
@@ -138,7 +138,7 @@ export function EditableProfileCard({
               className="font-medium capitalize"
             />
           ) : (
-            <h2 className="text-lg font-semibold capitalize">
+            <h2 className="text-lg  capitalize">
               {formData.name || "Not provided"}
             </h2>
           )}
@@ -154,7 +154,7 @@ export function EditableProfileCard({
               className="font-medium uppercase"
             />
           ) : (
-            <h2 className="text-lg font-semibold uppercase">
+            <h2 className="text-lg  uppercase">
               {formData.rollNo || "Not provided"}
             </h2>
           )}
@@ -179,7 +179,7 @@ export function EditableProfileCard({
               </SelectContent>
             </Select>
           ) : (
-            <h2 className="text-lg font-semibold">
+            <h2 className="text-lg ">
               {formData.course || "Not provided"}
             </h2>
           )}
@@ -188,23 +188,29 @@ export function EditableProfileCard({
         <div className="space-y-1">
           <Label className="text-muted-foreground">Department</Label>
           {isEditing ? (
-            <Select
-              value={formData?.dept || ""}
-              onValueChange={handleSelectChange("dept")}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select department" />
-              </SelectTrigger>
-              <SelectContent>
-                {departments.map((d) => (
-                  <SelectItem key={d} value={d}>
-                    {d}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                <Select
+                  value={formData?.dept || ""}
+                  onValueChange={handleSelectChange("dept")}
+                  
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select department" />
+                  </SelectTrigger>
+                  <SelectContent className="w-full">
+                    {
+                      Object.entries(departmentNameMap).map(([fullName, Code]) => (
+                        <SelectItem key={fullName} value={Code} className="">
+                          <div className="flex w-full gap-4 text-center h-full">
+                            <span>{fullName}</span>
+                            <p className="text-muted-foreground font-mono">{Code}</p>
+                          </div>
+                        </SelectItem>
+                      ))
+                    }
+                  </SelectContent>
+                </Select>
           ) : (
-            <h2 className="text-lg font-semibold">
+            <h2 className="text-lg ">
               {formData.dept || "Not provided"}
             </h2>
           )}
@@ -227,7 +233,7 @@ export function EditableProfileCard({
             </SelectContent>
           </Select>
           ) : (
-            <h2 className="text-lg font-semibold">
+            <h2 className="text-lg ">
               {formData.gender || "Not provided"}
             </h2>
           )}
@@ -261,7 +267,7 @@ export function EditableProfileCard({
               />
             </div>
           ) : (
-            <h2 className="text-lg font-semibold">
+            <h2 className="text-lg ">
               {formData.hall && formData.roomNo
                 ? `${formData.hall}, ${formData.roomNo}`
                 : formData.hall || formData.roomNo || "Not provided"}
@@ -280,7 +286,7 @@ export function EditableProfileCard({
               className="font-medium capitalize"
             />
           ) : (
-            <h2 className="text-lg font-semibold capitalize">
+            <h2 className="text-lg  capitalize">
               {formData.homeTown || "Not provided"}
             </h2>
           )}

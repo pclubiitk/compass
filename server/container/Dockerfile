@@ -39,6 +39,6 @@ COPY ./assets/public /assets/public
 COPY ./assets/tmp /assets/tmp
 COPY ./assets/default /assets/default
 
-EXPOSE 8080 8081 8082 8083 8084
+EXPOSE 8080 8081 8082 8083
 
 ENTRYPOINT ["/server"]
