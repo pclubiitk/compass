@@ -40,7 +40,7 @@ export function Step3Profile() {
     try {
       setIsFetchingData(true);
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_AUTH_URL}/api/profile/cc`,
+        `${process.env.NEXT_PUBLIC_AUTH_URL}/api/profile/oa`,
         {
           method: "GET",
           credentials: "include",

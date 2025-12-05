@@ -245,12 +245,8 @@ func autoC(c *gin.Context) {
 		return
 	}
 
-	if authCookie, err := c.Cookie("auth"); err == nil {
-		req.AddCookie(&http.Cookie{
-			Name:  "auth",
-			Value: authCookie,
-		})
-	}
+	req.Header.Set("x-api-key", viper.GetString("automation.key"))
+	req.Header.Set("Accept", "application/json")
 
 	resp, err := client.Do(req)
 	if err != nil {
