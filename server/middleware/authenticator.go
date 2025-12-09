@@ -14,7 +14,7 @@ var authConfig = AuthConfig{
 	JWTSecretKey:    viper.GetString("jwt.secret"),
 	TokenExpiration: 24 * time.Hour,
 	CookieDomain:    viper.GetString("domain"),
-	CookieSecure:    false, // Set to false in development
+	CookieSecure:    false, // Set to false in development // MUST set to true in production
 	CookieHTTPOnly:  true,  // Prevent XSS
 	SameSiteMode:    http.SameSiteLaxMode,
 }
@@ -46,6 +46,7 @@ func UserAuthenticator(c *gin.Context) {
 	c.Set("userID", claims.UserID)
 	c.Set("userRole", claims.Role)
 	c.Set("verified", claims.Verified)
+	c.Set("visibility", claims.Visibility) // added visibility
 
 	// Verify the user power
 	if role := c.GetInt("userRole"); role < int(model.UserRole) {
@@ -83,3 +84,27 @@ func EmailVerified(c *gin.Context) {
 }
 
 // TODO: Visitors Auth System, Need to define exact permission
+
+func CheckVisibility(c *gin.Context) {
+	// is visibility on?
+	visibility, exists := c.Get("visibility")
+	if !exists {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized here"})
+		return
+	}
+
+	if isVisible, ok := visibility.(bool); ok {
+		if !isVisible {
+			// redirect the user back to profile page
+			c.Redirect(http.StatusFound, "/profile") 
+			c.Abort() // Stop the rest of the handlers from executing
+			return
+		}
+	} else {
+		// if data type is wrong (not bool)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		return
+	}
+
+	c.Next()
+}

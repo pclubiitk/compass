@@ -60,7 +60,7 @@ func verificationHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Request Failed, Please try again later"})
 		return
 	}
-	jwtToken, err := middleware.GenerateToken(user.UserID, int(user.Role), user.IsVerified)
+	jwtToken, err := middleware.GenerateToken(user.UserID, int(user.Role), user.IsVerified, user.Profile.Visibility)
 	if err != nil {
 		// TODO: Redirect to login page
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token, you will need to login!"})

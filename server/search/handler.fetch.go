@@ -31,14 +31,14 @@ func getChangeLog(c *gin.Context) {
 		return
 	}
 	// Generate the json form the logs
-	var addUserId []uuid.UUID
+	var addUserId []uuid.UUID // changing it to update to maintain uniformity
 	var deleteUserId []uuid.UUID
 
 	// Retrieve only un expired changelogs after last update time for user
 	if err := connections.DB.Model(model.ChangeLog{}).
-		Where("created_at > ? AND action = ?", input.LastUpdateTime, model.Add).
+		Where("created_at > ? AND action = ?", input.LastUpdateTime, model.Update).
 		Pluck("user_id", &addUserId).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch 'add' updates if any."})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch 'add' updates if any."}) //  changed to 'update'
 		return
 	}
 	if err := connections.DB.Model(model.ChangeLog{}).

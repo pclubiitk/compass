@@ -78,7 +78,7 @@ func loginHandler(c *gin.Context) {
 	}
 
 	// Creating JWT token
-	token, err := middleware.GenerateToken(dbUser.UserID, int(dbUser.Role), dbUser.IsVerified)
+	token, err := middleware.GenerateToken(dbUser.UserID, int(dbUser.Role), dbUser.IsVerified, dbUser.Profile.Visibility)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
 		return

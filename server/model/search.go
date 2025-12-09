@@ -28,7 +28,7 @@ type Profile struct {
 type Action string
 
 const (
-	Add    Action = "add"
+	Update    Action = "update"
 	Delete Action = "delete"
 )
 

@@ -55,7 +55,7 @@ func toggleVisibility(c *gin.Context) {
 	if err := connections.DB.Transaction(func(tx *gorm.DB) error {
 		updateAction := model.Delete
 		if *input.Visibility {
-			updateAction = model.Add
+			updateAction = model.Update
 		}
 
 		// Update the profile

@@ -8,11 +8,12 @@ import (
 	"github.com/google/uuid"
 )
 
-func GenerateToken(userID uuid.UUID, role int, verified bool) (string, error) {
+func GenerateToken(userID uuid.UUID, role int, verified bool, visibility bool) (string, error) {
 	claims := JWTClaims{
 		UserID: userID,
 		Role:   role,
 		Verified: verified,
+		Visibility: visibility,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject:   userID.String(),
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(authConfig.TokenExpiration)),
