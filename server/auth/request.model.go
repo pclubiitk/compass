@@ -40,3 +40,14 @@ type CCResponse struct {
 	Timestamp  *string `json:"timestamp"`
 	Message    *string `json:"message"`
 }
+
+type StudentDetails struct {
+	RollNo     string `json:"roll_no"`
+	Name       string `json:"name"`
+	Program    string `json:"program"`
+	Department string `json:"department"`
+	Gender     string `json:"gender"`
+	HostelInfo string `json:"hostel_info"`
+	Username   string `json:"username"`
+	Location   string `json:"location"`
+}

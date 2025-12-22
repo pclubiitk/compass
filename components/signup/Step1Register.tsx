@@ -32,6 +32,11 @@ export function Step1Register({ onSuccess }: Step1RegisterProps) {
     setIsLoading(true);
 
     try {
+      if (!agreedToTnC) {
+        toast.error("Agree to TnC to continue signing up.");
+        return;
+      }
+
       // Executing invisible reCAPTCHA
       const token = await recaptchaRef.current?.executeAsync();
       if (!token) {

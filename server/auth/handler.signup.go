@@ -29,9 +29,11 @@ func signupHandler(c *gin.Context) {
 	// Throws error if captcha verification fails
 	// registers the user in the DB only when the captcha is passed
 
-	if !verifyRecaptcha(input.Token) {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Failed captcha verification"})
-		return
+	if (viper.GetString("env") == "prod"){
+		if !verifyRecaptcha(input.Token) {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Failed captcha verification"})
+			return
+		}
 	}
 	// ----------------------------------------------------------------------------- //
 
