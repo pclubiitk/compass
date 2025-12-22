@@ -1,6 +1,8 @@
 # Main config file
 # Define things like DB name, ports, JWT expiry, etc.
 # remember to put all the fields
+env: dev # prod/dev
+
 database:
   host: "localhost"
   name: "compass"
