@@ -167,7 +167,7 @@ export function EditableProfileCard({
               value={formData.course || ""}
               onValueChange={handleSelectChange("course")}
             >
-              <SelectTrigger>
+              <SelectTrigger className="max-w-11/12">
                 <SelectValue placeholder="Select course" />
               </SelectTrigger>
               <SelectContent>

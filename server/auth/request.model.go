@@ -49,6 +49,5 @@ type StudentDetails struct {
 	Gender     string `json:"gender"`
 	HostelInfo string `json:"hostel_info"`
 	Username   string `json:"username"`
-	BloodGroup string `json:"blood_group"`
 	Location   string `json:"location"`
 }
