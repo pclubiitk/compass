@@ -58,4 +58,3 @@ next-env.d.ts
 # Data
 /server/parser/*.csv
 /server/parser/*.sql
-package-lock.json

@@ -37,7 +37,7 @@ export default function SWRProvider({
       value={{
         provider: localStorageProvider,
         revalidateOnFocus: true,
-        dedupingInterval: 30000, // 30s dedupe window
+        dedupingInterval: 30000, // 30s dedupe window // If multiple components request the same data within 30 seconds, SWR only sends one network request.
         shouldRetryOnError: false,
       }}
     >

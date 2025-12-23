@@ -13,13 +13,7 @@ type Location = {
   location_type?: string;
 };
 
-const fetcher = async (url: string) => {
-  const res = await fetch(url, { credentials: "include" });
-  if (!res.ok) throw new Error("Failed to fetch locations");
-  return res.json();
-};
-
-//Hook to fetch and cache locations using SWR + localStorage fallback.Automatically merges incremental updates and handles deletions.
+// Hook to fetch and cache locations using SWR + localStorage fallback.Automatically merges incremental updates and handles deletions.
 
 export function useLocations() {
   // Read existing local cache
@@ -30,16 +24,6 @@ export function useLocations() {
       ? JSON.parse(localStorage.getItem("cached_locations") || "[]")
       : [];
 
-  const cachedTime =
-    typeof window !== "undefined"
-      ? localStorage.getItem("cached_time")
-      : null;
-
-  // Prepare Incremental Fetch: If we have a timestamp, ask for updates since then.
-  // If no timestamp (first run), this will be empty, fetching ALL locations.
-  const sinceParam = cachedTime
-    ? `?since=${encodeURIComponent(cachedTime)}`
-    : "";
 
   // Fetch Updates: Use SWR to fetch from the incremental endpoint.
   // We pass 'cached' as fallbackData so SWR uses it initially.
@@ -47,6 +31,8 @@ export function useLocations() {
     "locations",
     async () => {
       const cachedTime = localStorage.getItem("cached_time");
+      // Prepare Incremental Fetch: If we have a timestamp, ask for updates since then.
+      // If no timestamp (first run), this will be empty, fetching ALL locations.
       const sinceParam = cachedTime
         ? `?since=${encodeURIComponent(cachedTime)}`
         : "";
@@ -65,7 +51,6 @@ export function useLocations() {
   );
 
 
-
   // Merge Logic: Combine cached data with updates from the server.
   const merged = useMemo(() => {
     if (!data) return cached;
@@ -73,7 +58,7 @@ export function useLocations() {
     // 'data' here is the response from the server (incremental updates)
     const updated = data.updated || data.locations || [];
     const deleted = data.deleted || []; // List of IDs to remove
-    const timestamp = data.lastFetchTime || new Date().toISOString();
+    const timestamp = data.lastFetchTime || "" // so if any error occurs, everything is reset;
 
     // Remove deleted locations from the cache
     const filtered = cached.filter(

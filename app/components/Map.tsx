@@ -34,7 +34,7 @@ type MapProps = {
   locations: any[];
 };
 
-// Colors + Icons
+// Colors + Icons // TODO: move them to a single design, constant file.
 const colorMap: Record<string, string> = {
   food: "#ef4444",
   lecturehall: "#3b82f6",
@@ -250,7 +250,7 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
       locationMarkers.current = [];
 
       if (!locations?.length) {
-        console.log("⚠️ No locations to render");
+        console.log("No locations to render");
         return;
       }
 
@@ -282,6 +282,7 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
           opacity: 0;
           animation-delay: ${index * 0.03}s;
         `;
+        // TODO: this animation time is slow, causing one be one entry.
 
         el.appendChild(inner);
 

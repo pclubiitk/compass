@@ -1,6 +1,4 @@
 "use client";
-
-import { tree } from "next/dist/build/templates/app-page";
 // TODO: Lets start with basic context management for login state
 // TODO: can later use libraries like, redux, zustand, or more
 import {
@@ -44,7 +42,7 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
         } else {
           setLoggedIn(false);
         }
-      } catch (error) {
+      } catch {
         setGlobalLoading(false);
       } finally {
         setGlobalLoading(false);

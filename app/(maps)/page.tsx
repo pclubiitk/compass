@@ -5,7 +5,6 @@ import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
-import { useGContext } from "@/components/ContextProvider";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -19,7 +18,6 @@ import {
 import { useLocations } from "@/app/hooks/useLocations";
 
 export default function Home() {
-  const { isLoggedIn, isGlobalLoading } = useGContext();
   const { isValidating } = useLocations();
   const router = useRouter();
 
@@ -32,13 +30,16 @@ export default function Home() {
     setMounted(true);
   }, []);
 
-  // Search handler
+  // TODO: Search handler, correct it to use only our search not the nominator api
+  // TODO: look into the api limits.
   const handleSearch = async () => {
     if (!query.trim()) return;
     const mapRef = (window as any).mapRef;
     if (!mapRef?.current) return;
 
-    const coordMatch = query.match(/^\s*(-?\d+(\.\d+)?),\s*(-?\d+(\.\d+)?)\s*$/);
+    const coordMatch = query.match(
+      /^\s*(-?\d+(\.\d+)?),\s*(-?\d+(\.\d+)?)\s*$/
+    );
     let lng, lat;
 
     if (coordMatch) {
@@ -46,10 +47,12 @@ export default function Home() {
       lat = parseFloat(coordMatch[3]);
     } else {
       const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json`
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
+          query
+        )}&format=json`
       );
       const data = await res.json();
-      if (!data[0]) return alert("❌ Location not found");
+      if (!data[0]) return alert("Location not found");
       lat = parseFloat(data[0].lat);
       lng = parseFloat(data[0].lon);
     }
@@ -59,6 +62,7 @@ export default function Home() {
 
   return (
     <>
+    {/* TODO: can extract the login dialog pop up, as it will be required at multiple place. */}
       {/* Login Required Dialog */}
       <AlertDialog open={loginDialogOpen} onOpenChange={setLoginDialogOpen}>
         <AlertDialogContent>

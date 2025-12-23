@@ -98,6 +98,132 @@
   }
 }
 
+/* markdown css */
+.markdown-content, .markdown-content * {
+  color: #000000 !important;
+}
+/* i have to remove this, but not able to fix the white text problem */
+
+.markdown-content {
+  color: var(--foreground) !important; /* Force text color */
+  font-size: 1.125rem; /* Slightly larger text for readability */
+  line-height: 1.75;
+}
+
+.markdown-content > *:first-child {
+  margin-top: 0; /* Remove extra space at the top */
+}
+
+/* Headings */
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3 {
+  font-weight: 700;
+  margin-top: 2em;
+  margin-bottom: 0.8em;
+  line-height: 1.3;
+  color: var(--foreground);
+}
+
+.markdown-content h1 { font-size: 2.25rem; }
+.markdown-content h2 { font-size: 1.875rem; border-bottom: 1px solid var(--border); padding-bottom: 0.3em; }
+.markdown-content h3 { font-size: 1.5rem; }
+
+/* Paragraphs and Links */
+.markdown-content p {
+  margin-bottom: 1.25em;
+}
+
+.markdown-content a {
+  color: #3b82f6; 
+  /* blue links */
+  font-weight: 500;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(59, 130, 246, 0.5);;
+  transition: all 0.2s ease-in-out;
+}
+.markdown-content a:hover {
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+/* Lists */
+.markdown-content ul,
+.markdown-content ol {
+  padding-left: 1.5rem;
+  margin-bottom: 1.25em;
+}
+.markdown-content li {
+  margin-bottom: 0.5em;
+}
+.markdown-content li::marker {
+  color: var(--primary);
+}
+
+/* Blockquotes */
+.markdown-content blockquote {
+  border-left: 4px solid var(--primary);
+  padding: 0.5em 1em;
+  margin: 1.5em 0;
+  color: var(--muted-foreground);
+  background-color: #f3f4f6;
+}
+
+/* Code Blocks */
+.markdown-content pre {
+  background-color: #f3f4f6;
+  padding: 1.25em;
+  border-radius: var(--radius-lg);
+  overflow-x: auto;
+  margin-bottom: 1.5em;
+  border: 1px solid var(--border);
+}
+.markdown-content code {
+  font-family: 'Courier New', Courier, monospace;
+  background-color: #f3f4f6;
+  color: var(--accent-foreground);
+  padding: 0.2em 0.4em;
+  border-radius: 5px;
+  font-size: 0.9em;
+}
+.markdown-content pre code {
+  background-color: transparent;
+  padding: 0;
+  border: none;
+}
+
+
+
+/* Horizontal Rule */
+.markdown-content hr {
+  border-top: 1px solid var(--border);
+  margin: 3em 0;
+}
+
+/* Images */
+.markdown-content img {
+  max-width: 100%;
+  border-radius: var(--radius-xl);
+  margin: 2em 0;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+/* Tables */
+.markdown-content table {
+  width: 100%;
+  margin-bottom: 1.5em;
+  border-collapse: collapse;
+}
+.markdown-content th,
+.markdown-content td {
+  border: 1px solid var(--border);
+  padding: 0.75em 1em;
+  text-align: left;
+}
+.markdown-content th {
+  font-weight: 600;
+  background-color: var(--accent);
+}
+
 
 /*
 ---break---

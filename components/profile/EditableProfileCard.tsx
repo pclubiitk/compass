@@ -20,8 +20,8 @@ import {
 } from "@/components/ui/select";
 import { Edit, Save, X } from "lucide-react";
 import { toast } from "sonner";
-import type { Profile } from "@/app/profile/page";
-import { courses, departments, halls } from "@/components/Constant";
+import type { Profile } from "@/app/(auth)/profile/page";
+import { courses, departmentNameMap, halls } from "@/components/Constant";
 import {
   AlertDeleteProfileInfo,
   AlertVisibilityProfileInfo,
@@ -64,7 +64,7 @@ export function EditableProfileCard({
     setIsSaving(true);
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_AUTH_URL}/profile`,
+        `${process.env.NEXT_PUBLIC_AUTH_URL}/api/profile`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -80,7 +80,7 @@ export function EditableProfileCard({
       } else {
         toast.error(data.error || "Failed to update.");
       }
-    } catch (error) {
+    } catch {
       toast.error("An unexpected error occurred.");
     } finally {
       setIsSaving(false);
@@ -129,76 +129,99 @@ export function EditableProfileCard({
       </CardHeader>
       <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         <div className="space-y-1">
-          <Label>Full Name</Label>
-          <Input
-            name="name"
-            value={formData.name || ""}
-            onChange={handleChange}
-            readOnly={!isEditing}
-            className={"font-medium capitalize"}
-          />
+          <Label className="text-muted-foreground">Full Name</Label>
+          {isEditing ? (
+            <Input
+              name="name"
+              value={formData.name || ""}
+              onChange={handleChange}
+              className="font-medium capitalize"
+            />
+          ) : (
+            <h2 className="text-lg  capitalize">
+              {formData.name || "Not provided"}
+            </h2>
+          )}
         </div>
-        <div className="space-y-1">
-          <Label>Roll Number</Label>
 
-          <Input
-            name="RollNo"
-            value={formData.rollNo || ""}
-            onChange={handleChange}
-            readOnly={!isEditing}
-            className={"font-medium uppercase"}
-          />
-        </div>
         <div className="space-y-1">
-          <div className="flex gap-2">
-            <div className="space-y-1">
-              <Label>Course</Label>
-              <Select
-                value={formData.course || ""}
-                onValueChange={
-                  isEditing ? handleSelectChange("course") : () => {}
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {courses.map((c) => (
-                    <SelectItem key={c} value={c}>
-                      {c}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1">
-              <Label>Department</Label>
-              <Select
-                value={formData?.dept || ""}
-                onValueChange={
-                  isEditing ? handleSelectChange("dept") : () => {}
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {departments.map((d) => (
-                    <SelectItem key={d} value={d}>
-                      {d}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+          <Label className="text-muted-foreground">Roll Number</Label>
+          {isEditing ? (
+            <Input
+              name="RollNo"
+              value={formData.rollNo || ""}
+              onChange={handleChange}
+              className="font-medium uppercase"
+            />
+          ) : (
+            <h2 className="text-lg  uppercase">
+              {formData.rollNo || "Not provided"}
+            </h2>
+          )}
         </div>
+
         <div className="space-y-1">
-          <Label>Gender</Label>
+          <Label className="text-muted-foreground">Course</Label>
+          {isEditing ? (
+            <Select
+              value={formData.course || ""}
+              onValueChange={handleSelectChange("course")}
+            >
+              <SelectTrigger className="max-w-11/12">
+                <SelectValue placeholder="Select course" />
+              </SelectTrigger>
+              <SelectContent>
+                {courses.map((c) => (
+                  <SelectItem key={c} value={c}>
+                    {c}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <h2 className="text-lg ">
+              {formData.course || "Not provided"}
+            </h2>
+          )}
+        </div>
+
+        <div className="space-y-1">
+          <Label className="text-muted-foreground">Department</Label>
+          {isEditing ? (
+                <Select
+                  value={formData?.dept || ""}
+                  onValueChange={handleSelectChange("dept")}
+                  
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select department" />
+                  </SelectTrigger>
+                  <SelectContent className="w-full">
+                    {
+                      Object.entries(departmentNameMap).map(([fullName, Code]) => (
+                        <SelectItem key={fullName} value={Code} className="">
+                          <div className="flex w-full gap-4 text-center h-full">
+                            <span>{fullName}</span>
+                            <p className="text-muted-foreground font-mono">{Code}</p>
+                          </div>
+                        </SelectItem>
+                      ))
+                    }
+                  </SelectContent>
+                </Select>
+          ) : (
+            <h2 className="text-lg ">
+              {formData.dept || "Not provided"}
+            </h2>
+          )}
+        </div>
+
+        <div className="space-y-1">
+          <Label className="text-muted-foreground">Gender</Label>
+          {isEditing ? (
           <Select
             value={formData?.gender || ""}
-            onValueChange={isEditing ? handleSelectChange("gender") : () => {}}
-            required
+            onValueChange={handleSelectChange("gender")}
           >
             <SelectTrigger>
               <SelectValue placeholder="Select gender" />
@@ -209,17 +232,20 @@ export function EditableProfileCard({
               <SelectItem value="Other">Other</SelectItem>
             </SelectContent>
           </Select>
+          ) : (
+            <h2 className="text-lg ">
+              {formData.gender || "Not provided"}
+            </h2>
+          )}
         </div>
 
         <div className="space-y-1">
+          <Label className="text-muted-foreground">Hall & Room</Label>
+          {isEditing ? (
           <div className="flex gap-2">
-            <div className="space-y-1">
-              <Label>Hall</Label>
               <Select
                 value={formData.hall || ""}
-                onValueChange={
-                  isEditing ? handleSelectChange("hall") : () => {}
-                }
+                onValueChange={handleSelectChange("hall")}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Hall" />
@@ -232,31 +258,38 @@ export function EditableProfileCard({
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-            <div className="space-y-1">
-              <Label>Room</Label>
               <Input
-                // className=
                 name="roomNo"
                 placeholder="Room"
                 value={formData.roomNo || ""}
                 onChange={handleChange}
-                className={"font-medium uppercase"}
-                readOnly={!isEditing}
+                className="font-medium uppercase"
               />
             </div>
-          </div>
+          ) : (
+            <h2 className="text-lg ">
+              {formData.hall && formData.roomNo
+                ? `${formData.hall}, ${formData.roomNo}`
+                : formData.hall || formData.roomNo || "Not provided"}
+            </h2>
+          )}
         </div>
+
         <div className="space-y-1">
-          <Label>Home Town</Label>
-          <Input
-            name="HomeTown"
-            placeholder="Pratapgarh, Rajasthan"
-            value={formData.homeTown || ""}
-            onChange={handleChange}
-            className={"font-medium capitalize"}
-            readOnly={!isEditing}
-          />
+          <Label className="text-muted-foreground">Home Town</Label>
+          {isEditing ? (
+            <Input
+              name="HomeTown"
+              placeholder="Pratapgarh, Rajasthan"
+              value={formData.homeTown || ""}
+              onChange={handleChange}
+              className="font-medium capitalize"
+            />
+          ) : (
+            <h2 className="text-lg  capitalize">
+              {formData.homeTown || "Not provided"}
+            </h2>
+          )}
         </div>
       </CardContent>
     </Card>

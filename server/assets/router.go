@@ -10,6 +10,9 @@ func Router(r *gin.Engine) {
 
 	// Static Route to provide the images
 	r.Static("/assets", "./assets/public")
+	r.NoRoute(func(c *gin.Context) {
+		c.File("./assets/default/404.png")
+	})
 
 	// TODO: Make it more formal, this limit
 	r.MaxMultipartMemory = 5 << 20

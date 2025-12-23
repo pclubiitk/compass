@@ -9,7 +9,7 @@ type ReviewProps = {
   review_body: string;
   //once confirm why there was a never
   time: string;
-  img: string;
+  imgs: { ImageID: string }[];
 };
 
 export default function ReviewCard({
@@ -17,21 +17,21 @@ export default function ReviewCard({
   rating,
   review_body,
   time,
-  img,
+  imgs,
 }: Omit<ReviewProps, "mode">) {
   return (
     <Card className="mx-3 my-3 py-0 gap-0 bg-white dark:bg-black text-black dark:text-white">
       <div className="mx-4 py-3">
         <CardTitle className="text-lg py-1 my-0"> {author} </CardTitle>
-        {img && (
+        {imgs.map((img) => (
           <div className="relative w-full h-48 my-2 rounded-md overflow-hidden">
             <img
-              src={img}
+              src={`${process.env.NEXT_PUBLIC_ASSET_URL}/assets/${img.ImageID}.webp`}
               alt="Review attachment"
               className="w-full h-full object-cover"
             />
           </div>
-        )}
+        ))}
         <div className="flex items-center justify-between mb-3">
           <RatedStars
             count={5}

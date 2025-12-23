@@ -137,6 +137,7 @@ export default function AddLocationDrawer({
 
           if (!imgRes.ok) {
             const errorText = await imgRes.text();
+            // TODO: discuss correct approach.
             console.error("Image upload failed:", imgRes.status, errorText);
             toast.warning("Image upload failed. Submitting without image.");
           } else {
@@ -381,7 +382,7 @@ export default function AddLocationDrawer({
     </motion.form>
   );
 
-  // 🖥️ Desktop Dialog
+  // Desktop Dialog
   if (isDesktop) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -403,14 +404,14 @@ export default function AddLocationDrawer({
     );
   }
 
-  // 📱 Mobile Drawer
+  // Mobile Drawer
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent className="max-h-[90vh]">
         <DrawerHeader className="text-left border-b pb-4">
           <DrawerTitle>Add New Location</DrawerTitle>
           <DrawerDescription>
-            Tap a point on the map to set coordinates.
+            Fill in the details to add a marker to the map.
           </DrawerDescription>
         </DrawerHeader>
 

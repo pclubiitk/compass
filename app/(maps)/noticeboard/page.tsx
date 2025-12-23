@@ -7,22 +7,70 @@ import React, {
   useRef,
   useCallback,
 } from "react";
-import { Search } from "lucide-react";
-import { Notice } from "@/lib/types";
-import NoticeCard from "@/components/ui/NoticeCard";
-import ShareDialog from "./ShareDialog";
+import { Search, Share2, Copy } from "lucide-react";
+import ShareDialog from './ShareDialog'; 
+import Link from 'next/link';
+
+interface Notice {
+  id: string;
+  title: string;
+  description: string;
+  body: string;
+  entity: string;
+  location: string;
+  eventTime: string;
+}
+
+const NoticeCard = ({ 
+  notice, 
+  onShare, 
+  onCopy 
+}: { 
+  notice: Notice; 
+  onShare: (notice: Notice) => void; 
+  onCopy: (notice: Notice) => void; 
+}) => (
+  <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200 hover:shadow-lg transition-shadow group">
+    <h2 className="text-xl font-bold text-gray-800 group-hover:text-blue-600 transition-colors">{notice.title}</h2>
+    <p className="text-gray-600 mt-2">{notice.description}</p>
+    <div className="text-sm text-gray-500 mt-4">
+      <span><strong>Location:</strong> {notice.location}</span>
+      <span className="ml-4"><strong>Time:</strong> {new Date(notice.eventTime).toLocaleString()}</span>
+    </div>
+    <div className="flex items-center space-x-4 mt-4 pt-4 border-t border-gray-100">
+      <button
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onShare(notice);
+        }}
+        className="flex items-center space-x-2 text-sm text-gray-500 hover:text-blue-600 transition-colors"
+      >
+        <Share2 className="w-4 h-4" />
+        <span>Share</span>
+      </button>
+      <button
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onCopy(notice);
+        }}
+        className="flex items-center space-x-2 text-sm text-gray-500 hover:text-blue-600 transition-colors"
+      >
+        <Copy className="w-4 h-4" />
+        <span>Copy</span>
+      </button>
+    </div>
+  </div>
+);
 
 export default function NoticeBoardPage() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [expandedCards, setExpandedCards] = useState(new Set<string>());
   const [shareNotice, setShareNotice] = useState<Notice | null>(null);
   const [notices, setNotices] = useState<Notice[]>([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
-
-  // TODO: Enable the search query in the page so the id of the notice can be directly shared
-
   const loaderRef = useRef<HTMLDivElement | null>(null);
 
   const fetchNotices = useCallback(async () => {
@@ -37,7 +85,7 @@ export default function NoticeBoardPage() {
 
       if (json?.noticeboard_list?.length > 0) {
         setNotices((prev) => {
-          const newNotices = [...prev, ...json.noticeboard_list];
+          const newNotices = [...prev, ...json.noticeboard_list.map((n: any) => ({...n, id: n.NoticeId || n.id}))];
           setHasMore(newNotices.length < json.total_notices);
           return newNotices;
         });
@@ -51,25 +99,21 @@ export default function NoticeBoardPage() {
     }
   }, [page, hasMore, loading]);
 
-  // this triggers fetch when page changes
   useEffect(() => {
     fetchNotices();
-  }, [page]);
+  }, [page, fetchNotices]);
 
-  // this is intersectionObserver to detect scroll bottom
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && hasMore && !loading) {
-          setPage((prev) => prev + 1); // increment only when visible and fetch done
+          setPage((prev) => prev + 1);
         }
       },
       { threshold: 1.0 }
     );
-
     const current = loaderRef.current;
     if (current) observer.observe(current);
-
     return () => {
       if (current) observer.unobserve(current);
     };
@@ -84,14 +128,6 @@ export default function NoticeBoardPage() {
     );
   }, [searchTerm, notices]);
 
-  const toggleExpand = (noticeId: string) => {
-    setExpandedCards((prev) => {
-      const newSet = new Set(prev);
-      newSet.has(noticeId) ? newSet.delete(noticeId) : newSet.add(noticeId);
-      return newSet;
-    });
-  };
-
   const handleShare = (notice: Notice) => {
     setShareNotice(notice);
   };
@@ -102,9 +138,9 @@ export default function NoticeBoardPage() {
     ).toLocaleString()}\nLocation: ${notice.location}`;
     try {
       await navigator.clipboard.writeText(text);
-      alert("Notice copied to clipboard!");
+      alert('Notice copied to clipboard!');
     } catch (err) {
-      alert("Failed to copy notice. Please try manually.");
+      alert('Failed to copy notice. Please try manually.');
       console.error(err);
     }
   };
@@ -116,40 +152,54 @@ export default function NoticeBoardPage() {
           Campus Notices
         </h1>
 
+        <div className="relative mb-8">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Search className="h-5 w-5 text-gray-400" />
+          </div>
+          <input
+            type="text"
+            placeholder="Search notices by title, content, or department..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="block w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-400 shadow-sm text-gray-800 placeholder-gray-500 transition-all"
+          />
+        </div>
+
         <div className="space-y-6">
           {filteredNotices.length > 0 ? (
             filteredNotices.map((notice) => (
-              <NoticeCard
+              <Link
+                href={`/noticeboard/${notice.id}`}
                 key={notice.id}
-                notice={notice}
-                isExpanded={expandedCards.has(notice.id)}
-                onToggleExpand={() => toggleExpand(notice.id)}
-                onShare={handleShare}
-                onCopy={handleCopy}
-              />
+                className="block no-underline"
+              >
+                <NoticeCard 
+                  notice={notice}
+                  onShare={handleShare}
+                  onCopy={handleCopy} />
+              </Link>
             ))
-          ) : loading ? (
+          ) : !loading ? (
             <p className="text-center text-gray-500 py-12">
               No notices available at the moment.
             </p>
           ) : null}
         </div>
 
-        {/* this is loader for infinite scroll */}
         {filteredNotices.length > 0 && (
           <div ref={loaderRef} className="text-center py-6 text-gray-500">
             {loading
               ? "Loading more notices..."
               : hasMore
               ? "Scroll down to load more"
-              : "No more notices"}
+              : "You've reached the end."}
           </div>
         )}
       </div>
 
       {shareNotice && (
         <ShareDialog
-          url={`${window.location.origin}/noticeboard#${shareNotice.id}`}
+          url={`${window.location.href.split('#')[0]}#${shareNotice.id}`}
           title={shareNotice.title}
           onClose={() => setShareNotice(null)}
         />

@@ -70,7 +70,9 @@ interface ReviewData {
   rating: number;
   description: string;
   CreatedAt: string;
-  image_url?: string;
+  Images?: {
+    ImageID: string;
+  }[];
   User: {
     name: string;
     profile_pic?: string;
@@ -86,8 +88,6 @@ export default function LocationPage() {
   const [location, setLocation] = useState<LocationData | null>(null);
   const [reviews, setReviews] = useState<ReviewData[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // ... existing imports ...
 
   const fetchLocation = async () => {
     if (!id) return;
@@ -208,7 +208,7 @@ export default function LocationPage() {
               {/* Cover Image */}
               <div className="w-full relative h-64 md:h-80 lg:h-[400px]">
                 <Image
-                  src={location.coverpic || "/no-image-placeholder.png"}
+                  src={location.coverpic || "/404.png"}
                   alt={location.name}
                   fill
                   className="object-cover"
@@ -324,7 +324,7 @@ export default function LocationPage() {
                       rating={review.rating}
                       review_body={review.description}
                       time={review.CreatedAt}
-                      img={review.image_url || ""}
+                      imgs={review.Images || []}
                     />
                   ))
                 ) : (

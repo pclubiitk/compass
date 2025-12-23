@@ -5,8 +5,10 @@ import (
 	"compass/model"
 	"net/http"
 	"strconv"
-	"time"
+	"errors"
 	"github.com/google/uuid"
+	// "log"
+	"time"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -47,25 +49,59 @@ func noticeProvider(c *gin.Context) {
 	})
 }
 
-func locationProvider(c *gin.Context) {
-	// TODO: write a pagination logic
-	var locations []model.Location
+// noticeDetailProvider fetches a single notice by its ID using GORM.
+func noticeDetailProvider(c *gin.Context) {
 
-	err := connections.DB.
-		Model(&model.Location{}).
-		Where("status = ?", model.Approved).
-		Select("location_id", "name", "latitude", "longitude", "location_type").
-		Find(&locations).Error
+	logrus.Info("--- Handler was called ---")
 
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch locations"})
-		return
+    // Get and validate the ID from the URL
+    noticeIDStr := c.Param("id")
+    noticeID, err := uuid.Parse(noticeIDStr)
+    if err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid notice ID format"})
+        return
+    }
+
+    // Query the database for the notice, preloading the User
+    var notice model.Notice
+    result := connections.DB.
+        Model(&model.Notice{}).
+        Preload("User", connections.UserSelect). // Preload user data, just like in noticeProvider
+        Where("notice_id = ?", noticeID).
+        First(&notice) // Use First() to get a single record
+
+	logrus.WithFields(logrus.Fields{
+		"title":       notice.Title,
+		"description": notice.Description,
+	}).Info("fetching description")
+
+	// Check for DB error
+	if result.Error != nil {
+		logrus.WithFields(logrus.Fields{
+			"title": notice.Title,
+		}).WithError(result.Error).Error("fetch failed")
+	} else {
+		logrus.WithFields(logrus.Fields{
+			"id":    noticeID,
+			"title": notice.Title,
+		}).Info("fetched xd")
 	}
 
-	c.JSON(http.StatusOK, gin.H{"locations": locations})
-	// Handle all the edge cases with suitable return http code, write them in the read me for later documentation
+    // Handle any errors from the database query
+    if result.Error != nil {
+        if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+            c.JSON(http.StatusNotFound, gin.H{"error": "Notice not found"})
+            return
+        }
 
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch notice"})
+        return
+    }
+
+    // Return the complete notice object
+    c.JSON(http.StatusOK, notice)
 }
+
 func incrementalLocationProvider(c *gin.Context) {
 	sinceStr := c.Query("since")
 
@@ -73,7 +109,7 @@ func incrementalLocationProvider(c *gin.Context) {
 		LocationId uuid.UUID `json:"locationId"`
 		DeletedAt  time.Time `json:"deletedAt"`
 	}
-
+	// If since time is empty, provide all locations
 	if sinceStr == "" {
 		var locs []model.Location
 		if err := connections.DB.
@@ -138,7 +174,7 @@ func incrementalLocationProvider(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"locations":     updated,                
+		"locations":     updated,
 		"deleted":       deleted,
 		"lastFetchTime": maxTime.Format(time.RFC3339),
 	})

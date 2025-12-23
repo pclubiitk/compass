@@ -9,7 +9,7 @@ import (
 
 type Profile struct {
 	gorm.Model
-	UserID uuid.UUID
+	UserID uuid.UUID `gorm:"type:uuid;not null"`
 	// Student Search Data, Personal Data
 	Name       string `json:"name"`
 	Email      string `json:"email"`

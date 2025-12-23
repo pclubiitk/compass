@@ -1,6 +1,6 @@
 "use client"
 import { useEffect } from "react"
-import { AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
+import { AccordionItem, AccordionContent } from "@/components/ui/accordion"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
 
 type NoticeCardProps = {

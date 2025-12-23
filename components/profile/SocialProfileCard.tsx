@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Search, Map, LogOut } from "lucide-react";
-import type { Profile } from "@/app/profile/page"; // Import the type
+import type { Profile } from "@/app/(auth)/profile/page"; // Import the type
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useGContext } from "@/components/ContextProvider";
@@ -46,7 +46,7 @@ export function SocialProfileCard({ profile }: { profile: Profile }) {
         setLoggedIn(false);
         router.replace("/login");
       }
-    } catch (error) {
+    } catch {
       toast("Something went wrong, Try again later.");
     } finally {
       setGlobalLoading(false);
