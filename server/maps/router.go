@@ -17,7 +17,9 @@ func Router(r *gin.Engine) {
 		maps.GET("/location/:id", locationDetailProvider) // provide exact details about the location using the id
 		maps.GET("/locations/incremental", incrementalLocationProvider) // incremental location updates
 		maps.GET("/reviews/:id/:page", reviewProvider)    // provide the reviews of the location id, most recent 50, if there are more do the pagination
-
+        maps.GET("/location/fuzzy", FuzzySearchLocationsHandler)
+        maps.GET("/notice/fuzzy", FuzzySearchNoticesHandler)
+												
 		// User-protected routes
 		user := maps.Group("/")
 		user.Use(middleware.UserAuthenticator, middleware.EmailVerified)
