@@ -5,8 +5,8 @@ import (
 	"compass/middleware"
 	"compass/model"
 	"crypto/rand"
-	"encoding/hex"
 	"fmt"
+	"math/big"
 	"net/http"
 	"strings"
 	"time"
@@ -15,10 +15,14 @@ import (
 	"github.com/google/uuid"
 )
 
+
 func generateVerificationToken() string {
-	b := make([]byte, 3)
-	rand.Read(b) // never returns an error and fills b completely
-	return hex.EncodeToString(b)
+    // Generate a number between 0 and 999999
+    n, err := rand.Int(rand.Reader, big.NewInt(1000000))
+    if err != nil {
+        return "" 
+    }
+    return fmt.Sprintf("%06d", n.Int64()) // always 6 digits
 }
 
 func verificationHandler(c *gin.Context) {
