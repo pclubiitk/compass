@@ -10,16 +10,20 @@ func Router(r *gin.Engine) {
 
 	// Static Route to provide the images
 	r.Static("/assets", "./assets/public")
+	r.Static("/pfp", "./assets/pfp")
 	r.NoRoute(func(c *gin.Context) {
 		c.File("./assets/default/404.png")
 	})
 
 	// TODO: Make it more formal, this limit
 	r.MaxMultipartMemory = 5 << 20
-
 	// r.MaxMultipartMemory = 8 << 20
 
 	// Require login to upload image
 	r.Use(middleware.UserAuthenticator, middleware.EmailVerified)
 	r.POST("/assets", uploadAsset)
+
+	// Admin can see tmp files too
+	r.Static("/assets/tmp", "./assets/tmp" )
+
 }

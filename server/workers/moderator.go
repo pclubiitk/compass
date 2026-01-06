@@ -8,7 +8,7 @@ import (
 	"compass/model"
 	"encoding/json"
 	"fmt"
-
+	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
@@ -37,37 +37,134 @@ func ModeratorWorker() error {
 			task.Nack(false, false) // don't requeue malformed messages
 			continue
 		}
-		// switch according to type
-		var (
-			flagged bool
-			err     error
-		)
-		// TODO: Revieve the description, why it was flagged using the response fields and add that into flagged
-		switch job.Type {
-		case model.ModerationTypeReviewText:
-			flagged, err = ModerateText(job.AssetID)
-		case model.ModerationTypeImage:
-			flagged, err = ModerateImage(job.AssetID)
-		default:
-			logrus.Info("Received unknown type moderation job")
-		}
+
+		flagged, err := moderateJob(job)
 		if err != nil {
 			logrus.Errorf("Moderation error for\nID: %s\nType: %s\nError: %v", job.AssetID, job.Type, err)
 			// TODO: Drop the messages if they are tried multiple times
 			task.Nack(false, false) // don't requeue, improve on this logic later
 			// task.Nack(false, true)
 			continue
-		} else {
-			// Remove the task form queue, confirm that it is processed
-			task.Ack(false)
 		}
+
+		// Fetch image and owner
+		image, user, err := getImageAndUser(job.AssetID)
+		if err != nil {
+			logrus.Errorf("Failed to get image or user for\nID: %s\nError: %v", job.AssetID, err)
+			task.Nack(false, false)
+			continue
+		}
+
 		if flagged {
-			logrus.Infof("Moderation bot flagged\nID: %s\nType: %s", job.AssetID, job.Type)
-			// TODO: Send mail
-			// TODO: Update the tables accordingly
+			if err := handleFlaggedImage(image, user); err != nil {
+				logrus.Errorf("Failed to handle flagged image for\nID: %s\nError: %v", job.AssetID, err)
+				task.Nack(false, false)
+				continue
+			}
 		} else {
-			logrus.Infof("Moderation bot found it right\nID: %s\nType: %s", job.AssetID, job.Type)
+			if err := handleApprovedImage(job.AssetID, image, user); err != nil {
+				logrus.Errorf("Failed to handle approved image for\nID: %s\nError: %v", job.AssetID, err)
+				task.Nack(false, false)
+				continue
+			}
 		}
+		// Remove the task form queue, confirm that it is processed
+		task.Ack(false)
 	}
+
 	return fmt.Errorf("moderation worker channel closed unexpectedly")
+}
+
+// moderateJob decides flagged/approved status based on type
+func moderateJob(job ModerationJob) (bool, error) {
+	// Switch according to type
+	switch job.Type {
+	case model.ModerationTypeReviewText:
+		return ModerateText(job.AssetID)
+	case model.ModerationTypeImage:
+		return ModerateImage(job.AssetID)
+	default:
+		logrus.Infof("Unknown moderation job type: %s", job.Type)
+		return false, nil
+	}
+}
+
+// getImageAndUser fetches image and its owner from DB
+func getImageAndUser(assetID uuid.UUID) (model.Image, model.User, error) {
+	imageID := assetID.String()
+	var image model.Image
+	if err := connections.DB.First(&image, "image_id = ?", imageID).Error; err != nil {
+		return image, model.User{}, err
+	}
+
+	var user model.User
+	if err := connections.DB.First(&user, "user_id = ?", image.OwnerID).Error; err != nil {
+		return image, user, err
+	}
+
+	return image, user, nil
+}
+
+// handleFlaggedImage sends violation email and updates DB
+func handleFlaggedImage(image model.Image, user model.User) error {
+	imageID := image.ImageID.String()
+
+	mailJob := MailJob{
+		Type: "violation_warning",
+		To:   user.Email,
+		Data: map[string]interface{}{
+			"username": user.Email,
+			"reason":   "Your uploaded image violated our content policy and was rejected.",
+		},
+	}
+	if err := sendEmail(mailJob); err != nil {
+		logrus.Errorf("Failed to queue violation email for %s: %v", user.Email, err)
+	}
+
+	if err := connections.DB.Model(&model.Image{}).
+		Where("image_id = ?", imageID).
+		Update("status", model.Rejected).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// handleApprovedImage moves image, updates DB, and sends thank-you email
+func handleApprovedImage(assetID uuid.UUID, image model.Image, user model.User) error {
+	imageID := assetID.String()
+
+	// This is a critical error, so return error, and mark the task unfinished.
+	if err := MoveImageFromTmpToPublic(assetID); err != nil {
+		logrus.Errorf("Failed to move image %s to public: %v", imageID, err)
+		return err
+	} else {
+		logrus.Infof("Image with ID: %s successfully moved from tmp to public", imageID)
+	}
+
+	if err := connections.DB.Model(&model.Image{}).
+		Where("image_id = ?", imageID).
+		Update("status", model.Approved).Error; err != nil {
+		return err
+	}
+
+	mailJob := MailJob{
+		Type: "thanks_contribution",
+		To:   user.Email,
+		Data: map[string]interface{}{
+			"username":      user.Email,
+			"content_title": "Your uploaded image",
+		},
+	}
+	if err := sendEmail(mailJob); err != nil {
+		logrus.Errorf("Failed to queue thank-you email for %s: %v", user.Email, err)
+	}
+
+	return nil
+}
+
+// this method marshals the job and publishes to mail queue
+func sendEmail(mailJob MailJob) error {
+	payload, _ := json.Marshal(mailJob)
+	return PublishJob(payload, "mail")
 }

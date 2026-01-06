@@ -36,6 +36,8 @@ type User struct {
 	ContributedLocations []Location `gorm:"foreignKey:ContributedBy;references:UserID"`
 	ContributedReview    []Review   `gorm:"foreignKey:ContributedBy;references:UserID"`
 	ContributedNotice    []Notice   `gorm:"foreignKey:ContributedBy;references:UserID"`
-	// ProfilePic           *Image     `gorm:"polymorphic:ParentAsset;" json:"profilepic"` // here the * makes it a pointer and when it is null, it return null in json instead of a default values
+	ProfilePic string `json:"profilepic"`  //this stores the img path of the form pfp/uniqueid.image type   
+	// we later access the image as backendurl/public/{imagepath}
+	//  // here the * makes it a pointer and when it is null, it return null in json instead of a default values
 	BioPics []Image `gorm:"polymorphic:ParentAsset;" json:"biopics"`
 }

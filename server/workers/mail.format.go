@@ -45,9 +45,9 @@ func formatVerificationEmail(job MailJob) (MailContent, error) {
 	link := job.Data["link"]
 	data := map[string]interface{}{
 		// "Username": username,
-		"Token":  	token,
-		"Link":     link,
-		"Expiry":   viper.GetInt("expiry.emailVerification"),
+		"Token":  token,
+		"Link":   link,
+		"Expiry": viper.GetInt("expiry.emailVerification"),
 	}
 	// <h2>Hello {{.Username}},</h2>
 	tmpl := `
@@ -80,7 +80,7 @@ func formatThanksEmail(job MailJob) (MailContent, error) {
 		"ContentTitle": contentTitle,
 	}
 	tmpl := `
-		<h2>Hi {{.Username}},</h2>
+		<h2>Hi</h2>
 		<p>Thank you for your contribution: <strong>{{.ContentTitle}}</strong>.</p>
 		<p>We appreciate your involvement in the community!</p>
 	`
@@ -104,7 +104,7 @@ func formatWarningEmail(job MailJob) (MailContent, error) {
 		"Reason":   reason,
 	}
 	tmpl := `
-		<h2>Hello {{.Username}},</h2>
+		<h2>Hi</h2>
 		<p>We've found that one of your recent submissions violated our community guidelines.</p>
 		<p>Reason: {{.Reason}}</p>
 		<p>Please make sure to follow the rules to avoid further action.</p>

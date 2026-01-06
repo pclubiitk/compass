@@ -1,6 +1,12 @@
 "use client";
 
-import { useState, FormEvent, ChangeEvent, useEffect, useCallback } from "react";
+import {
+  useState,
+  FormEvent,
+  ChangeEvent,
+  useEffect,
+  useCallback,
+} from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,6 +16,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Camera } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -20,10 +27,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import {  courses, halls, departmentNameMap } from "@/components/Constant";
+import { courses, halls, departmentNameMap } from "@/components/Constant";
 
 export function Step3Profile() {
   const router = useRouter();
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isFetchingData, setIsFetchingData] = useState(true);
   const [profileData, setProfileData] = useState({
@@ -36,7 +45,8 @@ export function Step3Profile() {
     roomNo: "",
     homeTown: "",
   });
- const fetchAutomationData = useCallback(async () => {
+
+  const fetchAutomationData = useCallback(async () => {
     try {
       setIsFetchingData(true);
       const response = await fetch(
@@ -56,7 +66,9 @@ export function Step3Profile() {
           let hall = "";
           let roomNo = "";
           if (automation.hostel_info) {
-            const hostelParts = automation.hostel_info.split(",").map((s: string) => s.trim());
+            const hostelParts = automation.hostel_info
+              .split(",")
+              .map((s: string) => s.trim());
             hall = hostelParts[0] || "";
             roomNo = hostelParts[1] || "";
           }
@@ -70,25 +82,26 @@ export function Step3Profile() {
           } else {
             gender = "Other";
           }
-          let homeTown = ""
+          let homeTown = "";
 
           if (automation.location) {
-            homeTown = automation.location
+            homeTown = automation.location;
           }
-          
 
           // Set the profile data
           setProfileData({
             name: automation.name || "",
             rollNo: automation.roll_no || "",
-            dept: departmentNameMap[automation.department as keyof typeof departmentNameMap] || "",
+            dept:
+              departmentNameMap[
+                automation.department as keyof typeof departmentNameMap
+              ] || "",
             course: automation.program || "",
             gender: gender,
             hall: hall,
             roomNo: roomNo,
             homeTown: homeTown || "",
           });
-
         }
       } else {
         console.warn("Could not fetch automation data");
@@ -104,6 +117,46 @@ export function Step3Profile() {
   useEffect(() => {
     fetchAutomationData();
   }, [fetchAutomationData]);
+
+  // TODO: Add a loading for the image upload.
+  // Image upload function called immediately when user picks a file
+  const uploadImageInstant = async (file: File) => {
+    const formData = new FormData();
+    formData.append("profileImage", file);
+
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_AUTH_URL}/api/profile/pfp`,
+        {
+          method: "POST",
+          body: formData,
+          credentials: "include",
+        }
+      );
+      const data = await response.json();
+      if (response.ok) {
+        toast.success("Profile picture uploaded!");
+        return true;
+      } else {
+        toast.error(data.error || "Failed to upload image.");
+        return false;
+      }
+    } catch (error) {
+      toast.error("Image upload failed.");
+      return false;
+    }
+  };
+
+  const handleImageChange = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Automatically uploads after selection
+    if (await uploadImageInstant(file)) {
+      setImageFile(file);
+      setPreviewUrl(URL.createObjectURL(file)); // showing local preview once uploaded
+    }
+  };
 
   // Handles changes for all text inputs
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -158,8 +211,8 @@ export function Step3Profile() {
       <CardHeader>
         <CardTitle className="text-2xl">Complete Your Profile</CardTitle>
         <CardDescription>
-          {isFetchingData 
-            ? "Fetching your profile data..." 
+          {isFetchingData
+            ? "Fetching your profile data..."
             : "Fill in your details to finish setting up your account. Fields with * are required."}
         </CardDescription>
       </CardHeader>
@@ -183,6 +236,32 @@ export function Step3Profile() {
               disabled={isFetchingData}
             />
           </div>
+
+          {/* additional input component for user profile image*/}
+          <div className="relative group w-32 h-32 sm:w-36 sm:h-36 bg-gray-100 rounded-full overflow-hidden mx-auto mb-4">
+            {/* preview */}
+            {previewUrl && (
+              <img
+                src={previewUrl}
+                alt="Preview"
+                className="w-full h-full object-cover rounded-full"
+              />
+            )}
+            <label
+              className="absolute inset-0 flex items-center justify-center 
+                    bg-black/40 opacity-0 group-hover:opacity-100 
+                    transition-all cursor-pointer rounded-full"
+            >
+              <Camera className="text-white w-7 h-7" />
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleImageChange}
+              />
+            </label>
+          </div>
+
           <div className="grid gap-2">
             <Label htmlFor="rollNo">
               Roll Number <span className="text-red-500">*</span>
@@ -201,8 +280,8 @@ export function Step3Profile() {
             <Label>
               Department <span className="text-red-500">*</span>
             </Label>
-            <Select 
-              onValueChange={handleSelectChange("dept")} 
+            <Select
+              onValueChange={handleSelectChange("dept")}
               value={profileData.dept}
               disabled={isFetchingData}
               required
@@ -211,16 +290,16 @@ export function Step3Profile() {
                 <SelectValue placeholder="Select department" />
               </SelectTrigger>
               <SelectContent>
-                {
-                  Object.entries(departmentNameMap).map(([fullName, Code]) => (
-                    <SelectItem key={Code} value={Code}>
-                      <div className="flex items-center justify-between gap-4 w-full">
-                        <span className="truncate">{fullName}</span>
-                        <span className="text-muted-foreground text-xs font-mono shrink-0">{Code}</span>
-                      </div>
-                    </SelectItem>
-                  ))
-                }
+                {Object.entries(departmentNameMap).map(([fullName, Code]) => (
+                  <SelectItem key={Code} value={Code}>
+                    <div className="flex items-center justify-between gap-4 w-full">
+                      <span className="truncate">{fullName}</span>
+                      <span className="text-muted-foreground text-xs font-mono shrink-0">
+                        {Code}
+                      </span>
+                    </div>
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -228,8 +307,8 @@ export function Step3Profile() {
             <Label>
               Course <span className="text-red-500">*</span>
             </Label>
-            <Select 
-              onValueChange={handleSelectChange("course")} 
+            <Select
+              onValueChange={handleSelectChange("course")}
               value={profileData.course}
               disabled={isFetchingData}
               required
@@ -250,8 +329,8 @@ export function Step3Profile() {
             <Label>
               Gender <span className="text-red-500">*</span>
             </Label>
-            <Select 
-              onValueChange={handleSelectChange("gender")} 
+            <Select
+              onValueChange={handleSelectChange("gender")}
               value={profileData.gender}
               disabled={isFetchingData}
               required
@@ -273,7 +352,7 @@ export function Step3Profile() {
             <Label>Hall & Room Number</Label>
             <div className="flex gap-2">
               <div>
-                <Select 
+                <Select
                   onValueChange={handleSelectChange("hall")}
                   value={profileData.hall}
                   disabled={isFetchingData}
@@ -316,8 +395,16 @@ export function Step3Profile() {
           </div>
 
           <div className="md:col-span-2">
-            <Button type="submit" className="w-full" disabled={isLoading || isFetchingData}>
-              {isFetchingData ? "Loading..." : isLoading ? "Saving..." : "Save and Finish"}
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={isLoading || isFetchingData}
+            >
+              {isFetchingData
+                ? "Loading..."
+                : isLoading
+                ? "Saving..."
+                : "Save and Finish"}
             </Button>
           </div>
         </form>

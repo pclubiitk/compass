@@ -1,20 +1,22 @@
 package assets
 
 import (
+	"bytes"
 	"fmt"
+	"github.com/google/uuid"
+	"github.com/h2non/bimg"
+	"github.com/kolesa-team/go-webp/encoder"
+	"github.com/kolesa-team/go-webp/webp"
+	"github.com/spf13/viper"
+	heif "github.com/strukturag/libheif/go/heif"
 	"io"
 	"mime/multipart"
 	"os"
 	"path/filepath"
-
-	"github.com/google/uuid"
-	"github.com/h2non/bimg"
-	"github.com/spf13/viper"
 )
 
 // Compressor and convert
 // TODO: Need to fix the quality for different image type, as png is very heavy
-// TODO: Fix the upload issue of heic / heif
 func cncImage(image *multipart.FileHeader) ([]byte, error) {
 	file, err := image.Open()
 	if err != nil {
@@ -27,20 +29,66 @@ func cncImage(image *multipart.FileHeader) ([]byte, error) {
 	}
 	options := bimg.Options{
 		// TODO: Make the width and the height according to the formate
-		Quality: viper.GetInt("image.qualtiy"),
+		Quality: viper.GetInt("image.quality"),
 		// Width:   payload.Width,
 		// Height:  payload.Height,
 	}
 	// Image format converter
+
 	newImage := bimg.NewImage(imgBytes)
-	fmt.Print(newImage.Type())
-	if newImage.Type() == "heif" {
-		return nil, fmt.Errorf("we currently do not support heic format")
-	} else if processedImage, err := newImage.Process(options); err != nil {
-		return nil, err
-	} else {
-		return processedImage, nil
+	imgType := newImage.Type()
+
+	if imgType == "heic" || imgType == "heif" || imgType == "HEIC" || imgType == "HEIF" {
+		ctx, err := heif.NewContext()
+		if err != nil {
+			return nil, fmt.Errorf("failed to create HEIF context: %w", err)
+		}
+
+		if err := ctx.ReadFromMemory(imgBytes); err != nil {
+			return nil, fmt.Errorf("failed to read HEIC data: %w", err)
+		}
+
+		handle, err := ctx.GetPrimaryImageHandle()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get primary image handle: %w", err)
+		}
+
+		// This was showing an error due to depreciated syntax..now cleared as NewDecodingOptions function returns two values , not one.
+
+		decodingOpts, err := heif.NewDecodingOptions()
+		if err != nil {
+			return nil, fmt.Errorf("failed to create HEIF decoding options: %w", err)
+		}
+		heifImg, err := handle.DecodeImage(heif.ColorspaceRGB, heif.ChromaInterleavedRGBA, decodingOpts)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode HEIC image: %w", err)
+		}
+
+		// Convert *heif.Image → Go image.Image
+		rgbaImg, err := heifImg.GetImage()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get Go image: %w", err)
+		}
+
+		// Encoding directly to WebP in memory using golang webp encoder
+		var webpBuffer bytes.Buffer
+		webpOptions, err := encoder.NewLossyEncoderOptions(encoder.PresetDefault, 80)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create WebP encoder options: %w", err)
+		}
+
+		if err := webp.Encode(&webpBuffer, rgbaImg, webpOptions); err != nil {
+			return nil, fmt.Errorf("failed to encode WebP: %w", err)
+		}
+
+		return webpBuffer.Bytes(), nil
 	}
+	processedImage, err := newImage.Process(options)
+	if err != nil {
+		return nil, err
+	}
+
+	return processedImage, nil
 }
 
 // Save image

@@ -8,10 +8,12 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/h2non/bimg v1.1.9
 	github.com/jackc/pgx/v5 v5.6.0
+	github.com/kolesa-team/go-webp v1.0.5
 	github.com/openai/openai-go/v2 v2.0.2
 	github.com/rabbitmq/amqp091-go v1.10.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/viper v1.20.1
+	github.com/strukturag/libheif v1.16.2
 	golang.org/x/crypto v0.39.0
 	golang.org/x/sync v0.16.0
 	gopkg.in/mail.v2 v2.3.1

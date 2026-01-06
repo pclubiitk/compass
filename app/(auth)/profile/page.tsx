@@ -8,7 +8,7 @@ import { SocialProfileCard } from "@/components/profile/SocialProfileCard";
 import { EditableProfileCard } from "@/components/profile/EditableProfileCard";
 import { ContributionsCard } from "@/components/profile/ContributionsCard";
 
-// Data Type
+// Data Types
 export type Profile = {
   name: string;
   email: string;
@@ -19,7 +19,9 @@ export type Profile = {
   hall: string;
   roomNo: string;
   homeTown: string;
+  profilePic?: string;
 };
+
 export type UserData = {
   role: number;
   profile: Profile;
@@ -36,12 +38,29 @@ export default function ProfilePage() {
   const fetchProfile = async () => {
     // We don't reset loading to true on refetch to avoid skeleton flashes
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL}/api/profile`, {
-        credentials: "include",
-      });
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_AUTH_URL}/api/profile`,
+        {
+          credentials: "include",
+        }
+      );
       if (res.ok) {
         const data = await res.json();
-        setUserData(data.profile);
+
+        const normalized = {
+          ...data,
+          profile: {
+            ...data.profile,
+            profile: {
+              ...data.profile.profile,
+              profilePic: data.profile.profilepic ?? data.profile.profilePic,
+            },
+          },
+        };
+
+        // console.log("Normalized profilePic:", normalized.profile.profilePic);
+
+        setUserData(normalized.profile);
       } else {
         toast.error("Invalid Session. Redirecting to login.");
         // After login again direct to profile
@@ -59,6 +78,7 @@ export default function ProfilePage() {
     fetchProfile();
   }, []);
 
+  // Loading Skeleton
   if (isLoading) {
     return (
       <div className="flex flex-col lg:flex-row min-h-screen bg-muted/40">
@@ -77,12 +97,18 @@ export default function ProfilePage() {
     return <div className="text-center p-12">Could not load profile data.</div>;
   }
 
+  const profile = userData.profile;
+
   return (
     <div className="flex flex-col lg:flex-row min-h-screen bg-muted/40">
       {/* --- Left Column (Fixed) --- */}
       <aside className="w-full lg:w-1/3 xl:w-1/3 p-4 sm:p-6 lg:p-8">
         <div className="lg:sticky lg:top-8">
-          <SocialProfileCard profile={userData.profile} />
+          <SocialProfileCard
+            email={profile.email}
+            profilePic={profile.profilePic}
+            onProfileUpdate={fetchProfile}
+          />
         </div>
       </aside>
 
