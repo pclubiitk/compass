@@ -17,16 +17,28 @@ import { toast } from "sonner";
 
 export function AlertDeleteProfileInfo() {
   const { setGlobalLoading } = useGContext();
-  const delay = (ms: number | undefined) =>
-    new Promise((res) => setTimeout(res, ms));
+
   const deleteProfileData = async () => {
     try {
       setGlobalLoading(true);
-      await delay(10000);
-    } catch {
-      toast(
-        "Unable to toggle visibility at the moment, please try again later."
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_SEARCH_SERVER}/api/search/`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+        }
       );
+
+      if (!response.ok) {
+        throw new Error("Failed to delete profile");
+      }
+      toast("Profile data deleted successfully.");
+    } catch (error) {
+      console.error(error);
+      toast("Unable to delete profile at the moment, please try again later.");
     } finally {
       setGlobalLoading(false);
     }
@@ -118,11 +130,29 @@ export function AlertVisibilityProfileInfo({
   const [visibility, setVisibility] = useState(initialVisibility);
   const { setGlobalLoading } = useGContext();
   const toggleVisibility = async () => {
+    const nextState = !visibility; // next state
     try {
       setGlobalLoading(true);
-      // Add your logic to toggle visibility here
-      setVisibility((prev) => !prev);
-    } catch {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_SEARCH_SERVER}/api/search/toggleVisibility`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ visibility: nextState }),
+          credentials: "include", // Passes auth cookies
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to update visibility");
+      }
+
+      // Only update local UI state if backend request succeeded
+      setVisibility(nextState);
+      toast(nextState ? "Profile is now visible." : "Profile is now hidden.");
+    } catch (error) {
       toast(
         "Unable to toggle visibility at the moment, please try again later."
       );

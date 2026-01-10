@@ -19,6 +19,8 @@ func deleteProfileData(c *gin.Context) {
 		return
 	}
 	if err := connections.DB.Transaction(func(tx *gorm.DB) error {
+		// soft delete from "profiles" table
+		// TODO: We may need hard delete, due to unique key constraint
 		if err := tx.Delete(&model.Profile{}, "user_id = ?", existingProfile.UserID).Error; err != nil {
 			return err
 		}
@@ -26,7 +28,12 @@ func deleteProfileData(c *gin.Context) {
 		if err := tx.Where("user_id = ?", existingProfile.UserID).Delete(&model.ChangeLog{}).Error; err != nil {
 			return err
 		}
+		// create log entry
 		if err := tx.Create(&model.ChangeLog{UserID: existingProfile.UserID, Action: model.Delete}).Error; err != nil {
+			return err
+		}
+		// Soft delete from "users" table
+		if err := tx.Delete(&model.User{}, "user_id = ?", existingProfile.UserID).Error; err != nil {
 			return err
 		}
 		return nil
@@ -48,7 +55,7 @@ func toggleVisibility(c *gin.Context) {
 	if err := connections.DB.Transaction(func(tx *gorm.DB) error {
 		updateAction := model.Delete
 		if *input.Visibility {
-			updateAction = model.Add
+			updateAction = model.Update
 		}
 
 		// Update the profile

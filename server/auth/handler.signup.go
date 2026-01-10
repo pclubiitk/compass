@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"time"
 
+	"gorm.io/gorm"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/sirupsen/logrus"
@@ -57,13 +58,32 @@ func signupHandler(c *gin.Context) {
 		Profile:           model.Profile{Email: input.Email, Visibility: true},
 	}
 
-	// Saving user in DB
-	if err := connections.DB.Model(&model.User{}).Create(&user).Error; err != nil {
+	// Saving user in DB and updating in changelog
+	if err := connections.DB.Transaction(func(tx *gorm.DB) error {
+		// Create the User (and Profile via nested struct)
+		if err := tx.Create(&user).Error; err != nil {
+			return err // This error bubbles up to the if err != nil check below
+		}
+
+		// Create the ChangeLog entry
+		logEntry := model.ChangeLog{
+			UserID: user.UserID,
+			Action: "signup", 
+		}
+
+		if err := tx.Create(&logEntry).Error; err != nil {
+			return err
+		}
+
+		return nil
+	}); err != nil {
+		// Handle Duplicate User Error (Postgres Code 23505)
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
 			c.JSON(http.StatusConflict, gin.H{"error": "User already exists"})
 			return
 		}
+		// Handle other DB errors
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error creating user"})
 		return
 	}

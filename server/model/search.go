@@ -28,12 +28,12 @@ type Profile struct {
 type Action string
 
 const (
-	Add    Action = "add"
+	Update    Action = "update"
 	Delete Action = "delete"
 )
 
 type ChangeLog struct {
 	UserID    uuid.UUID `gorm:"primarykey"`
 	CreatedAt time.Time `json:"-"`
-	Action    Action    `json:"action" gorm:"type:varchar(20);check:action IN ('add','delete')"`
+	Action    Action    `json:"action" gorm:"type:varchar(20);check:action IN ('signup','delete','update')"`
 }
