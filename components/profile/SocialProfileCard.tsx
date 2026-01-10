@@ -45,9 +45,7 @@ export function SocialProfileCard({
 
   const BACKEND_URL = process.env.NEXT_PUBLIC_AUTH_URL;
 
-  const [preview, setPreview] = useState<string | null>(
-    profilePic ? `${BACKEND_URL}/${profilePic}` : null
-  );
+  // const [preview, setPreview] = useState<string | null>(profilePic ? `${BACKEND_URL}/${profilePic}` : null);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
@@ -55,7 +53,7 @@ export function SocialProfileCard({
   useEffect(() => {
     if (!selectedImage) return;
     const url = URL.createObjectURL(selectedImage);
-    setPreview(url);
+    // setPreview(url);
     return () => URL.revokeObjectURL(url);
   }, [selectedImage]);
 
@@ -77,7 +75,7 @@ export function SocialProfileCard({
 
       if (res.ok) {
         toast.success("Profile image updated!");
-        setPreview(`${BACKEND_URL}/${data.imagePath}`);
+        // setPreview(`${BACKEND_URL}/${data.imagePath}`);
         onProfileUpdate?.();
       } else {
         toast.error(data.error || "Upload failed");

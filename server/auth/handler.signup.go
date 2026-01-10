@@ -18,6 +18,11 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+func isValidIITKEmail(email string) bool {
+	return len(email) > 12 && email[len(email)-12:] == "@iitk.ac.in"
+}
+
+
 func signupHandler(c *gin.Context) {
 	var input LoginSignupRequest
 
@@ -25,6 +30,15 @@ func signupHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format"})
 		return
 	}
+	//Allow only IITK emails ie ends with @iitk.ac.in
+	if !isValidIITKEmail(input.Email) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Please use a valid IIT Kanpur email address"})
+		return
+	}
+	
+
+
+
 	// FOR DEV: BYPASS RECAPTCHA
 	// ----------------------------------------------------------------------------- //
 	// Throws error if captcha verification fails

@@ -28,8 +28,6 @@ function ShareButton({
   children: React.ReactNode;
   className: string;
 }) {
-  const baseClasses =
-    "inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition text-sm";
   if (href) {
     return (
       <a
@@ -56,7 +54,7 @@ function ShareButton({
 export default function ShareDialog({ url, title, onClose }: ShareDialogProps) {
   const [copied, setCopied] = useState(false);
 
-  const shareText = encodeURIComponent(title);
+  // const shareText = encodeURIComponent(title);
   const shareUrl = `${window.location.origin}/noticeboard/${url}`;
 
   // Copy link handler

@@ -16,8 +16,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
-  DialogClose,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,7 +31,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  ImagePlus,
   MapPin,
   AlignLeft,
   Navigation,
@@ -296,7 +293,9 @@ export default function AddLocationDrawer({
           <Label>Cover Image</Label>
           {!previewUrl ? (
             <div
-              onClick={() => document.getElementById("location-cover-image")?.click()}
+              onClick={() =>
+                document.getElementById("location-cover-image")?.click()
+              }
               className="border border-dashed border-muted-foreground/30 rounded-lg p-8 flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-muted/50 transition-colors"
             >
               <div className="p-2.5 rounded-full bg-muted text-muted-foreground">
@@ -415,9 +414,7 @@ export default function AddLocationDrawer({
           </DrawerDescription>
         </DrawerHeader>
 
-        <div className="px-6 py-6 overflow-y-auto">
-          {FormContent}
-        </div>
+        <div className="px-6 py-6 overflow-y-auto">{FormContent}</div>
 
         <DrawerFooter className="border-t pt-4">
           <DrawerClose asChild>

@@ -26,11 +26,15 @@ export function BottomNav() {
   const navItems = [
     { icon: Search, label: "Search", path: "/" },
     { icon: Megaphone, label: "Noticeboard", path: "/noticeboard" },
-    { icon: Plus, label: "Add Location", path: "" }, // 
+    { icon: Plus, label: "Add Location", path: "" },
     { icon: User, label: "Profile", path: "/profile" },
   ];
 
-  const handleClick = async (label: string, path: string, e?: React.MouseEvent) => {
+  const handleClick = async (
+    label: string,
+    path: string,
+    e?: React.MouseEvent
+  ) => {
     e?.preventDefault();
 
     // Instant drawer trigger (no routing)
@@ -54,11 +58,14 @@ export function BottomNav() {
       }
 
       //  Already on map — open instantly
-      const mapRef = (window as any).mapRef?.current;
-      const markerRef = (window as any).markerRef?.current;
+      const mapRef = window.mapRef.current;
+      const markerRef = window.markerRef.current;
 
+      // TODO: Verify the logic
       if (mapRef) {
-        const pos = markerRef ? markerRef.getLngLat() : mapRef.getCenter();
+        const pos = markerRef.length
+          ? markerRef[0].getLngLat()
+          : mapRef.getCenter();
         localStorage.setItem("selected_lat", pos.lat.toString());
         localStorage.setItem("selected_lon", pos.lng.toString());
         window.dispatchEvent(new Event("trigger-add-location")); // 💫 open drawer
@@ -107,7 +114,7 @@ export function BottomNav() {
           <Button
             key={label}
             variant="ghost"
-            className="flex flex-col items-center justify-center px-0 min-w-[60px] sm:min-w-[72px]"
+            className="flex flex-col items-center justify-center px-0 min-w-15 sm:min-w-18"
             onClick={(e) => handleClick(label, path, e)}
           >
             <Icon className="h-5 w-5 sm:h-6 sm:w-6 text-gray-700" />

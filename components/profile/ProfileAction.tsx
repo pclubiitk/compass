@@ -152,7 +152,7 @@ export function AlertVisibilityProfileInfo({
       // Only update local UI state if backend request succeeded
       setVisibility(nextState);
       toast(nextState ? "Profile is now visible." : "Profile is now hidden.");
-    } catch (error) {
+    } catch {
       toast(
         "Unable to toggle visibility at the moment, please try again later."
       );

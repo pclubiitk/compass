@@ -48,6 +48,12 @@ export function Step1Register({ onSuccess }: Step1RegisterProps) {
       const email = formData.get("email");
       const password = formData.get("password");
 
+      // Only allow IITK email addresses
+      if (typeof email !== "string" || !email.endsWith("@iitk.ac.in")) {
+        toast.error("Please use a valid IIT Kanpur email address.");
+        setIsLoading(false);
+        return;
+      }
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_AUTH_URL}/api/auth/signup`,
         {

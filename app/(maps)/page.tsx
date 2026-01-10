@@ -16,13 +16,6 @@ import {
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
 
-declare global {
-  interface Window {
-    mapRef: any;
-    markerRef: any;
-  }
-}
-
 export default function Home() {
   const [results, setResults] = useState<any[]>([]); // storing results for dropdown
   const { isValidating } = useLocations();
@@ -34,11 +27,13 @@ export default function Home() {
     setMounted(true);
   }, []);
 
-  // Ensure markerRef is always an array
+  // Ensure markerRef is initialized as a ref object with current property
   useEffect(() => {
     if (typeof window !== "undefined") {
-      if (!window.markerRef || !Array.isArray(window.markerRef)) {
-        window.markerRef = [];
+      if (!window.markerRef) {
+        window.markerRef = { current: [] };
+      } else if (!window.markerRef.current) {
+        window.markerRef.current = [];
       }
     }
   }, []);
@@ -89,18 +84,18 @@ export default function Home() {
 
     // Clearing previous markers if needed
     if (
-      window.markerRef &&
-      Array.isArray(window.markerRef) &&
-      window.markerRef.length
+      window.markerRef?.current &&
+      Array.isArray(window.markerRef.current) &&
+      window.markerRef.current.length
     ) {
-      window.markerRef.forEach((m: any) => {
+      window.markerRef.current.forEach((m: any) => {
         try {
           m.remove();
-        } catch (e) {}
+        } catch {}
       });
+      // Resetting to empty array
+      window.markerRef.current = [];
     }
-    // Resetting to empty array
-    window.markerRef = [];
 
     const coordMatch = query.match(
       /^\s*(-?\d+(\.\d+)?),\s*(-?\d+(\.\d+)?)\s*$/
@@ -116,7 +111,7 @@ export default function Home() {
         .setLngLat([lng, lat])
         .addTo(mapRef.current);
 
-      window.markerRef.push(marker);
+      window.markerRef.current.push(marker);
 
       setTimeout(() => {
         mapRef.current.flyTo({ center: [lng, lat], zoom: 14 });
@@ -151,19 +146,19 @@ export default function Home() {
     if (!mapRef || !mapRef.current) return;
 
     if (
-      window.markerRef &&
-      Array.isArray(window.markerRef) &&
-      window.markerRef.length
+      window.markerRef?.current &&
+      Array.isArray(window.markerRef.current) &&
+      window.markerRef.current.length
     ) {
-      window.markerRef.forEach((m: any) => {
+      window.markerRef.current.forEach((m: any) => {
         try {
           m.remove();
-        } catch (e) {
+        } catch {
           // ignore
         }
       });
+      window.markerRef.current = [];
     }
-    window.markerRef = [];
 
     const maplibregl = (await import("maplibre-gl")).default;
     const marker = new maplibregl.Marker({ color: "#f00" })
@@ -171,7 +166,7 @@ export default function Home() {
       .addTo(mapRef.current);
 
     // push into array (consistent)
-    window.markerRef.push(marker);
+    window.markerRef.current.push(marker);
 
     mapRef.current.flyTo({ center: [loc.longitude, loc.latitude], zoom: 14 });
   };

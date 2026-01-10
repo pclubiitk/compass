@@ -31,7 +31,7 @@ import { courses, halls, departmentNameMap } from "@/components/Constant";
 
 export function Step3Profile() {
   const router = useRouter();
-  const [imageFile, setImageFile] = useState<File | null>(null);
+  // const [imageFile, setImageFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isFetchingData, setIsFetchingData] = useState(true);
@@ -141,7 +141,7 @@ export function Step3Profile() {
         toast.error(data.error || "Failed to upload image.");
         return false;
       }
-    } catch (error) {
+    } catch {
       toast.error("Image upload failed.");
       return false;
     }
@@ -153,7 +153,7 @@ export function Step3Profile() {
 
     // Automatically uploads after selection
     if (await uploadImageInstant(file)) {
-      setImageFile(file);
+      // setImageFile(file);
       setPreviewUrl(URL.createObjectURL(file)); // showing local preview once uploaded
     }
   };

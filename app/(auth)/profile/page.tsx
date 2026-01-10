@@ -1,21 +1,20 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SocialProfileCard } from "@/components/profile/SocialProfileCard";
 import { EditableProfileCard } from "@/components/profile/EditableProfileCard";
 import { ContributionsCard } from "@/components/profile/ContributionsCard";
-import { useCalendar } from "@/calendar/contexts/calendar-context";
-import { CalendarProvider } from "@/calendar/contexts/calendar-context";
+import { useCalendar, CalendarProvider } from "@/calendar/contexts/calendar-context";
 import { ClientContainer } from "@/calendar/components/client-container";
+import { getEvents } from "@/calendar/requests";
+import { Calendar } from "lucide-react";
 
-import { IEvent } from "@/calendar/interfaces";
-import { Notice } from "@/lib/types";
-import { env } from "process";
+import type { IEvent } from "@/calendar/interfaces";
 
-const mapServer = env.NEXT_PUBLIC_MAP_SERVER;
 // Data Type
 export type Profile = {
   name: string;
@@ -42,69 +41,28 @@ export default function ProfilePage() {
   const router = useRouter();
   const [userData, setUserData] = useState<UserData | null>(null);
   const [calendarEvents, setCalendarEvents] = useState<IEvent[]>([]);
-  const [calendarType, setCalendarType] = useState<
-    "year" | "week" | "day" | "month"
-  >("day");
   const [isLoading, setIsLoading] = useState(true);
-  const [notices, setNotices] = useState<Notice[]>([]);
+  const [calendarLoading, setCalendarLoading] = useState(true);
 
-  // TODO: Move this to the calendar/requests.ts (it was meant for that)
-  // TODO: Match the event entries with https://github.com/lramos33/big-calendar doc's
-  useEffect(() => {
-    const fetchNotices = async () => {
-      try {
-        const res = await fetch(`${mapServer}/api/maps/notice?page=1`);
-        const data = await res.json();
-
-        const formatted: Notice[] = data.noticeboard_list.map((n: any) => ({
-          id: n.id,
-          title: n.title,
-          description: n.description,
-          type: n.type || "Event",
-          recipient: n.recipient || "All",
-          location: n.location || "Campus",
-          eventTime: n.eventTime || n.time,
-          eventEndTime: n.eventEndTime || n.endTime,
-        }));
-
-        setNotices(formatted);
-
-        // build calendar events *after* data is fetched
-        const eventss: IEvent[] = formatted
-
-          .map((notice, index) => {
-            const start = new Date(notice.eventTime);
-            const end = new Date(notice.eventEndTime);
-            if (isNaN(start.getTime())) {
-              console.warn("Invalid date in notice:", notice);
-              return null;
-            }
-
-            // Add a small offset for uniqueness
-
-            return {
-              id: index + 1,
-              title: notice.title,
-              description: notice.description,
-
-              startDate: start.toISOString(),
-              endDate: end.toISOString(),
-              location: notice.location || "Campus",
-              color: "blue",
-            };
-          })
-          .filter(Boolean) as unknown as IEvent[];
-
-        setCalendarEvents(eventss);
-      } catch (err) {
-        console.error("Failed to fetch notices:", err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchNotices();
+  // Fetch calendar events using the new requests module
+  const fetchCalendarEvents = useCallback(async () => {
+    setCalendarLoading(true);
+    try {
+      const events = await getEvents();
+      setCalendarEvents(events);
+      return events;
+    } catch (err) {
+      console.error("Failed to fetch calendar events:", err);
+      return [];
+    } finally {
+      setCalendarLoading(false);
+    }
   }, []);
+
+  // Load calendar events on mount
+  useEffect(() => {
+    fetchCalendarEvents();
+  }, [fetchCalendarEvents]);
 
   const fetchProfile = async () => {
     // We don't reset loading to true on refetch to avoid skeleton flashes
@@ -196,11 +154,31 @@ export default function ProfilePage() {
             notices={userData.ContributedNotice}
           />
 
-          <div className="h-80">
-            <CalendarProvider events={calendarEvents}>
-              <CalendarInner />
-            </CalendarProvider>
-          </div>
+          {/* Calendar Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="w-5 h-5" />
+                Campus Events
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              {calendarLoading ? (
+                <div className="h-96 flex items-center justify-center">
+                  <Skeleton className="h-80 w-full mx-4" />
+                </div>
+              ) : (
+                <div className="min-h-125">
+                  <CalendarProvider
+                    events={calendarEvents}
+                    fetchEvents={fetchCalendarEvents}
+                  >
+                    <CalendarInner />
+                  </CalendarProvider>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </main>
     </div>
@@ -210,12 +188,8 @@ export default function ProfilePage() {
 function CalendarInner() {
   const { view } = useCalendar();
 
-  useEffect(() => {
-    console.log("Current calendar view:", view);
-  }, [view]);
-
   return (
-    <div className="mx-auto flex max-w-screen-2xl flex-col gap-4 p-4">
+    <div className="flex flex-col">
       <ClientContainer view={view} />
     </div>
   );

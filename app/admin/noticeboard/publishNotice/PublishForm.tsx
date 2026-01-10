@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 const CopyIcon = () => (
   <svg
@@ -50,8 +51,11 @@ interface UploadedImage {
 
 export default function NoticeboardForm() {
   const router = useRouter();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  // FIXME:
+  // 28:10  Error: 'isSubmitting' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+  // 29:10  Error: 'error' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+  // const [isSubmitting, setIsSubmitting] = useState(false);
+  // const [error, setError] = useState<string | null>(null);
 
   const [images, setImages] = useState<UploadedImage[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null); // To trigger file input click
@@ -129,8 +133,8 @@ export default function NoticeboardForm() {
               : img
           )
         );
-      } catch (err: any) {
-        setError(err.message);
+      } catch {
+        // setError(err.message);
         setImages((prev) =>
           prev.filter((img) => img.previewUrl !== image.previewUrl)
         );
@@ -179,13 +183,11 @@ export default function NoticeboardForm() {
       );
     }, 2000);
   };
-  // -- changes --
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
-    setError(null);
-    console.log("Submitted notice:", formData);
-    // --------------
+    // setIsSubmitting(true);
+    // setError(null);
+    // console.log("Submitted notice:", formData);
 
     try {
       const response = await fetch(
@@ -209,11 +211,12 @@ export default function NoticeboardForm() {
       // successful
       console.log("Notice submitted successfully!");
       router.push("/admin/noticeboard");
-    } catch (err: any) {
-      console.error("Failed to submit notice:", err);
-      setError(err.message);
+    } catch {
+      toast.error("Failed to submit notice");
+      // console.error("Failed to submit notice:", err);
+      // setError(err.message);
     } finally {
-      setIsSubmitting(false);
+      // setIsSubmitting(false);
     }
 
     // router.push('/admin/noticeboard');
@@ -242,6 +245,7 @@ export default function NoticeboardForm() {
               name={field}
               placeholder={field}
               type="text"
+              // TODO: add correct interface NoticeFormData
               value={(formData as any)[field]}
               onChange={handleChange}
               className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder:text-gray-400"

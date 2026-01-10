@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LocationCard } from "@/components/profile/LocationCard";
+import { LocationCard , LocationCardProps} from "@/components/profile/LocationCard";
 
 // TODO: Define the type of the locations interface to resolve the error
 interface ContributionsCardProps {
@@ -44,7 +44,7 @@ export function ContributionsCard({
             {locations.length ? (
               <TabsContent value="locations" className="mt-4">
                 <div className="space-y-4">
-                  {locations.map((loc) => (
+                  {locations.map((loc : LocationCardProps["location"]) => (
                     <LocationCard key={loc.locationId} location={loc} />
                   ))}
                 </div>

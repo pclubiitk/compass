@@ -56,7 +56,7 @@ export default function UserNoticeDetailPage() {
   }, [id]);
 
   if (loading) return <div className="p-10 text-center">Loading notice...</div>;
-  if (!notice) return <div className="p-10 text-center">Sorry, we couldn't find that notice.</div>;
+  if (!notice) return <div className="p-10 text-center">Sorry, we couldn`&apos;`t find that notice.</div>;
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4">

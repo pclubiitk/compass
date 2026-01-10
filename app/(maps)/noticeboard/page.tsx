@@ -2,7 +2,6 @@
 
 import React, {
   useState,
-  useMemo,
   useEffect,
   useRef,
   useCallback,
@@ -93,6 +92,7 @@ export default function NoticeBoardPage() {
 
       if (json?.noticeboard_list?.length > 0) {
         setNotices((prev) => {
+           // TODO: add correct interface for noticeboard_list
           const newNotices = [
             ...prev,
             ...json.noticeboard_list.map((n: any) => ({
@@ -181,7 +181,7 @@ export default function NoticeBoardPage() {
           // console.warn("Cache exceeded 5 MB. Clearing localStorage cache.");
           localStorage.removeItem(CACHE_KEY);
         }
-      } catch (err) {
+      } catch {
         // console.error("Fuzzy search error:", err);
         toast.error("Error searching notice.");
       } finally {
