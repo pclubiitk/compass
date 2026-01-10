@@ -49,7 +49,6 @@ services:
         condition: service_healthy
       postgres:
         condition: service_healthy
-    # No use, as we just run the binary
     environment:
       POSTGRES_HOST: postgres
       RABBITMQ_HOST: rabbitmq
