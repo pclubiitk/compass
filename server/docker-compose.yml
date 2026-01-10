@@ -6,13 +6,19 @@
 # So later add a retry logic for few attempts with 5 sec delay assuming it will eventually connect
 # For now i wil add the restart condition in the docker compose file itself, the restart condition
 
+
+# TODO: changed ports mapping since conflict with local servers. To be rolled back.
+#       5673->5672
+#       15673->15672
+#       5435->5432
+
 services:
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rabbitmq-1
     ports:
-      - "5672:5672"
-      - "15672:15672" # for the ui
+      - "5673:5672"
+      - "15673:15672" # for the ui
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "ping"]
       interval: 10s
@@ -26,7 +32,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: compass
     ports:
-      - "5432:5432"
+      - "5435:5432"
     # in health check change the user (i have set it to the value above)
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U this_is_mjk -d compass"]
@@ -49,7 +55,6 @@ services:
         condition: service_healthy
       postgres:
         condition: service_healthy
-    # No use, as we just run the binary
     environment:
       POSTGRES_HOST: postgres
       RABBITMQ_HOST: rabbitmq

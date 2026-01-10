@@ -24,6 +24,5 @@ func Router(r *gin.Engine) {
 	r.POST("/assets", uploadAsset)
 
 	// Admin can see tmp files too
-	r.Static("/assets/tmp", "./assets/tmp" )
-
+	r.Static("/tmp", "./assets/tmp")
 }

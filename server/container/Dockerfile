@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   libde265-dev \
   libx265-dev \
   libvips-dev \
+  ca-certificates \
   && rm -rf /var/lib/apt/lists/*
 
 #Building latest libheif (v1.18.2)
@@ -44,6 +45,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   libde265-0 \
   libx265-199 \
   libheif1 \
+  ca-certificates \
   && rm -rf /var/lib/apt/lists/*
 
 # Copy built libheif from builder
@@ -55,10 +57,10 @@ RUN ldconfig
 COPY --from=builder /app/server /server
 COPY ./config.yaml /config.yaml
 COPY ./secret.yml /secret.yml
-COPY ./assets/public /assets/public
-COPY ./assets/tmp /assets/tmp
-COPY ./assets/default /assets/default
-COPY ./assets/pfp /assets/pfp
+COPY ./assets /assets
+# COPY ./assets/tmp /assets/tmp
+# COPY ./assets/default /assets/default
+# COPY ./assets/pfp /assets/pfp
 
 EXPOSE 8080 8081 8082 8083
 
