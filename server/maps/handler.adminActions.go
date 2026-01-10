@@ -5,7 +5,6 @@ import (
 	"compass/connections"
 	"compass/model"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -161,7 +160,6 @@ func locationAction(c *gin.Context) {
 	// // Handle all the edge cases with suitable return http code, write them in the read me for later documentation
 }
 
-
 func addNotice(c *gin.Context) {
 	var input AddNoticeRequest
 
@@ -171,21 +169,12 @@ func addNotice(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format"})
 		return
 	}
-	// TODO: Extract this logic out, need something more elegant
-
-	eventTime, err := time.Parse("2006-01-02T15:04", input.EventTime)
-    if err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid eventTime format. Please use YYYY-MM-DDTHH:MM"})
-        return
-    }
 
 	userID, exist := c.Get("userID") // means api requests must be authenticated
 	if !exist {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
-	// Removing this for now, HAVE TO ADD
-
 
 	if err := connections.DB.Transaction(func(tx *gorm.DB) error {
 		// Create notice
@@ -193,7 +182,8 @@ func addNotice(c *gin.Context) {
 			Title:         input.Title,
 			Description:   input.Description,
 			Entity:        input.Entity,
-			EventTime:     eventTime,
+			EventTime:     input.EventTime,
+			EventEndTime:  input.EventEndTime,
 			Body:          input.Body,
 			Location:      input.Location,
 			ContributedBy: userID.(uuid.UUID),

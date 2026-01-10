@@ -44,7 +44,7 @@ export function ShareButton() {
         <div className="flex flex-col gap-2">
           <input
             type="text"
-            className="p-4 border-1 "
+            className="p-4 border "
             value={window.location.href}
             readOnly
           />
