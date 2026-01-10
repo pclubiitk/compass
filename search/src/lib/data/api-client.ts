@@ -42,6 +42,9 @@ export async function fetch_changelog(lastTime: Timestamp) {
         lastUpdateTime: new Date(lastTime).toISOString(),
       }),
     });
+    if (!resp.ok) {
+      throw new Error(`Status code: ${resp.status} ${resp.statusText}`);
+    }
     return resp.json();
   } catch (err) {
     console.error("Failed in fetching changelog err: ", err);

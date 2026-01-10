@@ -68,7 +68,7 @@ import { ErrorCard } from "@/components/cards/ErrorCard";
 
 export default function Home(props: Object) {
   // [For: Worker Object] [Use a ref to hold the worker instance so it persists across re-renders]
-  const workerRef = useRef<Worker>();
+  const workerRef = useRef<Worker>(null);
   // Array of Students to be rendered in the display
   const [students, setStudents]: [Array<StudentType>, Function] = useState([]);
   // Overlay on the display element state

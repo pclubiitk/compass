@@ -1,0 +1,25 @@
+# More info: https://docs.docker.com/reference/dockerfile#dockerignore-file
+
+# Ignore common version control system files
+.git
+.gitignore
+.gitmodules
+
+# build files
+.next
+
+# Ignore common dependency management directories
+**/node_modules
+**/venv
+
+# Ignore editor and IDE specific files
+.vscode/
+.DS_Store
+
+# Ignore Docker-related files that are not needed in the image
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# Ignore sensitive files (adjust as needed)
+.env

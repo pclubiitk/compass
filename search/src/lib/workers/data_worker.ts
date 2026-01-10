@@ -91,7 +91,8 @@ async function initializeData(): Promise<void> {
       // console.log("Fetching changelog from API...");
       const res = await fetch_changelog(time);
       if (res === null) {
-        throw new Error("Failed to fetch change log");
+        // Error occurred, console is in the child function
+        return;
       }
       students = await apply_Changelog(res);
     } catch (err) {
