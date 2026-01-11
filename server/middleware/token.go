@@ -18,7 +18,7 @@ func GenerateRefreshToken(userID uuid.UUID) (string, error) {
 		UserID: userID.String(),
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject:   userID.String(),
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(authConfig.TokenExpiration)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(authConfig.RefreshTokenExpiry)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			Issuer:    "pclub",
 		},
