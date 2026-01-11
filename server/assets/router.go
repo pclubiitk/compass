@@ -11,6 +11,7 @@ func Router(r *gin.Engine) {
 	// Static Route to provide the images
 	r.Static("/assets", "./assets/public")
 	r.Static("/pfp", "./assets/pfp")
+	r.Static("/tmp", "./assets/tmp") // Serve tmp files from /tmp path instead of /assets/tmp to avoid wildcard conflicts
 	r.NoRoute(func(c *gin.Context) {
 		c.File("./assets/default/404.png")
 	})
