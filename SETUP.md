@@ -75,5 +75,10 @@ cd /compass
 npm install
 npm run dev
 ```
-
+repeat this in the /search repository
+```bash
+cd /compass/search
+npm install
+npm run dev
+```
 ---
