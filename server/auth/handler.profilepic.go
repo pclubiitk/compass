@@ -13,6 +13,7 @@ import (
 )
 
 // FIXME: When the pfp already exists for the user, need to delete it or update it for the same uuid
+// TODO: Define a file limit, and compress it.
 func UploadProfileImage(c *gin.Context) {
 	userIDRaw, exists := c.Get("userID")
 	if !exists {
