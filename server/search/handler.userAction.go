@@ -2,6 +2,7 @@ package search
 
 import (
 	"compass/connections"
+	"compass/middleware"
 	"compass/model"
 	"net/http"
 
@@ -96,6 +97,18 @@ func toggleVisibility(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to update visibility at the moment."})
 		return
 	}
+
+	// TODO: We can extract out this token refresh logic
+	// Clear the old cookie with visibility true
+	middleware.ClearAuthCookie(c)
+	token, err := middleware.GenerateAccessToken(userID.(uuid.UUID))
+	ref_token, _ := middleware.GenerateRefreshToken(userID.(uuid.UUID))
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"message": "visibility updated successfully, please login again to continue"})
+	}
+	middleware.SetAuthCookie(c, token)
+	middleware.SetRefreshCookie(c, ref_token)
+
 	c.JSON(http.StatusOK, gin.H{"message": "visibility updated successfully"})
 
 }

@@ -8,20 +8,16 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
-	"gorm.io/gorm"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
-
-func isValidIITKEmail(email string) bool {
-	return len(email) > 12 && email[len(email)-12:] == "@iitk.ac.in"
-}
-
 
 func signupHandler(c *gin.Context) {
 	var input LoginSignupRequest
@@ -30,21 +26,18 @@ func signupHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format"})
 		return
 	}
-	//Allow only IITK emails ie ends with @iitk.ac.in
-	if !isValidIITKEmail(input.Email) {
+	//Allow only IITK emails
+	if !strings.HasSuffix(input.Email, "@iitk.ac.in") {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Please use a valid IIT Kanpur email address"})
 		return
 	}
-	
-
-
 
 	// FOR DEV: BYPASS RECAPTCHA
 	// ----------------------------------------------------------------------------- //
 	// Throws error if captcha verification fails
 	// registers the user in the DB only when the captcha is passed
 
-	if (viper.GetString("env") == "prod"){
+	if viper.GetString("env") == "prod" {
 		if !verifyRecaptcha(input.Token) {
 			c.JSON(http.StatusForbidden, gin.H{"error": "Failed captcha verification"})
 			return
@@ -82,7 +75,7 @@ func signupHandler(c *gin.Context) {
 		// Create the ChangeLog entry
 		logEntry := model.ChangeLog{
 			UserID: user.UserID,
-			Action: "signup", 
+			Action: "signup",
 		}
 
 		if err := tx.Create(&logEntry).Error; err != nil {

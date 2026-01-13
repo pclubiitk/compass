@@ -3,4 +3,6 @@ npm-debug.log
 .git
 dist
 build
-.env
+# As search will be build via it's own docker file
+search/
+#.env

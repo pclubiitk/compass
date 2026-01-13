@@ -95,8 +95,8 @@ func loginHandler(c *gin.Context) {
 	// Clear the previous cookie
 	middleware.ClearAuthCookie(c)
 	// Set cookie
-middleware.SetAuthCookie(c, accessToken)
-middleware.SetRefreshCookie(c, refreshToken)
+	middleware.SetAuthCookie(c, accessToken)
+	middleware.SetRefreshCookie(c, refreshToken)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Login successful"})
 }

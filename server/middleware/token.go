@@ -11,8 +11,6 @@ import (
 	"gorm.io/gorm"
 )
 
-
-
 func GenerateRefreshToken(userID uuid.UUID) (string, error) {
 	claims := JWTClaimsRefresh{
 		UserID: userID.String(),
@@ -32,28 +30,27 @@ func GenerateAccessToken(userID uuid.UUID) (string, error) {
 
 	var modelUser model.User
 	result := connections.DB.
-    Model(&model.User{}).
-    Select("role", "is_verified").
-    Preload("Profile", func(db *gorm.DB) *gorm.DB {
-        return db.Select("visibility")
-    }).
-    Where("user_id = ?", userID).
-    First(&modelUser)
+		Model(&model.User{}).
+		// Here we need to keep the user_id in the select query for a very specific reason, if we don't have them the query can't join it with the profile table and we will always have the visibility false
+		Select("user_id", "role", "is_verified").
+		Preload("Profile", func(db *gorm.DB) *gorm.DB {
+			return db.Select("user_id", "visibility")
+		}).
+		Where("user_id = ?", userID).
+		First(&modelUser)
 
-if result.Error != nil {
-    return "", result.Error
-}
+	if result.Error != nil {
+		return "", result.Error
+	}
 
-role := int(modelUser.Role)
-verified := modelUser.IsVerified
-visibility := modelUser.Profile.Visibility
-
-
+	role := int(modelUser.Role)
+	verified := modelUser.IsVerified
+	visibility := modelUser.Profile.Visibility
 
 	claims := JWTClaims{
-		UserID:   userID,
-		Role:     role,
-		Verified: verified,
+		UserID:     userID,
+		Role:       role,
+		Verified:   verified,
 		Visibility: visibility,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject:   userID.String(),
@@ -64,7 +61,7 @@ visibility := modelUser.Profile.Visibility
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(authConfig.JWTSecretKey))
-}	
+}
 
 func SetAuthCookie(c *gin.Context, token string) {
 	c.SetSameSite(authConfig.SameSiteMode)

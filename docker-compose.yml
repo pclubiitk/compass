@@ -1,4 +1,4 @@
-services:  
+services:
   search:
     build:
       context: ./search
@@ -9,7 +9,7 @@ services:
   compass-frontend:
    build:
      context: .
-     dockerfile: /Dockerfile
+     dockerfile: Dockerfile
    restart: always
    ports:
      - "3001:3000"
