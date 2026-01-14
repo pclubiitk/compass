@@ -9,7 +9,7 @@ export default function TermsAndConditionsPage() {
         <h1 className="text-3xl font-bold">Data handling & Privacy Policy</h1>
         <h2>followed by Programming Club, IIT Kanpur</h2>
         <p className="text-sm text-gray-600 dark:text-gray-400 mt-6 mb-8">
-          Last Updated: 20 October 2025
+          Last Updated: 13 January 2026
         </p>
         <p className="mb-1">
           {/* TODO: Better parse it */}
@@ -91,8 +91,7 @@ export default function TermsAndConditionsPage() {
         </p>
         <ol className="list-disc ml-5 mb-2">
           <li>
-            We request SG data directly from the Institute Councelling
-            Service(ICS) to validate and encopourate it into the family tree.
+            We request SG data directly from the Centre for Mental Health and Wellbeing Team (CMHW) to validate and encopourate it into the family tree.
           </li>
           <li>
             The obtained profile data is cross-verified with the Computer Centre
@@ -101,6 +100,9 @@ export default function TermsAndConditionsPage() {
           <li>
             The verification process is handled securely, and no sensitive
             information is exposed to unauthorized parties.
+          </li>
+          <li>
+            We collect your profile photo from the OA server which can be changed later by you.
           </li>
         </ol>
         <p>
