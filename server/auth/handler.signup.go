@@ -19,7 +19,7 @@ import (
 )
 
 func isValidIITKEmail(email string) bool {
-	return len(email) > 12 && email[len(email)-12:] == "@iitk.ac.in"
+	return len(email) > 12 && email[len(email)-11:] == "@iitk.ac.in"
 }
 
 

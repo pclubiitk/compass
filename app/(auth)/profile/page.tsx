@@ -136,6 +136,8 @@ export default function ProfilePage() {
           <SocialProfileCard
             email={profile.email}
             profilePic={profile.profilePic}
+            rollNo={profile.rollNo}
+            gender={profile.gender}
             onProfileUpdate={fetchProfile}
           />
         </div>
