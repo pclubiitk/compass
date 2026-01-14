@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Eye, EyeClosed, Trash } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useGContext } from "../ContextProvider";
 import { toast } from "sonner";
@@ -128,7 +128,35 @@ export function AlertVisibilityProfileInfo({
   initialVisibility: boolean;
 }) {
   const [visibility, setVisibility] = useState(initialVisibility);
+  const [isLoading, setIsLoading] = useState(true);
   const { setGlobalLoading } = useGContext();
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL}/api/profile`, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include", 
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data?.profile?.profile) {
+            console.log(data.profile.profile.visibility);
+            setVisibility(data.profile.profile.visibility);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch profile", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, []);
+
   const toggleVisibility = async () => {
     const nextState = !visibility; // next state
     try {
