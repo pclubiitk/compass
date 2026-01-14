@@ -65,10 +65,11 @@ import { useGContext } from "@/components/ContextProvider";
 import Options from "@/components/ui/Options";
 import { UsersRound } from "lucide-react";
 import { ErrorCard } from "@/components/cards/ErrorCard";
+import ComingSoon from "@/components/ui/ComingSoon";
 
 export default function Home(props: Object) {
   // [For: Worker Object] [Use a ref to hold the worker instance so it persists across re-renders]
-  const workerRef = useRef<Worker>(null);
+  const workerRef = useRef<Worker>();
   // Array of Students to be rendered in the display
   const [students, setStudents]: [Array<StudentType>, Function] = useState([]);
   // Overlay on the display element state
@@ -191,6 +192,7 @@ export default function Home(props: Object) {
     setCurr([
       <SCard type={"big"} data={student} key="closed">
         <Button
+          disabled={true}
           className="w-full mt-2"
           variant="outline"
           onClick={() => {
@@ -199,6 +201,7 @@ export default function Home(props: Object) {
         >
           <UsersRound className="h-4 w-4" />
           Open Family Tree
+          <ComingSoon />
         </Button>
       </SCard>,
     ]);

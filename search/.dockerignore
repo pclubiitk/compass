@@ -22,4 +22,8 @@ docker-compose*.yml
 .dockerignore
 
 # Ignore sensitive files (adjust as needed)
-.env
+# .env
+
+
+# ignore the worker build
+/workers/

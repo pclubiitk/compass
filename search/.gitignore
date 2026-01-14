@@ -38,6 +38,8 @@ next-env.d.ts
 #next-pwa
 /public/sw.js*
 /public/workbox*
+# Workers build code
+/public/workers/
 
 #scripts
 /family_tree_scripts

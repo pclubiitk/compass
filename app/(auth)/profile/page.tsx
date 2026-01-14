@@ -8,12 +8,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SocialProfileCard } from "@/components/profile/SocialProfileCard";
 import { EditableProfileCard } from "@/components/profile/EditableProfileCard";
 import { ContributionsCard } from "@/components/profile/ContributionsCard";
-import { useCalendar, CalendarProvider } from "@/calendar/contexts/calendar-context";
+import {
+  useCalendar,
+  CalendarProvider,
+} from "@/calendar/contexts/calendar-context";
 import { ClientContainer } from "@/calendar/components/client-container";
 import { getEvents } from "@/calendar/requests";
 import { Calendar } from "lucide-react";
 
 import type { IEvent } from "@/calendar/interfaces";
+import ComingSoon from "@/components/ui/ComingSoon";
 
 // Data Type
 export type Profile = {
@@ -160,6 +164,7 @@ export default function ProfilePage() {
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="w-5 h-5" />
                 Campus Events
+                <ComingSoon />
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
