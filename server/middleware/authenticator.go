@@ -18,11 +18,11 @@ var authConfig = AuthConfig{
 	TokenExpiration:    5 * time.Minute,
 	RefreshTokenExpiry: 24 * 7 * time.Hour, // 7 days
 	CookieDomain:       viper.GetString("domain"),
-	CookieSecure:       false, 	// Set to false in development
-							   	// TODO: MUST set to true in production
-								// The Secure attribute is a crucial cookie configuration setting that instructs a web browser to send a cookie only over an encrypted HTTPS connection
-	CookieHTTPOnly: 	true, 	// Prevent XSS
-	SameSiteMode:   	http.SameSiteLaxMode,
+	CookieSecure:       false, // Set to false in development
+	// TODO: MUST set to true in production
+	// The Secure attribute is a crucial cookie configuration setting that instructs a web browser to send a cookie only over an encrypted HTTPS connection
+	CookieHTTPOnly: true, // Prevent XSS
+	SameSiteMode:   http.SameSiteLaxMode,
 }
 
 // TODO: Extract the basic token extraction and verification out and keep just the user part
@@ -171,11 +171,8 @@ func CheckVisibility(c *gin.Context) {
 
 	if isVisible, ok := visibility.(bool); ok {
 		if !isVisible {
-			// redirect the user back to profile page
-			// TODO: Test it, according to the domains, and provide a explanation to the user
-
 			c.Redirect(http.StatusFound, "/profile")
-			c.Abort() // Stop the rest of the handlers from executing
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized, Please make your profile visible/public to view others"})
 			return
 		}
 	} else {

@@ -39,7 +39,7 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
         <Card
           {...cardProps}
           className={cn(
-            "w-[350px] p-6 flex flex-col items-center text-center transition-shadow hover:shadow-lg",
+            "w-87.5 p-6 flex flex-col items-center text-center transition-shadow hover:shadow-lg",
             props.pointer && "cursor-pointer"
           )}
         >
@@ -59,16 +59,16 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
           <CardContent className="w-full mt-auto pt-6 text-left">
             <div className="space-y-3 text-sm text-muted-foreground">
               <div className="flex items-center gap-3">
-                <University className="h-5 w-5 flex-shrink-0" />
-                <span>{`${data.hall}, ${data.roomNo}`}</span>
+                <University className="h-5 w-5 shrink-0" />
+                <span>{`${data.hall || "Not Provided"} ${data.roomNo ? "," : ""} ${data.roomNo}`}</span>
               </div>
               <div className="flex items-center gap-3">
-                <Home className="h-5 w-5 flex-shrink-0" />
-                <span>{data.homeTown}</span>
+                <Home className="h-5 w-5 shrink-0" />
+                <span>{data.homeTown || "Not Provided"}</span>
               </div>
               {data.email && (
                 <div className="flex items-center gap-3">
-                  <Mail className="h-5 w-5 flex-shrink-0" />
+                  <Mail className="h-5 w-5 shrink-0" />
                   <a
                     href={`mailto:${data.email}`}
                     className="truncate hover:underline"

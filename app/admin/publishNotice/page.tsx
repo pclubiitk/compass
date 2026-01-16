@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import PublishForm from '@/app/admin/noticeboard/publishNotice/PublishForm';
+import PublishForm from '@/app/admin/publishNotice/PublishForm';
 
 export const metadata: Metadata = {
   title: 'Publish Notice',
