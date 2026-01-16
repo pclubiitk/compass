@@ -28,9 +28,21 @@ func processUnverifiedUsers() error {
 	// We use Unscoped to find them even if they are already soft-deleted (though logic says they shouldn't be yet)
 	// But actually, we want to find active users who are unverified.
 	// TODO: Set the delete time into the config, 6hrs is good enough.
-	threshold := time.Now().Add(-24 * time.Hour)
+	threshold := time.Now().Add(-1 * time.Hour)
 
-	result := connections.DB.Preload("Profile").Where("is_verified = ? AND created_at < ?", false, threshold).Find(&users)
+	result := connections.DB.
+		Joins("LEFT JOIN profiles ON profiles.user_id = users.user_id").
+		Preload("Profile").
+		Where(`
+        users.created_at < ?
+        AND (
+            users.is_verified = false
+            OR profiles.name = ''
+            OR profiles.name IS NULL
+        )
+    `, threshold).
+		Find(&users)
+
 	if result.Error != nil {
 		return result.Error
 	}
