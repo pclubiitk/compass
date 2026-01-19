@@ -31,6 +31,7 @@ export type Profile = {
   roomNo: string;
   homeTown: string;
   profilePic?: string;
+  visibility: boolean;
 };
 
 export type UserData = {

@@ -42,8 +42,7 @@ func deleteProfileData(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to delete profile"})
 		return
 	}
-	c.SetCookie("auth_token", "", -1, "/", "", true, true);
-	c.SetCookie("refresh_token", "", -1, "/", "", true, true);
+	middleware.ClearAuthCookie(c)
 	c.JSON(http.StatusOK, gin.H{"message": "User profile data deleted successfully"})
 }
 

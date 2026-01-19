@@ -122,43 +122,19 @@ export function AlertDeleteProfileInfo() {
   );
 }
 
+interface AlertVisibilityProps {
+  currentVisibility: boolean;
+  onVisibilityChange: (newVisibility: boolean) => void;
+}
+
 export function AlertVisibilityProfileInfo({
-  initialVisibility,
-}: {
-  initialVisibility: boolean;
-}) {
-  const [visibility, setVisibility] = useState(initialVisibility);
-  const [isLoading, setIsLoading] = useState(true);
+  currentVisibility,
+  onVisibilityChange
+}: AlertVisibilityProps) {
   const { setGlobalLoading } = useGContext();
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL}/api/profile`, {
-          method: "GET",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include", 
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data?.profile?.profile) {
-            console.log(data.profile.profile.visibility);
-            setVisibility(data.profile.profile.visibility);
-          }
-        }
-      } catch (error) {
-        console.error("Failed to fetch profile", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchProfile();
-  }, []);
-
   const toggleVisibility = async () => {
-    const nextState = !visibility; // next state
+    const nextState = !currentVisibility; // next state
     try {
       setGlobalLoading(true);
       const response = await fetch(
@@ -177,9 +153,12 @@ export function AlertVisibilityProfileInfo({
         throw new Error("Failed to update visibility");
       }
 
-      // Only update local UI state if backend request succeeded
-      setVisibility(nextState);
-      toast(nextState ? "Profile is now visible." : "Profile is now hidden.");
+      const data = await response.json();      
+      // trust backend if available, otherwise use nextstate
+      const confirmedState = data.visibility ?? nextState;
+      onVisibilityChange(confirmedState);
+
+      toast(confirmedState ? "Profile is now visible." : "Profile is now hidden.");
     } catch {
       toast(
         "Unable to toggle visibility at the moment, please try again later."
@@ -192,14 +171,14 @@ export function AlertVisibilityProfileInfo({
     <Dialog>
       <DialogTrigger asChild>
         <Button variant="outline" onClick={() => {}}>
-          {visibility ? <Eye /> : <EyeClosed />}
+          {currentVisibility ? <Eye /> : <EyeClosed />}
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Are you absolutely sure?</DialogTitle>
           <DialogDescription>
-            {visibility ? (
+            {currentVisibility ? (
               <>
                 This will make your profile invisible in{" "}
                 <a href="search.pclub.in">Student Search Portal</a> <br />
@@ -235,7 +214,7 @@ export function AlertVisibilityProfileInfo({
             <Button
               variant="destructive"
               className={cn(
-                !visibility &&
+                !currentVisibility &&
                   "dark:bg-green-600 bg-green-600 hover:bg-green-500"
               )}
               onClick={toggleVisibility}
