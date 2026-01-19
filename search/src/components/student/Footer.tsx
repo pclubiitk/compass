@@ -14,7 +14,7 @@ export default function GuestFooter() {
               target="_blank"
               rel="noopener noreferrer"
             >
-              Institute Counselling Service IITK
+             Centre for Mental Health and Wellbeing Team (CMHW) IITK
             </Link>
           </p>
           <Image
