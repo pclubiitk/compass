@@ -10,6 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 )
 
 // FIXME: When the pfp already exists for the user, need to delete it or update it for the same uuid
@@ -20,6 +21,13 @@ func UploadProfileImage(c *gin.Context) {
 		return
 	}
 	userID := userIDRaw.(uuid.UUID)
+
+	// Fetch old profile pic
+	var user model.User
+	var oldProfilePic string
+	if err := connections.DB.Select("profile_pic").First(&user, "user_id = ?", userID).Error; err == nil {
+		oldProfilePic = user.ProfilePic
+	}
 
 	// Parsing form
 	if err := c.Request.ParseMultipartForm(10 << 20); err != nil {
@@ -71,6 +79,16 @@ func UploadProfileImage(c *gin.Context) {
 		Update("profile_pic", relativePath).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update profile pic"})
 		return
+	}
+
+	// Delete old profile picture if exists
+	if oldProfilePic != "" {
+		oldPath := filepath.Join(cwd, "assets", oldProfilePic)
+		if err := os.Remove(oldPath); err != nil {
+			logrus.Errorf("Failed to delete old PFP at %s: %v", oldPath, err)
+		} else {
+			logrus.Infof("Deleted old PFP at %s", oldPath)
+		}
 	}
 
 	// fmt.Println("Upload path:", fullPath)

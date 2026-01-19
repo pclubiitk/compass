@@ -33,6 +33,8 @@ func FormatMail(job MailJob) (MailContent, error) {
 		return formatGenericNotice(job)
 	case "account_deletion":
 		return formatAccountDeletionEmail(job)
+	case "password_reset":
+		return formatPasswordResetEmail(job)
 	default:
 		return MailContent{}, fmt.Errorf("unknown mail type: %s", job.Type)
 	}
@@ -183,6 +185,34 @@ func formatAccountDeletionEmail(job MailJob) (MailContent, error) {
 	return MailContent{
 		To:      job.To,
 		Subject: "Account Deleted - Verification Timeout",
+		Body:    body,
+		IsHTML:  true,
+	}, nil
+}
+
+func formatPasswordResetEmail(job MailJob) (MailContent, error) {
+	// username := job.Data["username"]
+	token := job.Data["token"]
+	link := job.Data["link"]
+	data := map[string]interface{}{
+		// "Username": username,
+		"Token": token,
+		"Link":  link,
+	}
+	tmpl := `
+		<h2>Reset Your Password</h2>
+		<p>You have requested to reset your password.</p>
+		<p>Click the link below to reset it:</p>
+		<p><a href="{{.Link}}">Reset Password</a></p>
+		<p>If you did not request this, please ignore this email.</p>
+	`
+	body, err := renderTemplate(tmpl, data)
+	if err != nil {
+		return MailContent{}, err
+	}
+	return MailContent{
+		To:      job.To,
+		Subject: "Reset Your Password",
 		Body:    body,
 		IsHTML:  true,
 	}, nil

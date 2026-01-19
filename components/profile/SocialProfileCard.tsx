@@ -48,19 +48,6 @@ export function SocialProfileCard({
     }
   }
 
-  // IITK Home Page Image
-  if (userName) {
-    imageUrls.push(
-      `url("https://home.iitk.ac.in/~${encodeURIComponent(userName)}/dp")`
-    );
-  }
-
-  // DOAA Photo
-  if (rollNo) {
-    imageUrls.push(
-      `url("https://oa.cc.iitk.ac.in/Oa/Jsp/Photo/${rollNo}_0.jpg")`
-    );
-  }
 
   const genericImage = gender === "F" ? "/GenericFemale.png" : "/GenericMale.png";
   imageUrls.push(`url("${genericImage}")`);

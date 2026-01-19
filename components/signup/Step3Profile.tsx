@@ -89,7 +89,7 @@ export function Step3Profile() {
             rollNo: automation.roll_no || "",
             dept:
               departmentNameMap[
-                automation.department as keyof typeof departmentNameMap
+              automation.department as keyof typeof departmentNameMap
               ] || "",
             course: automation.program || "",
             gender: gender,
@@ -171,7 +171,7 @@ export function Step3Profile() {
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-            
+
             {/* Full Name */}
             <div className="grid gap-2">
               <Label htmlFor="name" className="text-sm font-medium">
@@ -335,7 +335,7 @@ export function Step3Profile() {
                 profile picture. You can change it later in your profile settings.
               </p>
             </div>
-            
+
             <Button
               type="submit"
               className="w-full h-11 text-base font-semibold shadow-sm transition-all active:scale-[0.98]"
