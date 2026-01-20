@@ -100,7 +100,7 @@ func signupHandler(c *gin.Context) {
 		// Dev Mode, call the anonymous function
 		func() string {
 			if viper.GetString("domain") == "" {
-				return "http://localhost:3000"
+				return "http://localhost:3001"
 			}
 			return fmt.Sprintf("https://%s.%s", "auth", viper.GetString("domain"))
 		}(),

@@ -155,7 +155,7 @@ export function SocialProfileCard({
             variant="outline"
             size="icon"
             className="h-12 w-12"
-            onClick={() => router.push("https://search.pclub.in")}
+            onClick={() => router.push(process.env.NEXT_PUBLIC_SEARCH_UI_URL || "https://search.pclub.in")}
           >
             <Search />
           </Button>

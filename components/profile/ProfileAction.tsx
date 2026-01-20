@@ -39,7 +39,7 @@ export function AlertDeleteProfileInfo() {
       toast("Profile data deleted successfully.");
       router.replace("/signup")
     } catch (error) {
-      // console.error(error);
+      console.error(error);
       toast("Unable to delete profile at the moment, please try again later.");
     } finally {
       setGlobalLoading(false);
