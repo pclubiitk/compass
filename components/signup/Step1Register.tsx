@@ -45,7 +45,7 @@ export function Step1Register({ onSuccess }: Step1RegisterProps) {
       }
 
       const formData = new FormData(formRef.current!);
-      const email = formData.get("email");
+      const email = formData.get("email")?.toString().toLowerCase();
       const password = formData.get("password");
 
       // Only allow IITK email addresses

@@ -27,7 +27,7 @@ func signupHandler(c *gin.Context) {
 		return
 	}
 	//Allow only IITK emails
-	if !strings.HasSuffix(input.Email, "@iitk.ac.in") {
+	if !strings.HasSuffix(strings.ToLower(input.Email), "@iitk.ac.in") {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Please use a valid IIT Kanpur email address"})
 		return
 	}
@@ -57,7 +57,7 @@ func signupHandler(c *gin.Context) {
 	token := generateVerificationToken()
 	expiry := time.Now().Add(time.Duration(viper.GetInt("expiry.emailVerification")) * time.Hour).Format(time.RFC3339)
 	user := model.User{
-		Email:             input.Email,
+		Email:             strings.ToLower(input.Email),
 		Password:          string(hashPass),
 		IsVerified:        false,
 		Role:              model.UserRole,

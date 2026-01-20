@@ -37,6 +37,7 @@ export function EditableProfileCard({
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState<Partial<Profile>>(profile);
+  const visibility = profile.visibility;
 
   // Sync form state if the profile prop changes (e.g., after a refetch)
   useEffect(() => {
@@ -122,7 +123,7 @@ export function EditableProfileCard({
                 Edit
               </Button>
               <AlertDeleteProfileInfo />
-              <AlertVisibilityProfileInfo initialVisibility={true} />
+              <AlertVisibilityProfileInfo currentVisibility={visibility} onVisibilityChange={() => onUpdate()}/>
             </>
           )}
         </div>

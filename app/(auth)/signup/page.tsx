@@ -26,15 +26,20 @@ function SignupPageHolder() {
   // Hook to read URL query parameters
   const searchParams = useSearchParams();
 
-  // This effect runs once on page load to handle direct links from email
+  // This effect runs once on page load to handle direct links from email or redirect to step 3 if profile data empty.
   useEffect(() => {
     const token = searchParams.get("token");
     const userID = searchParams.get("userID");
+    const step = searchParams.get("step");
 
     // If both token and userID are in the URL, jump to Step 2
     if (token && userID) {
       setFormData((prev) => ({ ...prev, userID: userID }));
       setActiveStep(1);
+    }
+    // If step = 3, means the profile data was empty
+    if(step && step === "3"){
+      setActiveStep(2); // 0 based indexing
     }
     // The empty dependency array [] ensures this runs only once on mount
   }, []);

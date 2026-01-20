@@ -31,6 +31,7 @@ export type Profile = {
   roomNo: string;
   homeTown: string;
   profilePic?: string;
+  visibility: boolean;
 };
 
 export type UserData = {
@@ -94,6 +95,15 @@ export default function ProfilePage() {
         // console.log("Normalized profilePic:", normalized.profile.profilePic);
 
         setUserData(normalized.profile);
+        // If profile incomplete redirect to signup step 3
+        if (
+          normalized.profile.profile.name.length === 0 ||
+          normalized.profile.profile.rollNo.length === 0 ||
+          normalized.profile.profile.dept.length === 0 ||
+          normalized.profile.profile.course === 0
+        ) {
+          router.push("/signup?step=3");
+        }
       } else {
         toast.error("Invalid Session. Redirecting to login.");
         // After login again direct to profile
