@@ -12,12 +12,13 @@ export interface Notice {
   id: string;
   title: string;
   description: string;
-  entity: string;       //to represent department / Club / Cell
   // publisher: string;    // Person or org name
-  eventTime: string;    // ISO date string
+  entity: string;          //to represent department / Club / Cell
+  eventTime: string;       // ISO date string
+  eventEndTime: string;    // ISO date string
   location: string;
-  coverpic?: Image;     // single image
-  biopics: Image[];     // multiple images
+  coverpic?: Image;        // single image
+  biopics: Image[];        // multiple images
   createdAt: string;
   updatedAt: string;
   deletedAt?: string;

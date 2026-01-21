@@ -5,8 +5,8 @@ import (
 	"compass/middleware"
 	"compass/model"
 	"crypto/rand"
-	"encoding/hex"
 	"fmt"
+	"math/big"
 	"net/http"
 	"strings"
 	"time"
@@ -15,10 +15,14 @@ import (
 	"github.com/google/uuid"
 )
 
+
 func generateVerificationToken() string {
-	b := make([]byte, 3)
-	rand.Read(b) // never returns an error and fills b completely
-	return hex.EncodeToString(b)
+    // Generate a number between 0 and 999999
+    n, err := rand.Int(rand.Reader, big.NewInt(1000000))
+    if err != nil {
+        return "" 
+    }
+    return fmt.Sprintf("%06d", n.Int64()) // always 6 digits
 }
 
 func verificationHandler(c *gin.Context) {
@@ -60,7 +64,8 @@ func verificationHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Request Failed, Please try again later"})
 		return
 	}
-	jwtToken, err := middleware.GenerateToken(user.UserID, user.Profile.RollNo, int(user.Role), user.IsVerified)
+	accessToken, err := middleware.GenerateAccessToken(user.UserID);
+	refreshToken, err := middleware.GenerateRefreshToken(user.UserID);
 	if err != nil {
 		// TODO: Redirect to login page
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token, you will need to login!"})
@@ -68,6 +73,9 @@ func verificationHandler(c *gin.Context) {
 	}
 	// set cookie
 	middleware.ClearAuthCookie(c) // Clear the previous cookie
-	middleware.SetAuthCookie(c, jwtToken)
+
+	// TODO: Make sure both cookies are set properly, i observed previously that only auth cookie was being set after otp verification
+	middleware.SetRefreshCookie(c, refreshToken)
+middleware.SetAuthCookie(c, accessToken)
 	c.JSON(http.StatusOK, gin.H{"message": "Email verification successful."})
 }

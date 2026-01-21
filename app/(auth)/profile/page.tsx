@@ -1,12 +1,23 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SocialProfileCard } from "@/components/profile/SocialProfileCard";
 import { EditableProfileCard } from "@/components/profile/EditableProfileCard";
 import { ContributionsCard } from "@/components/profile/ContributionsCard";
+import {
+  useCalendar,
+  CalendarProvider,
+} from "@/calendar/contexts/calendar-context";
+import { ClientContainer } from "@/calendar/components/client-container";
+import { getEvents } from "@/calendar/requests";
+import { Calendar } from "lucide-react";
+
+import type { IEvent } from "@/calendar/interfaces";
+import ComingSoon from "@/components/ui/ComingSoon";
 
 // Data Type
 export type Profile = {
@@ -19,7 +30,10 @@ export type Profile = {
   hall: string;
   roomNo: string;
   homeTown: string;
+  profilePic?: string;
+  visibility: boolean;
 };
+
 export type UserData = {
   role: number;
   profile: Profile;
@@ -31,17 +45,65 @@ export type UserData = {
 export default function ProfilePage() {
   const router = useRouter();
   const [userData, setUserData] = useState<UserData | null>(null);
+  const [calendarEvents, setCalendarEvents] = useState<IEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [calendarLoading, setCalendarLoading] = useState(true);
+
+  // Fetch calendar events using the new requests module
+  const fetchCalendarEvents = useCallback(async () => {
+    setCalendarLoading(true);
+    try {
+      const events = await getEvents();
+      setCalendarEvents(events);
+      return events;
+    } catch (err) {
+      console.error("Failed to fetch calendar events:", err);
+      return [];
+    } finally {
+      setCalendarLoading(false);
+    }
+  }, []);
+
+  // Load calendar events on mount
+  useEffect(() => {
+    fetchCalendarEvents();
+  }, [fetchCalendarEvents]);
 
   const fetchProfile = async () => {
     // We don't reset loading to true on refetch to avoid skeleton flashes
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL}/api/profile`, {
-        credentials: "include",
-      });
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_AUTH_URL}/api/profile`,
+        {
+          credentials: "include",
+        }
+      );
       if (res.ok) {
         const data = await res.json();
-        setUserData(data.profile);
+
+        const normalized = {
+          ...data,
+          profile: {
+            ...data.profile,
+            profile: {
+              ...data.profile.profile,
+              profilePic: data.profile.profilepic ?? data.profile.profilePic,
+            },
+          },
+        };
+
+        // console.log("Normalized profilePic:", normalized.profile.profilePic);
+
+        setUserData(normalized.profile);
+        // If profile incomplete redirect to signup step 3
+        if (
+          normalized.profile.profile.name.length === 0 ||
+          normalized.profile.profile.rollNo.length === 0 ||
+          normalized.profile.profile.dept.length === 0 ||
+          normalized.profile.profile.course === 0
+        ) {
+          router.push("/signup?step=3");
+        }
       } else {
         toast.error("Invalid Session. Redirecting to login.");
         // After login again direct to profile
@@ -59,6 +121,7 @@ export default function ProfilePage() {
     fetchProfile();
   }, []);
 
+  // Loading Skeleton
   if (isLoading) {
     return (
       <div className="flex flex-col lg:flex-row min-h-screen bg-muted/40">
@@ -77,12 +140,18 @@ export default function ProfilePage() {
     return <div className="text-center p-12">Could not load profile data.</div>;
   }
 
+  const profile = userData.profile;
+
   return (
     <div className="flex flex-col lg:flex-row min-h-screen bg-muted/40">
       {/* --- Left Column (Fixed) --- */}
       <aside className="w-full lg:w-1/3 xl:w-1/3 p-4 sm:p-6 lg:p-8">
         <div className="lg:sticky lg:top-8">
-          <SocialProfileCard profile={userData.profile} />
+          <SocialProfileCard
+            email={profile.email}
+            profilePic={profile.profilePic}
+            onProfileUpdate={fetchProfile}
+          />
         </div>
       </aside>
 
@@ -98,8 +167,45 @@ export default function ProfilePage() {
             reviews={userData.ContributedReview}
             notices={userData.ContributedNotice}
           />
+
+          {/* Calendar Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="w-5 h-5" />
+                Campus Events
+                <ComingSoon />
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              {calendarLoading ? (
+                <div className="h-96 flex items-center justify-center">
+                  <Skeleton className="h-80 w-full mx-4" />
+                </div>
+              ) : (
+                <div className="min-h-125">
+                  <CalendarProvider
+                    events={calendarEvents}
+                    fetchEvents={fetchCalendarEvents}
+                  >
+                    <CalendarInner />
+                  </CalendarProvider>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </main>
+    </div>
+  );
+}
+
+function CalendarInner() {
+  const { view } = useCalendar();
+
+  return (
+    <div className="flex flex-col">
+      <ClientContainer view={view} />
     </div>
   );
 }

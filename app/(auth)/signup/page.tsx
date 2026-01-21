@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { SignupStepper } from "@/components/signup/SignupStepper";
 import { Step1Register } from "@/components/signup/Step1Register";
 import { Step2Verify } from "@/components/signup/Step2Verify";
 import { Step3Profile } from "@/components/signup/Step3Profile";
 import { useSearchParams } from "next/navigation";
+import { useGContext } from "@/components/ContextProvider";
 
 // Define the steps for the stepper component
 const steps = [
@@ -14,7 +15,7 @@ const steps = [
   { title: "Complete", description: "your profile" },
 ];
 
-export default function SignupPage() {
+function SignupPageHolder() {
   const [activeStep, setActiveStep] = useState(0);
   const [formData, setFormData] = useState({
     email: "",
@@ -25,15 +26,20 @@ export default function SignupPage() {
   // Hook to read URL query parameters
   const searchParams = useSearchParams();
 
-  // This effect runs once on page load to handle direct links from email
+  // This effect runs once on page load to handle direct links from email or redirect to step 3 if profile data empty.
   useEffect(() => {
     const token = searchParams.get("token");
     const userID = searchParams.get("userID");
+    const step = searchParams.get("step");
 
     // If both token and userID are in the URL, jump to Step 2
     if (token && userID) {
       setFormData((prev) => ({ ...prev, userID: userID }));
       setActiveStep(1);
+    }
+    // If step = 3, means the profile data was empty
+    if(step && step === "3"){
+      setActiveStep(2); // 0 based indexing
     }
     // The empty dependency array [] ensures this runs only once on mount
   }, []);
@@ -67,7 +73,7 @@ export default function SignupPage() {
 
   return (
     <div
-      className="flex flex-col items-center justify-center min-h-screen p-4 bg-gradient-to-r 
+      className="flex flex-col items-center justify-center min-h-screen p-4 bg-linear-to-r 
   from-blue-100 to-teal-100 
   dark:from-slate-800 dark:to-slate-900"
     >
@@ -76,5 +82,27 @@ export default function SignupPage() {
       </div>
       {renderStepContent()}
     </div>
+  );
+}
+
+// TODO: Look into it
+function LoaderFallback() {
+  const { setGlobalLoading } = useGContext();
+
+  useEffect(() => {
+    setGlobalLoading(true);
+    return () => setGlobalLoading(false); // turn off when done
+  }, [setGlobalLoading]);
+
+  return null; // nothing visible — loader runs globally
+}
+// Why Suspense here?
+// To allow for potential future asynchronous operations within the SignupPageHolder component without blocking the initial render.
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={<LoaderFallback />}>
+      <SignupPageHolder />
+    </Suspense>
   );
 }

@@ -1,0 +1,307 @@
+body {
+	overflow-y: scroll;
+	overflow-x: hidden;
+	
+	/* font-family:Helvetica, sans-serif; */
+}
+
+img {
+	object-position:top;
+}
+
+a {
+	color: #77aaaa;
+}
+
+.MuiCard-root {
+	padding:10px;
+}
+
+.MuiCard-root > * {
+	margin:10px;
+}
+
+.buttons {
+	position:fixed;
+    float:right;
+    display:flex;
+    flex-direction:column;
+    right: 20px;
+    top:10px;
+
+}
+
+.buttons > * {
+	margin:10px;
+}
+
+.options {
+	width: 80%;
+	max-width: 900px;
+	margin: auto;
+	padding:30px 0px;
+	display:flex;
+	flex-direction:column;
+	align-items: center;
+	filter: drop-shadow(0px 5px 5px #777);
+}
+
+.row {
+	padding: 10px;
+	width:100%;
+	display:flex;
+	flex-wrap:wrap;
+	flex-direction:row;
+	justify-content:space-evenly;
+}
+
+.row > * {
+	margin:10px;
+}
+
+.options .field {
+	width: 200px;
+	margin: auto;
+}
+
+.options .main-text {
+	width:100%;
+}
+
+.student-card {
+	border-radius: 20px;
+	width: 350px;
+	height: 600px;
+	padding:10px;
+	display:flex;
+	flex-direction:column;
+	justify-content:flex-start;
+	align-items:center;
+	transition: opacity 0.3s linear;
+}
+
+.student-card > * {
+	margin: 5px;
+}
+
+.student-card .more-data {
+	width:100%; 
+	padding-left:40px; 
+	margin-top:auto;
+}
+
+.student-card .more-data * {
+	margin: 5px;
+}
+
+.student-card .more-data > div {
+	display:flex;
+	justify-content:flex-start;
+}
+
+.student-card-compact {
+	width:100%;
+	max-width: 300px;
+	height: 150px;
+	padding:10px;
+	border-radius: 10px;
+	display:flex;
+	justify-content:flex-start;
+}
+
+.student-card-compact > * {
+	margin: 0px;
+}
+
+.student-card-compact p:first-child {
+	font-weight:bold;
+}
+
+.student-card-compact .data p {
+	margin:5px;
+}
+
+.name, .roll, .dept {
+	text-align:center;
+}
+
+.name {
+	font-family:Helvetica;
+	font-weight:bold;
+	font-size:1.25em;
+}
+
+.roll {
+	font-size:1em;
+}
+
+.student-card-ultra-compact {
+	width: 100%;
+	max-width: 300px;
+	height: 150px;
+	padding: 10px;
+	border-radius: 75px;
+	display:flex;
+	justify-content:space-between;
+	align-items:center;
+}
+
+.student-card-ultra-compact p:first-child {
+	font-weight:bold;
+}
+
+.student-card-ultra-compact .data {
+	flex-grow:1;
+}
+
+.tree-view {
+	width:80vw;
+	display:flex;
+	flex-direction:column;
+	justify-content:flex-start;
+	align-items:center;
+	margin-bottom: 40px;
+}
+
+.tree-view > * {
+	margin:10px;
+	filter: drop-shadow(0px 5px 5px #777);
+}
+
+.bacchas {
+	width:100%;
+	display:flex;
+	flex-wrap:wrap;
+	justify-content:center;
+}
+
+.bacchas > * {
+	margin:5px;
+}
+
+.display {
+	width:90%;
+	margin: auto;
+	display:flex;
+	justify-content:space-evenly;
+	flex-wrap:wrap;
+	
+}
+
+.display > * {
+	margin:10px;
+	filter: drop-shadow(0px 5px 5px #777);
+	
+}
+
+.overlay {
+	width:80vw;
+	margin:0 auto;
+	/* filter: drop-shadow(0px 5px 5px #777); */
+	/* 
+display:flex;
+	justify-content:center;
+*/
+	display:grid;
+	grid-template-columns: 1fr;
+	align-content: start;
+	justify-content: center;
+}
+
+.overlay > * {
+	margin:auto;
+	margin-top:5vh;
+	grid-row-start: 1;
+ 	grid-column-start: 1;
+}
+
+#count {
+	width:200px;
+	margin:auto;
+}
+
+#count * {
+	margin:10px auto;
+	width:fit-content;
+	padding: 10px;
+}
+
+/* animation classes */
+.fade-enter {
+	transform: scale(0.9);
+	opacity: 0;
+}
+
+.fade-enter-active {
+	transform: scale(1);
+	opacity: 1;
+	transition: all 0.3s ease-out;
+}
+
+.overlay > .fade-enter {
+	/* position: absolute; */
+	align-self:start;
+	margin:auto;
+	margin-top:5vh
+	/* justify-self:start; */
+}
+ 
+.overlay > .fade-exit {
+	/* position: absolute; */
+	align-self:start;
+	margin:auto;
+	margin-top:5vh
+	/* justify-self:start; */
+}
+
+
+
+.fade-exit {
+	opacity : 1;
+}
+
+.fade-exit-active {
+	opacity: 0;
+	transition: opacity 0.3s linear;
+}
+
+
+
+
+.loader {
+	width: 100px !important; 
+	height: 100px !important;
+	border-radius: 100px !important;
+	border: dashed 10px #008888 !important;
+	animation: loading 5s infinite linear !important;
+}
+
+@keyframes loading {
+	0% {
+		transform: rotate(0deg);
+	}
+	
+	100% {
+		transform: rotate(360deg);
+	}
+}
+
+.footer-absolute {
+	position: fixed;
+    bottom: 0;
+	height: fit-content;
+	left: 0;
+	/* for preventing transitions from affecting it */
+	transform: none !important;
+	margin: none !important;
+    /* right: 0; This will position the footer to the right */
+}
+
+.tree-container {
+    display: flex;
+	flex-direction: column;
+	justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+	width: 100%;
+}

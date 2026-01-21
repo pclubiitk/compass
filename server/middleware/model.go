@@ -14,13 +14,21 @@ type JWTClaims struct {
 	RollNo   string    `json:"roll_no"`
 	Role     int       `json:"role"`
 	Verified bool      `json:"verified"`
+	Visibility bool    `json:"visibility"`
 	jwt.RegisteredClaims
 }
+
+type JWTClaimsRefresh struct {
+	UserID string `json:"user_id"`
+	jwt.RegisteredClaims
+}
+
 
 // AuthConfig holds authentication configuration
 type AuthConfig struct {
 	JWTSecretKey    string
 	TokenExpiration time.Duration
+	RefreshTokenExpiry time.Duration
 	CookieDomain    string
 	CookieSecure    bool
 	CookieHTTPOnly  bool

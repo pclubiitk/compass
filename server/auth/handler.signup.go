@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -15,6 +16,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 func signupHandler(c *gin.Context) {
@@ -24,12 +26,18 @@ func signupHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format"})
 		return
 	}
+	//Allow only IITK emails
+	if !strings.HasSuffix(strings.ToLower(input.Email), "@iitk.ac.in") {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Please use a valid IIT Kanpur email address"})
+		return
+	}
+
 	// FOR DEV: BYPASS RECAPTCHA
 	// ----------------------------------------------------------------------------- //
 	// Throws error if captcha verification fails
 	// registers the user in the DB only when the captcha is passed
 
-	if (viper.GetString("env") == "prod"){
+	if viper.GetString("env") == "prod" {
 		if !verifyRecaptcha(input.Token) {
 			c.JSON(http.StatusForbidden, gin.H{"error": "Failed captcha verification"})
 			return
@@ -49,7 +57,7 @@ func signupHandler(c *gin.Context) {
 	token := generateVerificationToken()
 	expiry := time.Now().Add(time.Duration(viper.GetInt("expiry.emailVerification")) * time.Hour).Format(time.RFC3339)
 	user := model.User{
-		Email:             input.Email,
+		Email:             strings.ToLower(input.Email),
 		Password:          string(hashPass),
 		IsVerified:        false,
 		Role:              model.UserRole,
@@ -57,13 +65,32 @@ func signupHandler(c *gin.Context) {
 		Profile:           model.Profile{Email: input.Email, Visibility: true},
 	}
 
-	// Saving user in DB
-	if err := connections.DB.Model(&model.User{}).Create(&user).Error; err != nil {
+	// Saving user in DB and updating in changelog
+	if err := connections.DB.Transaction(func(tx *gorm.DB) error {
+		// Create the User (and Profile via nested struct)
+		if err := tx.Create(&user).Error; err != nil {
+			return err // This error bubbles up to the if err != nil check below
+		}
+
+		// Create the ChangeLog entry
+		logEntry := model.ChangeLog{
+			UserID: user.UserID,
+			Action: "signup",
+		}
+
+		if err := tx.Create(&logEntry).Error; err != nil {
+			return err
+		}
+
+		return nil
+	}); err != nil {
+		// Handle Duplicate User Error (Postgres Code 23505)
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
 			c.JSON(http.StatusConflict, gin.H{"error": "User already exists"})
 			return
 		}
+		// Handle other DB errors
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error creating user"})
 		return
 	}
@@ -73,7 +100,7 @@ func signupHandler(c *gin.Context) {
 		// Dev Mode, call the anonymous function
 		func() string {
 			if viper.GetString("domain") == "" {
-				return "http://localhost:3000"
+				return "http://localhost:3001"
 			}
 			return fmt.Sprintf("https://%s.%s", "auth", viper.GetString("domain"))
 		}(),

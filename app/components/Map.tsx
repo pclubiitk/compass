@@ -1,4 +1,5 @@
 "use client";
+// TODO: Read and break where ever possible
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useGContext } from "@/components/ContextProvider";
@@ -53,7 +54,7 @@ const iconMap: Record<string, any> = {
   default: MapPin,
 };
 
-const formatCount = (n?: number) => (typeof n === "number" ? n : 0);
+// const formatCount = (n?: number) => (typeof n === "number" ? n : 0);
 
 // IITK fallback center (lng, lat)
 const FALLBACK_CENTER: [number, number] = [
@@ -75,9 +76,9 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
 
   // Track geolocation permission state (if browser supports it)
   useEffect(() => {
-    if (typeof navigator === "undefined" || !("permissions" in navigator)) return;
+    if (typeof navigator === "undefined" || !("permissions" in navigator))
+      return;
 
-    // @ts-ignore - TS lib sometimes doesn’t include geolocation here
     navigator.permissions
       .query({ name: "geolocation" })
       .then((status: PermissionStatus) => {
@@ -111,7 +112,9 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
     `;
     document.head.appendChild(styleSheet);
 
-    const savedCenter = JSON.parse(localStorage.getItem("map_center") || "null");
+    const savedCenter = JSON.parse(
+      localStorage.getItem("map_center") || "null"
+    );
     const savedZoom = Number(localStorage.getItem("map_zoom")) || 14;
 
     // Helper to set up the map for BOTH success + fallback
@@ -219,15 +222,20 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
 
     navigator.geolocation.getCurrentPosition(
       ({ coords }) => {
-        const startCenter = (savedCenter ||
-          [coords.longitude, coords.latitude]) as [number, number];
+        const startCenter = (savedCenter || [
+          coords.longitude,
+          coords.latitude,
+        ]) as [number, number];
         setupMap(startCenter);
       },
-      (err) => {
+      () => {
         // console.error("Geolocation error:", err);
         setLocationDenied(true);
 
-        const startCenter = (savedCenter || FALLBACK_CENTER) as [number, number];
+        const startCenter = (savedCenter || FALLBACK_CENTER) as [
+          number,
+          number
+        ];
         setupMap(startCenter);
       }
     );
@@ -240,36 +248,33 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
   }, [onMarkerClick, setGlobalLoading]);
 
   // Marker rendering
-  const renderMarkers = useCallback(
-    (force = false) => {
-      if (!mapLoaded || !mapRef.current) return;
-      const map = mapRef.current;
+  const renderMarkers = useCallback(() => {
+    if (!mapLoaded || !mapRef.current) return;
+    const map = mapRef.current;
 
-      // Clear previous markers
-      locationMarkers.current.forEach((m) => m.remove());
-      locationMarkers.current = [];
+    // Clear previous markers
+    locationMarkers.current.forEach((m) => m.remove());
+    locationMarkers.current = [];
 
-      if (!locations?.length) {
-        console.log("No locations to render");
-        return;
-      }
+    if (!locations?.length) {
+      console.log("No locations to render");
+      return;
+    }
 
-      locations.forEach((loc, index) => {
-        if (!loc.latitude || !loc.longitude) return;
+    locations.forEach((loc, index) => {
+      if (!loc.latitude || !loc.longitude) return;
 
-        const rawType = (
-          loc.locationType ||
-          loc.location_type ||
-          ""
-        ).toLowerCase().trim();
-        const Icon = iconMap[rawType] || iconMap.default;
-        const color = colorMap[rawType] || colorMap.default;
+      const rawType = (loc.locationType || loc.location_type || "")
+        .toLowerCase()
+        .trim();
+      const Icon = iconMap[rawType] || iconMap.default;
+      const color = colorMap[rawType] || colorMap.default;
 
-        const el = document.createElement("div");
-        el.style.cursor = "pointer";
+      const el = document.createElement("div");
+      el.style.cursor = "pointer";
 
-        const inner = document.createElement("div");
-        inner.style.cssText = `
+      const inner = document.createElement("div");
+      inner.style.cssText = `
           width: 28px; height: 28px;
           display: flex; align-items: center; justify-content: center;
           background: ${color};
@@ -282,49 +287,47 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
           opacity: 0;
           animation-delay: ${index * 0.03}s;
         `;
-        // TODO: this animation time is slow, causing one be one entry.
+      // TODO: this animation time is slow, causing one be one entry.
 
-        el.appendChild(inner);
+      el.appendChild(inner);
 
-        const root = createRoot(inner);
-        root.render(<Icon size={16} color="white" />);
+      const root = createRoot(inner);
+      root.render(<Icon size={16} color="white" />);
 
-        const marker = new maplibregl.Marker({ element: el, anchor: "center" })
-          .setLngLat([loc.longitude, loc.latitude])
-          .addTo(map);
+      const marker = new maplibregl.Marker({ element: el, anchor: "center" })
+        .setLngLat([loc.longitude, loc.latitude])
+        .addTo(map);
 
-        el.addEventListener("click", (e) => {
-          e.stopPropagation();
+      el.addEventListener("click", (e) => {
+        e.stopPropagation();
 
-          map.flyTo({
-            center: [loc.longitude, loc.latitude],
-            zoom: Math.max(map.getZoom(), 16),
-            speed: 1.2,
-            curve: 1.5,
-            essential: true,
-          });
-
-          inner.animate(
-            [
-              { transform: "scale(1)" },
-              { transform: "scale(1.3)" },
-              { transform: "scale(1)" },
-            ],
-            { duration: 300, easing: "ease-out" }
-          );
-
-          setTimeout(() => {
-            router.push(`/location/${loc.locationId || loc.id}`);
-          }, 400);
+        map.flyTo({
+          center: [loc.longitude, loc.latitude],
+          zoom: Math.max(map.getZoom(), 16),
+          speed: 1.2,
+          curve: 1.5,
+          essential: true,
         });
 
-        locationMarkers.current.push(marker);
+        inner.animate(
+          [
+            { transform: "scale(1)" },
+            { transform: "scale(1.3)" },
+            { transform: "scale(1)" },
+          ],
+          { duration: 300, easing: "ease-out" }
+        );
+
+        setTimeout(() => {
+          router.push(`/location/${loc.locationId || loc.id}`);
+        }, 400);
       });
 
-      console.log(`Rendered ${locations.length} markers`);
-    },
-    [locations, mapLoaded, router]
-  );
+      locationMarkers.current.push(marker);
+    });
+
+    console.log(`Rendered ${locations.length} markers`);
+  }, [locations, mapLoaded, router]);
 
   useEffect(() => {
     if (mapLoaded) renderMarkers();
@@ -335,7 +338,7 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
     const handler = () => {
       setTimeout(() => {
         mapRef.current?.resize();
-        renderMarkers(true);
+        renderMarkers();
       }, 350);
     };
     window.addEventListener("drawer-close", handler);
@@ -420,7 +423,9 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {isHardDenied ? "Location access is blocked" : "Location permission needed"}
+              {isHardDenied
+                ? "Location access is blocked"
+                : "Location permission needed"}
             </AlertDialogTitle>
             {/* IMPORTANT: keep this to plain text only (AlertDialogDescription renders a <p>) */}
             <AlertDialogDescription>

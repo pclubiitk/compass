@@ -24,7 +24,7 @@ export default function ReviewCard({
       <div className="mx-4 py-3">
         <CardTitle className="text-lg py-1 my-0"> {author} </CardTitle>
         {imgs.map((img) => (
-          <div className="relative w-full h-48 my-2 rounded-md overflow-hidden">
+          <div className="relative w-full h-48 my-2 rounded-md overflow-hidden" key={img.ImageID}>
             <img
               src={`${process.env.NEXT_PUBLIC_ASSET_URL}/assets/${img.ImageID}.webp`}
               alt="Review attachment"

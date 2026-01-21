@@ -2,7 +2,9 @@ package search
 
 import (
 	"compass/connections"
+	"compass/middleware"
 	"compass/model"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -19,21 +21,46 @@ func deleteProfileData(c *gin.Context) {
 		return
 	}
 	if err := connections.DB.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Delete(&model.Profile{}, "user_id = ?", existingProfile.UserID).Error; err != nil {
+		// Update user email to a dummy email
+		dummyEmail := fmt.Sprintf("deleted_%s@iitk.ac.in", existingProfile.UserID)
+		if err := tx.Model(&model.User{}).Where("user_id = ?", existingProfile.UserID).Updates(map[string]interface{}{
+			"email":       dummyEmail,
+			"password":    "",
+			"is_verified": false,
+			"profile_pic": "",
+		}).Error; err != nil {
 			return err
 		}
+
+		// Clear profile data but keep name, email and set to their zero value
+		if err := tx.Model(&model.Profile{}).
+			Where("user_id = ?", existingProfile.UserID).
+			Select("RollNo", "Dept", "Course", "Gender", "Hall", "RoomNumber", "HomeTown", "Visibility", "Bapu", "Bachhas").
+			Updates(model.Profile{}).Error; err != nil {
+			return err
+		}
+
+		// TODO: Delete bio pics
+		if err := tx.Where("parent_asset_id = ? AND parent_asset_type = ?", existingProfile.UserID, "users").Delete(&model.Image{}).Error; err != nil {
+			return err
+		}
+
 		// Delete any pre existing log for user
 		if err := tx.Where("user_id = ?", existingProfile.UserID).Delete(&model.ChangeLog{}).Error; err != nil {
 			return err
 		}
+
+		// Create log entry
 		if err := tx.Create(&model.ChangeLog{UserID: existingProfile.UserID, Action: model.Delete}).Error; err != nil {
 			return err
 		}
+
 		return nil
 	}); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to delete profile"})
 		return
 	}
+	middleware.ClearAuthCookie(c)
 	c.JSON(http.StatusOK, gin.H{"message": "User profile data deleted successfully"})
 }
 
@@ -48,7 +75,7 @@ func toggleVisibility(c *gin.Context) {
 	if err := connections.DB.Transaction(func(tx *gorm.DB) error {
 		updateAction := model.Delete
 		if *input.Visibility {
-			updateAction = model.Add
+			updateAction = model.Update
 		}
 
 		// Update the profile
@@ -89,6 +116,18 @@ func toggleVisibility(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to update visibility at the moment."})
 		return
 	}
+
+	// TODO: We can extract out this token refresh logic
+	// Clear the old cookie with visibility true
+	middleware.ClearAuthCookie(c)
+	token, err := middleware.GenerateAccessToken(userID.(uuid.UUID))
+	ref_token, _ := middleware.GenerateRefreshToken(userID.(uuid.UUID))
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"message": "visibility updated successfully, please login again to continue"})
+	}
+	middleware.SetAuthCookie(c, token)
+	middleware.SetRefreshCookie(c, ref_token)
+
 	c.JSON(http.StatusOK, gin.H{"message": "visibility updated successfully"})
 
 }

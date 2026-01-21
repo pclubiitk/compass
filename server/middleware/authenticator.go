@@ -1,22 +1,28 @@
 package middleware
 
 import (
+	"compass/connections"
 	"compass/model"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"github.com/spf13/viper"
+	"gorm.io/gorm"
 )
 
 var authConfig = AuthConfig{
-	JWTSecretKey:    viper.GetString("jwt.secret"),
-	TokenExpiration: 24 * time.Hour,
-	CookieDomain:    viper.GetString("domain"),
-	CookieSecure:    false, // Set to false in development
-	CookieHTTPOnly:  true,  // Prevent XSS
-	SameSiteMode:    http.SameSiteLaxMode,
+	JWTSecretKey:       viper.GetString("jwt.secret"),
+	TokenExpiration:    5 * time.Minute,
+	RefreshTokenExpiry: 24 * 7 * time.Hour, // 7 days
+	CookieDomain:       viper.GetString("domain"),
+	CookieSecure:       false, // Set to false in development
+	// TODO: MUST set to true in production
+	// The Secure attribute is a crucial cookie configuration setting that instructs a web browser to send a cookie only over an encrypted HTTPS connection
+	CookieHTTPOnly: true, // Prevent XSS
+	SameSiteMode:   http.SameSiteLaxMode,
 }
 
 // TODO: Extract the basic token extraction and verification out and keep just the user part
@@ -24,7 +30,8 @@ func UserAuthenticator(c *gin.Context) {
 	// Check for cookie
 	tokenString, err := c.Cookie("auth_token")
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		tryRefresh(c)
+
 		return
 	}
 	// extract token
@@ -32,7 +39,7 @@ func UserAuthenticator(c *gin.Context) {
 		return []byte(authConfig.JWTSecretKey), nil
 	})
 	if err != nil || !token.Valid {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+		tryRefresh(c)
 		return
 	}
 	// Type conversion to *JWTClaims
@@ -47,12 +54,80 @@ func UserAuthenticator(c *gin.Context) {
 	c.Set("rollNo", claims.RollNo)
 	c.Set("userRole", claims.Role)
 	c.Set("verified", claims.Verified)
+	c.Set("visibility", claims.Visibility)
 
 	// Verify the user power
 	if role := c.GetInt("userRole"); role < int(model.UserRole) {
 		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Insufficient permissions"})
 		return
 	}
+	c.Next()
+}
+func tryRefresh(c *gin.Context) {
+	refreshToken, err := c.Cookie("refresh_token")
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+	token, err := jwt.ParseWithClaims(
+		refreshToken,
+		&JWTClaimsRefresh{},
+		func(token *jwt.Token) (interface{}, error) {
+			return []byte(authConfig.JWTSecretKey), nil
+		},
+	)
+
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+		return
+	}
+
+	claims, ok := token.Claims.(*JWTClaimsRefresh)
+	if !ok || !token.Valid {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token claims"})
+		return
+	}
+
+	userID, err := uuid.Parse(claims.UserID)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	// Fetch user details from db
+
+	var modelUser model.User
+	result := connections.DB.
+		Model(&model.User{}).
+		Select("role", "is_verified").
+		Preload("Profile", func(db *gorm.DB) *gorm.DB {
+			return db.Select("visibility")
+		}).
+		Where("user_id = ?", userID).
+		First(&modelUser)
+	if result.Error != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
+		return
+	}
+	// Ideally fetch role + verified from DB
+	role := int(modelUser.Role)
+	verified := modelUser.IsVerified
+	visibility := modelUser.Profile.Visibility
+
+	//geneate new access token
+	newAccessToken, err := GenerateAccessToken(userID)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate access token"})
+		return
+	}
+	SetAuthCookie(c, newAccessToken)
+	// Set context values
+
+	c.Set("userID", userID)
+	c.Set("userRole", role)
+	c.Set("verified", verified)
+	c.Set("visibility", visibility)
+
 	c.Next()
 }
 
@@ -70,8 +145,10 @@ func AdminAuthenticator(c *gin.Context) {
 func EmailVerified(c *gin.Context) {
 	// verified email ?
 	verified, exist := c.Get("verified")
+
+	// TODO: better way for this check, as its in every handler request.
 	if !exist {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized here"})
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
 	if !verified.(bool) {
@@ -80,6 +157,31 @@ func EmailVerified(c *gin.Context) {
 	}
 	// TODO: implement the refresh the token, can remove this then, as the token will not have the verification update
 	// ClearAuthCookie(c)
+	c.Next()
+}
+
+func CheckVisibility(c *gin.Context) {
+	// is visibility on?
+
+	// TODO: better way for this check, as its in every handler request.
+	visibility, exists := c.Get("visibility")
+	if !exists {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	if isVisible, ok := visibility.(bool); ok {
+		if !isVisible {
+			c.Redirect(http.StatusFound, "/profile")
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized, Please make your profile visible/public to view others"})
+			return
+		}
+	} else {
+		// if data type is wrong (not bool)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		return
+	}
+
 	c.Next()
 }
 

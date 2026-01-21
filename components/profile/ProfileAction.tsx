@@ -10,23 +10,37 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Eye, EyeClosed, Trash } from "lucide-react";
-import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useGContext } from "../ContextProvider";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation"
 
 export function AlertDeleteProfileInfo() {
   const { setGlobalLoading } = useGContext();
-  const delay = (ms: number | undefined) =>
-    new Promise((res) => setTimeout(res, ms));
+  const router = useRouter()
+
   const deleteProfileData = async () => {
     try {
       setGlobalLoading(true);
-      await delay(10000);
-    } catch {
-      toast(
-        "Unable to toggle visibility at the moment, please try again later."
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_SEARCH_SERVER}/api/search/`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+        }
       );
+
+      if (!response.ok) {
+        throw new Error("Failed to delete profile");
+      }
+      toast("Profile data deleted successfully.");
+      router.replace("/signup")
+    } catch (error) {
+      console.error(error);
+      toast("Unable to delete profile at the moment, please try again later.");
     } finally {
       setGlobalLoading(false);
     }
@@ -110,18 +124,43 @@ export function AlertDeleteProfileInfo() {
   );
 }
 
+interface AlertVisibilityProps {
+  currentVisibility: boolean;
+  onVisibilityChange: (newVisibility: boolean) => void;
+}
+
 export function AlertVisibilityProfileInfo({
-  initialVisibility,
-}: {
-  initialVisibility: boolean;
-}) {
-  const [visibility, setVisibility] = useState(initialVisibility);
+  currentVisibility,
+  onVisibilityChange
+}: AlertVisibilityProps) {
   const { setGlobalLoading } = useGContext();
+
   const toggleVisibility = async () => {
+    const nextState = !currentVisibility; // next state
     try {
       setGlobalLoading(true);
-      // Add your logic to toggle visibility here
-      setVisibility((prev) => !prev);
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_SEARCH_SERVER}/api/search/toggleVisibility`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ visibility: nextState }),
+          credentials: "include", // Passes auth cookies
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to update visibility");
+      }
+
+      const data = await response.json();      
+      // trust backend if available, otherwise use nextstate
+      const confirmedState = data.visibility ?? nextState;
+      onVisibilityChange(confirmedState);
+
+      toast(confirmedState ? "Profile is now visible." : "Profile is now hidden.");
     } catch {
       toast(
         "Unable to toggle visibility at the moment, please try again later."
@@ -134,14 +173,14 @@ export function AlertVisibilityProfileInfo({
     <Dialog>
       <DialogTrigger asChild>
         <Button variant="outline" onClick={() => {}}>
-          {visibility ? <Eye /> : <EyeClosed />}
+          {currentVisibility ? <Eye /> : <EyeClosed />}
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Are you absolutely sure?</DialogTitle>
           <DialogDescription>
-            {visibility ? (
+            {currentVisibility ? (
               <>
                 This will make your profile invisible in{" "}
                 <a href="search.pclub.in">Student Search Portal</a> <br />
@@ -177,7 +216,7 @@ export function AlertVisibilityProfileInfo({
             <Button
               variant="destructive"
               className={cn(
-                !visibility &&
+                !currentVisibility &&
                   "dark:bg-green-600 bg-green-600 hover:bg-green-500"
               )}
               onClick={toggleVisibility}

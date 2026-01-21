@@ -1,19 +1,58 @@
 package middleware
 
 import (
+	"compass/connections"
+	"compass/model"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
-func GenerateToken(userID uuid.UUID, rollNo string, role int, verified bool) (string, error) {
+func GenerateRefreshToken(userID uuid.UUID) (string, error) {
+	claims := JWTClaimsRefresh{
+		UserID: userID.String(),
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject:   userID.String(),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(authConfig.RefreshTokenExpiry)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			Issuer:    "pclub",
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(authConfig.JWTSecretKey))
+}
+
+func GenerateAccessToken(userID uuid.UUID) (string, error) {
+
+	var modelUser model.User
+	result := connections.DB.
+		Model(&model.User{}).
+		// Here we need to keep the user_id in the select query for a very specific reason, if we don't have them the query can't join it with the profile table and we will always have the visibility false
+		Select("user_id", "role", "is_verified").
+		Preload("Profile", func(db *gorm.DB) *gorm.DB {
+			return db.Select("user_id", "visibility", "roll_no")
+		}).
+		Where("user_id = ?", userID).
+		First(&modelUser)
+
+	if result.Error != nil {
+		return "", result.Error
+	}
+
+	role := int(modelUser.Role)
+	verified := modelUser.IsVerified
+	visibility := modelUser.Profile.Visibility
+
 	claims := JWTClaims{
-		UserID: userID,
-		RollNo: rollNo,
-		Role:   role,
-		Verified: verified,
+		UserID:     userID,
+		RollNo:     modelUser.Profile.RollNo,
+		Role:       role,
+		Verified:   verified,
+		Visibility: visibility,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject:   userID.String(),
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(authConfig.TokenExpiration)),
@@ -37,10 +76,33 @@ func SetAuthCookie(c *gin.Context, token string) {
 		authConfig.CookieHTTPOnly,
 	)
 }
+
+func SetRefreshCookie(c *gin.Context, token string) {
+	c.SetSameSite(authConfig.SameSiteMode)
+	c.SetCookie(
+		"refresh_token",
+		token,
+		int(authConfig.RefreshTokenExpiry.Seconds()),
+		"/",
+		authConfig.CookieDomain,
+		authConfig.CookieSecure,
+		authConfig.CookieHTTPOnly,
+	)
+}
+
 func ClearAuthCookie(c *gin.Context) {
 	c.SetSameSite(authConfig.SameSiteMode)
 	c.SetCookie(
 		"auth_token",
+		"",
+		-1,
+		"/",
+		authConfig.CookieDomain,
+		authConfig.CookieSecure,
+		authConfig.CookieHTTPOnly,
+	)
+	c.SetCookie(
+		"refresh_token",
 		"",
 		-1,
 		"/",

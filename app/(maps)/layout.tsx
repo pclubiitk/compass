@@ -18,6 +18,7 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
+import { FeatureGuard } from "@/components/FeatureGuard";
 
 const Map = dynamic(() => import("@/app/components/Map"), {
   ssr: false,
@@ -67,7 +68,8 @@ export default function MapsLayout({ children }: { children: React.ReactNode }) 
   }, [locations]);
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden bg-gray-50">
+    <FeatureGuard feature="maps">
+      <div className="relative h-screen w-screen overflow-hidden bg-gray-50">
       {memoMap}
 
       {/* Render Drawer outside Map React tree for isolation */}
@@ -122,5 +124,7 @@ export default function MapsLayout({ children }: { children: React.ReactNode }) 
         </AlertDialogContent>
       </AlertDialog>
     </div>
+    </FeatureGuard>
+    
   );
 }

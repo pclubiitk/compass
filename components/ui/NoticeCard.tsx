@@ -88,7 +88,7 @@ function NoticeCard({
                   key={pic.id}
     src={`/assets/${pic.id}.webp`}
                   alt="Bio"
-                  className="w-full h-40 object-cover flex-shrink-0"
+                  className="w-full h-40 object-cover shrink-0"
                 />
               ))}
             </div>

@@ -23,6 +23,7 @@ export interface Notice {
   description: string;
   publisher: string;
   eventTime: string;
+  eventEndTime: string;
   location: string;
   entity: string;
 }

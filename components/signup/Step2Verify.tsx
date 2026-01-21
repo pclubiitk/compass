@@ -7,6 +7,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -18,6 +19,7 @@ import {
 } from "@/components/ui/input-otp";
 import { toast } from "sonner";
 import { REGEXP_ONLY_DIGITS_AND_CHARS } from "input-otp";
+import Link from "next/link";
 
 interface Step2VerifyProps {
   userID: string;
@@ -109,6 +111,9 @@ export function Step2Verify({ userID, onSuccess }: Step2VerifyProps) {
           </Button>
         </form>
       </CardContent>
+      <CardFooter>
+        <p className="italic"><Link className="underline" href="https://nwm.iitk.ac.in/">nwm</Link> is preferred over any other mail client for faster mail delivery</p>
+      </CardFooter>
     </Card>
   );
 }

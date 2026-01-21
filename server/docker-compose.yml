@@ -6,6 +6,8 @@
 # So later add a retry logic for few attempts with 5 sec delay assuming it will eventually connect
 # For now i wil add the restart condition in the docker compose file itself, the restart condition
 
+# TODO: Find the time zone issues if any, can cause issues in the changelog logic
+
 services:
   rabbitmq:
     image: rabbitmq:3-management

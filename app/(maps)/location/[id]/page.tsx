@@ -172,7 +172,11 @@ export default function LocationPage() {
                   </Button>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="icon" className="rounded-full">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="rounded-full"
+                      >
                         <Share2 className="w-5 h-5" />
                       </Button>
                     </AlertDialogTrigger>
@@ -180,16 +184,40 @@ export default function LocationPage() {
                       <AlertDialogHeader>
                         <AlertDialogTitle>Share this location</AlertDialogTitle>
                         <div className="flex justify-center gap-4 mt-4 pt-2">
-                          <FacebookShareButton url={typeof window !== "undefined" ? window.location.href : ""}>
+                          <FacebookShareButton
+                            url={
+                              typeof window !== "undefined"
+                                ? window.location.href
+                                : ""
+                            }
+                          >
                             <FacebookIcon size={48} round />
                           </FacebookShareButton>
-                          <RedditShareButton url={typeof window !== "undefined" ? window.location.href : ""}>
+                          <RedditShareButton
+                            url={
+                              typeof window !== "undefined"
+                                ? window.location.href
+                                : ""
+                            }
+                          >
                             <RedditIcon size={48} round />
                           </RedditShareButton>
-                          <WhatsappShareButton url={typeof window !== "undefined" ? window.location.href : ""}>
+                          <WhatsappShareButton
+                            url={
+                              typeof window !== "undefined"
+                                ? window.location.href
+                                : ""
+                            }
+                          >
                             <WhatsappIcon size={48} round />
                           </WhatsappShareButton>
-                          <LinkedinShareButton url={typeof window !== "undefined" ? window.location.href : ""}>
+                          <LinkedinShareButton
+                            url={
+                              typeof window !== "undefined"
+                                ? window.location.href
+                                : ""
+                            }
+                          >
                             <LinkedinIcon size={48} round />
                           </LinkedinShareButton>
                         </div>
@@ -258,7 +286,10 @@ export default function LocationPage() {
                     <Badge variant="secondary" className="px-3 py-1">
                       {location.Tag}
                     </Badge>
-                    <Badge variant="outline" className="px-3 py-1 flex items-center gap-1">
+                    <Badge
+                      variant="outline"
+                      className="px-3 py-1 flex items-center gap-1"
+                    >
                       <Clock className="w-3 h-3" />
                       {location.Time}
                     </Badge>
@@ -273,7 +304,11 @@ export default function LocationPage() {
 
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-muted-foreground hover:text-foreground"
+                      >
                         <CircleUserRound className="w-4 h-4 mr-2" />
                         Contact Info
                       </Button>
@@ -310,7 +345,10 @@ export default function LocationPage() {
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                   Reviews
                 </h2>
-                <ReviewDrawer locationId={id as string} onReviewAdded={fetchReviews}>
+                <ReviewDrawer
+                  locationId={id as string}
+                  onReviewAdded={fetchReviews}
+                >
                   <Button>Add Review</Button>
                 </ReviewDrawer>
               </div>
@@ -333,7 +371,9 @@ export default function LocationPage() {
                       <Star className="w-8 h-8 text-gray-400" />
                     </div>
                     <p className="font-medium">No reviews yet</p>
-                    <p className="text-sm mt-1">Be the first to share your experience!</p>
+                    <p className="text-sm mt-1">
+                      Be the first to share your experience!
+                    </p>
                   </div>
                 )}
               </div>
