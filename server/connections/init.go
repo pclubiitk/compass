@@ -12,4 +12,6 @@ func init() {
 	dbConnection()
 	// Connect to moderator ai client
 	aiConnection()
+	// Connect to Redis
+	InitRedis()
 }

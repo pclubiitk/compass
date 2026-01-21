@@ -17,11 +17,17 @@ rabbitmq:
   moderationqueue: "moderation_queue"
   port: 5672
 
+puppylove:
+  enabled: false
+  redis:
+    host: 
+
 ports:
   auth: 8080
   maps: 8081
   assets: 8082
   search: 8083
+  puppylove: 8084
 
 smtp:
   host: smtp.gmail.com

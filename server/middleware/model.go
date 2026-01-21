@@ -11,6 +11,7 @@ import (
 // JWTClaims custom claims structure
 type JWTClaims struct {
 	UserID   uuid.UUID `json:"user_id"`
+	RollNo   string    `json:"roll_no"`
 	Role     int       `json:"role"`
 	Verified bool      `json:"verified"`
 	Visibility bool    `json:"visibility"`
