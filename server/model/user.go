@@ -1,6 +1,7 @@
 package model
 
 import (
+	"compass/model/puppylove"
 	"time"
 
 	"github.com/google/uuid"
@@ -10,9 +11,10 @@ import (
 type Role int
 
 const (
-	AdminRole Role = 100 // "admin"
-	Bot       Role = 99  // "bot"
-	UserRole  Role = 50  // "user"
+	AdminRole     Role = 200 // "admin"
+	PuppyLoveRole Role = 100
+	Bot           Role = 99 // "bot"
+	UserRole      Role = 50 // "user"
 	// TODO: add roles like Super Admin, Visitors
 )
 
@@ -30,13 +32,14 @@ type User struct {
 	Role              Role      `json:"role" gorm:"type:int;"`
 
 	// Search Profile
-	Profile Profile `gorm:"foreignKey:UserID;references:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"profile"`
+	Profile          Profile                    `gorm:"foreignKey:UserID;references:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"profile"`
+	PuppyLoveProfile puppylove.PuppyLoveProfile `gorm:"foreignKey:UserID;references:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"puppylove_profile,omitempty"`
 
 	// Compass Fields
 	ContributedLocations []Location `gorm:"foreignKey:ContributedBy;references:UserID"`
 	ContributedReview    []Review   `gorm:"foreignKey:ContributedBy;references:UserID"`
 	ContributedNotice    []Notice   `gorm:"foreignKey:ContributedBy;references:UserID"`
-	ProfilePic string `json:"profilepic"`  //this stores the img path of the form pfp/uniqueid.image type   
+	ProfilePic           string     `json:"profilepic"` //this stores the img path of the form pfp/uniqueid.image type
 	// we later access the image as backendurl/public/{imagepath}
 	//  // here the * makes it a pointer and when it is null, it return null in json instead of a default values
 	BioPics []Image `gorm:"polymorphic:ParentAsset;" json:"biopics"`

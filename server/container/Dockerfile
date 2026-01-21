@@ -59,6 +59,6 @@ COPY ./config.yaml /config.yaml
 COPY ./secret.yml /secret.yml
 COPY ./assets /assets
 
-EXPOSE 8080 8081 8082 8083
+EXPOSE 8080 8081 8082 8083 8084
 
 ENTRYPOINT ["/server"]
