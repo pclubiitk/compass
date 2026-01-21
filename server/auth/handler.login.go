@@ -52,7 +52,7 @@ func loginHandler(c *gin.Context) {
 
 	// FOR DEV: BYPASS RE-CAPTCHA
 	// ----------------------------------------------------------------------------- //
-	if (viper.GetString("env") == "prod"){
+	if viper.GetString("env") == "prod" {
 		if !verifyRecaptcha(req.Token) {
 			c.JSON(http.StatusForbidden, gin.H{"error": "Failed captcha verification"})
 			return
@@ -62,6 +62,9 @@ func loginHandler(c *gin.Context) {
 
 	//  Fetch user from DB
 	result := connections.DB.Model(&model.User{}).Select("email", "user_id", "password", "role", "is_verified").
+		Preload("Profile", func(db *gorm.DB) *gorm.DB {
+			return db.Select("user_id", "roll_no")
+		}).
 		Where("email = ?", req.Email).First(&dbUser)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
@@ -80,7 +83,7 @@ func loginHandler(c *gin.Context) {
 	}
 
 	// Creating JWT token
-	token, err := middleware.GenerateToken(dbUser.UserID, int(dbUser.Role), dbUser.IsVerified)
+	token, err := middleware.GenerateToken(dbUser.UserID, dbUser.Profile.RollNo, int(dbUser.Role), dbUser.IsVerified)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
 		return

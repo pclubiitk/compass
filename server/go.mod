@@ -10,6 +10,7 @@ require (
 	github.com/jackc/pgx/v5 v5.6.0
 	github.com/openai/openai-go/v2 v2.0.2
 	github.com/rabbitmq/amqp091-go v1.10.0
+	github.com/redis/go-redis/v9 v9.17.2
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/viper v1.20.1
 	golang.org/x/crypto v0.39.0
@@ -20,9 +21,12 @@ require (
 )
 
 require (
+	github.com/JGLTechnologies/gin-rate-limit v1.5.6 // indirect
 	github.com/bytedance/sonic v1.13.3 // indirect
 	github.com/bytedance/sonic/loader v0.2.4 // indirect
+	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cloudwego/base64x v0.1.5 // indirect
+	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/fsnotify/fsnotify v1.8.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.9 // indirect
 	github.com/gin-contrib/sse v1.1.0 // indirect

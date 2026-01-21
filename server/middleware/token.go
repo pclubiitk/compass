@@ -8,9 +8,10 @@ import (
 	"github.com/google/uuid"
 )
 
-func GenerateToken(userID uuid.UUID, role int, verified bool) (string, error) {
+func GenerateToken(userID uuid.UUID, rollNo string, role int, verified bool) (string, error) {
 	claims := JWTClaims{
 		UserID: userID,
+		RollNo: rollNo,
 		Role:   role,
 		Verified: verified,
 		RegisteredClaims: jwt.RegisteredClaims{
