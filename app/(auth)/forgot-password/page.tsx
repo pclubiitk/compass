@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useTransition, useRef, FormEvent } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -22,19 +22,24 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import axios from "axios";
 import Link from "next/link";
 import Image from "next/image";
+import ReCAPTCHA from "react-google-recaptcha";
 
 
 const formSchema = z.object({
     email: z.string().email({
         message: "Please enter a valid email address.",
+    }).refine((email) => email.endsWith("@iitk.ac.in"), {
+        message: "Please enter a valid IITK email address.",
     }),
 });
 
 export default function ForgotPasswordPage() {
     const [isPending, startTransition] = useTransition();
+
+    const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY!;
+    const recaptchaRef = useRef<ReCAPTCHA>(null);
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -43,16 +48,42 @@ export default function ForgotPasswordPage() {
         },
     });
 
-    function onSubmit(values: z.infer<typeof formSchema>) {
-        startTransition(async () => {
-            try {
-                const response = await axios.post("/api/auth/forgot-password", values);
-                toast.success(response.data.message || "Reset link sent if email exists.");
-            } catch (error: any) {
-                toast.error("Something went wrong. Please try again.");
-                console.error(error);
+    async function onSubmit(values: z.infer<typeof formSchema>) {
+
+        try {
+            // Executing invisible v2 reCAPTCHA
+            const token = await recaptchaRef.current?.executeAsync();
+            if (!token) {
+                toast.error("Error in captcha validation");
+                return;
             }
-        });
+
+            startTransition(async () => {
+                try {
+                    const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL}/api/auth/forgot-password`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ ...values, token }),
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        toast.success(data.message || "Reset link sent if email exists.");
+                    } else {
+                        toast.error(data.error || "Something went wrong. Please try again.");
+                    }
+                } catch (error) {
+                    toast.error("Something went wrong. Please try again.");
+                    console.error(error);
+                } finally {
+                    recaptchaRef.current?.reset();
+                }
+            });
+        } catch (error) {
+            toast.error("Captcha error. Please try again.");
+            console.error(error);
+        }
     }
 
     return (
@@ -96,6 +127,9 @@ export default function ForgotPasswordPage() {
                             <Button type="submit" className="w-full rounded-xl h-12 text-base font-medium" disabled={isPending}>
                                 {isPending ? "Sending..." : "Send Reset Link"}
                             </Button>
+
+                            {/* Invisible v2 reCAPTCHA */}
+                            <ReCAPTCHA sitekey={siteKey} ref={recaptchaRef} size="invisible" />
 
                             <div className="text-sm text-center">
                                 <Link href="/login" className="font-medium text-primary hover:text-primary/90 transition-colors">

@@ -75,15 +75,15 @@ function ResetPasswordPageHolder() {
     if (!token || !id) {
         return (
             <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-linear-to-r from-blue-100 to-teal-100 dark:from-slate-800 dark:to-slate-900">
-                <Card className="w-full max-w-md rounded-3xl shadow-2xl border-none">
-                    <CardHeader className="pt-8">
+                <Card className="w-full max-w-sm">
+                    <CardHeader>
                         <CardTitle className="text-destructive text-center text-xl">Invalid Link</CardTitle>
                         <CardDescription className="text-center px-4">
                             This password reset link is invalid or missing a token.
                         </CardDescription>
                     </CardHeader>
-                    <CardContent className="p-8">
-                        <Button onClick={() => router.push("/login")} className="w-full rounded-xl h-12 text-base font-medium">
+                    <CardContent>
+                        <Button onClick={() => router.push("/login")} className="w-full">
                             Go to Login
                         </Button>
                     </CardContent>
@@ -93,27 +93,38 @@ function ResetPasswordPageHolder() {
     }
     return (
         <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-linear-to-r from-blue-100 to-teal-100 dark:from-slate-800 dark:to-slate-900">
-            <Card className="w-full max-w-md rounded-3xl shadow-2xl border-none">
-                <CardHeader className="space-y-1.5 items-center pt-8">
-                    <div className="flex size-12 items-center justify-center rounded-2xl mb-4 bg-primary/10">
-                        <Image
-                            src="/pclub.png"
-                            alt="Programming Club Logo"
-                            width={60}
-                            height={60}
-                            className="rounded-2xl"
-                        />
-                    </div>
-                    <CardTitle className="text-2xl font-bold tracking-tight text-center">Reset Password</CardTitle>
-                    <CardDescription className="text-center px-4">
+            <Card className="w-full max-w-sm">
+                <CardHeader>
+                    <CardTitle className="flex flex-col items-center gap-2">
+                        <a
+                            href="https://pclub.in"
+                            className="flex flex-col items-center gap-2 font-medium"
+                        >
+                            <div className="flex size-8 items-center justify-center rounded-md">
+                                <Image
+                                    src="/pclub.png"
+                                    alt="Programming Club Logo"
+                                    width={60}
+                                    height={60}
+                                    className="rounded-2xl"
+                                />
+                            </div>
+                            <span className="sr-only">Programming Club</span>
+                        </a>
+                    </CardTitle>
+                    <CardDescription className="flex flex-col items-center gap-2">
+                        <p>Programming Club IIT Kanpur</p>
+                    </CardDescription>
+                    <CardTitle className="text-2xl">Reset Password</CardTitle>
+                    <CardDescription>
                         Enter your new password below.
                     </CardDescription>
                 </CardHeader>
 
-                <CardContent className="p-8">
-                    <form onSubmit={onSubmit} className="grid gap-6">
+                <CardContent>
+                    <form onSubmit={onSubmit} className="grid gap-4">
                         <div className="grid gap-2">
-                            <Label htmlFor="password" className="ml-1">New Password</Label>
+                            <Label htmlFor="password">New Password</Label>
                             <Input
                                 id="password"
                                 name="password"
@@ -121,11 +132,10 @@ function ResetPasswordPageHolder() {
                                 required
                                 minLength={8}
                                 placeholder="New password"
-                                className="rounded-xl h-12"
                             />
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="confirmPassword" className="ml-1">Confirm Password</Label>
+                            <Label htmlFor="confirmPassword">Confirm Password</Label>
                             <Input
                                 id="confirmPassword"
                                 name="confirmPassword"
@@ -133,11 +143,10 @@ function ResetPasswordPageHolder() {
                                 required
                                 minLength={8}
                                 placeholder="Confirm new password"
-                                className="rounded-xl h-12"
                             />
                         </div>
 
-                        <Button type="submit" className="w-full rounded-xl h-12 text-base font-medium" disabled={isLoading}>
+                        <Button type="submit" className="w-full" disabled={isLoading}>
                             {isLoading ? "Resetting..." : "Reset Password"}
                         </Button>
                     </form>

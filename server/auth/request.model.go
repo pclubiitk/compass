@@ -55,6 +55,7 @@ type StudentDetails struct {
 
 type ForgotPasswordRequest struct {
 	Email string `form:"email" binding:"required,email"`
+	Token string `json:"token" binding:"required"`
 }
 
 type ResetPasswordRequest struct {

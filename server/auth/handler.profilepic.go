@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -54,7 +55,34 @@ func UploadProfileImage(c *gin.Context) {
 
 	// Creating file
 	ext := filepath.Ext(header.Filename)
-	filename := uuid.New().String() + ext
+	var filename string
+
+	// Check if we can reuse the existing filename
+	if oldProfilePic != "" && strings.HasPrefix(oldProfilePic, "pfp/") {
+		// oldProfilePic is like "pfp/UUID.ext"
+		base := filepath.Base(oldProfilePic)         // UUID.ext
+		oldExt := filepath.Ext(base)                 // .ext
+		filenameID := strings.TrimSuffix(base, oldExt) // UUID
+		filename = filenameID + ext                  // Reuse UUID with new extension
+
+		// If extension changed, we need to delete the old file immediately to avoid duplicates
+		if oldExt != ext {
+			oldPath := filepath.Join(cwd, "assets", oldProfilePic)
+			if err := os.Remove(oldPath); err != nil {
+				logrus.Errorf("Failed to delete old PFP (ext change) at %s: %v", oldPath, err)
+			} else {
+				logrus.Infof("Deleted old PFP (ext change) at %s", oldPath)
+			}
+			// Clear oldProfilePic so the cleanup block at the end doesn't try to delete it again
+			oldProfilePic = "" 
+		} else {
+            // If extension is same, os.Create will overwrite, but we should clear oldProfilePic so end block doesn't delete it
+            oldProfilePic = ""
+        }
+	} else {
+		filename = uuid.New().String() + ext
+	}
+
 	fullPath := filepath.Join(uploadDir, filename)
 
 	out, err := os.Create(fullPath)
