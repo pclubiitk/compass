@@ -34,7 +34,7 @@ func GenerateAccessToken(userID uuid.UUID) (string, error) {
 		// Here we need to keep the user_id in the select query for a very specific reason, if we don't have them the query can't join it with the profile table and we will always have the visibility false
 		Select("user_id", "role", "is_verified").
 		Preload("Profile", func(db *gorm.DB) *gorm.DB {
-			return db.Select("user_id", "visibility")
+			return db.Select("user_id", "visibility", "roll_no")
 		}).
 		Where("user_id = ?", userID).
 		First(&modelUser)
@@ -49,6 +49,7 @@ func GenerateAccessToken(userID uuid.UUID) (string, error) {
 
 	claims := JWTClaims{
 		UserID:     userID,
+		RollNo:     modelUser.Profile.RollNo,
 		Role:       role,
 		Verified:   verified,
 		Visibility: visibility,

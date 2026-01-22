@@ -51,6 +51,7 @@ func UserAuthenticator(c *gin.Context) {
 	// Set the role here
 	// TODO: Find better way, here whenever i extract i need to do a check if that thing exist or not
 	c.Set("userID", claims.UserID)
+	c.Set("rollNo", claims.RollNo)
 	c.Set("userRole", claims.Role)
 	c.Set("verified", claims.Verified)
 	c.Set("visibility", claims.Visibility)

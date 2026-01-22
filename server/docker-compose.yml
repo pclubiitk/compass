@@ -35,6 +35,16 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+  redis:
+    image: redis:7-alpine
+    restart: always
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
   server:
     build:
       context: .
@@ -46,13 +56,19 @@ services:
       - "8081:8081"
       - "8082:8082"
       - "8083:8083"
+      - "8084:8084"
     depends_on:
       rabbitmq:
         condition: service_healthy
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_healthy
+    # No use, as we just run the binary
     environment:
       POSTGRES_HOST: postgres
       RABBITMQ_HOST: rabbitmq
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
       # force Go to use go.mod/go.sum for dependency management
       GO111MODULE: on

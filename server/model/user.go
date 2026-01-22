@@ -1,6 +1,7 @@
 package model
 
 import (
+	"compass/model/puppylove"
 	"time"
 
 	"github.com/google/uuid"
@@ -10,9 +11,10 @@ import (
 type Role int
 
 const (
-	AdminRole Role = 100 // "admin"
-	Bot       Role = 99  // "bot"
-	UserRole  Role = 50  // "user"
+	AdminRole     Role = 200 // "admin"
+	PuppyLoveRole Role = 100
+	Bot           Role = 99 // "bot"
+	UserRole      Role = 50 // "user"
 	// TODO: add roles like Super Admin, Visitors
 )
 
@@ -30,7 +32,8 @@ type User struct {
 	Role              Role      `json:"role" gorm:"type:int;"`
 
 	// Search Profile
-	Profile Profile `gorm:"foreignKey:UserID;references:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"profile"`
+	Profile          Profile                    `gorm:"foreignKey:UserID;references:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"profile"`
+	PuppyLoveProfile puppylove.PuppyLoveProfile `gorm:"foreignKey:UserID;references:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"puppylove_profile,omitempty"`
 
 	// Compass Fields
 	ContributedLocations []Location `gorm:"foreignKey:ContributedBy;references:UserID"`

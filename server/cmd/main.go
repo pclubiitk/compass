@@ -4,6 +4,7 @@ import (
 	_ "compass/connections" // is a blank import and it runs the init() functions in the package
 	"compass/workers"
 	"time"
+	"compass/puppylove"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -16,6 +17,9 @@ const (
 )
 
 func main() {
+	// Initialize PuppyLove config with defaults
+	puppylove.InitPuppyLoveConfig()
+
 	// Create an error group to handle errors together
 	var g errgroup.Group
 
@@ -37,9 +41,16 @@ func main() {
 	g.Go(func() error { return authServer().ListenAndServe() })
 	g.Go(func() error { return mapsServer().ListenAndServe() })
 	g.Go(func() error { return searchServer().ListenAndServe() })
+
+	if puppylove.IsPuppyLoveEnabled() {
+		logrus.Infof("PuppyLove Mode Enabled! (mode: %s)", puppylove.GetPuppyLoveMode())
+
+		g.Go(func() error { return puppyloveServer().ListenAndServe() })
+	} else {
+		logrus.Info("PuppyLove Mode Disabled!")
+	}
 	logrus.Info("Main server is Starting...")
 	if err := g.Wait(); err != nil {
 		logrus.Fatal("Some service failed with error: ", err)
 	}
-
 }
