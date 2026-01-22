@@ -10,34 +10,15 @@ import { useGContext } from "@/components/ContextProvider";
 import { ModeToggle } from "@/components/ui/mode-toggle";
 import { useState, useEffect } from "react";
 
-// TODO: CC blocks showing the profile images on other urls hence need to add it to the bg like earlier, can't use next js Image, Avatar.
 // TODO: Add tool tips
-// TODO: Correct the image url logic
-
-// export default function Image(props: ImageProps) {
-// 	return (
-// 		<div style={{
-// 			width:"150px",
-// 			height:"150px",
-// 			position:"relative",
-// 			borderRadius:"100%",
-// 			flexShrink:"0",
-// 	backgroundImage:`url("https://home.iitk.ac.in/~${props.u}/dp"),url("https://oa.cc.iitk.ac.in/Oa/Jsp/Photo/${props.i}_0.jpg"),url("${props.g === "F" ? Female.src : Male.src}")`,
-// 			backgroundPosition:"center top",
-// 			backgroundSize:"cover",
-// 			...props.style
-
-// 		}} />
-// 	)
-// }
 
 export function SocialProfileCard({
   email,
-  profilePic,
+  userID,
   onProfileUpdate,
 }: {
   email: string;
-  profilePic?: string;
+  userID?: string;
   onProfileUpdate?: () => void;
 }) {
   const router = useRouter();
@@ -75,7 +56,6 @@ export function SocialProfileCard({
 
       if (res.ok) {
         toast.success("Profile image updated!");
-        // setPreview(`${BACKEND_URL}/${data.imagePath}`);
         onProfileUpdate?.();
       } else {
         toast.error(data.error || "Upload failed");
@@ -118,18 +98,12 @@ export function SocialProfileCard({
 
   return (
     <Card className="overflow-hidden pt-0">
-      <div className="h-32 md:h-40 bg-gradient-to-r from-blue-100 to-teal-100 dark:from-slate-800 dark:to-slate-900" />
+      <div className="h-32 md:h-40 bg-linear-to-r from-blue-100 to-teal-100 dark:from-slate-800 dark:to-slate-900" />
       <div className="flex flex-col items-center -mt-24 sm:-mt-30 p-6 relative">
         <div className="relative group w-32 h-32 sm:w-36 sm:h-36">
           <Avatar className="w-full h-full border-4 border-card cursor-pointer">
             <AvatarImage
-              src={
-                profilePic
-                  ? `${process.env.NEXT_PUBLIC_ASSET_URL}/${profilePic}`
-                  : email
-                  ? `https://home.iitk.ac.in/~${email.split("@")[0]}/dp`
-                  : ""
-              }
+              src={`${process.env.NEXT_PUBLIC_ASSET_URL}/pfp/${userID}.webp`}
             />
             <AvatarFallback>
               {email ? email.slice(0, 2).toUpperCase() : "NA"}
@@ -155,7 +129,12 @@ export function SocialProfileCard({
             variant="outline"
             size="icon"
             className="h-12 w-12"
-            onClick={() => router.push(process.env.NEXT_PUBLIC_SEARCH_UI_URL || "https://search.pclub.in")}
+            onClick={() =>
+              router.push(
+                process.env.NEXT_PUBLIC_SEARCH_UI_URL ||
+                  "https://search.pclub.in",
+              )
+            }
           >
             <Search />
           </Button>

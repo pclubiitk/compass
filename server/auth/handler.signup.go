@@ -62,7 +62,7 @@ func signupHandler(c *gin.Context) {
 		IsVerified:        false,
 		Role:              model.UserRole,
 		VerificationToken: fmt.Sprintf("%s<>%s", token, expiry),
-		Profile:           model.Profile{Email: input.Email, Visibility: true},
+		Profile:           model.Profile{Email: strings.ToLower(input.Email), Visibility: true},
 	}
 
 	// Saving user in DB and updating in changelog

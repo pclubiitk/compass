@@ -13,6 +13,19 @@ import (
 func getAllProfiles(c *gin.Context) {
 	// This request may be slow,
 	// TODO: Better way if possible, reddis be dekh sak te he.
+	// TODO: check if we truly need the distinct on check here and below
+	// var profiles []model.ProfileWithPic
+	// if err := connections.DB.
+	// 	Table("profiles").
+	// 	Select("DISTINCT ON (profiles.user_id) profiles.*, users.profile_pic").
+	// 	Joins("LEFT JOIN users ON users.user_id = profiles.user_id").
+	// 	Where("profiles.visibility = ? AND profiles.deleted_at IS NULL", true).
+	// 	Order("profiles.user_id, profiles.updated_at DESC").
+	// 	Scan(&profiles).Error; err != nil {
+	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch profiles."})
+	// 	return
+	// }
+
 	var profiles []model.Profile
 	if err := connections.DB.Find(&profiles, "visibility = ?", true).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch profiles."})
@@ -53,5 +66,30 @@ func getChangeLog(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Updates fetched successfully.", "addProfiles": newProfiles, "deleteUserId": deleteUserId, "requestTime": requestTime})
+
+	// // Initialize to empty slices (not nil) so JSON marshals as [] instead of null
+	// newProfiles := []model.ProfileWithPic{}
+	// deleteUserIdStrings := []string{}
+
+	// // Only query if there are user IDs to fetch
+	// if len(addUserId) > 0 {
+	// 	if err := connections.DB.
+	// 		Table("profiles").
+	// 		Select("DISTINCT ON (profiles.user_id) profiles.*, users.profile_pic").
+	// 		Joins("LEFT JOIN users ON users.user_id = profiles.user_id").
+	// 		Where("profiles.user_id IN ? AND profiles.deleted_at IS NULL", addUserId).
+	// 		Order("profiles.user_id, profiles.updated_at DESC").
+	// 		Scan(&newProfiles).Error; err != nil {
+	// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve new profiles"})
+	// 		return
+	// 	}
+	// }
+
+	// // Convert UUIDs to strings for frontend
+	// for _, id := range deleteUserId {
+	// 	deleteUserIdStrings = append(deleteUserIdStrings, id.String())
+	// }
+
+	// c.JSON(http.StatusOK, gin.H{"message": "Updates fetched successfully.", "addProfiles": newProfiles, "deleteUserId": deleteUserIdStrings, "requestTime": requestTime})
 
 }

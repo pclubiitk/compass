@@ -11,6 +11,8 @@
 # Ignore common dependency management directories
 **/node_modules
 **/venv
+package-lock.json
+npm-debug.log
 
 # Ignore editor and IDE specific files
 .vscode/

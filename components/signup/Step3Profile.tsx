@@ -54,7 +54,7 @@ export function Step3Profile() {
         {
           method: "GET",
           credentials: "include",
-        }
+        },
       );
 
       if (response.ok) {
@@ -131,7 +131,7 @@ export function Step3Profile() {
           method: "POST",
           body: formData,
           credentials: "include",
-        }
+        },
       );
       const data = await response.json();
       if (response.ok) {
@@ -189,7 +189,7 @@ export function Step3Profile() {
           headers: { "Content-Type": "application/json" },
           credentials: "include",
           body: JSON.stringify(profileData),
-        }
+        },
       );
       const data = await response.json();
 
@@ -403,8 +403,8 @@ export function Step3Profile() {
               {isFetchingData
                 ? "Loading..."
                 : isLoading
-                ? "Saving..."
-                : "Save and Finish"}
+                  ? "Saving..."
+                  : "Save and Finish"}
             </Button>
           </div>
         </form>

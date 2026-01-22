@@ -1,27 +1,32 @@
 // TODO: Facing issue in the build - reason - sharp install issue, but works fine when docker build is performed.
-import Male from "@/components/assets/GenericMale.png";
-import Female from "@/components/assets/GenericFemale.png";
+
+const ASSET_URL = process.env.NEXT_PUBLIC_ASSET_URL || "";
 
 interface ImageProps {
   style: Object;
   email: string;
-  rollNo: string;
   gender: string;
   alt: string;
+  profilePic?: string;
 }
 
 export default function Image(props: ImageProps) {
   const userName = props.email?.split("@")[0] || "";
   const urls: string[] = [];
-  if (userName) {
-    urls.push(
-      `url("https://home.iitk.ac.in/~${encodeURIComponent(userName)}/dp")`
-    );
+
+  // Priority 1: Profile picture from our server
+  if (props.profilePic) {
+    urls.push(`url("${ASSET_URL}/${props.profilePic}")`);
   }
-  urls.push(
-    `url("https://oa.cc.iitk.ac.in/Oa/Jsp/Photo/${props.rollNo}_0.jpg")`
-  );
-  urls.push(`url("${props.gender === "F" ? Female.src : Male.src}")`);
+
+  // Priority 2: User's home page dp
+  // if (userName) {
+  //   urls.push(
+  //     `url("https://home.iitk.ac.in/~${encodeURIComponent(userName)}/dp")`
+  //   );
+  // }
+  // Priority 3: Generic fallback
+  urls.push(`url("${props.gender === "F" ? "/GenericFemale.png" : "/GenericMale.png"}")`);
   return (
     <div
       style={{

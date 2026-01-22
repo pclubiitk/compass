@@ -5,9 +5,12 @@ import (
 	"compass/model"
 	"compass/workers"
 	"encoding/json"
+	"net/http"
+	"os"
+	"path/filepath"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"net/http"
 )
 
 func uploadAsset(c *gin.Context) {
@@ -28,11 +31,11 @@ func uploadAsset(c *gin.Context) {
 		Submitted: false,
 	}
 	file := req.File
+	cwd, _ := os.Getwd()
 	// Compress and convert the image to webp
-	if img, err := cncImage(file); err != nil {
+	if img, err := CncImage(file); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error in compressing the image"})
-		// TODO: // ./ vs no
-	} else if path, err := saveImage(img, "./assets/tmp", image.ImageID); err != nil {
+	} else if path, err := SaveImage(img, filepath.Join(cwd, "assets", "tmp"), image.ImageID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error in saving image"})
 	} else if err := connections.DB.Model(&model.Image{}).Create(&image).Error; err != nil {
 		// Add entry in the table and save the image in the server

@@ -6,6 +6,7 @@ import (
 	"compass/model"
 	"errors"
 	"net/http"
+	"strings"
 
 	"encoding/json"
 	"fmt"
@@ -101,7 +102,7 @@ func verifyProfile(c *gin.Context, profileData model.Profile) bool {
 
 	// Checking Status of verification
 	if apiResp.Status != nil {
-		if *apiResp.Status != "true" || (profileData.Name != *apiResp.Name) {
+		if *apiResp.Status != "true" || (!strings.EqualFold(profileData.Name, *apiResp.Name)) {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"error": "Please once verify you data. It should be exactly same as printed on your ID card or displayed in IITK APP",
 			})

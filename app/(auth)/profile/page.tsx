@@ -21,6 +21,7 @@ import ComingSoon from "@/components/ui/ComingSoon";
 
 // Data Type
 export type Profile = {
+  UserID: string;
   name: string;
   email: string;
   rollNo: string;
@@ -30,7 +31,6 @@ export type Profile = {
   hall: string;
   roomNo: string;
   homeTown: string;
-  profilePic?: string;
   visibility: boolean;
 };
 
@@ -76,7 +76,7 @@ export default function ProfilePage() {
         `${process.env.NEXT_PUBLIC_AUTH_URL}/api/profile`,
         {
           credentials: "include",
-        }
+        },
       );
       if (res.ok) {
         const data = await res.json();
@@ -149,7 +149,7 @@ export default function ProfilePage() {
         <div className="lg:sticky lg:top-8">
           <SocialProfileCard
             email={profile.email}
-            profilePic={profile.profilePic}
+            userID={profile.UserID}
             onProfileUpdate={fetchProfile}
           />
         </div>
