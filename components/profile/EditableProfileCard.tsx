@@ -228,9 +228,9 @@ export function EditableProfileCard({
               <SelectValue placeholder="Select gender" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="Male">Male</SelectItem>
-              <SelectItem value="Female">Female</SelectItem>
-              <SelectItem value="Other">Other</SelectItem>
+              <SelectItem value="M">Male</SelectItem>
+              <SelectItem value="F">Female</SelectItem>
+              <SelectItem value="O">Other</SelectItem>
             </SelectContent>
           </Select>
           ) : (

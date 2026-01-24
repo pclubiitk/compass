@@ -64,18 +64,18 @@ func updatePassword(c *gin.Context) {
 
 func verifyProfile(c *gin.Context, profileData model.Profile) bool {
 	// OA's verification route, do not take name input, but returns name upon verification
-	// Creating the paramkey string
+	// TODO: Add logic to check if that roll no is already registered or not
 	paramkey := fmt.Sprintf("%s:%s:%s:%s", profileData.RollNo, profileData.Course, profileData.Dept, profileData.Email)
+	// TODO: put this url in the env file
+	// req, err := http.NewRequest("GET", fmt.Sprintf("http://localhost:5000/verify?paramkey=%s", paramkey), nil)
 
-	// Send request to verify student data
-	client := &http.Client{Timeout: 10 * time.Second}
 	req, err := http.NewRequest("GET", fmt.Sprintf("%s?paramkey=%s", viper.GetString("oa.url"), paramkey), nil)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create verification request"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create request"})
 		return false
 	}
 	req.Header.Set("x-api-key", viper.GetString("oa.key"))
-	req.Header.Set("Accept", "application/json")
+	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to call OA API"})
@@ -83,17 +83,18 @@ func verifyProfile(c *gin.Context, profileData model.Profile) bool {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		if resp.StatusCode == http.StatusForbidden {
-			logrus.Errorf("OA Token expired or missing, Urgent action required, request new or check viper env")
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Programming club's oa token expired, we are working to resolve it as soon as possible"})
-		} else {
-			logrus.Error("OA API ERROR, with status code: ", resp.StatusCode)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Some error occurred in profile verification, please try again later."})
-		}
+	if resp.StatusCode == 401 {
+		// Log the critical error
+		// Send mail to maintainers
+		logrus.Errorf("OA Token expired or missing, Urgent action required, request new or check viper env")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Programming club's oa token expired, we are working to resolve it as soon as possible"})
+		return false
+	} else if resp.StatusCode != 200 {
+		logrus.Error("OA API ERROR, with status code: ", resp.StatusCode)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Details"})
 		return false
 	}
-
+	// Parse the response
 	var apiResp CCResponse
 	if err := json.NewDecoder(resp.Body).Decode(&apiResp); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse OA API response"})
@@ -127,6 +128,7 @@ func updateProfile(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
+	// find the current user, we are sure it exist
 	var user model.User
 	if connections.DB.
 		Model(&model.User{}).
@@ -167,6 +169,15 @@ func updateProfile(c *gin.Context) {
 
 	}
 
+	// TODO: resolve this.
+	// var newPfpPath string
+
+	// if user.ProfilePic == "" {
+	// 	if path, err := FetchAndSaveProfileImage(input.RollNo, user.Email); err == nil && path != "" {
+	// 		newPfpPath = path
+	// 	}
+	// }
+
 	// TODO: Test it
 	// Update into db
 	if err := connections.DB.Transaction(func(tx *gorm.DB) error {
@@ -179,6 +190,14 @@ func updateProfile(c *gin.Context) {
 			FirstOrCreate(&model.Profile{}).Error; err != nil {
 			return err
 		}
+
+		// Update ProfilePic if we fetched a new one
+		// if newPfpPath != "" {
+		// 	if err := tx.Model(&model.User{}).Where("user_id = ?", userID).Update("profile_pic", newPfpPath).Error; err != nil {
+		// 		return err
+		// 	}
+		// }
+
 		// Delete any pre-existing log for this user
 		// (as it is syncing data based on change_logs table)
 		if err := tx.Where("user_id = ?", userID).Delete(&model.ChangeLog{}).Error; err != nil {

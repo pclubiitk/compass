@@ -37,6 +37,8 @@ domain: ""
 # Browsers rewrite Domain=localhost cookies into .localhost, which breaks host-only cookie checks.
 # Fix: leave domain empty ("") in dev so the cookie is scoped only to localhost
 
+frontend_url: "http://localhost:3000" # Dev: http://localhost:3000, Prod: https://yourdomain.com
+
 expiry:
   emailVerification: 3
 

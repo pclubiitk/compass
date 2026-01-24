@@ -27,7 +27,7 @@ func deleteProfileData(c *gin.Context) {
 			"email":       dummyEmail,
 			"password":    "",
 			"is_verified": false,
-			"profile_pic": "",
+			// "profile_pic": "",
 		}).Error; err != nil {
 			return err
 		}

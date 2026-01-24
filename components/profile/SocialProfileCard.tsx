@@ -2,8 +2,8 @@
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Search, Map, LogOut, Camera } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useGContext } from "@/components/ContextProvider";
@@ -26,19 +26,34 @@ export function SocialProfileCard({
 
   const BACKEND_URL = process.env.NEXT_PUBLIC_AUTH_URL;
 
-  // const [preview, setPreview] = useState<string | null>(profilePic ? `${BACKEND_URL}/${profilePic}` : null);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+
+  // Background Image Logic Construction
+  const imageUrls: string[] = [];
+
+  if (preview) {
+    imageUrls.push(`url("${preview}")`);
+  }
 
   //for showing temporary preview when user selects a new image
   useEffect(() => {
     if (!selectedImage) return;
     const url = URL.createObjectURL(selectedImage);
-    // setPreview(url);
+    setPreview(url);
     return () => URL.revokeObjectURL(url);
   }, [selectedImage]);
 
-  //uploading a new image
+  // Reset preview when the profile picture is updated from the server i.e. the uploading is done
+  useEffect(() => {
+    if (!uploading) {
+      setPreview(null);
+      setSelectedImage(null);
+    }
+  }, [uploading]);
+
+  // Uploading a new image
   const handleUpload = async (file: File) => {
     const formData = new FormData();
     formData.append("profileImage", file);
@@ -103,7 +118,11 @@ export function SocialProfileCard({
         <div className="relative group w-32 h-32 sm:w-36 sm:h-36">
           <Avatar className="w-full h-full border-4 border-card cursor-pointer">
             <AvatarImage
-              src={`${process.env.NEXT_PUBLIC_ASSET_URL}/pfp/${userID}.webp`}
+              src={
+                selectedImage
+                  ? selectedImage
+                  : `${process.env.NEXT_PUBLIC_ASSET_URL}/pfp/${userID}.webp`
+              }
             />
             <AvatarFallback>
               {email ? email.slice(0, 2).toUpperCase() : "NA"}
@@ -123,7 +142,7 @@ export function SocialProfileCard({
           </label>
         </div>
 
-        <p className="text-muted-foreground">{email}</p>
+        <p className="text-muted-foreground mt-4">{email}</p>
         <div className="flex gap-2 mt-6">
           <Button
             variant="outline"
@@ -142,12 +161,10 @@ export function SocialProfileCard({
             variant="outline"
             size="icon"
             className="h-12 w-12"
-            // TODO: Need to change this to the new doamin
             onClick={() => router.push("/")}
           >
             <Map />
           </Button>
-          {/* Node: here in the ModeToggle, we have increased the size of icon */}
           <ModeToggle />
           <Button
             variant="outline"

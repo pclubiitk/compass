@@ -131,7 +131,12 @@ function LoginPageHolder() {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="password">Password</Label>
+              <div className="flex items-center">
+                <Label htmlFor="password">Password</Label>
+                <a href="/forgot-password" className="ml-auto inline-block text-sm underline-offset-4 hover:underline">
+                  Forgot your password?
+                </a>
+              </div>
               <Input
                 id="password"
                 name="password"
@@ -166,8 +171,8 @@ function LoaderFallback() {
 
   return null; // nothing visible — loader runs globally
 }
-  // Why Suspense here?
-  // To allow for potential future asynchronous operations within the SignupPageHolder component without blocking the initial render.
+// Why Suspense here?
+// To allow for potential future asynchronous operations within the SignupPageHolder component without blocking the initial render.
 
 export default function LoginPage() {
   return (

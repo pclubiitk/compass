@@ -16,7 +16,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Camera } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -28,11 +27,10 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { courses, halls, departmentNameMap } from "@/components/Constant";
+import { Loader2 } from "lucide-react"; // Standard loader icon
 
 export function Step3Profile() {
   const router = useRouter();
-  // const [imageFile, setImageFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isFetchingData, setIsFetchingData] = useState(true);
   const [profileData, setProfileData] = useState({
@@ -62,7 +60,6 @@ export function Step3Profile() {
         const automation = data.automation;
 
         if (automation) {
-          // Parse hostel info (format: "HALL13, C-106")
           let hall = "";
           let roomNo = "";
           if (automation.hostel_info) {
@@ -73,22 +70,18 @@ export function Step3Profile() {
             roomNo = hostelParts[1] || "";
           }
 
-          // Map gender (M -> Male, F -> Female)
           let gender = "";
-          if (automation.gender === "M") {
-            gender = "Male";
-          } else if (automation.gender === "F") {
-            gender = "Female";
+          if (["M", "F"].includes(automation.gender)) {
+            gender = automation.gender;
           } else {
-            gender = "Other";
+            gender = "None";
           }
-          let homeTown = "";
 
+          let homeTown = "";
           if (automation.location) {
             homeTown = automation.location;
           }
 
-          // Set the profile data
           setProfileData({
             name: automation.name || "",
             rollNo: automation.roll_no || "",
@@ -113,50 +106,9 @@ export function Step3Profile() {
     }
   }, []);
 
-  // Fetch automation data on component mount
   useEffect(() => {
     fetchAutomationData();
   }, [fetchAutomationData]);
-
-  // TODO: Add a loading for the image upload.
-  // Image upload function called immediately when user picks a file
-  const uploadImageInstant = async (file: File) => {
-    const formData = new FormData();
-    formData.append("profileImage", file);
-
-    try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_AUTH_URL}/api/profile/pfp`,
-        {
-          method: "POST",
-          body: formData,
-          credentials: "include",
-        },
-      );
-      const data = await response.json();
-      if (response.ok) {
-        toast.success("Profile picture uploaded!");
-        return true;
-      } else {
-        toast.error(data.error || "Failed to upload image.");
-        return false;
-      }
-    } catch {
-      toast.error("Image upload failed.");
-      return false;
-    }
-  };
-
-  const handleImageChange = async (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Automatically uploads after selection
-    if (await uploadImageInstant(file)) {
-      // setImageFile(file);
-      setPreviewUrl(URL.createObjectURL(file)); // showing local preview once uploaded
-    }
-  };
 
   // Handles changes for all text inputs
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -164,7 +116,6 @@ export function Step3Profile() {
     setProfileData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Generic handler for all Select components to keep code DRY
   const handleSelectChange =
     (name: keyof typeof profileData) => (value: string) => {
       setProfileData((prev) => ({ ...prev, [name]: value }));
@@ -207,204 +158,205 @@ export function Step3Profile() {
   };
 
   return (
-    <Card className="w-full max-w-lg">
-      <CardHeader>
-        <CardTitle className="text-2xl">Complete Your Profile</CardTitle>
-        <CardDescription>
+    <Card className="w-full max-w-xl shadow-lg border-muted/60">
+      <CardHeader className="space-y-1.5">
+        <CardTitle className="text-2xl font-bold tracking-tight">
+          Complete Your Profile
+        </CardTitle>
+        <CardDescription className="text-sm">
           {isFetchingData
             ? "Fetching your profile data..."
             : "Fill in your details to finish setting up your account. Fields with * are required."}
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form
-          onSubmit={handleSubmit}
-          className="grid grid-cols-1 md:grid-cols-2 gap-4"
-        >
-          {/* --- Mandatory Fields --- */}
-          <div className="grid gap-2">
-            <Label htmlFor="name">
-              Full Name <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id="name"
-              name="name"
-              value={profileData.name}
-              onChange={handleChange}
-              required
-              className="capitalize"
-              disabled={isFetchingData}
-            />
-          </div>
-
-          {/* additional input component for user profile image*/}
-          <div className="relative group w-32 h-32 sm:w-36 sm:h-36 bg-gray-100 rounded-full overflow-hidden mx-auto mb-4">
-            {/* preview */}
-            {previewUrl && (
-              <img
-                src={previewUrl}
-                alt="Preview"
-                className="w-full h-full object-cover rounded-full"
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+            {/* Full Name */}
+            <div className="grid gap-2">
+              <Label htmlFor="name" className="text-sm font-medium">
+                Full Name <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="name"
+                name="name"
+                value={profileData.name}
+                onChange={handleChange}
+                required
+                className="capitalize focus-visible:ring-primary"
+                disabled={isFetchingData}
               />
-            )}
-            <label
-              className="absolute inset-0 flex items-center justify-center 
-                    bg-black/40 opacity-0 group-hover:opacity-100 
-                    transition-all cursor-pointer rounded-full"
-            >
-              <Camera className="text-white w-7 h-7" />
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleImageChange}
+            </div>
+
+            {/* Roll Number */}
+            <div className="grid gap-2">
+              <Label htmlFor="rollNo" className="text-sm font-medium">
+                Roll Number <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="rollNo"
+                name="rollNo"
+                value={profileData.rollNo}
+                onChange={handleChange}
+                required
+                className="uppercase focus-visible:ring-primary"
+                disabled={isFetchingData}
               />
-            </label>
-          </div>
+            </div>
 
-          <div className="grid gap-2">
-            <Label htmlFor="rollNo">
-              Roll Number <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id="rollNo"
-              name="rollNo"
-              value={profileData.rollNo}
-              onChange={handleChange}
-              required
-              className="uppercase"
-              disabled={isFetchingData}
-            />
-          </div>
-          <div className="grid gap-2 md:col-span-2">
-            <Label>
-              Department <span className="text-red-500">*</span>
-            </Label>
-            <Select
-              onValueChange={handleSelectChange("dept")}
-              value={profileData.dept}
-              disabled={isFetchingData}
-              required
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select department" />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(departmentNameMap).map(([fullName, Code]) => (
-                  <SelectItem key={Code} value={Code}>
-                    <div className="flex items-center justify-between gap-4 w-full">
-                      <span className="truncate">{fullName}</span>
-                      <span className="text-muted-foreground text-xs font-mono shrink-0">
-                        {Code}
-                      </span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid gap-2">
-            <Label>
-              Course <span className="text-red-500">*</span>
-            </Label>
-            <Select
-              onValueChange={handleSelectChange("course")}
-              value={profileData.course}
-              disabled={isFetchingData}
-              required
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select course" />
-              </SelectTrigger>
-              <SelectContent>
-                {courses.map((c) => (
-                  <SelectItem key={c} value={c}>
-                    {c}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid gap-2">
-            <Label>
-              Gender <span className="text-red-500">*</span>
-            </Label>
-            <Select
-              onValueChange={handleSelectChange("gender")}
-              value={profileData.gender}
-              disabled={isFetchingData}
-              required
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select gender" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Male">Male</SelectItem>
-                <SelectItem value="Female">Female</SelectItem>
-                <SelectItem value="Other">Other</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+            {/* Department */}
+            <div className="grid gap-2 md:col-span-2">
+              <Label className="text-sm font-medium">
+                Department <span className="text-destructive">*</span>
+              </Label>
+              <Select
+                onValueChange={handleSelectChange("dept")}
+                value={profileData.dept}
+                disabled={isFetchingData}
+                required
+              >
+                <SelectTrigger className="w-full focus:ring-primary">
+                  <SelectValue placeholder="Select department" />
+                </SelectTrigger>
+                <SelectContent className="max-h-80">
+                  {Object.entries(departmentNameMap).map(([fullName, Code]) => (
+                    <SelectItem key={Code} value={Code}>
+                      <div className="flex items-center justify-between gap-4 w-full">
+                        <span className="truncate">{fullName}</span>
+                        <span className="text-muted-foreground text-[10px] font-mono bg-muted px-1 rounded shrink-0">
+                          {Code}
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-          {/* --- Optional Fields --- */}
-          {/* Combined Hall and Room Number Field */}
-          <div className="grid gap-2">
-            <Label>Hall & Room Number</Label>
-            <div className="flex gap-2">
-              <div>
-                <Select
-                  onValueChange={handleSelectChange("hall")}
-                  value={profileData.hall}
-                  disabled={isFetchingData}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select hall" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {halls.map((h) => (
-                      <SelectItem key={h} value={h}>
-                        {h}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            {/* Course */}
+            <div className="grid gap-2">
+              <Label className="text-sm font-medium">
+                Course <span className="text-destructive">*</span>
+              </Label>
+              <Select
+                onValueChange={handleSelectChange("course")}
+                value={profileData.course}
+                disabled={isFetchingData}
+                required
+              >
+                <SelectTrigger className="focus:ring-primary">
+                  <SelectValue placeholder="Select course" />
+                </SelectTrigger>
+                <SelectContent>
+                  {courses.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Gender */}
+            <div className="grid gap-2">
+              <Label className="text-sm font-medium">
+                Gender <span className="text-destructive">*</span>
+              </Label>
+              <Select
+                onValueChange={handleSelectChange("gender")}
+                value={profileData.gender}
+                disabled={isFetchingData}
+                required
+              >
+                <SelectTrigger className="focus:ring-primary">
+                  <SelectValue placeholder="Select gender" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="M">Male</SelectItem>
+                  <SelectItem value="F">Female</SelectItem>
+                  <SelectItem value="O">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Hall & Room Number */}
+            <div className="grid gap-2 md:col-span-1">
+              <Label className="text-sm font-medium">Hall & Room Number</Label>
+              <div className="flex gap-2">
+                <div className="w-3/5">
+                  <Select
+                    onValueChange={handleSelectChange("hall")}
+                    value={profileData.hall}
+                    disabled={isFetchingData}
+                  >
+                    <SelectTrigger className="focus:ring-primary">
+                      <SelectValue placeholder="Select hall" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {halls.map((h) => (
+                        <SelectItem key={h} value={h}>
+                          {h}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="w-2/5">
+                  <Input
+                    name="roomNo"
+                    placeholder="D123"
+                    value={profileData.roomNo}
+                    onChange={handleChange}
+                    className="uppercase focus-visible:ring-primary"
+                    disabled={isFetchingData}
+                  />
+                </div>
               </div>
-              <div>
-                <Input
-                  name="roomNo"
-                  placeholder="D123"
-                  value={profileData.roomNo}
-                  onChange={handleChange}
-                  className="uppercase"
-                  disabled={isFetchingData}
-                />
-              </div>
+            </div>
+
+            {/* Home Town */}
+            <div className="grid gap-2 md:col-span-1">
+              <Label htmlFor="homeTown" className="text-sm font-medium">
+                Home Town, State
+              </Label>
+              <Input
+                id="homeTown"
+                name="homeTown"
+                value={profileData.homeTown}
+                onChange={handleChange}
+                className="capitalize focus-visible:ring-primary"
+                disabled={isFetchingData}
+              />
             </div>
           </div>
 
-          <div className="grid gap-2">
-            <Label htmlFor="homeTown">Home Town, State</Label>
-            <Input
-              id="homeTown"
-              name="homeTown"
-              value={profileData.homeTown}
-              onChange={handleChange}
-              className="capitalize"
-              disabled={isFetchingData}
-            />
-          </div>
+          <div className="pt-2 space-y-4">
+            <div className="p-3 rounded-lg bg-muted/40 border border-muted-foreground/10">
+              <p className="text-xs text-muted-foreground text-center leading-relaxed">
+                Note: Your image from the OA portal will be used as the default
+                profile picture. You can change it later in your profile
+                settings.
+              </p>
+            </div>
 
-          <div className="md:col-span-2">
             <Button
               type="submit"
-              className="w-full"
+              className="w-full h-11 text-base font-semibold shadow-sm transition-all active:scale-[0.98]"
               disabled={isLoading || isFetchingData}
             >
-              {isFetchingData
-                ? "Loading..."
-                : isLoading
-                  ? "Saving..."
-                  : "Save and Finish"}
+              {isFetchingData ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Fetching...
+                </>
+              ) : isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save and Finish"
+              )}
             </Button>
           </div>
         </form>

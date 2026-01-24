@@ -16,6 +16,8 @@ func Router(r *gin.Engine) {
 		auth.POST("/signup", signupHandler)
 		auth.GET("/logout", logoutHandler)
 		auth.GET("/verify", verificationHandler)
+		auth.POST("/forgot-password", forgotPasswordHandler)
+		auth.POST("/reset-password", resetPasswordHandler)
 		// Middleware will handel not login state
 		auth.GET("/me", middleware.UserAuthenticator, func(c *gin.Context) {
 			val, exists := c.Get("visibility")

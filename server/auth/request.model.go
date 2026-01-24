@@ -51,3 +51,15 @@ type StudentDetails struct {
 	Username   string `json:"username"`
 	Location   string `json:"location"`
 }
+
+
+type ForgotPasswordRequest struct {
+	Email string `form:"email" binding:"required,email"`
+	Token string `json:"token" binding:"required"`
+}
+
+type ResetPasswordRequest struct {
+	UserID   string `json:"id" binding:"required,uuid"`
+	Token    string `json:"token" binding:"required"`
+	Password string `json:"password" binding:"required,min=8"`
+}
