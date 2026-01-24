@@ -25,10 +25,10 @@ type Profile struct {
 	Bachhas    string `json:"bachhas"`
 }
 
-type ProfileWithPic struct {
-	Profile
-	ProfilePic string `json:"profilePic"`
-}
+// type ProfileWithPic struct {
+// 	Profile
+// 	ProfilePic string `json:"profilePic"`
+// }
 
 type Action string
 

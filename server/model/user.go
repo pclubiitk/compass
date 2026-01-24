@@ -24,6 +24,7 @@ type User struct {
 	// Internal fields
 	UserID            uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	Email             string    `gorm:"unique" json:"email"`
+	ProfilePic        bool      `json:"profilePic"`
 	Password          string    `json:"password"`
 	IsVerified        bool      `json:"-"`
 	VerificationToken string    `json:"-"` //erased after verification

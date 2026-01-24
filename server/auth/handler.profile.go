@@ -16,47 +16,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
-func updatePassword(c *gin.Context) {
-	var input UpdatePasswordRequest
-	var user model.User
-	var err error
-	var newPasswordHash []byte
-
-	// TODO: Many functions have this repetition, extract out.
-	// Request Validation
-	userID, exist := c.Get("userID")
-	if !exist {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format"})
-		return
-	}
-	// find the current user, we are sure it exist
-	connections.DB.Model(&model.User{}).Where("user_id = ?", userID.(uuid.UUID)).First(&user)
-
-	if bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.NewPassword)) != nil {
-		if len(input.NewPassword) < 8 {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Password must be at least 8 characters"})
-			return
-		}
-		if newPasswordHash, err = bcrypt.GenerateFromPassword([]byte(input.NewPassword), bcrypt.DefaultCost); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable create new password"})
-		}
-	}
-	if err := connections.DB.Model(&model.User{}).
-		Where("user_id = ?", userID.(uuid.UUID)).
-		Update("password", string(newPasswordHash)).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed update password"})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"message": "Password updated successfully"})
-}
 
 // func updateProfileImage(){
 // 	// TODO: set up for images, for image upload, if the similarity is > 90,can ignore it (can think)
@@ -170,13 +132,13 @@ func updateProfile(c *gin.Context) {
 	}
 
 	// TODO: resolve this.
-	// var newPfpPath string
+	var newPfpPath string
 
-	// if user.ProfilePic == "" {
-	// 	if path, err := FetchAndSaveProfileImage(input.RollNo, user.Email); err == nil && path != "" {
-	// 		newPfpPath = path
-	// 	}
-	// }
+	if user.ProfilePic == false {
+		if path, err := FetchAndSaveProfileImage(input.RollNo, user.Email, userID.(uuid.UUID)); err == nil && path != "" {
+			newPfpPath = path
+		}
+	}
 
 	// TODO: Test it
 	// Update into db
@@ -192,11 +154,11 @@ func updateProfile(c *gin.Context) {
 		}
 
 		// Update ProfilePic if we fetched a new one
-		// if newPfpPath != "" {
-		// 	if err := tx.Model(&model.User{}).Where("user_id = ?", userID).Update("profile_pic", newPfpPath).Error; err != nil {
-		// 		return err
-		// 	}
-		// }
+		if newPfpPath != "" {
+			if err := tx.Model(&model.User{}).Where("user_id = ?", userID).Update("profile_pic", true).Error; err != nil {
+				return err
+			}
+		}
 
 		// Delete any pre-existing log for this user
 		// (as it is syncing data based on change_logs table)
