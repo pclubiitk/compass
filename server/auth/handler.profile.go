@@ -6,7 +6,8 @@ import (
 	"compass/model"
 	"errors"
 	"net/http"
-    "io"
+	"strings"
+
 	"encoding/json"
 	"fmt"
 	"time"
@@ -94,16 +95,15 @@ func verifyProfile(c *gin.Context, profileData model.Profile) bool {
 		return false
 	}
 	// Parse the response
-	var response CCResponse
-	body, _ := io.ReadAll(resp.Body)
-	if err := json.Unmarshal(body, &response); err != nil {
+	var apiResp CCResponse
+	if err := json.NewDecoder(resp.Body).Decode(&apiResp); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse OA API response"})
 		return false
 	}
 
 	// Checking Status of verification
-	if response.Status != nil {
-		if *response.Status != "true" || (profileData.Name != *response.Name) {
+	if apiResp.Status != nil {
+		if *apiResp.Status != "true" || (!strings.EqualFold(profileData.Name, *apiResp.Name)) {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"error": "Please once verify you data. It should be exactly same as printed on your ID card or displayed in IITK APP",
 			})
@@ -132,7 +132,7 @@ func updateProfile(c *gin.Context) {
 	var user model.User
 	if connections.DB.
 		Model(&model.User{}).
-		Select("user_id, email, profile_pic"). // Added profile_pic
+		Select("user_id, email").
 		Preload("Profile").
 		First(&user, "user_id = ?", userID.(uuid.UUID)).Error != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "User does not exist"})
@@ -169,12 +169,14 @@ func updateProfile(c *gin.Context) {
 
 	}
 
-	var newPfpPath string
-	if user.ProfilePic == "" {
-		if path, err := FetchAndSaveProfileImage(input.RollNo, user.Email); err == nil && path != "" {
-			newPfpPath = path
-		}
-	}
+	// TODO: resolve this.
+	// var newPfpPath string
+
+	// if user.ProfilePic == "" {
+	// 	if path, err := FetchAndSaveProfileImage(input.RollNo, user.Email); err == nil && path != "" {
+	// 		newPfpPath = path
+	// 	}
+	// }
 
 	// TODO: Test it
 	// Update into db
@@ -188,13 +190,13 @@ func updateProfile(c *gin.Context) {
 			FirstOrCreate(&model.Profile{}).Error; err != nil {
 			return err
 		}
-		
+
 		// Update ProfilePic if we fetched a new one
-		if newPfpPath != "" {
-			if err := tx.Model(&model.User{}).Where("user_id = ?", userID).Update("profile_pic", newPfpPath).Error; err != nil {
-				return err
-			}
-		}
+		// if newPfpPath != "" {
+		// 	if err := tx.Model(&model.User{}).Where("user_id = ?", userID).Update("profile_pic", newPfpPath).Error; err != nil {
+		// 		return err
+		// 	}
+		// }
 
 		// Delete any pre-existing log for this user
 		// (as it is syncing data based on change_logs table)

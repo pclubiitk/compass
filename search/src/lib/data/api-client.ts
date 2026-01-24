@@ -43,6 +43,10 @@ export async function fetch_changelog(lastTime: Timestamp) {
       }),
     });
     if (!resp.ok) {
+      postMessage({
+        status: "error",
+        message: (await resp.json())?.error || "An error occurred during fetch changes"
+      })
       throw new Error(`Status code: ${resp.status} ${resp.statusText}`);
     }
     return resp.json();

@@ -3,55 +3,39 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Search, Map, LogOut, Camera } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useGContext } from "@/components/ContextProvider";
 import { ModeToggle } from "@/components/ui/mode-toggle";
 import { useState, useEffect } from "react";
 
+// TODO: Add tool tips
+
 export function SocialProfileCard({
   email,
-  profilePic,
-  rollNo,
-  gender,
+  userID,
   onProfileUpdate,
 }: {
   email: string;
-  profilePic?: string;
-  rollNo?: string;
-  gender?: string;
+  userID?: string;
   onProfileUpdate?: () => void;
 }) {
   const router = useRouter();
   const { setLoggedIn, setGlobalLoading } = useGContext();
 
   const BACKEND_URL = process.env.NEXT_PUBLIC_AUTH_URL;
-  const ASSET_URL = process.env.NEXT_PUBLIC_ASSET_URL;
 
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
 
   // Background Image Logic Construction
-  const userName = email?.split("@")[0] || "";
   const imageUrls: string[] = [];
 
   if (preview) {
     imageUrls.push(`url("${preview}")`);
   }
-
-  if (profilePic) {
-    if (ASSET_URL) {
-      imageUrls.push(`url("${ASSET_URL}/${profilePic}")`);
-    } else {
-      imageUrls.push(`url("/${profilePic}")`);
-    }
-  }
-
-
-  const genericImage = gender === "F" ? "/GenericFemale.png" : "/GenericMale.png";
-  imageUrls.push(`url("${genericImage}")`);
-
 
   //for showing temporary preview when user selects a new image
   useEffect(() => {
@@ -61,13 +45,15 @@ export function SocialProfileCard({
     return () => URL.revokeObjectURL(url);
   }, [selectedImage]);
 
-  // Reset preview when the profile picture is updated from the server
+  // Reset preview when the profile picture is updated from the server i.e. the uploading is done
   useEffect(() => {
-    setPreview(null);
-    setSelectedImage(null);
-  }, [profilePic]);
+    if (!uploading) {
+      setPreview(null);
+      setSelectedImage(null);
+    }
+  }, [uploading]);
 
-  //uploading a new image
+  // Uploading a new image
   const handleUpload = async (file: File) => {
     const formData = new FormData();
     formData.append("profileImage", file);
@@ -127,18 +113,21 @@ export function SocialProfileCard({
 
   return (
     <Card className="overflow-hidden pt-0">
-      <div className="h-32 md:h-40 bg-gradient-to-r from-blue-100 to-teal-100 dark:from-slate-800 dark:to-slate-900" />
+      <div className="h-32 md:h-40 bg-linear-to-r from-blue-100 to-teal-100 dark:from-slate-800 dark:to-slate-900" />
       <div className="flex flex-col items-center -mt-24 sm:-mt-30 p-6 relative">
         <div className="relative group w-32 h-32 sm:w-36 sm:h-36">
-          {/* Custom Avatar Div using background-image fallback chain */}
-          <div
-            className="w-full h-full rounded-full border-4 border-card cursor-pointer bg-cover bg-center bg-no-repeat shadow-sm"
-            style={{
-              backgroundImage: imageUrls.join(", "),
-              backgroundSize: "cover",
-              backgroundPosition: "center top",
-            }}
-          />
+          <Avatar className="w-full h-full border-4 border-card cursor-pointer">
+            <AvatarImage
+              src={
+                selectedImage
+                  ? selectedImage
+                  : `${process.env.NEXT_PUBLIC_ASSET_URL}/pfp/${userID}.webp`
+              }
+            />
+            <AvatarFallback>
+              {email ? email.slice(0, 2).toUpperCase() : "NA"}
+            </AvatarFallback>
+          </Avatar>
 
           {/* Hover overlay & file input */}
           <label className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-all cursor-pointer rounded-full">
@@ -159,7 +148,12 @@ export function SocialProfileCard({
             variant="outline"
             size="icon"
             className="h-12 w-12"
-            onClick={() => router.push("https://search.pclub.in")}
+            onClick={() =>
+              router.push(
+                process.env.NEXT_PUBLIC_SEARCH_UI_URL ||
+                  "https://search.pclub.in",
+              )
+            }
           >
             <Search />
           </Button>

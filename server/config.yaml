@@ -42,7 +42,3 @@ image:
 
 noticeboard:
   limit: 5
-
-profile:
-  site_url: "https://oa.cc.iitk.ac.in/Oa/Jsp/Photo/%s_0.jpg"
-  home_url: "https://home.iitk.ac.in/~%s/dp"

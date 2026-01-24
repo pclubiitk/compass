@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
@@ -62,7 +63,7 @@ func loginHandler(c *gin.Context) {
 
 	//  Fetch user from DB
 	result := connections.DB.Model(&model.User{}).Select("email", "user_id", "password", "role", "is_verified").
-		Where("email = ?", req.Email).First(&dbUser)
+		Where("email = ?", strings.ToLower(req.Email)).First(&dbUser)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
@@ -95,8 +96,8 @@ func loginHandler(c *gin.Context) {
 	// Clear the previous cookie
 	middleware.ClearAuthCookie(c)
 	// Set cookie
-middleware.SetAuthCookie(c, accessToken)
-middleware.SetRefreshCookie(c, refreshToken)
+	middleware.SetAuthCookie(c, accessToken)
+	middleware.SetRefreshCookie(c, refreshToken)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Login successful"})
 }

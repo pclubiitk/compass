@@ -8,15 +8,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SocialProfileCard } from "@/components/profile/SocialProfileCard";
 import { EditableProfileCard } from "@/components/profile/EditableProfileCard";
 import { ContributionsCard } from "@/components/profile/ContributionsCard";
-import { useCalendar, CalendarProvider } from "@/calendar/contexts/calendar-context";
+import {
+  useCalendar,
+  CalendarProvider,
+} from "@/calendar/contexts/calendar-context";
 import { ClientContainer } from "@/calendar/components/client-container";
 import { getEvents } from "@/calendar/requests";
 import { Calendar } from "lucide-react";
 
 import type { IEvent } from "@/calendar/interfaces";
+import ComingSoon from "@/components/ui/ComingSoon";
 
 // Data Type
 export type Profile = {
+  UserID: string;
   name: string;
   email: string;
   rollNo: string;
@@ -26,7 +31,7 @@ export type Profile = {
   hall: string;
   roomNo: string;
   homeTown: string;
-  profilePic?: string;
+  visibility: boolean;
 };
 
 export type UserData = {
@@ -71,7 +76,7 @@ export default function ProfilePage() {
         `${process.env.NEXT_PUBLIC_AUTH_URL}/api/profile`,
         {
           credentials: "include",
-        }
+        },
       );
       if (res.ok) {
         const data = await res.json();
@@ -90,6 +95,15 @@ export default function ProfilePage() {
         // console.log("Normalized profilePic:", normalized.profile.profilePic);
 
         setUserData(normalized.profile);
+        // If profile incomplete redirect to signup step 3
+        if (
+          normalized.profile.profile.name.length === 0 ||
+          normalized.profile.profile.rollNo.length === 0 ||
+          normalized.profile.profile.dept.length === 0 ||
+          normalized.profile.profile.course === 0
+        ) {
+          router.push("/signup?step=3");
+        }
       } else {
         toast.error("Invalid Session. Redirecting to login.");
         // After login again direct to profile
@@ -135,9 +149,7 @@ export default function ProfilePage() {
         <div className="lg:sticky lg:top-8">
           <SocialProfileCard
             email={profile.email}
-            profilePic={profile.profilePic}
-            rollNo={profile.rollNo}
-            gender={profile.gender}
+            userID={profile.UserID}
             onProfileUpdate={fetchProfile}
           />
         </div>
@@ -162,6 +174,7 @@ export default function ProfilePage() {
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="w-5 h-5" />
                 Campus Events
+                <ComingSoon />
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">

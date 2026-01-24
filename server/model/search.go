@@ -9,7 +9,7 @@ import (
 
 type Profile struct {
 	gorm.Model
-	UserID uuid.UUID `gorm:"type:uuid;not null"`
+	UserID uuid.UUID `gorm:"type:uuid;not null;uniqueIndex" json:"UserID"`
 	// Student Search Data, Personal Data
 	Name       string `json:"name"`
 	Email      string `json:"email"`
@@ -25,10 +25,15 @@ type Profile struct {
 	Bachhas    string `json:"bachhas"`
 }
 
+type ProfileWithPic struct {
+	Profile
+	ProfilePic string `json:"profilePic"`
+}
+
 type Action string
 
 const (
-	Update    Action = "update"
+	Update Action = "update"
 	Delete Action = "delete"
 )
 

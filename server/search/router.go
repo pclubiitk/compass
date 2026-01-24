@@ -17,6 +17,6 @@ func Router(r *gin.Engine) {
     protected.Use(middleware.CheckVisibility)
     {
         protected.GET("/", getAllProfiles)
-        protected.POST("/changeLog", getChangeLog)     
+        protected.POST("/changeLog", getChangeLog)
     }
 }

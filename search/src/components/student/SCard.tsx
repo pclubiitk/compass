@@ -39,19 +39,19 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
         <Card
           {...cardProps}
           className={cn(
-            "w-[350px] p-6 flex flex-col items-center text-center transition-shadow hover:shadow-lg",
-            props.pointer && "cursor-pointer"
+            "w-87.5 p-6 flex flex-col items-center text-center transition-shadow hover:shadow-lg",
+            props.pointer && "cursor-pointer",
           )}
         >
           <Image
             style={{ width: 200, height: 200 }}
             email={props.data.email}
-            rollNo={props.data.rollNo}
             gender={props.data.gender}
+            profilePic={"pfp/" + props.data.UserID + ".webp"}
             alt="Image of student"
           />
           <CardHeader className="p-2 pb-0 w-full">
-            <CardTitle className="text-2xl">{data.name}</CardTitle>
+            <CardTitle className="text-2xl capitalize">{data.name}</CardTitle>
             <CardDescription>{data.rollNo}</CardDescription>
             <CardDescription>{`${data.course}, ${data.dept}`}</CardDescription>
           </CardHeader>
@@ -59,16 +59,16 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
           <CardContent className="w-full mt-auto pt-6 text-left">
             <div className="space-y-3 text-sm text-muted-foreground">
               <div className="flex items-center gap-3">
-                <University className="h-5 w-5 flex-shrink-0" />
-                <span>{`${data.hall}, ${data.roomNo}`}</span>
+                <University className="h-5 w-5 shrink-0" />
+                <span>{`${data.hall || "Not Provided"} ${data.roomNo ? "," : ""} ${data.roomNo}`}</span>
               </div>
               <div className="flex items-center gap-3">
-                <Home className="h-5 w-5 flex-shrink-0" />
-                <span>{data.homeTown}</span>
+                <Home className="h-5 w-5 shrink-0" />
+                <span>{data.homeTown || "Not Provided"}</span>
               </div>
               {data.email && (
                 <div className="flex items-center gap-3">
-                  <Mail className="h-5 w-5 flex-shrink-0" />
+                  <Mail className="h-5 w-5 shrink-0" />
                   <a
                     href={`mailto:${data.email}`}
                     className="truncate hover:underline"
@@ -104,18 +104,18 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
           className={cn(
             "w-full max-w-xs p-2 flex items-center transition-shadow hover:shadow-md flex-row align-top",
             props.pointer && "cursor-pointer",
-            type === "self" && "dark:border-amber-500 light: "
+            type === "self" && "dark:border-amber-500 light: ",
           )}
         >
           <Image
             style={{ width: 150, height: 150 }}
             email={props.data.email}
-            rollNo={props.data.rollNo}
             gender={props.data.gender}
+            profilePic={"pfp/" + props.data.UserID + ".webp"}
             alt="Image of student"
           />
           <CardHeader className="w-full px-0">
-            <CardTitle className="text-xl wrap-break-word">
+            <CardTitle className="text-xl wrap-break-word capitalize">
               {data.name}
             </CardTitle>
             <CardDescription>{data.rollNo}</CardDescription>

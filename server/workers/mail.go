@@ -1,6 +1,6 @@
 package workers
 
-// TODO: If the request fails, then it keeps on trying
+// FIXME: If the request fails, then it keeps on trying
 // Use a logic of attempt and admin logs, max retry along with msg.Nack(false, true), msg.Reject(true) functions
 
 import (

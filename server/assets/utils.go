@@ -3,21 +3,22 @@ package assets
 import (
 	"bytes"
 	"fmt"
+	"io"
+	"mime/multipart"
+	"os"
+	"path/filepath"
+
 	"github.com/google/uuid"
 	"github.com/h2non/bimg"
 	"github.com/kolesa-team/go-webp/encoder"
 	"github.com/kolesa-team/go-webp/webp"
 	"github.com/spf13/viper"
 	heif "github.com/strukturag/libheif/go/heif"
-	"io"
-	"mime/multipart"
-	"os"
-	"path/filepath"
 )
 
-// Compressor and convert
+// CncImage compresses and converts image to WebP format
 // TODO: Need to fix the quality for different image type, as png is very heavy
-func cncImage(image *multipart.FileHeader) ([]byte, error) {
+func CncImage(image *multipart.FileHeader) ([]byte, error) {
 	file, err := image.Open()
 	if err != nil {
 		return nil, err
@@ -92,8 +93,12 @@ func cncImage(image *multipart.FileHeader) ([]byte, error) {
 }
 
 // Save image
-func saveImage(image []byte, path string, id uuid.UUID) (string, error) {
-	savePath := fmt.Sprintf("./"+path+"/%s.webp", id)
+func SaveImage(image []byte, path string, id uuid.UUID) (string, error) {
+	fileName := fmt.Sprintf("%s.webp", id)
+	savePath := filepath.Join(path, fileName)
+	if err := os.MkdirAll(path, os.ModePerm); err != nil {
+		return savePath, err
+	}
 	writeError := bimg.Write(savePath, image)
 	return savePath, writeError
 }

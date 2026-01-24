@@ -93,7 +93,7 @@ export default function LocationPage() {
     if (!id) return;
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_MAPS_URL}/api/maps/location/${id}`
+        `${process.env.NEXT_PUBLIC_MAPS_URL}/api/maps/location/${id}`,
       );
 
       if (!res.ok) {
@@ -118,7 +118,7 @@ export default function LocationPage() {
     if (!id) return;
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_MAPS_URL}/api/maps/reviews/${id}/${page}`
+        `${process.env.NEXT_PUBLIC_MAPS_URL}/api/maps/reviews/${id}/${page}`,
       );
       const data = await res.json();
       setReviews(data.reviews || []);
@@ -234,7 +234,8 @@ export default function LocationPage() {
               </div>
 
               {/* Cover Image */}
-              <div className="w-full relative h-64 md:h-80 lg:h-[400px]">
+              {/* TODO: Add the 404 fall back on every other image on frontend */}
+              <div className="w-full relative h-64 md:h-80 lg:h-100">
                 <Image
                   src={location.coverpic || "/404.png"}
                   alt={location.name}

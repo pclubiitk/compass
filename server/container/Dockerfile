@@ -57,7 +57,9 @@ RUN ldconfig
 COPY --from=builder /app/server /server
 COPY ./config.yaml /config.yaml
 COPY ./secret.yml /secret.yml
-COPY ./assets /assets
+COPY ./assets/pfp /assets/pfp
+COPY ./assets/public /assets/public
+COPY ./assets/tmp /assets/tmp
 
 EXPOSE 8080 8081 8082 8083
 

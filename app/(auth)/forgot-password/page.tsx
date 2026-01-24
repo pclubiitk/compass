@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition, useRef, FormEvent } from "react";
+import { useTransition, useRef} from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -103,7 +103,7 @@ export default function ForgotPasswordPage() {
                         Forgot Password
                     </CardTitle>
                     <CardDescription className="text-sm text-center px-4">
-                        Enter your email address and we'll send you a link to reset your password.
+                        Enter your email address and we&apos;ll send you a link to reset your password.
                     </CardDescription>
                 </CardHeader>
 

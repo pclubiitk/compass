@@ -52,7 +52,7 @@ export function Step3Profile() {
         {
           method: "GET",
           credentials: "include",
-        }
+        },
       );
 
       if (response.ok) {
@@ -71,15 +71,13 @@ export function Step3Profile() {
           }
 
           let gender = "";
-          if (automation.gender === "M") {
-            gender = "Male";
-          } else if (automation.gender === "F") {
-            gender = "Female";
+          if (["M", "F"].includes(automation.gender)) {
+            gender = automation.gender;
           } else {
-            gender = "Other";
+            gender = "None";
           }
-          let homeTown = "";
 
+          let homeTown = "";
           if (automation.location) {
             homeTown = automation.location;
           }
@@ -89,7 +87,7 @@ export function Step3Profile() {
             rollNo: automation.roll_no || "",
             dept:
               departmentNameMap[
-              automation.department as keyof typeof departmentNameMap
+                automation.department as keyof typeof departmentNameMap
               ] || "",
             course: automation.program || "",
             gender: gender,
@@ -112,6 +110,7 @@ export function Step3Profile() {
     fetchAutomationData();
   }, [fetchAutomationData]);
 
+  // Handles changes for all text inputs
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setProfileData((prev) => ({ ...prev, [name]: value }));
@@ -141,7 +140,7 @@ export function Step3Profile() {
           headers: { "Content-Type": "application/json" },
           credentials: "include",
           body: JSON.stringify(profileData),
-        }
+        },
       );
       const data = await response.json();
 
@@ -161,7 +160,9 @@ export function Step3Profile() {
   return (
     <Card className="w-full max-w-xl shadow-lg border-muted/60">
       <CardHeader className="space-y-1.5">
-        <CardTitle className="text-2xl font-bold tracking-tight">Complete Your Profile</CardTitle>
+        <CardTitle className="text-2xl font-bold tracking-tight">
+          Complete Your Profile
+        </CardTitle>
         <CardDescription className="text-sm">
           {isFetchingData
             ? "Fetching your profile data..."
@@ -171,7 +172,6 @@ export function Step3Profile() {
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-
             {/* Full Name */}
             <div className="grid gap-2">
               <Label htmlFor="name" className="text-sm font-medium">
@@ -272,9 +272,9 @@ export function Step3Profile() {
                   <SelectValue placeholder="Select gender" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Male">Male</SelectItem>
-                  <SelectItem value="Female">Female</SelectItem>
-                  <SelectItem value="Other">Other</SelectItem>
+                  <SelectItem value="M">Male</SelectItem>
+                  <SelectItem value="F">Female</SelectItem>
+                  <SelectItem value="O">Other</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -316,7 +316,9 @@ export function Step3Profile() {
 
             {/* Home Town */}
             <div className="grid gap-2 md:col-span-1">
-              <Label htmlFor="homeTown" className="text-sm font-medium">Home Town, State</Label>
+              <Label htmlFor="homeTown" className="text-sm font-medium">
+                Home Town, State
+              </Label>
               <Input
                 id="homeTown"
                 name="homeTown"
@@ -332,7 +334,8 @@ export function Step3Profile() {
             <div className="p-3 rounded-lg bg-muted/40 border border-muted-foreground/10">
               <p className="text-xs text-muted-foreground text-center leading-relaxed">
                 Note: Your image from the OA portal will be used as the default
-                profile picture. You can change it later in your profile settings.
+                profile picture. You can change it later in your profile
+                settings.
               </p>
             </div>
 

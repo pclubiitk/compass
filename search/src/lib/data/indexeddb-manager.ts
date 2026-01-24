@@ -192,6 +192,10 @@ async function apply_Changelog(resp: {
         reject(trxn.error);
       };
 
+      // Ensure arrays are not null (defensive handling for backend nil slices)
+      const addProfiles = resp.addProfiles || [];
+      const deleteUserIds = resp.deleteUserId || [];
+
       // Get existing student data object
       const getRequest = store.get(1);
 
@@ -201,7 +205,7 @@ async function apply_Changelog(resp: {
 
         // Modify the data in memory
         // Add or update profiles
-        for (const st of resp.addProfiles) {
+        for (const st of addProfiles) {
           const idx = current.findIndex((s: Student) => s.UserID === st.UserID);
           if (idx >= 0) {
             current[idx] = st; // Update existing
@@ -211,7 +215,7 @@ async function apply_Changelog(resp: {
         }
 
         // Delete profiles
-        const deleteSet = new Set(resp.deleteUserId); // Use a Set for faster lookups
+        const deleteSet = new Set(deleteUserIds); // Use a Set for faster lookups
         current = current.filter((s: Student) => !deleteSet.has(s.UserID));
 
         // Write modified data back to the database

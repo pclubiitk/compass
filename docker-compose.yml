@@ -1,0 +1,16 @@
+services:
+  search:
+    build:
+      context: ./search
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "3000:3000"
+  compass-frontend:
+   build:
+     context: .
+     dockerfile: Dockerfile
+   restart: always
+   ports:
+     - "3001:3000"
+
