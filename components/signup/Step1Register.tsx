@@ -45,6 +45,7 @@ export function Step1Register({ onSuccess }: Step1RegisterProps) {
       }
 
       const formData = new FormData(formRef.current!);
+      const rollno = formData.get("rollno");
       const email = formData.get("email")?.toString().toLowerCase();
       const password = formData.get("password");
 
@@ -54,12 +55,13 @@ export function Step1Register({ onSuccess }: Step1RegisterProps) {
         setIsLoading(false);
         return;
       }
+      // TODO: add checks for roll no numeric and proper format
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_AUTH_URL}/api/auth/signup`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password, token }),
+          body: JSON.stringify({ rollno, email, password, token }),
         }
       );
 
@@ -111,9 +113,18 @@ export function Step1Register({ onSuccess }: Step1RegisterProps) {
           </a>{" "}
         </CardDescription>
       </CardHeader>
-
       <CardContent>
         <form ref={formRef} onSubmit={handleSubmit} className="grid gap-4">
+          <div className="grid gap-2">
+          <Label htmlFor="Roll Number">Roll Number</Label>
+          <Input
+            id="rollno"
+            name="rollno"
+            type="rollno"
+            placeholder="Roll Number"
+            required
+          />
+        </div>
           <div className="grid gap-2">
             <Label htmlFor="email">Email</Label>
             <Input

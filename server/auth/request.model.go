@@ -1,8 +1,9 @@
 package auth
 
 type LoginSignupRequest struct {
-	Email    string `form:"email" binding:"required,email"`
-	Password string `form:"password" binding:"required,min=8"`
+	RollNo	 string `json:"rollno" form:"rollno" binding:"required"`
+	Email    string `json:"email" form:"email" binding:"required,email"`
+	Password string `json:"password" form:"password" binding:"required,min=8"`
 	// FOR DEV: BYPASS
 	Token string `json:"token" binding:"required"`
 }

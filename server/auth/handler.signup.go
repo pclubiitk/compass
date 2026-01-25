@@ -56,23 +56,69 @@ func signupHandler(c *gin.Context) {
 	//  Generating verification token
 	token := generateVerificationToken()
 	expiry := time.Now().Add(time.Duration(viper.GetInt("expiry.emailVerification")) * time.Hour).Format(time.RFC3339)
-	user := model.User{
-		Email:             strings.ToLower(input.Email),
-		Password:          string(hashPass),
-		IsVerified:        false,
-		Role:              model.UserRole,
-		VerificationToken: fmt.Sprintf("%s<>%s", token, expiry),
-		Profile:           model.Profile{Email: strings.ToLower(input.Email), Visibility: true},
-	}
+	verificationTokenString := fmt.Sprintf("%s<>%s", token, expiry)
+	
+	var user model.User
 
-	// Saving user in DB and updating in changelog
 	if err := connections.DB.Transaction(func(tx *gorm.DB) error {
-		// Create the User (and Profile via nested struct)
-		if err := tx.Create(&user).Error; err != nil {
-			return err // This error bubbles up to the if err != nil check below
-		}
+        
+        // Check for "cmhw_{rollno}"
+        dummyEmail := fmt.Sprintf("cmhw_%s", input.RollNo)
+        var existingUser model.User
 
-		// Create the ChangeLog entry
+        // We check if a user exists with the dummy email
+        // We use Unscoped() in case the dummy user was soft-deleted, though likely not needed
+        result := tx.Where("email = ?", dummyEmail).First(&existingUser)
+
+        if result.Error == nil {
+            // User Found (overwrite logic)
+            // We update the EXISTING record's ID to the variable so we can use it later
+            user = existingUser 
+
+            user.Email = strings.ToLower(input.Email)
+            user.Password = string(hashPass)
+            user.VerificationToken = verificationTokenString
+            user.IsVerified = false 
+            
+            if err := tx.Save(&user).Error; err != nil { return err }
+
+            // Sync Profile email AND ensure RollNo is saved
+            if err := tx.Model(&model.Profile{}).
+                Where("user_id = ?", user.UserID).
+                Updates(map[string]interface{}{
+                    "email": user.Email,
+                    "roll_no": input.RollNo,
+					"visibility": false,
+                }).Error; err != nil {
+                return err
+            }
+		} else if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+            // User Not Found (new user logic)
+			// does a profile with this Roll No already exist?
+            // this happens if they already claimed the "cmhw_" account previously
+            var duplicateCheck model.Profile
+            if err := tx.Where("roll_no = ?", input.RollNo).First(&duplicateCheck).Error; err == nil {
+                // We found a profile with this Roll No -> They are already registered.
+                // We return a specific custom error text to catch it below.
+                return fmt.Errorf("DUPLICATE_ROLL_NO")
+            }
+            
+            user = model.User{
+                Email:             strings.ToLower(input.Email),
+                Password:          string(hashPass),
+                IsVerified:        false,
+                Role:              model.UserRole,
+                VerificationToken: verificationTokenString,
+                Profile:           model.Profile{
+					Email:      strings.ToLower(input.Email), 
+					Visibility: true,
+					RollNo: 	input.RollNo,
+                },
+            }
+
+            if err := tx.Create(&user).Error; err != nil { return err }
+		} else { return result.Error }
+
 		logEntry := model.ChangeLog{
 			UserID: user.UserID,
 			Action: "signup",
@@ -84,6 +130,12 @@ func signupHandler(c *gin.Context) {
 
 		return nil
 	}); err != nil {
+
+		if err.Error() == "DUPLICATE_ROLL_NO" {
+            c.JSON(http.StatusConflict, gin.H{"error": "An account with this Roll Number already exists"})
+            return
+        }
+
 		// Handle Duplicate User Error (Postgres Code 23505)
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
