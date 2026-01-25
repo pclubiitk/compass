@@ -29,6 +29,7 @@ export function SocialProfileCard({
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [timestamp, setTimestamp] = useState(Date.now());
 
   // Background Image Logic Construction
   const imageUrls: string[] = [];
@@ -71,6 +72,7 @@ export function SocialProfileCard({
 
       if (res.ok) {
         toast.success("Profile image updated!");
+        setTimestamp(Date.now());
         onProfileUpdate?.();
       } else {
         toast.error(data.error || "Upload failed");
@@ -116,12 +118,15 @@ export function SocialProfileCard({
       <div className="h-32 md:h-40 bg-linear-to-r from-blue-100 to-teal-100 dark:from-slate-800 dark:to-slate-900" />
       <div className="flex flex-col items-center -mt-24 sm:-mt-30 p-6 relative">
         <div className="relative group w-32 h-32 sm:w-36 sm:h-36">
-          <Avatar className="w-full h-full border-4 border-card cursor-pointer">
+          <Avatar
+            key={timestamp}
+            className="w-full h-full border-4 border-card cursor-pointer"
+          >
             <AvatarImage
               src={
-                selectedImage
-                  ? selectedImage
-                  : `${process.env.NEXT_PUBLIC_ASSET_URL}/pfp/${userID}.webp`
+                preview
+                  ? preview
+                  : `${process.env.NEXT_PUBLIC_ASSET_URL}/pfp/${userID}.webp?t=${timestamp}`
               }
             />
             <AvatarFallback>

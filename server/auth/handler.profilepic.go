@@ -41,14 +41,14 @@ func UploadProfileImage(c *gin.Context) {
 
 	// Setup upload directory
 	cwd, _ := os.Getwd()
-	savePath, err := assets.SaveImage(processedImage, filepath.Join(cwd, "assets", "pfp"), userID)
+	_, err = assets.SaveImage(processedImage, filepath.Join(cwd, "assets", "pfp"), userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save image"})
 		return
 	}
 
 	// Update the user proflie in the database
-	if err := connections.DB.Model(&model.User{}).Where("user_id = ?", userID).Update("profile_pic", "pfp/"+filepath.Base(savePath)).Error; err != nil {
+	if err := connections.DB.Model(&model.User{}).Where("user_id = ?", userID).Update("profile_pic", true).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update profile"})
 		return
 	}
