@@ -71,8 +71,7 @@ function ResetPasswordPageHolder() {
             setIsLoading(false);
         }
     }
-
-    // Common Logo Header Component to keep it DRY
+    // TODO: extract this out for all this auth pages
     const LogoHeader = () => (
         <>
             <CardTitle className="flex flex-col items-center gap-2">
@@ -175,7 +174,7 @@ function ResetPasswordPageHolder() {
 
 export default function ResetPasswordPage() {
     return (
-        <Suspense fallback={null}>
+        <Suspense fallback={<div>Loading...</div>}>
             <ResetPasswordPageHolder />
         </Suspense>
     );

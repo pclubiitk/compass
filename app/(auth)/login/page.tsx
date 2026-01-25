@@ -126,7 +126,7 @@ function LoginPageHolder() {
                 id="email"
                 name="email"
                 type="email"
-                placeholder="@iik.ac.in"
+                placeholder="@iitk.ac.in"
                 required
               />
             </div>

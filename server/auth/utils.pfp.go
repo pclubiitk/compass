@@ -28,32 +28,12 @@ func FetchAndSaveProfileImage(rollNo, email string, userID uuid.UUID) (string, e
 
 	logrus.Infof("FetchAndSaveProfileImage: Attempting for user=%s, rollNo=%s", userName, rollNo)
 
-	// Try Site first
-	siteUrlTemplate := os.Getenv("PROFILE_SITE_URL")
-	if siteUrlTemplate == "" {
-		siteUrlTemplate = viper.GetString("profile.site_url")
-	}
-
-	if siteUrlTemplate != "" {
-		url := fmt.Sprintf(siteUrlTemplate, rollNo)
-		logrus.Infof("FetchAndSaveProfileImage: Trying Site URL: %s", url)
-		relPath, err := downloadAndSave(url, userID)
-		if err == nil && relPath != "" {
-			logrus.Infof("FetchAndSaveProfileImage: Success from Site")
-			return relPath, nil
-		} else {
-			logrus.Infof("FetchAndSaveProfileImage: Failed Site (err=%v)", err)
-		}
-	}
-
 	// Try Home second
-	homeUrlTemplate := os.Getenv("PROFILE_HOME_URL")
-	if homeUrlTemplate == "" {
-		homeUrlTemplate = viper.GetString("profile.home_url")
-	}
+	homeUrlTemplate := viper.GetString("profile.home_url")
+	
 	if homeUrlTemplate != "" {
 		url := fmt.Sprintf(homeUrlTemplate, userName)
-		logrus.Infof("FetchAndSaveProfileImage: Trying Home URL: %s", url)
+		logrus.Infof("FetchAndSaveProfileImage: Trying Home URL for %s", rollNo)
 		relPath, err := downloadAndSave(url, userID)
 		if err == nil && relPath != "" {
 			logrus.Infof("FetchAndSaveProfileImage: Success from Home")
@@ -62,6 +42,22 @@ func FetchAndSaveProfileImage(rollNo, email string, userID uuid.UUID) (string, e
 			logrus.Infof("FetchAndSaveProfileImage: Failed Home (err=%v)", err)
 		}
 	}
+
+	// Internal network restriction, hence no need.
+	// Try Site first
+	// siteUrlTemplate := viper.GetString("profile.site_url")	
+
+	// if siteUrlTemplate != "" {
+	// 	url := fmt.Sprintf(siteUrlTemplate, rollNo)
+	// 	logrus.Infof("FetchAndSaveProfileImage: Trying Site URL for %s", rollNo)
+	// 	relPath, err := downloadAndSave(url, userID)
+	// 	if err == nil && relPath != "" {
+	// 		logrus.Infof("FetchAndSaveProfileImage: Success from Site")
+	// 		return relPath, nil
+	// 	} else {
+	// 		logrus.Infof("FetchAndSaveProfileImage: Failed Site (err=%v)", err)
+	// 	}
+	// }	
 
 	logrus.Warn("FetchAndSaveProfileImage: No image found from any source")
 	return "", nil

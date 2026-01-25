@@ -120,7 +120,7 @@ export function Step1Register({ onSuccess }: Step1RegisterProps) {
               id="email"
               name="email"
               type="email"
-              placeholder="@iik.ac.in"
+              placeholder="@iitk.ac.in"
               required
             />
           </div>

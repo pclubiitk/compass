@@ -122,6 +122,7 @@ export function SocialProfileCard({
             key={timestamp}
             className="w-full h-full border-4 border-card cursor-pointer"
           >
+            {/* updating timestamp makes the asset reload once uploaded */}
             <AvatarImage
               src={
                 preview
