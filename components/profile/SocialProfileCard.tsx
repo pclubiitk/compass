@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search, Map, LogOut, Camera } from "lucide-react";
+import { Search, Map, LogOut, Camera,Info } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useGContext } from "@/components/ContextProvider";
@@ -146,6 +146,15 @@ export function SocialProfileCard({
             onClick={() => router.push("/")}
           >
             <Map />
+          </Button>
+             <Button
+            variant="outline"
+            size="icon"
+            className="h-12 w-12"
+            // TODO: Need to change this to the new doamin
+            onClick={() => router.replace("http://localhost:3000/info")}
+          >
+            <Info />
           </Button>
           {/* Node: here in the ModeToggle, we have increased the size of icon */}
           <ModeToggle />

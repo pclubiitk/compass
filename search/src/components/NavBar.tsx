@@ -2,6 +2,7 @@ import { Info, User } from "lucide-react";
 import { InfoCard } from "./cards/InfoCard";
 import { CardDescription, Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { PROFILE_POINT } from "@/lib/constant";
@@ -17,6 +18,7 @@ interface NavBar {
 }
 
 export const NavBar = (props: NavBar) => {
+  const router = useRouter();
   return (
     <Card className="p-2 text-center text-sm text-muted-foreground sticky top-2 z-1 w-4/5 max-w-4xl m-auto mt-4 flex flex-row justify-between">
       <CardDescription className="mt-2 flex flex-row">
@@ -47,15 +49,15 @@ export const NavBar = (props: NavBar) => {
             onClick={() => {}}
           />
         )}
-        <Button
-          variant="secondary"
-          size="icon"
-          className="rounded-full border cursor-pointer"
-          onClick={() => props.displayInfo(<InfoCard />)}
-        >
-          <Info className="h-4 w-4" />
-          <span className="sr-only">FAQs</span>
-        </Button>
+                   <Button
+            variant="outline"
+            size="icon"
+             className="rounded-full border cursor-pointer"
+            // TODO: Need to change this to the new doamin
+            onClick={() => router.replace("http://localhost:3000/info")}
+          >
+    <Info/>
+          </Button>
         <Link href={PROFILE_POINT}>
           <Button
             variant="secondary"

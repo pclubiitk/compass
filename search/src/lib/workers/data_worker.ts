@@ -34,6 +34,22 @@ self.onmessage = async (event: MessageEvent) => {
         results: check_query(payload, students),
       });
       break;
+      case "get_team": {
+  const rollNos: string[] = payload.map(String);
+
+  console.log("Fetching team data for roll numbers:", rollNos);
+  console.log("Total students in database:", students.length);
+  const teamResults = students.filter((st) =>
+    rollNos.includes(String(st.rollNo))
+  );
+
+  self.postMessage({
+    status: "team_results",
+    results: teamResults,
+  });
+  break;
+}
+
     case "get_family_tree":
       const student: Student = payload;
       const baapu = students.filter(
