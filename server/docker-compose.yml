@@ -35,7 +35,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    vloumes:
+    volumes:
       - /srv/compass/postgres-data:/var/lib/postgresql/data
       - /srv/compass/postgres-backups:/backups
   server:
