@@ -35,6 +35,9 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    vloumes:
+      - /srv/compass/postgres-data:/var/lib/postgresql/data
+      - /srv/compass/postgres-backups:/backups
   server:
     build:
       context: .
@@ -56,3 +59,7 @@ services:
       RABBITMQ_HOST: rabbitmq
       # force Go to use go.mod/go.sum for dependency management
       GO111MODULE: on
+    volumes:
+      - /srv/compass/data/pfp:/assets/pfp
+      - /srv/compass/data/public:/assets/public
+      - /srv/compass/data/tmp:/assets/tmp
