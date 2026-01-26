@@ -11,9 +11,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { toast } from "sonner"
 
 export function ModeToggle() {
   const { setTheme } = useTheme()
+
+  // Force system on mount
+  React.useEffect(() => {
+    setTheme("system")
+  }, [setTheme])
 
   return (
     <DropdownMenu>
@@ -24,15 +30,24 @@ export function ModeToggle() {
           <span className="sr-only">Toggle theme</span>
         </Button>
       </DropdownMenuTrigger>
+
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => setTheme("light")}>
-          Light
+        <DropdownMenuItem
+          disabled
+          onClick={() => toast("Light mode coming soon")}
+        >
+          Light <span className="ml-auto text-xs text-muted-foreground">Coming soon</span>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("dark")}>
-          Dark
+
+        <DropdownMenuItem
+          disabled
+          onClick={() => toast("Dark mode coming soon")}
+        >
+          Dark <span className="ml-auto text-xs text-muted-foreground">Coming soon</span>
         </DropdownMenuItem>
+
         <DropdownMenuItem onClick={() => setTheme("system")}>
-          System
+          System 
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

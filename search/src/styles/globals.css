@@ -109,6 +109,41 @@
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
 }
+/* Puppy Love - Aesthetic Light Theme */
+.puppy-love-mode {
+  background-color: #fffafa !important; /* Soft Snow Pink */
+  background-image: radial-gradient(#ffe4e9 1px, transparent 1px);
+  background-size: 30px 30px;
+}
+
+/* Heart Particles */
+.heart-particle {
+  position: absolute;
+  bottom: -50px;
+  font-size: 1.5rem;
+  opacity: 0;
+  filter: blur(0.5px);
+  animation: heartFloatUp linear infinite;
+}
+
+@keyframes heartFloatUp {
+  0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+  20% { opacity: 0.4; }
+  80% { opacity: 0.4; }
+  100% { transform: translateY(-110vh) rotate(360deg); opacity: 0; }
+}
+
+/* Safeguarding Input boxes - they will keep original styles */
+.puppy-love-mode input, 
+.puppy-love-mode select {
+  box-shadow: 0 2px 10px rgba(255, 182, 193, 0.1);
+}
+
+/* Navbar specific overrides for Puppy Love mode */
+.puppy-love-mode .card {
+  backdrop-filter: blur(10px) saturate(180%);
+  -webkit-backdrop-filter: blur(10px) saturate(180%);
+}
 
 @layer base {
   * {

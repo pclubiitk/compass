@@ -11,11 +11,6 @@ import {
   ReactNode,
 } from "react";
 
-// Need following context
-// 1. Logged In (if not logged in redirect to login in 5 seconds)
-// 2. Profile Visibility (if not, then delete all the local data)
-// 3. Puppy Love Season (if so, received hearts, etc)
-
 interface GlobalContextType {
   isLoggedIn: boolean;
   setLoggedIn: (isLoggedIn: boolean) => void;
@@ -29,7 +24,8 @@ interface GlobalContextType {
   setGlobalError: (globalError: boolean) => void;
 
   isPLseason: boolean;
-  // TODO: Define the Puppy Love variables
+  isPuppyLove: boolean;
+  setIsPuppyLove: (val: boolean) => void;
 }
 
 const GlobalContext = createContext<GlobalContextType>({
@@ -45,6 +41,8 @@ const GlobalContext = createContext<GlobalContextType>({
   setGlobalError: () => {},
 
   isPLseason: false,
+  isPuppyLove: false,
+  setIsPuppyLove: () => {},
 });
 
 export function GlobalContextProvider({ children }: { children: ReactNode }) {
@@ -53,13 +51,13 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
   const [isPLseason, setPLseason] = useState<boolean>(false);
   const [globalError, setGlobalError] = useState<boolean>(false);
   const [profileVisibility, setProfileVisibility] = useState<boolean>(false);
+  
+  const [isPuppyLove, setIsPuppyLove] = useState<boolean>(false);
 
   useEffect(() => {
     async function verifyingLogin() {
       try {
         setGlobalLoading(true);
-        // TODO: Update the backend route to return the current applications configs,
-        // like season booleans like for Puppy Love.
         const response = await fetch(
           `${process.env.NEXT_PUBLIC_AUTH_URL}/api/auth/me`,
           {
@@ -70,6 +68,8 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
         if (response.ok) {
           setProfileVisibility(true);
           setLoggedIn(true);
+          // Set to true if the backend says it's Puppy Love season
+          setPLseason(true); 
         } else if (response.status === 401) {
           setLoggedIn(false);
         } else {
@@ -93,6 +93,8 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
     globalError,
     setGlobalError,
     isPLseason,
+    isPuppyLove,
+    setIsPuppyLove,
   };
 
   return (

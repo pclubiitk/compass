@@ -61,11 +61,15 @@ func ProcessImageBytes(imgBytes []byte) ([]byte, error) {
 
 		// This was showing an error due to depreciated syntax..now cleared as NewDecodingOptions function returns two values , not one.
 
-		decodingOpts, err := heif.NewDecodingOptions()
+		// decodingOpts, err := heif.NewDecodingOptions()
 		if err != nil {
 			return nil, fmt.Errorf("failed to create HEIF decoding options: %w", err)
 		}
-		heifImg, err := handle.DecodeImage(heif.ColorspaceRGB, heif.ChromaInterleavedRGBA, decodingOpts)
+		heifImg, err := handle.DecodeImage(
+    heif.Colorspace(heif.ColorspaceRGB),
+    heif.Chroma(heif.ChromaInterleavedRGB),
+    nil,
+)
 		if err != nil {
 			return nil, fmt.Errorf("failed to decode HEIC image: %w", err)
 		}

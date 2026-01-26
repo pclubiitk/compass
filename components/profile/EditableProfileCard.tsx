@@ -52,9 +52,13 @@ export function EditableProfileCard({
       [name[0].toLowerCase() + name.substring(1)]: value,
     }));
   };
-  const handleSelectChange = (name: keyof Profile) => (value: string) => {
+ const handleSelectChange = (name: keyof Profile) => (value: string) => {
+  if (name === "hall" && value === "None") {
+    setFormData((prev) => ({ ...prev, [name]: "" })); // or null
+  } else {
     setFormData((prev) => ({ ...prev, [name]: value }));
-  };
+  }
+};
 
   const handleCancel = () => {
     setFormData(profile);
