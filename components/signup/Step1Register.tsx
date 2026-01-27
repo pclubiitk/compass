@@ -13,7 +13,6 @@ import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import Link from "next/link";
 import ReCAPTCHA from "react-google-recaptcha";
 
 interface Step1RegisterProps {
@@ -106,9 +105,13 @@ export function Step1Register({ onSuccess }: Step1RegisterProps) {
         <CardDescription>
           Enter your email and password to create an account. Already have an
           account?{" "}
-          <a href="/login" className="underline underline-offset-4">
-            Login
-          </a>{" "}
+          <Button
+            variant="link"
+            asChild
+            className="p-0 h-auto underline-offset-4"
+          >
+            <a href="/login">Login</a>
+          </Button>
         </CardDescription>
       </CardHeader>
 
@@ -146,19 +149,44 @@ export function Step1Register({ onSuccess }: Step1RegisterProps) {
             />
             <label htmlFor="privacy">
               I have read and agree to the{" "}
-              <Link
-                href="/privacy-policy"
-                className="text-blue-600 hover:underline"
-                target="_blank"
+              <Button
+                variant="link"
+                asChild
+                className="p-0 h-auto text-blue-600"
               >
-                Data handling & Privacy Policy
-              </Link>{" "}
+                <a href="/privacy-policy" target="_blank">
+                  Data handling & Privacy Policy
+                </a>
+              </Button>{" "}
               followed by Programming Club.
             </label>
           </div>
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? "Creating Account..." : "Continue"}
           </Button>
+
+          {/* Divider with OR text */}
+          <div className="relative -my-2">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300 dark:border-gray-600" />
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-gray-500 dark:bg-slate-950 dark:text-gray-400">
+                or
+              </span>
+            </div>
+          </div>
+
+          {/* Alternative action */}
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full"
+            onClick={() => window.location.href = "/login"}
+          >
+            Login Instead
+          </Button>
+
           {/* Invisible reCAPTCHA v3 */}
           <ReCAPTCHA sitekey={siteKey} ref={recaptchaRef} size="invisible" />
         </form>

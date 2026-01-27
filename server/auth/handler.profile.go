@@ -67,7 +67,7 @@ func verifyProfile(c *gin.Context, profileData model.Profile) bool {
 	if apiResp.Status != nil {
 		if *apiResp.Status != "true" || (!strings.EqualFold(profileData.Name, *apiResp.Name)) {
 			c.JSON(http.StatusBadRequest, gin.H{
-				"error": "Please once verify you data. It should be exactly same as printed on your ID card or displayed in IITK APP",
+				"error": "Please verify you data. It should be exactly same as: 1. on your ID card, or 2. displayed in IITK APP or 3. Initial Branch, if Branch is changed.",
 			})
 			return false
 		}
@@ -94,7 +94,7 @@ func updateProfile(c *gin.Context) {
 	var user model.User
 	if connections.DB.
 		Model(&model.User{}).
-		Select("user_id, email").
+		Select("user_id, email, profile_pic ").
 		Preload("Profile").
 		First(&user, "user_id = ?", userID.(uuid.UUID)).Error != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "User does not exist"})

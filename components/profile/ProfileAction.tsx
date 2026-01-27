@@ -203,7 +203,7 @@ export function AlertVisibilityProfileInfo({
                 <br />
                 <span>
                   By clicking proceed you accept our{" "}
-                  <a className="underline" href="/tnc">
+                  <a className="underline" href="/privacy-policy">
                     terms and conditions
                   </a>
                 </span>

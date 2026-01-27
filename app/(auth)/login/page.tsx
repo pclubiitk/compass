@@ -112,9 +112,13 @@ function LoginPageHolder() {
           <CardTitle className="text-2xl">Log In</CardTitle>
           <CardDescription>
             Please Login to continue. Don&apos;t have an account?{" "}
-            <a href="/signup" className="underline underline-offset-4">
-              Sign up
-            </a>
+            <Button
+              variant="link"
+              asChild
+              className="p-0 h-auto underline-offset-4"
+            >
+              <a href="/signup">Sign up</a>
+            </Button>
           </CardDescription>
         </CardHeader>
 
@@ -133,9 +137,13 @@ function LoginPageHolder() {
             <div className="grid gap-2">
               <div className="flex items-center">
                 <Label htmlFor="password">Password</Label>
-                <a href="/forgot-password" className="ml-auto inline-block text-sm underline-offset-4 hover:underline">
-                  Forgot your password?
-                </a>
+                <Button
+                  variant="link"
+                  asChild
+                  className="ml-auto p-0 h-auto text-sm underline-offset-4"
+                >
+                  <a href="/forgot-password">Forgot your password?</a>
+                </Button>
               </div>
               <Input
                 id="password"
@@ -151,6 +159,28 @@ function LoginPageHolder() {
 
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? "Verifying..." : "Login"}
+            </Button>
+
+            {/* Divider with OR text */}
+            <div className="relative -my-2">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300 dark:border-gray-600" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white text-gray-500 dark:bg-slate-950 dark:text-gray-400">
+                  or
+                </span>
+              </div>
+            </div>
+
+            {/* Alternative action */}
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={() => window.location.href = "/signup"}
+            >
+              Create New Account
             </Button>
           </form>
         </CardContent>

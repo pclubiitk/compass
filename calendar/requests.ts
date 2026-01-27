@@ -78,7 +78,7 @@ function noticeToEvent(notice: NoticeFromAPI, index: number): IEvent | null {
  * @returns Array of calendar events
  */
 export async function getEvents(page: number = 1): Promise<IEvent[]> {
-  const mapServer = process.env.NEXT_PUBLIC_MAP_SERVER || process.env.NEXT_PUBLIC_MAPS_URL;
+  const mapServer = process.env.NEXT_PUBLIC_MAPS_URL;
   
   if (!mapServer) {
     console.error("Map server URL not configured");

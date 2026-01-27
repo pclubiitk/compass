@@ -30,7 +30,6 @@ func FetchAndSaveProfileImage(rollNo, email string, userID uuid.UUID) (string, e
 
 	// Try Home second
 	homeUrlTemplate := viper.GetString("profile.home_url")
-	
 	if homeUrlTemplate != "" {
 		url := fmt.Sprintf(homeUrlTemplate, userName)
 		logrus.Infof("FetchAndSaveProfileImage: Trying Home URL for %s", rollNo)

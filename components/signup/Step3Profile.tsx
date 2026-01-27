@@ -60,16 +60,6 @@ export function Step3Profile() {
         const automation = data.automation;
 
         if (automation) {
-          let hall = "";
-          let roomNo = "";
-          if (automation.hostel_info) {
-            const hostelParts = automation.hostel_info
-              .split(",")
-              .map((s: string) => s.trim());
-            hall = hostelParts[0] || "";
-            roomNo = hostelParts[1] || "";
-          }
-
           let gender = "";
           if (["M", "F"].includes(automation.gender)) {
             gender = automation.gender;
@@ -77,12 +67,8 @@ export function Step3Profile() {
             gender = "None";
           }
 
-          let homeTown = "";
-          if (automation.location) {
-            homeTown = automation.location;
-          }
-
           setProfileData({
+            ...profileData,
             name: automation.name || "",
             rollNo: automation.roll_no || "",
             dept:
@@ -91,9 +77,6 @@ export function Step3Profile() {
               ] || "",
             course: automation.program || "",
             gender: gender,
-            hall: hall,
-            roomNo: roomNo,
-            homeTown: homeTown || "",
           });
         }
       } else {
@@ -331,13 +314,6 @@ export function Step3Profile() {
           </div>
 
           <div className="pt-2 space-y-4">
-            <div className="p-3 rounded-lg bg-muted/40 border border-muted-foreground/10">
-              <p className="text-xs text-muted-foreground text-center leading-relaxed">
-                Note: Your image from the OA portal will be used as the default
-                profile picture. You can change it later in your profile
-                settings.
-              </p>
-            </div>
 
             <Button
               type="submit"
