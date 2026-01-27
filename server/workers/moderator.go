@@ -62,7 +62,7 @@ func ModeratorWorker() error {
 				continue
 			}
 		} else {
-			if err := handleApprovedImage(job.AssetID, image, user); err != nil {
+			if err := handleApprovedImage(job.AssetID, user); err != nil {
 				logrus.Errorf("Failed to handle approved image for\nID: %s\nError: %v", job.AssetID, err)
 				task.Nack(false, false)
 				continue
@@ -131,7 +131,7 @@ func handleFlaggedImage(image model.Image, user model.User) error {
 }
 
 // handleApprovedImage moves image, updates DB, and sends thank-you email
-func handleApprovedImage(assetID uuid.UUID, image model.Image, user model.User) error {
+func handleApprovedImage(assetID uuid.UUID, user model.User) error {
 	imageID := assetID.String()
 
 	// This is a critical error, so return error, and mark the task unfinished.

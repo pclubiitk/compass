@@ -5,9 +5,16 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+export function convertToTitleCase(str: string) {
+  if (!str) {
+    return "";
+  }
+  return str.toLowerCase().replace(/\b\w/g, (s) => s.toUpperCase());
+}
+
 export function debounce<T extends (...args: any[]) => void>(
   func: T,
-  wait: number
+  wait: number,
 ): (...args: Parameters<T>) => void {
   let timeout: NodeJS.Timeout | null = null;
   return function executedFunction(...args: Parameters<T>) {

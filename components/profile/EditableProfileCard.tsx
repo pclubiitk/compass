@@ -53,7 +53,11 @@ export function EditableProfileCard({
     }));
   };
   const handleSelectChange = (name: keyof Profile) => (value: string) => {
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (name === "hall" && value === "None") {
+      setFormData((prev) => ({ ...prev, [name]: "" })); // or null
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleCancel = () => {
@@ -71,7 +75,7 @@ export function EditableProfileCard({
           headers: { "Content-Type": "application/json" },
           credentials: "include",
           body: JSON.stringify(formData),
-        }
+        },
       );
       const data = await response.json();
       if (response.ok) {
@@ -123,7 +127,10 @@ export function EditableProfileCard({
                 Edit
               </Button>
               <AlertDeleteProfileInfo />
-              <AlertVisibilityProfileInfo currentVisibility={visibility} onVisibilityChange={() => onUpdate()}/>
+              <AlertVisibilityProfileInfo
+                currentVisibility={visibility}
+                onVisibilityChange={() => onUpdate()}
+              />
             </>
           )}
         </div>
@@ -180,70 +187,61 @@ export function EditableProfileCard({
               </SelectContent>
             </Select>
           ) : (
-            <h2 className="text-lg ">
-              {formData.course || "Not provided"}
-            </h2>
+            <h2 className="text-lg ">{formData.course || "Not provided"}</h2>
           )}
         </div>
 
         <div className="space-y-1">
           <Label className="text-muted-foreground">Department</Label>
           {isEditing ? (
-                <Select
-                  value={formData?.dept || ""}
-                  onValueChange={handleSelectChange("dept")}
-                  
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select department" />
-                  </SelectTrigger>
-                  <SelectContent className="w-full">
-                    {
-                      Object.entries(departmentNameMap).map(([fullName, Code]) => (
-                        <SelectItem key={fullName} value={Code} className="">
-                          <div className="flex w-full gap-4 text-center h-full">
-                            <span>{fullName}</span>
-                            <p className="text-muted-foreground font-mono">{Code}</p>
-                          </div>
-                        </SelectItem>
-                      ))
-                    }
-                  </SelectContent>
-                </Select>
+            <Select
+              value={formData?.dept || ""}
+              onValueChange={handleSelectChange("dept")}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select department" />
+              </SelectTrigger>
+              <SelectContent className="w-full">
+                {Object.entries(departmentNameMap).map(([fullName, Code]) => (
+                  <SelectItem key={fullName} value={Code} className="">
+                    <div className="flex w-full gap-4 text-center h-full">
+                      <span>{fullName}</span>
+                      <p className="text-muted-foreground font-mono">{Code}</p>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           ) : (
-            <h2 className="text-lg ">
-              {formData.dept || "Not provided"}
-            </h2>
+            <h2 className="text-lg ">{formData.dept || "Not provided"}</h2>
           )}
         </div>
 
         <div className="space-y-1">
           <Label className="text-muted-foreground">Gender</Label>
           {isEditing ? (
-          <Select
-            value={formData?.gender || ""}
-            onValueChange={handleSelectChange("gender")}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select gender" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="M">Male</SelectItem>
-              <SelectItem value="F">Female</SelectItem>
-              <SelectItem value="O">Other</SelectItem>
-            </SelectContent>
-          </Select>
+            <Select
+              value={formData?.gender || ""}
+              onValueChange={handleSelectChange("gender")}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select gender" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="M">Male</SelectItem>
+                <SelectItem value="F">Female</SelectItem>
+                <SelectItem value="O">Other</SelectItem>
+              </SelectContent>
+            </Select>
           ) : (
-            <h2 className="text-lg ">
-              {formData.gender || "Not provided"}
-            </h2>
+            <h2 className="text-lg ">{formData.gender || "Not provided"}</h2>
           )}
         </div>
 
         <div className="space-y-1">
           <Label className="text-muted-foreground">Hall & Room</Label>
           {isEditing ? (
-          <div className="flex gap-2">
+            <div className="flex gap-2">
               <Select
                 value={formData.hall || ""}
                 onValueChange={handleSelectChange("hall")}

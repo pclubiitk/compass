@@ -2,8 +2,14 @@
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Search, Map, LogOut, Camera } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+  AvatarBadge,
+} from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useGContext } from "@/components/ContextProvider";
@@ -87,6 +93,10 @@ export function SocialProfileCard({
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > 2097152) {
+      toast("File is too big!");
+      return;
+    }
     setSelectedImage(file);
     handleUpload(file);
   };
@@ -120,7 +130,7 @@ export function SocialProfileCard({
         <div className="relative group w-32 h-32 sm:w-36 sm:h-36">
           <Avatar
             key={timestamp}
-            className="w-full h-full border-4 border-card cursor-pointer"
+            className="w-full h-full border-4 border-card shadow-2xl transition-transform duration-300 ring-4 ring-purple-500/20 dark:ring-purple-400/30"
           >
             {/* updating timestamp makes the asset reload once uploaded */}
             <AvatarImage
@@ -129,16 +139,21 @@ export function SocialProfileCard({
                   ? preview
                   : `${process.env.NEXT_PUBLIC_ASSET_URL}/pfp/${userID}.webp?t=${timestamp}`
               }
+              className="object-cover"
             />
-            <AvatarFallback>
+            <AvatarFallback className="text-2xl font-semibold bg-linear-to-br from-blue-500 to-purple-600 text-white">
               {email ? email.slice(0, 2).toUpperCase() : "NA"}
             </AvatarFallback>
           </Avatar>
 
-          {/* Hover overlay & file input */}
-          <label className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-all cursor-pointer rounded-full">
-            <Camera className="text-white w-7 h-7" />
+          {/* Camera icon at the bottom of the avatar */}
+          <label
+            htmlFor="profile-upload"
+            className="absolute bottom-0 left-1/2 translate-x-1/2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded-full p-2.5 cursor-pointer shadow-lg transition-all hover:scale-110 ring-4 ring-card z-10"
+          >
+            <Camera className="h-4 w-4" />
             <input
+              id="profile-upload"
               type="file"
               accept="image/*"
               className="hidden"
@@ -148,12 +163,17 @@ export function SocialProfileCard({
           </label>
         </div>
 
-        <p className="text-muted-foreground mt-4">{email}</p>
-        <div className="flex gap-2 mt-6">
+        {/* Email with better styling */}
+        <p className="text-muted-foreground mt-4 text-sm font-medium">
+          {email}
+        </p>
+
+        {/* Action buttons with better spacing and styling */}
+        <div className="flex flex-wrap gap-3 mt-6 justify-center">
           <Button
             variant="outline"
             size="icon"
-            className="h-12 w-12"
+            className="h-12 w-12 shadow-md hover:shadow-lg transition-all hover:scale-105"
             onClick={() =>
               router.push(
                 process.env.NEXT_PUBLIC_SEARCH_UI_URL ||
@@ -161,24 +181,48 @@ export function SocialProfileCard({
               )
             }
           >
-            <Search />
+            <Search className="h-5 w-5" />
           </Button>
+
+          {/* Map button with "Under Development" badge */}
+          <div className="relative">
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-12 w-12 shadow-md hover:shadow-lg transition-all opacity-60 cursor-not-allowed"
+              onClick={() => router.push("/")}
+              disabled
+            >
+              <Map className="h-5 w-5" />
+            </Button>
+            <Badge
+              variant="secondary"
+              className="absolute -top-2 -right-2 text-[10px] px-1.5 py-0.5 shadow-md bg-yellow-500/90 dark:bg-yellow-600/90 text-white border-0"
+            >
+              Dev
+            </Badge>
+          </div>
+
+          {/* ModeToggle with "Under Development" badge */}
+          <div className="relative">
+            <div className="opacity-60 pointer-events-none">
+              <ModeToggle />
+            </div>
+            <Badge
+              variant="secondary"
+              className="absolute -top-2 -right-2 text-[10px] px-1.5 py-0.5 shadow-md bg-yellow-500/90 dark:bg-yellow-600/90 text-white border-0"
+            >
+              Dev
+            </Badge>
+          </div>
+
           <Button
             variant="outline"
             size="icon"
-            className="h-12 w-12"
-            onClick={() => router.push("/")}
-          >
-            <Map />
-          </Button>
-          <ModeToggle />
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-12 w-12"
+            className="h-12 w-12 shadow-md hover:shadow-lg transition-all hover:scale-105 hover:bg-red-50 dark:hover:bg-red-950/20"
             onClick={logOut}
           >
-            <LogOut />
+            <LogOut className="h-5 w-5" />
           </Button>
         </div>
       </div>

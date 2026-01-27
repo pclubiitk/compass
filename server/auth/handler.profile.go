@@ -16,9 +16,12 @@ import (
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 	"gorm.io/gorm"
 )
 
+var caser = cases.Title(language.English)
 
 // func updateProfileImage(){
 // 	// TODO: set up for images, for image upload, if the similarity is > 90,can ignore it (can think)
@@ -83,7 +86,7 @@ func verifyProfile(c *gin.Context, profileData model.Profile) bool {
 // Returns: (baccha, bapu, error)
 func removeDummyAccount(tx *gorm.DB, rollNo string) (string, string, error) {
 	dummyEmail := fmt.Sprintf("cmhw_%s", rollNo)
-	
+
 	var dummyUser model.User
 	// check if dummy user exists
 	if err := tx.Where("email = ?", dummyEmail).First(&dummyUser).Error; err != nil {
@@ -120,7 +123,6 @@ func removeDummyAccount(tx *gorm.DB, rollNo string) (string, string, error) {
 		return "", "", err
 	}
 
-
 	// 5. Log the "delete" action
 	logEntry := model.ChangeLog{
 		UserID: dummyUser.UserID,
@@ -129,9 +131,9 @@ func removeDummyAccount(tx *gorm.DB, rollNo string) (string, string, error) {
 	if err := tx.Create(&logEntry).Error; err != nil {
 		return "", "", err
 	}
-	
+
 	logrus.Infof("Preserved data Bacchas, Bapu and soft-deleted dummy for roll %s", rollNo)
-	
+
 	// Return the preserved data
 	return baccha, bapu, nil
 }
@@ -165,7 +167,7 @@ func updateProfile(c *gin.Context) {
 		// We set the UserID from the authenticated user's token, not from the input
 		UserID:     userID.(uuid.UUID),
 		Email:      user.Email,
-		Name:       input.Name,
+		Name:       caser.String(input.Name),
 		RollNo:     input.RollNo,
 		Dept:       input.Dept,
 		Course:     input.Course,
@@ -199,21 +201,21 @@ func updateProfile(c *gin.Context) {
 	// TODO: Test it
 	// Update into db
 	if err := connections.DB.Transaction(func(tx *gorm.DB) error {
-		// retrieve data and cleanup dummy 
-        // must run before we assign the RollNo to the current user
-        savedBaccha, savedBapu, err := removeDummyAccount(tx, profileData.RollNo)
-        if err != nil {
-            return err 
-        }
+		// retrieve data and cleanup dummy
+		// must run before we assign the RollNo to the current user
+		savedBaccha, savedBapu, err := removeDummyAccount(tx, profileData.RollNo)
+		if err != nil {
+			return err
+		}
 
-        // --- [NEW] STEP 2: MERGE PRESERVED DATA ---
-        // If the dummy account had "Baccha/Bapu" data, inject it into the profile
-        if savedBaccha != "" {
-            profileData.Bachhas = savedBaccha
-        }
-        if savedBapu != "" {
-            profileData.Bapu = savedBapu
-        }
+		// --- [NEW] STEP 2: MERGE PRESERVED DATA ---
+		// If the dummy account had "Baccha/Bapu" data, inject it into the profile
+		if savedBaccha != "" {
+			profileData.Bachhas = savedBaccha
+		}
+		if savedBapu != "" {
+			profileData.Bapu = savedBapu
+		}
 		// Update or Create the Profile // 'tx' here instead of 'connections.DB' for one single step
 		if err := tx.
 			Where(model.Profile{UserID: userID.(uuid.UUID)}).

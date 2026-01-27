@@ -18,7 +18,7 @@ async function start_IDB(): Promise<void> {
         () => {
           reject("Failed to access local database.");
         },
-        { once: true }
+        { once: true },
       );
       openRequest.addEventListener(
         "success",
@@ -26,7 +26,7 @@ async function start_IDB(): Promise<void> {
           db = openRequest.result;
           resolve();
         },
-        { once: true }
+        { once: true },
       );
       openRequest.addEventListener(
         "upgradeneeded",
@@ -42,7 +42,7 @@ async function start_IDB(): Promise<void> {
           } catch (err) {
             console.error(
               "Error in deleting students db on version change",
-              err
+              err,
             );
           }
           //set up the DB, and if nothing goes wrong (i.e. no errors) then resolve successfully
@@ -53,7 +53,7 @@ async function start_IDB(): Promise<void> {
           objStore.createIndex("students", "students", { unique: false }); //this will hold the array/json string of the response
           //should trigger success event handler now, so we don't resolve the promise here
         },
-        { once: true }
+        { once: true },
       );
     } catch (error) {
       reject(error);
@@ -94,7 +94,11 @@ async function get_time_IDB(): Promise<number> {
 }
 
 //both of these assume that 'db' has the reference to the IndexedDB after 'start_IDB()' finishes - otherwise, will throw errors
-async function update_IDB(students: Student[]): Promise<void> {
+
+async function update_IDB(resp: {
+  profiles: Student[];
+  requestTime: Timestamp;
+}): Promise<void> {
   return new Promise(async (resolve, reject) => {
     try {
       await start_IDB();
@@ -115,9 +119,9 @@ async function update_IDB(students: Student[]): Promise<void> {
           cursor.continue(); //move onto next item
         } else {
           //no more entries left, so store data now
-          trxn.objectStore("students").add({ students: students, key: 1 });
+          trxn.objectStore("students").add({ students: resp.profiles, key: 1 });
           //add update time for future reference
-          trxn.objectStore("students").add({ time: Date.now(), key: 2 });
+          trxn.objectStore("students").add({ time: resp.requestTime, key: 2 });
         }
       };
       trxn.oncomplete = () => {

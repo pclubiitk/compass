@@ -192,7 +192,6 @@ export default function Home(props: Object) {
     setCurr([
       <SCard type={"big"} data={student} key="closed">
         <Button
-          disabled={true}
           className="w-full mt-2"
           variant="outline"
           onClick={() => {
@@ -201,7 +200,6 @@ export default function Home(props: Object) {
         >
           <UsersRound className="h-4 w-4" />
           Open Family Tree
-          <ComingSoon />
         </Button>
       </SCard>,
     ]);
