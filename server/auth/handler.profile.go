@@ -80,6 +80,62 @@ func verifyProfile(c *gin.Context, profileData model.Profile) bool {
 	return true
 }
 
+// Returns: (baccha, bapu, error)
+func removeDummyAccount(tx *gorm.DB, rollNo string) (string, string, error) {
+	dummyEmail := fmt.Sprintf("cmhw_%s", rollNo)
+	
+	var dummyUser model.User
+	// check if dummy user exists
+	if err := tx.Where("email = ?", dummyEmail).First(&dummyUser).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return "", "", nil // Nothing found, return empty strings
+		}
+		return "", "", err
+	}
+
+	var dummyProfile model.Profile
+	var baccha, bapu string
+
+	// we try to find the profile, okay if it doesn't exist (though it should)
+	if err := tx.Where("user_id = ?", dummyUser.UserID).First(&dummyProfile).Error; err == nil {
+		baccha = dummyProfile.Bachhas
+		bapu = dummyProfile.Bapu
+	}
+
+	// 3. Soft Delete the Profile
+	if err := tx.Where("user_id = ?", dummyUser.UserID).Delete(&model.Profile{}).Error; err != nil {
+		logrus.Errorf("Failed to soft-delete dummy profile for user %s: %v", dummyUser.UserID, err)
+		return "", "", err
+	}
+
+	// 4. Soft Delete the User
+	if err := tx.Delete(&dummyUser).Error; err != nil {
+		logrus.Errorf("Failed to soft-delete dummy user %s: %v", dummyUser.UserID, err)
+		return "", "", err
+	}
+
+	// Delete any pre-existing log for this user
+	// (as it is syncing data based on change_logs table)
+	if err := tx.Where("user_id = ?", dummyUser.UserID).Delete(&model.ChangeLog{}).Error; err != nil {
+		return "", "", err
+	}
+
+
+	// 5. Log the "delete" action
+	logEntry := model.ChangeLog{
+		UserID: dummyUser.UserID,
+		Action: "delete",
+	}
+	if err := tx.Create(&logEntry).Error; err != nil {
+		return "", "", err
+	}
+	
+	logrus.Infof("Preserved data Bacchas, Bapu and soft-deleted dummy for roll %s", rollNo)
+	
+	// Return the preserved data
+	return baccha, bapu, nil
+}
+
 func updateProfile(c *gin.Context) {
 	var input ProfileUpdateRequest
 
@@ -143,6 +199,21 @@ func updateProfile(c *gin.Context) {
 	// TODO: Test it
 	// Update into db
 	if err := connections.DB.Transaction(func(tx *gorm.DB) error {
+		// retrieve data and cleanup dummy 
+        // must run before we assign the RollNo to the current user
+        savedBaccha, savedBapu, err := removeDummyAccount(tx, profileData.RollNo)
+        if err != nil {
+            return err 
+        }
+
+        // --- [NEW] STEP 2: MERGE PRESERVED DATA ---
+        // If the dummy account had "Baccha/Bapu" data, inject it into the profile
+        if savedBaccha != "" {
+            profileData.Bachhas = savedBaccha
+        }
+        if savedBapu != "" {
+            profileData.Bapu = savedBapu
+        }
 		// Update or Create the Profile // 'tx' here instead of 'connections.DB' for one single step
 		if err := tx.
 			Where(model.Profile{UserID: userID.(uuid.UUID)}).
