@@ -1,3 +1,7 @@
+//defining fronted. Some other person cannot create a different frontend and access ours
+// only our frontend will work 
+
+
 package middleware
 
 import (

@@ -1,4 +1,5 @@
 // Central place to call all other config inits (viper, logging etc.)
+//other pages get called 
 package connections
 
 func init() {
