@@ -1,9 +1,10 @@
 /** @type {import('next').NextConfig} */
-const withPWA = require("next-pwa")({
-	dest:"public",
-	disable:false,
-	runtimeCaching: [//next-pwa selects first matching pattern - check cache.js in the next-pwa github repo to see the default list
-	//issue: workbox does not cache POST requests - or does it???
+// Disabling PWA functionality - we don't need it anymore
+// const withPWA = require("next-pwa")({
+// 	dest:"public",
+// 	disable:false,
+// 	runtimeCaching: [//next-pwa selects first matching pattern - check cache.js in the next-pwa github repo to see the default list
+//issue: workbox does not cache POST requests - or does it???
 // 		{ //these two need to be here so that pictures/etc. are not cached
 // 		  urlPattern: /^http:\/\/home\.iitk\.ac\.in\/.*/i, //home.iitk.ac.in - should not be cached
 // 		  handler: 'NetworkOnly',
@@ -33,19 +34,20 @@ const withPWA = require("next-pwa")({
 // 			},
 // 		  }
 // 		}
-	]
-})
+// 	]
+// })
 
 const nextConfig = {
   reactStrictMode: true,
   basePath: process.env.NEXT_PUBLIC_BASE_PATH,
-//   async redirects() {
-//   	return [{ //redirect all other pages to the index page i.e. url.com/bla -> url.com
-//   		source: "/:params([^]{1,})", //this matches *any* non-zero length string - has to be non-zero otherwise will infinitely redirect
-//   		destination: "/",
-//   		permanent: true
-//   	}]
-//   }
-}
+  //   async redirects() {
+  //   	return [{ //redirect all other pages to the index page i.e. url.com/bla -> url.com
+  //   		source: "/:params([^]{1,})", //this matches *any* non-zero length string - has to be non-zero otherwise will infinitely redirect
+  //   		destination: "/",
+  //   		permanent: true
+  //   	}]
+  //   }
+};
 
-module.exports = withPWA(nextConfig)
+// module.exports = withPWA(nextConfig)
+module.exports = nextConfig;

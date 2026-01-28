@@ -4,12 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Search, Map, LogOut, Camera } from "lucide-react";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-  AvatarBadge,
-} from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useGContext } from "@/components/ContextProvider";
@@ -141,7 +136,7 @@ export function SocialProfileCard({
               }
               className="object-cover"
             />
-            <AvatarFallback className="text-2xl font-semibold bg-linear-to-br from-blue-500 to-purple-600 text-white">
+            <AvatarFallback>
               {email ? email.slice(0, 2).toUpperCase() : "NA"}
             </AvatarFallback>
           </Avatar>

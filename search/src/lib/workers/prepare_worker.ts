@@ -19,7 +19,8 @@ function prepare_worker(students: Student[], options: Options): void {
         }
       } else {
         const key = optionKey as "hall" | "course" | "dept";
-        if (!options[optionKey].includes(st[key])) {
+        // If the st[key] is null, it causes the multiselect to crash the site.
+        if (st[key] && !options[optionKey].includes(st[key])) {
           options[optionKey].push(st[key]);
         }
       }
