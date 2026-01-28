@@ -8,46 +8,40 @@ import { useGContext } from "@/components/ContextProvider";
 
 
 export default function InfoPage() {
-const TEAM_ROLLS = [
-  230626, 240539, 240669,
-  240876, 240980, 240981,
-  240979, 241118, 241211,
-  
-];
-
+  const workerRef = useRef<Worker | null>(null);
 const [teamMembers, setTeamMembers] = useState<Student[]>([]);
-const workerRef = useRef<Worker | null>(null);
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.Worker) {
+      const worker = new Worker("workers/data_worker.js", { type: "module" });
+      workerRef.current = worker;
 
-useEffect(() => {
-  if (typeof window === "undefined") return;
+      worker.onmessage = (event: MessageEvent) => {
+        const { status, results } = event.data;
+        if (status === "team_results") {
+   
+          setTeamMembers(results);
+        }
+      };
 
-const worker = new Worker("/workers/data_worker.js", {
-  type: "module",
-});
+      // Fetch team if not already available
+      if (teamMembers.length === 0) {
+        const TEAM_ROLLS = [230626, 240539, 240669, 240876, 240980, 240981, 240979, 241118, 241211];
+        worker.postMessage({ command: "get_team", payload: TEAM_ROLLS });
+      }
 
-  workerRef.current = worker;
-
-  worker.onmessage = (event) => {
-    const { status, results } = event.data;
-
-    if (status === "team_results") {
-      console.log("Received team data:", results);
-      setTeamMembers(results);
-      // setGlobalLoading(false);
+      return () => {
+        workerRef.current?.terminate();
+      };
     }
-  };
+  }, [teamMembers]);
 
-  // ask for team data
-  worker.postMessage({
-    command: "get_team",
-    payload: TEAM_ROLLS,
-  });
 
-  return () => {
-    worker.terminate();
-    workerRef.current = null;
-  };
-}, []);
+
+   
+
+ 
+
+ 
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-start px-6 py-12
@@ -165,9 +159,9 @@ const worker = new Worker("/workers/data_worker.js", {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 
                 gap-8 place-items-center auto-rows-fr">
 
-          {teamMembers.map((student) => (
+          {/* {teamMembers.map((student) => (
             <SCard type="big" data={student} key={student.rollNo} />
-          ))}
+          ))} */}
         </div>
       </div>
 
