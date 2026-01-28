@@ -26,6 +26,7 @@ self.onmessage = async (event: MessageEvent) => {
 
   switch (command) {
     case "initialize":
+
       await initializeData();
       break;
     case "query":
@@ -34,6 +35,20 @@ self.onmessage = async (event: MessageEvent) => {
         results: check_query(payload, students),
       });
       break;
+    case "get_team": {
+      const rollNos: string[] = payload.map(String); 
+      const teamResults: Student[] = [];
+      rollNos.map((rollNo) => {
+        const found = check_query({ batch: [], hall: [], course: [], dept: [], name: rollNo, gender: "", address: "" }, students);
+        teamResults.push(...found);
+      });
+      self.postMessage({
+        status: "team_results",
+        results: teamResults,
+      });
+      break;
+    }
+
     case "get_family_tree":
       const student: Student = payload;
       const baapu = students.filter(

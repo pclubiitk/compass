@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, Map, LogOut, Camera } from "lucide-react";
+import { Search, Map, LogOut, Camera, Info } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -210,6 +210,20 @@ export function SocialProfileCard({
               Dev
             </Badge>
           </div>
+
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-12 w-12"
+            onClick={() =>
+              router.push(
+                (process.env.NEXT_PUBLIC_SEARCH_UI_URL ||
+                  "https://search.pclub.in") + "/info",
+              )
+            }
+          >
+            <Info />
+          </Button>
 
           <Button
             variant="outline"

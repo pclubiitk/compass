@@ -61,6 +61,13 @@ npm run dev
 ```
 ---
 
+
+# Credential creation and useful links
+
+1. [Gmail email sending auth token](https://stackoverflow.com/a/27130058/23078987)
+2. [For Recaptcha Dev](https://developers.google.com/recaptcha/docs/faq)
+3. [For CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS)
+
 # Subdomain Routing Implementation Guide
 ## Architecture
 
