@@ -60,3 +60,5 @@ next-env.d.ts
 /server/parser/*.csv
 /server/parser/*.sql
 /server/db_data/
+/server/db_backup
+/server/logs
