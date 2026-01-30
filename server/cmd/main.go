@@ -42,12 +42,13 @@ func main() {
 	g.Go(func() error { return mapsServer().ListenAndServe() })
 	g.Go(func() error { return searchServer().ListenAndServe() })
 
+	// Always run PuppyLove server in dev mode
+	g.Go(func() error { return puppyloveServer().ListenAndServe() })
+
 	if puppylove.IsPuppyLoveEnabled() {
 		logrus.Infof("PuppyLove Mode Enabled! (mode: %s)", puppylove.GetPuppyLoveMode())
-
-		g.Go(func() error { return puppyloveServer().ListenAndServe() })
 	} else {
-		logrus.Info("PuppyLove Mode Disabled!")
+		logrus.Info("PuppyLove Mode Disabled (routes still accessible for testing)")
 	}
 	logrus.Info("Main server is Starting...")
 	if err := g.Wait(); err != nil {

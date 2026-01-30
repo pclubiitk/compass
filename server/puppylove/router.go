@@ -24,6 +24,8 @@ func Router(r *gin.Engine) {
 			users.GET("/fetchPublicKeys", FetchPublicKeys)
 			users.GET("/fetchReturnHearts", FetchReturnHearts)
 
+			users.POST("/verify-password", VerifyAccessPassword)
+
 			users.POST("/about", UpdateAbout)
 			users.POST("/interests", UpdateInterest)
 

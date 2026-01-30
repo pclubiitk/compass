@@ -2,6 +2,7 @@ package puppylove
 
 import (
 	"compass/connections"
+	"compass/model"
 	"compass/model/puppylove"
 	"crypto/sha256"
 	"encoding/json"
@@ -11,6 +12,7 @@ import (
 	"net/url"
 
 	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -66,6 +68,38 @@ func UserFirstLogin(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message": "User Created Successfully."})
 }
 
+// VerifyAccessPassword validates the PuppyLove access password using the user's login password
+func VerifyAccessPassword(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	req := new(VerifyAccessPasswordReq)
+	if err := c.ShouldBindJSON(req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Input data format."})
+		return
+	}
+
+	var user model.User
+	if err := connections.DB.
+		Model(&model.User{}).
+		Select("user_id", "password").
+		Where("user_id = ?", userID).
+		First(&user).Error; err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+		return
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"valid": false})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"valid": true})
+}
+
 func GetUserData(c *gin.Context) {
 	roll_no, exists := c.Get("rollNo")
 	if !exists {
@@ -96,7 +130,6 @@ func GetUserData(c *gin.Context) {
 	})
 }
 
-
 // SendHeartWithReturn sends hearts and handles return hearts
 func SendHeartWithReturn(c *gin.Context) {
 	info := new(SendHeartFirst)
@@ -121,7 +154,6 @@ func SendHeartWithReturn(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Hearts already sent."})
 		return
 	}
-
 
 	if info.ENC1 != "" && info.SHA1 != "" {
 		newheart1 := puppylove.SendHeart{
@@ -303,9 +335,9 @@ func HeartClaimHandler(c *gin.Context) {
 		}
 
 		heartClaim := puppylove.HeartClaims{
-			Id:   info.Enc,
+			Id:       info.Enc,
 			SHA:      info.SHA,
-			Roll:      roll_no.(string),
+			Roll:     roll_no.(string),
 			SONG_ENC: heartModel.SONG_ENC,
 		}
 		if err := connections.DB.Create(&heartClaim).Error; err != nil {

@@ -2,7 +2,7 @@ import CryptoJS from 'crypto-js';
 
 export async function SHA256(password: string) {
   const encoder = new TextEncoder();
-  const data = encoder.encode(password);
+  const data = encoder.encode(password) as BufferSource;
   const hashBuffer = await crypto.subtle.digest('SHA-256', data);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   const passHash = hashArray
@@ -26,48 +26,64 @@ export async function GenerateKeys() {
   const publicKey = await crypto.subtle.exportKey('spki', keyPair.publicKey);
   const privateKey = await crypto.subtle.exportKey('pkcs8', keyPair.privateKey);
 
+  const pubKeyArray = Array.from(new Uint8Array(publicKey));
+  const privKeyArray = Array.from(new Uint8Array(privateKey));
+
   return {
-    pubKey: Buffer.from(publicKey).toString('base64'),
-    privKey: Buffer.from(privateKey).toString('base64'),
+    pubKey: btoa(pubKeyArray.map(b => String.fromCharCode(b)).join('')),
+    privKey: btoa(privKeyArray.map(b => String.fromCharCode(b)).join('')),
   };
 }
 
 export async function Encryption(SHA: string, publicKey: string) {
-  const publicKeyBuffer = Buffer.from(publicKey, 'base64');
+  const binaryString = atob(publicKey);
+  const publicKeyBuffer = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    publicKeyBuffer[i] = binaryString.charCodeAt(i);
+  }
   const publicKeyImported = await crypto.subtle.importKey(
     'spki',
-    publicKeyBuffer,
+    publicKeyBuffer as BufferSource,
     { name: 'RSA-OAEP', hash: 'SHA-256' },
     false,
     ['encrypt']
   );
 
-  const encodedData = new TextEncoder().encode(SHA);
+  const encodedData = new TextEncoder().encode(SHA) as BufferSource;
   const encryptedArrayBuffer = await crypto.subtle.encrypt(
     { name: 'RSA-OAEP' },
     publicKeyImported,
     encodedData
   );
 
-  return Buffer.from(encryptedArrayBuffer).toString('base64');
+  const encryptedArray = Array.from(new Uint8Array(encryptedArrayBuffer));
+  return btoa(encryptedArray.map(b => String.fromCharCode(b)).join(''));
 }
 
 export async function Decryption(ENC: string, privateKey: string) {
   try {
-    const privateKeyBuffer = Buffer.from(privateKey, 'base64');
+    const binaryString = atob(privateKey);
+    const privateKeyBuffer = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      privateKeyBuffer[i] = binaryString.charCodeAt(i);
+    }
     const privateKeyImported = await crypto.subtle.importKey(
       'pkcs8',
-      privateKeyBuffer,
+      privateKeyBuffer as BufferSource,
       { name: 'RSA-OAEP', hash: 'SHA-256' },
       false,
       ['decrypt']
     );
 
-    const encryptedData = Buffer.from(ENC, 'base64');
+    const encBinaryString = atob(ENC);
+    const encryptedData = new Uint8Array(encBinaryString.length);
+    for (let i = 0; i < encBinaryString.length; i++) {
+      encryptedData[i] = encBinaryString.charCodeAt(i);
+    }
     const decryptedArrayBuffer = await crypto.subtle.decrypt(
       { name: 'RSA-OAEP' },
       privateKeyImported,
-      encryptedData
+      encryptedData as BufferSource
     );
 
     return new TextDecoder().decode(decryptedArrayBuffer);
@@ -88,7 +104,7 @@ export async function Decryption_AES(ENC: string, pass: string) {
   return decrypted.toString(CryptoJS.enc.Utf8);
 }
 
-export async function RandInt() {
+export function RandInt() {
   const randomBytes = new Uint32Array(1);
   crypto.getRandomValues(randomBytes);
   return randomBytes[0];

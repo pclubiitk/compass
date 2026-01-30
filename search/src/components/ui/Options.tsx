@@ -35,7 +35,7 @@ interface OptionsProps {
 }
 
 function Options(props: OptionsProps) {
-  const { isGlobalLoading } = useGContext();
+  const { isGlobalLoading, isPuppyLove } = useGContext();
 
   const [query, setQuery] = useState<Query>({
     gender: "",
@@ -55,6 +55,14 @@ function Options(props: OptionsProps) {
   useEffect(() => {
     debouncedSendQuery(query);
   }, [query, debouncedSendQuery]);
+
+  // Clear search field when puppy love mode is toggled to prevent autofill
+  useEffect(() => {
+    setQuery((prevQuery) => ({
+      ...prevQuery,
+      name: "",
+    }));
+  }, [isPuppyLove]);
 
   return (
     <Card className="p-4 md:p-6 w-4/5 max-w-4xl m-auto">
