@@ -34,10 +34,12 @@ try:
             p_id = row['Parent ID'].strip()
             c_name = row['Child Name'].strip()
             c_id = row['Child ID'].strip()
+            p_gender = row['Gender'].strip()
+            c_gender = row['Child_gender'].strip()
 
-            # Avoid duplicates
-            unique_users[p_id] = p_name
-            unique_users[c_id] = c_name
+            # Avoid duplicates           
+            unique_users[p_id] = {'name': p_name, 'gender': p_gender}
+            unique_users[c_id] = {'name': c_name, 'gender': c_gender}
 
             bapu_map[c_id] = p_id
 
@@ -50,7 +52,10 @@ try:
     print(f"Found {len(unique_users)} unique users.")
     print("--- Starting Database Insertion ---")
 
-    for roll_no, name in unique_users.items():
+    for roll_no, user_data in unique_users.items():
+        name = user_data['name']
+        gender = user_data['gender']
+
         if name == "" or roll_no == "":
             continue
         user_uuid = str(uuid.uuid4())
@@ -72,9 +77,9 @@ try:
 
         insert_profile_query = """
         INSERT INTO profiles (
-            user_id, name, email, roll_no, bapu, bachhas, created_at, updated_at, visibility
+            user_id, name, email, roll_no, gender, bapu, bachhas, created_at, updated_at, visibility
         )
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
         
         cursor.execute(insert_profile_query, (
@@ -82,6 +87,7 @@ try:
             name.title(), 
             dummy_email,
             roll_no, 
+            gender,
             my_bapu, 
             "{" + str(my_bachhas) + "}",  # to keep format consistent across the frontend
             created_at, 
