@@ -135,7 +135,7 @@ export default function InfoPage() {
                 </div>
                 <br></br>
                 2. If your image was successfully uploaded, but is not changed
-                on the student search portal, please wait for sum time as the
+                on the student search portal, please wait for some time as the
                 network caches the images, it will auto update in some time.
               </AccordionContent>
             </AccordionItem>
