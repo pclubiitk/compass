@@ -68,9 +68,12 @@ func verifyProfile(c *gin.Context, profileData model.Profile) bool {
 
 	// Checking Status of verification
 	if apiResp.Status != nil {
-		if *apiResp.Status != "true" || (!strings.EqualFold(profileData.Name, *apiResp.Name)) {
+		// Normalize names by removing extra whitespaces and comparing case-insensitively
+		normalizedInputName := strings.ToLower(strings.Join(strings.Fields(profileData.Name), " "))
+		normalizedApiRespName := strings.ToLower(strings.Join(strings.Fields(*apiResp.Name), " "))
+		if *apiResp.Status != "true" || normalizedInputName != normalizedApiRespName {
 			c.JSON(http.StatusBadRequest, gin.H{
-				"error": "Please verify you data. It should be exactly same as: 1. on your ID card, or 2. displayed in IITK APP or 3. Initial Branch, if Branch is changed.",
+				"error": "Please verify your data. It should be exactly same as: 1. on your ID card, or 2. displayed in IITK APP or 3. Initial Branch, if Branch is changed.",
 			})
 			return false
 		}
