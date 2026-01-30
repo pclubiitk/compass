@@ -9,8 +9,8 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Student } from "@/lib/types/data";
-import { cn } from "@/lib/utils";
-import { Mail, Home, University, Globe, Users } from "lucide-react";
+import { cn, convertToTitleCase } from "@/lib/utils";
+import { Mail, Home, University, Globe } from "lucide-react";
 
 interface SCardProps {
   data: Student;
@@ -22,6 +22,8 @@ interface SCardProps {
 
 const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
   const { data, type, ...rest } = props;
+  data.name = convertToTitleCase(data.name);
+  data.email = data.email.startsWith("cmhw_") ? "Not Provided" : data.email;
 
   const cardProps = {
     ref: ref,
@@ -51,9 +53,11 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
             alt="Image of student"
           />
           <CardHeader className="p-2 pb-0 w-full">
-            <CardTitle className="text-2xl capitalize">{data.name}</CardTitle>
+            <CardTitle className="text-2xl overflow-hidden text-ellipsis capitalize">
+              {data.name}
+            </CardTitle>
             <CardDescription>{data.rollNo}</CardDescription>
-            <CardDescription>{`${data.course}, ${data.dept}`}</CardDescription>
+            <CardDescription>{`${data.course} ${data.dept ? "," : ""} ${data.dept}`}</CardDescription>
           </CardHeader>
 
           <CardContent className="w-full mt-auto pt-6 text-left">
@@ -104,7 +108,7 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
           className={cn(
             "w-full max-w-xs p-2 flex items-center transition-shadow hover:shadow-md flex-row align-top",
             props.pointer && "cursor-pointer",
-            type === "self" && "dark:border-amber-500 light: ",
+            type === "self" && "border-yellow-400 border-4 dark:border-amber-500",
           )}
         >
           <Image
@@ -115,11 +119,11 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
             alt="Image of student"
           />
           <CardHeader className="w-full px-0">
-            <CardTitle className="text-xl wrap-break-word capitalize">
+            <CardTitle className="text-xl  overflow-hidden text-ellipsis wrap-break-word capitalize">
               {data.name}
             </CardTitle>
             <CardDescription>{data.rollNo}</CardDescription>
-            <CardDescription>{`${data.course}, ${data.dept}`}</CardDescription>
+            <CardDescription>{`${data.course}${data.dept ? "," : ""} ${data.dept}`}</CardDescription>
           </CardHeader>
         </Card>
       );

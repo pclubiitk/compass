@@ -10,6 +10,10 @@ import (
 	"github.com/google/uuid"
 )
 
+// TODO: Make this production ready
+// This will save the time when the server was started, we will return this time to the frontend, if the last fetched time was before the server restart time then it will drop the db, it is helpful for developer mode to ensure the db changes are are updated in the search, as our manual changes do not create any changeLog.
+var serverStartTime = time.Now()
+
 func getAllProfiles(c *gin.Context) {
 	// This request may be slow,
 	// TODO: Better way if possible, reddis be dekh sak te he.
@@ -26,12 +30,14 @@ func getAllProfiles(c *gin.Context) {
 	// 	return
 	// }
 
+	var requestTime = time.Now()
 	var profiles []model.Profile
+
 	if err := connections.DB.Find(&profiles, "visibility = ?", true).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch profiles."})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "Profiles retrieved successfully", "profiles": profiles})
+	c.JSON(http.StatusOK, gin.H{"message": "Profiles retrieved successfully", "profiles": profiles, "requestTime": requestTime})
 }
 
 func getChangeLog(c *gin.Context) {
@@ -41,6 +47,17 @@ func getChangeLog(c *gin.Context) {
 	if err := c.ShouldBindJSON(&input); err != nil {
 		// Adding the request time format
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format", "requestTime": requestTime})
+		return
+	}
+
+	// If the server start time is after the last fetched time form the user, update the db completely
+	if input.LastUpdateTime.Before(serverStartTime) {
+		var profiles []model.Profile
+		if err := connections.DB.Find(&profiles, "visibility = ?", true).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch profiles."})
+			return
+		}
+		c.JSON(http.StatusAccepted, gin.H{"message": "Completely updating local database due to server restart", "profiles": profiles, "requestTime": requestTime, "dropData": true})
 		return
 	}
 	// Generate the json form the logs

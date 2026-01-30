@@ -15,11 +15,6 @@ export function ErrorCard() {
             <span className="font-bold">Visibility:</span> You must make your
             profile visible to view other profiles.
           </li>
-          <li>
-            <span className="font-bold">Network:</span> Access the website from
-            campus or via VPN at least so that student data can be downloaded
-            and stored locally.
-          </li>
         </ol>
       </CardDescription>
     </Card>

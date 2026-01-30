@@ -85,7 +85,8 @@ function check_query(query: Query, students: Student[]): Student[] {
         }
       } else if (key === "address") {
         if (
-          !student.homeTown.toLowerCase().includes(query.address.toLowerCase())
+          // Fix: if the hometown was empty it was just never evualted.
+          !(student.homeTown?.toLowerCase().includes(query.address.toLowerCase()))
         )
           return false;
       } else if (key !== "name") {

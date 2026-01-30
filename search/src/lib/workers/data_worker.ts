@@ -26,6 +26,7 @@ self.onmessage = async (event: MessageEvent) => {
 
   switch (command) {
     case "initialize":
+
       await initializeData();
       break;
     case "query":
@@ -34,10 +35,24 @@ self.onmessage = async (event: MessageEvent) => {
         results: check_query(payload, students),
       });
       break;
+    case "get_team": {
+      const rollNos: string[] = payload.map(String); 
+      const teamResults: Student[] = [];
+      rollNos.map((rollNo) => {
+        const found = check_query({ batch: [], hall: [], course: [], dept: [], name: rollNo, gender: "", address: "" }, students);
+        teamResults.push(...found);
+      });
+      self.postMessage({
+        status: "team_results",
+        results: teamResults,
+      });
+      break;
+    }
+
     case "get_family_tree":
       const student: Student = payload;
       const baapu = students.filter(
-        (st: Student) => st.rollNo === student.bapu
+        (st: Student) => st.rollNo === student.bapu,
       )[0]; //note that this can also be undefined - this will be handled by TreeCard
       const bacchas = check_bacchas(student.bachhas, students);
       self.postMessage({
@@ -73,9 +88,10 @@ async function initializeData(): Promise<void> {
       const res = await fetch_student_data();
       if (res === null) {
         throw new Error("Failed to fetch student data from DB");
-      } else new_students = res;
+      }
       // console.log("Updating local DB with API data...");
-      await update_IDB(new_students);
+      new_students = res.profiles as Student[];
+      await update_IDB(res);
     } catch (error) {
       console.error(error);
       cantGetData = true;
@@ -93,6 +109,10 @@ async function initializeData(): Promise<void> {
       if (res === null) {
         // Error occurred, console is in the child function
         return;
+      }
+      // Update the db completely if server restarts
+      if (res.dropData) {
+        update_IDB(res);
       }
       students = await apply_Changelog(res);
     } catch (err) {

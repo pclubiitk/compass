@@ -7,7 +7,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -19,7 +18,6 @@ import {
 } from "@/components/ui/input-otp";
 import { toast } from "sonner";
 import { REGEXP_ONLY_DIGITS_AND_CHARS } from "input-otp";
-import Link from "next/link";
 
 interface Step2VerifyProps {
   userID: string;
@@ -50,7 +48,7 @@ export function Step2Verify({ userID, onSuccess }: Step2VerifyProps) {
         {
           method: "GET",
           credentials: "include",
-        }
+        },
       );
       const data = await response.json();
 
@@ -83,37 +81,73 @@ export function Step2Verify({ userID, onSuccess }: Step2VerifyProps) {
         <CardTitle className="text-2xl">Verify Your Account</CardTitle>
         <CardDescription>
           Enter the 6-digit code sent to your email.
+          <br></br>
+          <p className="italic">
+            <Button variant="link" asChild className="p-0 h-auto">
+              <a
+                href="https://nwm.iitk.ac.in/"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                nwm
+              </a>
+            </Button>{" "}
+            is preferred over any other mail client for faster mail delivery
+          </p>
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="grid gap-4 justify-center">
-          <InputOTP
-            maxLength={6}
-            value={otp}
-            onChange={setOtp}
-            pattern={REGEXP_ONLY_DIGITS_AND_CHARS}
-            inputMode="text"
-          >
-            <InputOTPGroup>
-              <InputOTPSlot index={0} />
-              <InputOTPSlot index={1} />
-              <InputOTPSlot index={2} />
-            </InputOTPGroup>
-            <InputOTPSeparator />
-            <InputOTPGroup>
-              <InputOTPSlot index={3} />
-              <InputOTPSlot index={4} />
-              <InputOTPSlot index={5} />
-            </InputOTPGroup>
-          </InputOTP>
+        <form onSubmit={handleSubmit} className="grid gap-4">
+          <div className="flex justify-center w-full">
+            {" "}
+            <InputOTP
+              maxLength={6}
+              value={otp}
+              onChange={setOtp}
+              pattern={REGEXP_ONLY_DIGITS_AND_CHARS}
+              inputMode="text"
+            >
+              <InputOTPGroup>
+                <InputOTPSlot index={0} />
+                <InputOTPSlot index={1} />
+                <InputOTPSlot index={2} />
+              </InputOTPGroup>
+              <InputOTPSeparator />
+              <InputOTPGroup>
+                <InputOTPSlot index={3} />
+                <InputOTPSlot index={4} />
+                <InputOTPSlot index={5} />
+              </InputOTPGroup>
+            </InputOTP>
+          </div>
+
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? "Verifying..." : "Verify Account"}
           </Button>
+
+          {/* Divider with OR text */}
+          <div className="relative -my-2">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300 dark:border-gray-600" />
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-gray-500 dark:bg-slate-950 dark:text-gray-400">
+                or
+              </span>
+            </div>
+          </div>
+
+          {/* Alternative action */}
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full"
+            onClick={() => (window.location.href = "/login")}
+          >
+            Go to Login
+          </Button>
         </form>
       </CardContent>
-      <CardFooter>
-        <p className="italic"><Link className="underline" href="https://nwm.iitk.ac.in/">nwm</Link> is preferred over any other mail client for faster mail delivery</p>
-      </CardFooter>
     </Card>
   );
 }

@@ -22,7 +22,6 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import Link from "next/link";
 import Image from "next/image";
 import ReCAPTCHA from "react-google-recaptcha";
 
@@ -48,99 +47,129 @@ export default function ForgotPasswordPage() {
         },
     });
 
-    async function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    try {
+      const token = await recaptchaRef.current?.executeAsync();
+      if (!token) {
+        toast.error("Error in captcha validation");
+        return;
+      }
 
+      startTransition(async () => {
         try {
-            // Executing invisible v2 reCAPTCHA
-            const token = await recaptchaRef.current?.executeAsync();
-            if (!token) {
-                toast.error("Error in captcha validation");
-                return;
-            }
-
-            startTransition(async () => {
-                try {
-                    const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL}/api/auth/forgot-password`, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ ...values, token }),
-                    });
+          const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL}/api/auth/forgot-password`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ...values, token }),
+          });
 
                     const data = await response.json();
 
-                    if (response.ok) {
-                        toast.success(data.message || "Reset link sent if email exists.");
-                    } else {
-                        toast.error(data.error || "Something went wrong. Please try again.");
-                    }
-                } catch (error) {
-                    toast.error("Something went wrong. Please try again.");
-                    console.error(error);
-                } finally {
-                    recaptchaRef.current?.reset();
-                }
-            });
-        } catch (error) {
-            toast.error("Captcha error. Please try again.");
-            console.error(error);
+          if (response.ok) {
+            toast.success(data.message || "Reset link sent.");
+          } else {
+            toast.error(data.error || "Something went wrong.");
+          }
+        } catch {
+          toast.error("Something went wrong.");
+        } finally {
+          recaptchaRef.current?.reset();
         }
+      });
+    } catch {
+      toast.error("Captcha error.");
     }
+  }
 
-    return (
-        <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-linear-to-r from-blue-100 to-teal-100 dark:from-slate-800 dark:to-slate-900">
-            <Card className="w-full max-w-md rounded-3xl shadow-2xl border-none">
-                <CardHeader className="space-y-1.5 items-center pt-8">
-                    <div className="flex size-12 items-center justify-center rounded-2xl mb-4 bg-primary/10">
-                        <Image
-                            src="/pclub.png"
-                            alt="Programming Club Logo"
-                            width={60}
-                            height={60}
-                            className="rounded-2xl"
-                        />
-                    </div>
-                    <CardTitle className="text-2xl font-bold tracking-tight text-center">
-                        Forgot Password
-                    </CardTitle>
-                    <CardDescription className="text-sm text-center px-4">
-                        Enter your email address and we&apos;ll send you a link to reset your password.
-                    </CardDescription>
-                </CardHeader>
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-linear-to-r from-blue-100 to-teal-100 dark:from-slate-800 dark:to-slate-900">
+      <Card className="w-full max-w-sm">
+        <CardHeader>
+          {/* Centered Logo & Club Name Section */}
+          <CardTitle className="flex flex-col items-center gap-2">
+            <a href="https://pclub.in" className="flex flex-col items-center gap-2 font-medium">
+              <div className="flex size-8 items-center justify-center rounded-md">
+                <Image
+                  src="/pclub.png"
+                  alt="Logo"
+                  width={60}
+                  height={60}
+                  className="rounded-2xl"
+                />
+              </div>
+            </a>
+          </CardTitle>
+          <CardDescription className="flex flex-col items-center gap-2">
+            <p>Programming Club IIT Kanpur</p>
+          </CardDescription>
 
-                <CardContent className="p-8">
-                    <Form {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                            <FormField
-                                control={form.control}
-                                name="email"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className="ml-1">Email address</FormLabel>
-                                        <FormControl>
-                                            <Input placeholder="user@iitk.ac.in" {...field} className="rounded-xl h-12" />
-                                        </FormControl>
-                                        <FormMessage className="ml-1" />
-                                    </FormItem>
-                                )}
-                            />
+          {/* Left-Aligned Page Title & Description */}
+          <CardTitle className="text-2xl">Forgot Password</CardTitle>
+          <CardDescription>
+            Enter your email to reset your password. Don&apos;t have an account?{" "}
+            <Button
+              variant="link"
+              asChild
+              className="p-0 h-auto underline-offset-4"
+            >
+              <a href="/signup">Sign up</a>
+            </Button>
+          </CardDescription>
+        </CardHeader>
 
-                            <Button type="submit" className="w-full rounded-xl h-12 text-base font-medium" disabled={isPending}>
-                                {isPending ? "Sending..." : "Send Reset Link"}
-                            </Button>
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem className="grid gap-2 space-y-0">
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="@iitk.ac.in" 
+                        {...field} 
+                        type="email"
+                        required
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-                            {/* Invisible v2 reCAPTCHA */}
-                            <ReCAPTCHA sitekey={siteKey} ref={recaptchaRef} size="invisible" />
+              <ReCAPTCHA sitekey={siteKey} ref={recaptchaRef} size="invisible" />
 
-                            <div className="text-sm text-center">
-                                <Link href="/login" className="font-medium text-primary hover:text-primary/90 transition-colors">
-                                    Back to Login
-                                </Link>
-                            </div>
-                        </form>
-                    </Form>
-                </CardContent>
-            </Card>
-        </div>
-    );
+              <Button type="submit" className="w-full" disabled={isPending}>
+                {isPending ? "Verifying..." : "Send Reset Link"}
+              </Button>
 
+              {/* Divider with OR text */}
+              <div className="relative -my-2">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-300 dark:border-gray-600" />
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-white text-gray-500 dark:bg-slate-950 dark:text-gray-400">
+                    or
+                  </span>
+                </div>
+              </div>
+
+              {/* Alternative action */}
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => window.location.href = "/login"}
+              >
+                Back to Login
+              </Button>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+    </div>
+  );
 }

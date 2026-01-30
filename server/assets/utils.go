@@ -28,6 +28,11 @@ func CncImage(image *multipart.FileHeader) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	return ProcessImageBytes(imgBytes)
+}
+
+// ProcessImageBytes processes raw image bytes converting them to WebP
+func ProcessImageBytes(imgBytes []byte) ([]byte, error) {
 	options := bimg.Options{
 		// TODO: Make the width and the height according to the formate
 		Quality: viper.GetInt("image.quality"),

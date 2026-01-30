@@ -62,6 +62,7 @@ export const departmentNameMap = {
   Other: "OTH",
 };
 export const halls = [
+  "None",
   "HALL 1",
   "HALL 2",
   "HALL 3",

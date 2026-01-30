@@ -21,10 +21,11 @@ services:
       timeout: 5s
       retries: 5
   postgres:
+    container_name: db_postgres # Making specific container name to use it while connecting it via the pg_backup.sh
     image: postgres:15
     restart: always
     environment:
-      POSTGRES_USER: this_is_mjk 
+      POSTGRES_USER: this_is_mjk
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: compass
     ports:
@@ -35,10 +36,16 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    volumes:
+      # NOTE: ./db_data_on_host is the directory on my host (relative to the docker-compose.yml file),
+      # and /var/lib/postgresql/data is the default PostgreSQL data directory within the container.
+      - ./db_data:/var/lib/postgresql/data
   server:
     build:
       context: .
       dockerfile: container/Dockerfile
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     # it will restart the container if it crashers (due to rabbit mq or any other issue)
     restart: on-failure
     ports:
@@ -56,3 +63,7 @@ services:
       RABBITMQ_HOST: rabbitmq
       # force Go to use go.mod/go.sum for dependency management
       GO111MODULE: on
+    volumes:
+      - ./assets/pfp:/assets/pfp
+      - ./assets/public:/assets/public
+      - ./assets/tmp:/assets/tmp
