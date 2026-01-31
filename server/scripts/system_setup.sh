@@ -9,7 +9,7 @@ cd "$SCRIPT_DIR" || exit
 
 # Create the Assets, logs folder
 cd ..
-mkdir -p logs
+mkdir -p logs db_backup
 cd assets
 mkdir -p pfp public tmp
 cd ..
