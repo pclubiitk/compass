@@ -22,6 +22,9 @@ func main() {
 	// In Production mode, will not print the routes as done in debug mode
 	gin.SetMode(gin.ReleaseMode)
 
+	// Initialize SMTP connection pool
+	workers.InitMailDialer()
+
 	// The concurrent workers running in background.
 	// For now we are keeping them as background workers, as we expand, we can later convert them in to independent services.
 	g.Go(func() error {
