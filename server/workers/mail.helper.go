@@ -2,6 +2,7 @@ package workers
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -54,6 +55,27 @@ func resetMailSender() {
 	}
 }
 
+// isPermanentSMTPError checks if the error is a permanent SMTP error that
+// should NOT be retried with a new connection. These include:
+// - 5.4.5: Daily/hourly sending limit exceeded
+// - 5.1.1: Invalid recipient address
+// - 5.7.x: Authentication/policy errors
+// Retrying these errors just wastes SMTP connections and login attempts.
+func isPermanentSMTPError(err error) bool {
+	if err == nil {
+		return false
+	}
+	errStr := err.Error()
+	// Gmail quota/rate limit errors
+	if strings.Contains(errStr, "5.4.5") || // Daily sending limit
+		strings.Contains(errStr, "5.4.4") || // Rate limit
+		strings.Contains(errStr, "5.1.1") || // Invalid recipient
+		strings.Contains(errStr, "5.7.") { // Auth/policy errors
+		return true
+	}
+	return false
+}
+
 func SendMail(content MailContent) error {
 	// Create a new email message
 	m := mail.NewMessage()
@@ -76,8 +98,15 @@ func SendMail(content MailContent) error {
 
 	// Send the message using the pooled connection
 	if err := mail.Send(sender, m); err != nil {
+		// Check if this is a permanent error (quota, invalid recipient, etc.)
+		// These errors won't be fixed by reconnecting, so don't waste connections
+		if isPermanentSMTPError(err) {
+			logrus.Errorf("Permanent SMTP error for %s (not retrying): %v", content.To, err)
+			return fmt.Errorf("email send failed (permanent)")
+		}
+
+		// For transient errors (stale connection, timeout), try reconnecting once
 		logrus.Warnf("Send failed (possibly stale connection), retrying: %v", err)
-		// Reset connection and retry once
 		resetMailSender()
 
 		sender, err = getMailSender()
