@@ -6,11 +6,13 @@ env: prod # prod/dev
 database:
   host: "localhost"
   name: "compass"
+  # FIXME(prod): Create new user id
   user: "this_is_mjk"
   port: 5432
 
 rabbitmq:
   host: "localhost"
+  # FIXME(prod): Create new user id and pwd
   user: "guest"
   password: "guest"
   mailqueue: "mail_queue" # Keep the names consistent <type>queue for protect the publish logic correct
