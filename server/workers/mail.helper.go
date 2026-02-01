@@ -79,7 +79,7 @@ func isPermanentSMTPError(err error) bool {
 func SendMail(content MailContent) error {
 	// Create a new email message
 	m := mail.NewMessage()
-	m.SetHeader("From", viper.GetString("smtp.user"))
+	m.SetHeader("From", m.FormatAddress(viper.GetString("smtp.user"), "Programming Club"))
 	m.SetHeader("To", content.To)
 	m.SetHeader("Subject", content.Subject)
 
