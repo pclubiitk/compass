@@ -102,7 +102,7 @@ func signupHandler(c *gin.Context) {
 			if viper.GetString("domain") == "" {
 				return "http://localhost:3001"
 			}
-			return fmt.Sprintf("https://%s.%s", "bauth", viper.GetString("domain"))
+			return fmt.Sprintf("https://%s.%s", "auth", viper.GetString("domain"))
 		}(),
 		token,
 		user.UserID)

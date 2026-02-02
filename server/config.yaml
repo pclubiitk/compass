@@ -29,11 +29,11 @@ smtp:
   host: smtp.gmail.com
   port: 587
 
-domain: ""
+domain: "pclub.in"
 # Browsers rewrite Domain=localhost cookies into .localhost, which breaks host-only cookie checks.
 # Fix: leave domain empty ("") in dev so the cookie is scoped only to localhost
 
-frontend_url: "https://bauth.pclub.in" # Dev: http://localhost:3000, Prod: https://auth.pclub.in
+frontend_url: "https://auth.pclub.in" # Dev: http://localhost:3000, Prod: https://auth.pclub.in
 
 expiry:
   emailVerification: 3

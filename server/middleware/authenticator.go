@@ -18,7 +18,7 @@ var authConfig = AuthConfig{
 	TokenExpiration:    5 * time.Minute,
 	RefreshTokenExpiry: 24 * 7 * time.Hour, // 7 days
 	CookieDomain:       viper.GetString("domain"),
-	CookieSecure:       false, // Set to false in development
+	CookieSecure:       true, // Set to false in development
 	// TODO: MUST set to true in production
 	// The Secure attribute is a crucial cookie configuration setting that instructs a web browser to send a cookie only over an encrypted HTTPS connection
 	CookieHTTPOnly: true, // Prevent XSS
