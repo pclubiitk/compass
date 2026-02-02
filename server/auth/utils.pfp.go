@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"compass/assets"
 	"fmt"
 	"io"
 	"net/http"
@@ -9,13 +10,13 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	"github.com/spf13/viper"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 )
 
 // FetchAndSaveProfileImage tries to fetch a profile picture from external sources (Site or Home)
 // and saves it to the local assets directory. Returns the relative path or empty string.
-func FetchAndSaveProfileImage(rollNo, email string) (string, error) {
+func FetchAndSaveProfileImage(rollNo, email string, userID uuid.UUID) (string, error) {
 	// Extract UserName
 	// Assuming email is like 'user@iitk.ac.in'
 	parts := strings.Split(email, "@")
@@ -27,26 +28,12 @@ func FetchAndSaveProfileImage(rollNo, email string) (string, error) {
 
 	logrus.Infof("FetchAndSaveProfileImage: Attempting for user=%s, rollNo=%s", userName, rollNo)
 
-	// Try Site first
-	siteUrlTemplate := viper.GetString("profile.site_url")
-	if siteUrlTemplate != "" {
-		url := fmt.Sprintf(siteUrlTemplate, rollNo)
-		logrus.Infof("FetchAndSaveProfileImage: Trying Site URL: %s", url)
-		relPath, err := downloadAndSave(url)
-		if err == nil && relPath != "" {
-			logrus.Infof("FetchAndSaveProfileImage: Success from Site")
-			return relPath, nil
-		} else {
-			logrus.Infof("FetchAndSaveProfileImage: Failed Site (err=%v)", err)
-		}
-	}
-
 	// Try Home second
 	homeUrlTemplate := viper.GetString("profile.home_url")
 	if homeUrlTemplate != "" {
 		url := fmt.Sprintf(homeUrlTemplate, userName)
-		logrus.Infof("FetchAndSaveProfileImage: Trying Home URL: %s", url)
-		relPath, err := downloadAndSave(url)
+		logrus.Infof("FetchAndSaveProfileImage: Trying Home URL for %s", rollNo)
+		relPath, err := downloadAndSave(url, userID)
 		if err == nil && relPath != "" {
 			logrus.Infof("FetchAndSaveProfileImage: Success from Home")
 			return relPath, nil
@@ -55,11 +42,27 @@ func FetchAndSaveProfileImage(rollNo, email string) (string, error) {
 		}
 	}
 
+	// Internal network restriction, hence no need.
+	// Try Site first
+	// siteUrlTemplate := viper.GetString("profile.site_url")	
+
+	// if siteUrlTemplate != "" {
+	// 	url := fmt.Sprintf(siteUrlTemplate, rollNo)
+	// 	logrus.Infof("FetchAndSaveProfileImage: Trying Site URL for %s", rollNo)
+	// 	relPath, err := downloadAndSave(url, userID)
+	// 	if err == nil && relPath != "" {
+	// 		logrus.Infof("FetchAndSaveProfileImage: Success from Site")
+	// 		return relPath, nil
+	// 	} else {
+	// 		logrus.Infof("FetchAndSaveProfileImage: Failed Site (err=%v)", err)
+	// 	}
+	// }	
+
 	logrus.Warn("FetchAndSaveProfileImage: No image found from any source")
 	return "", nil
 }
 
-func downloadAndSave(url string) (string, error) {
+func downloadAndSave(url string, userID uuid.UUID) (string, error) {
 	resp, err := http.Get(url)
 	if err != nil {
 		return "", err
@@ -75,34 +78,29 @@ func downloadAndSave(url string) (string, error) {
 		return "", fmt.Errorf("invalid content type: %s", contentType)
 	}
 
-	// Determine extension
-	ext := ".jpg" // default
-	if strings.Contains(contentType, "png") {
-		ext = ".png"
-	} else if strings.Contains(contentType, "jpeg") {
-		ext = ".jpg"
+	// Read body to bytes
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	// Process image (Compress/Convert)
+	processedImage, err := assets.ProcessImageBytes(bodyBytes)
+	if err != nil {
+		return "", fmt.Errorf("failed to process image: %w", err)
 	}
 
 	// Create file path
 	cwd, _ := os.Getwd()
 	uploadDir := filepath.Join(cwd, "assets", "pfp")
-	if err := os.MkdirAll(uploadDir, os.ModePerm); err != nil {
-		return "", err
-	}
 
-	filename := uuid.New().String() + ext
-	fullPath := filepath.Join(uploadDir, filename)
-
-	out, err := os.Create(fullPath)
+	// Save using assets.SaveImage (which forces .webp extension)
+	savePath, err := assets.SaveImage(processedImage, uploadDir, userID)
 	if err != nil {
-		return "", err
-	}
-	defer out.Close()
-
-	if _, err := io.Copy(out, resp.Body); err != nil {
 		return "", err
 	}
 
 	// Return relative path
-	return filepath.Join("pfp", filename), nil
+	// assets.SaveImage returns full path, we need relative path from "pfp/..."
+	return filepath.Join("pfp", filepath.Base(savePath)), nil
 }

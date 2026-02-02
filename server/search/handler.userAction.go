@@ -11,7 +11,59 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	"github.com/sirupsen/logrus"
 )
+
+// restoreDummyAccount finds the soft-deleted placeholder and restores it.
+// This ensures scraped data (Baccha/Bapu) is preserved for future signups.
+func restoreDummyAccount(tx *gorm.DB, rollNo string) error {
+	dummyEmail := fmt.Sprintf("cmhw_%s", rollNo)
+
+	// 1. Restore the User (Set deleted_at = NULL)
+	// We use Unscoped() to find it even though it is deleted.
+	result := tx.Unscoped().
+		Model(&model.User{}).
+		Where("email = ?", dummyEmail).
+		Update("deleted_at", nil) // gorm uses nil to represent NULL for time fields
+
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return nil // No dummy account existed, nothing to restore.
+	}
+
+	// 2. Find the user_id of the restored user
+	var dummyUser model.User
+	if err := tx.Where("email = ?", dummyEmail).First(&dummyUser).Error; err != nil {
+		return err
+	}
+
+	// 3. Restore the Profile (Set deleted_at = NULL)
+	if err := tx.Unscoped().
+		Model(&model.Profile{}).
+		Where("user_id = ?", dummyUser.UserID).
+		Update("deleted_at", nil).Error; err != nil {
+		return err
+	}
+	logrus.Infof("User dummy id %s", dummyUser.UserID)
+	// Delete any pre-existing log for this user
+	// (as it is syncing data based on change_logs table)
+	if err := tx.Where("user_id = ?", dummyUser.UserID).Delete(&model.ChangeLog{}).Error; err != nil {
+		return err
+	}
+
+	logEntry := model.ChangeLog{
+        UserID: dummyUser.UserID,
+        Action: "signup",
+    }
+	if err := tx.Create(&logEntry).Error; err != nil {
+        return err
+    }
+
+	logrus.Infof("Restored backup dummy account for roll %s", rollNo)
+	return nil
+}
 
 func deleteProfileData(c *gin.Context) {
 	userID, _ := c.Get("userID")
@@ -20,6 +72,10 @@ func deleteProfileData(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User Profile not found"})
 		return
 	}
+
+	// capture the Roll No before we delete/clear it
+    userRollNo := existingProfile.RollNo
+
 	if err := connections.DB.Transaction(func(tx *gorm.DB) error {
 		// Update user email to a dummy email
 		dummyEmail := fmt.Sprintf("deleted_%s@iitk.ac.in", existingProfile.UserID)
@@ -39,6 +95,13 @@ func deleteProfileData(c *gin.Context) {
 			Updates(model.Profile{}).Error; err != nil {
 			return err
 		}
+
+		// now that the Roll No is free, bring back the dummy account (if it exists)
+        // so the scraped data is waiting for them if they ever return in future
+        if err := restoreDummyAccount(tx, userRollNo); err != nil {
+            // log the error but do not fail the deletion, as this is a background maintenance task
+            logrus.Errorf("Failed to restore dummy backup for roll %s: %v", userRollNo, err)
+        }
 
 		// TODO: Delete bio pics
 		if err := tx.Where("parent_asset_id = ? AND parent_asset_type = ?", existingProfile.UserID, "users").Delete(&model.Image{}).Error; err != nil {

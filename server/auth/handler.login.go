@@ -69,7 +69,7 @@ func loginHandler(c *gin.Context) {
 		Where("email = ?", strings.ToLower(req.Email)).First(&dbUser)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"}) // For protection, users should not know who is not on platform
 		} else {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
 		}
@@ -89,8 +89,8 @@ func loginHandler(c *gin.Context) {
 	}
 
 	// Creating JWT token
-	accessToken, err := middleware.GenerateAccessToken(dbUser.UserID);
-	refreshToken, err := middleware.GenerateRefreshToken(dbUser.UserID);
+	accessToken, err := middleware.GenerateAccessToken(dbUser.UserID)
+	refreshToken, err := middleware.GenerateRefreshToken(dbUser.UserID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
 		return

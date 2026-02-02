@@ -87,7 +87,7 @@ export default function ProfilePage() {
             ...data.profile,
             profile: {
               ...data.profile.profile,
-              profilePic: data.profile.profilepic ?? data.profile.profilePic,
+              // profilePic: data.profile.profilepic ?? data.profile.profilePic,
             },
           },
         };

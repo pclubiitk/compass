@@ -5,6 +5,7 @@ package connections
 // or api keys how do i do it without again loading the envs
 
 import (
+
 	"github.com/sirupsen/logrus"
 
 	"github.com/spf13/viper"

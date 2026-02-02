@@ -17,18 +17,18 @@ type Profile struct {
 	Dept       string `json:"dept"`
 	Course     string `json:"course"`
 	Gender     string `json:"gender"`
-	Hall       string `json:"hall"`
-	RoomNumber string `json:"roomNo"`
-	HomeTown   string `json:"homeTown"`
+	Hall       *string `json:"hall"`
+	RoomNumber *string `json:"roomNo"`
+	HomeTown   *string `json:"homeTown"`
 	Visibility bool   `json:"visibility"`
 	Bapu       string `json:"bapu"`
 	Bachhas    string `json:"bachhas"`
 }
 
-type ProfileWithPic struct {
-	Profile
-	ProfilePic string `json:"profilePic"`
-}
+// type ProfileWithPic struct {
+// 	Profile
+// 	ProfilePic string `json:"profilePic"`
+// }
 
 type Action string
 

@@ -71,51 +71,61 @@ function ResetPasswordPageHolder() {
             setIsLoading(false);
         }
     }
+    // TODO: extract this out for all this auth pages
+    const LogoHeader = () => (
+        <>
+            <CardTitle className="flex flex-col items-center gap-2">
+                <a
+                    href="https://pclub.in"
+                    className="flex flex-col items-center gap-2 font-medium"
+                >
+                    <div className="flex size-8 items-center justify-center rounded-md">
+                        <Image
+                            src="/pclub.png"
+                            alt="Programming Club Logo"
+                            width={60}
+                            height={60}
+                            className="rounded-2xl"
+                        />
+                    </div>
+                    <span className="sr-only">Programming Club</span>
+                </a>
+            </CardTitle>
+            <CardDescription className="flex flex-col items-center gap-2">
+                <p>Programming Club IIT Kanpur</p>
+            </CardDescription>
+        </>
+    );
 
     if (!token || !id) {
         return (
             <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-linear-to-r from-blue-100 to-teal-100 dark:from-slate-800 dark:to-slate-900">
                 <Card className="w-full max-w-sm">
                     <CardHeader>
-                        <CardTitle className="text-destructive text-center text-xl">Invalid Link</CardTitle>
-                        <CardDescription className="text-center px-4">
-                            This password reset link is invalid or missing a token.
+                        <LogoHeader />
+                        <CardTitle className="text-destructive text-2xl pt-2">Invalid Link</CardTitle>
+                        <CardDescription>
+                            This password reset link is invalid or expired.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
                         <Button onClick={() => router.push("/login")} className="w-full">
-                            Go to Login
+                            Back to Login
                         </Button>
                     </CardContent>
                 </Card>
             </div>
         );
     }
+
     return (
         <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-linear-to-r from-blue-100 to-teal-100 dark:from-slate-800 dark:to-slate-900">
             <Card className="w-full max-w-sm">
                 <CardHeader>
-                    <CardTitle className="flex flex-col items-center gap-2">
-                        <a
-                            href="https://pclub.in"
-                            className="flex flex-col items-center gap-2 font-medium"
-                        >
-                            <div className="flex size-8 items-center justify-center rounded-md">
-                                <Image
-                                    src="/pclub.png"
-                                    alt="Programming Club Logo"
-                                    width={60}
-                                    height={60}
-                                    className="rounded-2xl"
-                                />
-                            </div>
-                            <span className="sr-only">Programming Club</span>
-                        </a>
-                    </CardTitle>
-                    <CardDescription className="flex flex-col items-center gap-2">
-                        <p>Programming Club IIT Kanpur</p>
-                    </CardDescription>
-                    <CardTitle className="text-2xl">Reset Password</CardTitle>
+                    <LogoHeader />
+                    
+                    {/* Left-aligned title like the login page */}
+                    <CardTitle className="text-2xl pt-2">Reset Password</CardTitle>
                     <CardDescription>
                         Enter your new password below.
                     </CardDescription>
@@ -142,13 +152,19 @@ function ResetPasswordPageHolder() {
                                 type="password"
                                 required
                                 minLength={8}
-                                placeholder="Confirm new password"
+                                placeholder="Repeat new password"
                             />
                         </div>
 
                         <Button type="submit" className="w-full" disabled={isLoading}>
                             {isLoading ? "Resetting..." : "Reset Password"}
                         </Button>
+                        
+                        <div className="text-sm text-center">
+                            <a href="/login" className="underline underline-offset-4">
+                                Cancel
+                            </a>
+                        </div>
                     </form>
                 </CardContent>
             </Card>

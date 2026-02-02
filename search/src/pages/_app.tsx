@@ -29,6 +29,7 @@ export default function App({ Component, pageProps }: AppProps) {
         defaultTheme="system"
         enableSystem
         disableTransitionOnChange
+        forcedTheme="system"
       >
         <GlobalContextProvider>
           <Component {...pageProps} />

@@ -175,7 +175,7 @@ func formatAccountDeletionEmail(job MailJob) (MailContent, error) {
 	}
 	tmpl := `
 		<h2>Hello {{.Username}},</h2>
-		<p>Your account has been deleted because it was not verified within 24 hours of creation.</p>
+		<p>Your account has been deleted because it was not verified within 1 hours of creation.</p>
 		<p>If you wish to use our services, please sign up again.</p>
 	`
 	body, err := renderTemplate(tmpl, data)

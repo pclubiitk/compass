@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, forwardRef } from "react";
+import React, { useState, useCallback, useEffect} from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -64,7 +64,7 @@ function Options(props: OptionsProps) {
           disabled={isGlobalLoading}
           query={query}
           name="batch"
-          options={props.listOpts.batch}
+          options={props.listOpts.batch || []}
           setQuery={setQuery}
         />
 
@@ -73,7 +73,7 @@ function Options(props: OptionsProps) {
           disabled={isGlobalLoading}
           query={query}
           name="hall"
-          options={props.listOpts.hall}
+          options={props.listOpts.hall || []}
           setQuery={setQuery}
         />
 
@@ -83,7 +83,7 @@ function Options(props: OptionsProps) {
           query={query}
           name="course"
           label="Course"
-          options={props.listOpts.course}
+          options={props.listOpts.course || []}
           setQuery={setQuery}
         />
 
@@ -93,7 +93,7 @@ function Options(props: OptionsProps) {
           query={query}
           name="dept"
           label="Department"
-          options={props.listOpts.dept}
+          options={props.listOpts.dept || []}
           setQuery={setQuery}
         />
 

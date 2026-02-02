@@ -27,9 +27,9 @@ type ProfileUpdateRequest struct {
 	Dept       string `json:"dept"`
 	Course     string `json:"course"`
 	Gender     string `json:"gender"`
-	Hall       string `json:"hall"`
-	RoomNumber string `json:"roomNo"`
-	HomeTown   string `json:"homeTown"`
+	Hall       *string `json:"hall"`
+	RoomNumber *string `json:"roomNo"`
+	HomeTown   *string `json:"homeTown"`
 }
 
 type CCResponse struct {

@@ -16,47 +16,12 @@ import (
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"golang.org/x/crypto/bcrypt"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 	"gorm.io/gorm"
 )
 
-func updatePassword(c *gin.Context) {
-	var input UpdatePasswordRequest
-	var user model.User
-	var err error
-	var newPasswordHash []byte
-
-	// TODO: Many functions have this repetition, extract out.
-	// Request Validation
-	userID, exist := c.Get("userID")
-	if !exist {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format"})
-		return
-	}
-	// find the current user, we are sure it exist
-	connections.DB.Model(&model.User{}).Where("user_id = ?", userID.(uuid.UUID)).First(&user)
-
-	if bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.NewPassword)) != nil {
-		if len(input.NewPassword) < 8 {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Password must be at least 8 characters"})
-			return
-		}
-		if newPasswordHash, err = bcrypt.GenerateFromPassword([]byte(input.NewPassword), bcrypt.DefaultCost); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable create new password"})
-		}
-	}
-	if err := connections.DB.Model(&model.User{}).
-		Where("user_id = ?", userID.(uuid.UUID)).
-		Update("password", string(newPasswordHash)).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed update password"})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"message": "Password updated successfully"})
-}
+var caser = cases.Title(language.English)
 
 // func updateProfileImage(){
 // 	// TODO: set up for images, for image upload, if the similarity is > 90,can ignore it (can think)
@@ -103,9 +68,12 @@ func verifyProfile(c *gin.Context, profileData model.Profile) bool {
 
 	// Checking Status of verification
 	if apiResp.Status != nil {
-		if *apiResp.Status != "true" || (!strings.EqualFold(profileData.Name, *apiResp.Name)) {
+		// Normalize names by removing extra whitespaces and comparing case-insensitively
+		normalizedInputName := strings.ToLower(strings.Join(strings.Fields(profileData.Name), " "))
+		normalizedApiRespName := strings.ToLower(strings.Join(strings.Fields(*apiResp.Name), " "))
+		if *apiResp.Status != "true" || normalizedInputName != normalizedApiRespName {
 			c.JSON(http.StatusBadRequest, gin.H{
-				"error": "Please once verify you data. It should be exactly same as printed on your ID card or displayed in IITK APP",
+				"error": "Please verify your data. It should be exactly same as: 1. on your ID card, or 2. displayed in IITK APP or 3. Initial Branch, if Branch is changed.",
 			})
 			return false
 		}
@@ -116,6 +84,61 @@ func verifyProfile(c *gin.Context, profileData model.Profile) bool {
 		return false
 	}
 	return true
+}
+
+// Returns: (baccha, bapu, error)
+func removeDummyAccount(tx *gorm.DB, rollNo string) (string, string, error) {
+	dummyEmail := fmt.Sprintf("cmhw_%s", rollNo)
+
+	var dummyUser model.User
+	// check if dummy user exists
+	if err := tx.Where("email = ?", dummyEmail).First(&dummyUser).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return "", "", nil // Nothing found, return empty strings
+		}
+		return "", "", err
+	}
+
+	var dummyProfile model.Profile
+	var baccha, bapu string
+
+	// we try to find the profile, okay if it doesn't exist (though it should)
+	if err := tx.Where("user_id = ?", dummyUser.UserID).First(&dummyProfile).Error; err == nil {
+		baccha = dummyProfile.Bachhas
+		bapu = dummyProfile.Bapu
+	}
+
+	// 3. Soft Delete the Profile
+	if err := tx.Where("user_id = ?", dummyUser.UserID).Delete(&model.Profile{}).Error; err != nil {
+		logrus.Errorf("Failed to soft-delete dummy profile for user %s: %v", dummyUser.UserID, err)
+		return "", "", err
+	}
+
+	// 4. Soft Delete the User
+	if err := tx.Delete(&dummyUser).Error; err != nil {
+		logrus.Errorf("Failed to soft-delete dummy user %s: %v", dummyUser.UserID, err)
+		return "", "", err
+	}
+
+	// Delete any pre-existing log for this user
+	// (as it is syncing data based on change_logs table)
+	if err := tx.Where("user_id = ?", dummyUser.UserID).Delete(&model.ChangeLog{}).Error; err != nil {
+		return "", "", err
+	}
+
+	// 5. Log the "delete" action
+	logEntry := model.ChangeLog{
+		UserID: dummyUser.UserID,
+		Action: "delete",
+	}
+	if err := tx.Create(&logEntry).Error; err != nil {
+		return "", "", err
+	}
+
+	logrus.Infof("Preserved data Bacchas, Bapu and soft-deleted dummy for roll %s", rollNo)
+
+	// Return the preserved data
+	return baccha, bapu, nil
 }
 
 func updateProfile(c *gin.Context) {
@@ -132,7 +155,7 @@ func updateProfile(c *gin.Context) {
 	var user model.User
 	if connections.DB.
 		Model(&model.User{}).
-		Select("user_id, email").
+		Select("user_id, email, profile_pic ").
 		Preload("Profile").
 		First(&user, "user_id = ?", userID.(uuid.UUID)).Error != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "User does not exist"})
@@ -147,7 +170,7 @@ func updateProfile(c *gin.Context) {
 		// We set the UserID from the authenticated user's token, not from the input
 		UserID:     userID.(uuid.UUID),
 		Email:      user.Email,
-		Name:       input.Name,
+		Name:       caser.String(input.Name),
 		RollNo:     input.RollNo,
 		Dept:       input.Dept,
 		Course:     input.Course,
@@ -170,17 +193,32 @@ func updateProfile(c *gin.Context) {
 	}
 
 	// TODO: resolve this.
-	// var newPfpPath string
+	var newPfpPath string
 
-	// if user.ProfilePic == "" {
-	// 	if path, err := FetchAndSaveProfileImage(input.RollNo, user.Email); err == nil && path != "" {
-	// 		newPfpPath = path
-	// 	}
-	// }
+	if user.ProfilePic == false {
+		if path, err := FetchAndSaveProfileImage(input.RollNo, user.Email, userID.(uuid.UUID)); err == nil && path != "" {
+			newPfpPath = path
+		}
+	}
 
 	// TODO: Test it
 	// Update into db
 	if err := connections.DB.Transaction(func(tx *gorm.DB) error {
+		// retrieve data and cleanup dummy
+		// must run before we assign the RollNo to the current user
+		savedBaccha, savedBapu, err := removeDummyAccount(tx, profileData.RollNo)
+		if err != nil {
+			return err
+		}
+
+		// --- [NEW] STEP 2: MERGE PRESERVED DATA ---
+		// If the dummy account had "Baccha/Bapu" data, inject it into the profile
+		if savedBaccha != "" {
+			profileData.Bachhas = savedBaccha
+		}
+		if savedBapu != "" {
+			profileData.Bapu = savedBapu
+		}
 		// Update or Create the Profile // 'tx' here instead of 'connections.DB' for one single step
 		if err := tx.
 			Where(model.Profile{UserID: userID.(uuid.UUID)}).
@@ -192,11 +230,11 @@ func updateProfile(c *gin.Context) {
 		}
 
 		// Update ProfilePic if we fetched a new one
-		// if newPfpPath != "" {
-		// 	if err := tx.Model(&model.User{}).Where("user_id = ?", userID).Update("profile_pic", newPfpPath).Error; err != nil {
-		// 		return err
-		// 	}
-		// }
+		if newPfpPath != "" {
+			if err := tx.Model(&model.User{}).Where("user_id = ?", userID).Update("profile_pic", true).Error; err != nil {
+				return err
+			}
+		}
 
 		// Delete any pre-existing log for this user
 		// (as it is syncing data based on change_logs table)
