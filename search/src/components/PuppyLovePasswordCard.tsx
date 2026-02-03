@@ -1,12 +1,13 @@
-import { useState } from "react";
-import { Heart } from "lucide-react";
-import { Card } from "@/components/ui/card";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import { initPuppyLoveWorker, verifyPuppyLovePassword, decryptPrivateKey } from "@/lib/workers/puppyLoveWorkerClient";
+import { initPuppyLoveWorker, verifyPuppyLovePassword, decryptPrivateKey, fetchAndClaimHearts } from "@/lib/workers/puppyLoveWorkerClient";
 import { PUPPYLOVE_POINT } from "@/lib/constant";
-// import { useGContext } from "./ContextProvider";
-// import PuppyLoveFirstLogin from "./PuppyLoveFirstLogin";
+import { PuppyLoveRegistrationCard } from "./PuppyLoveRegistrationCard";
+import { PasswordRecoveryOptionsCard } from "./PasswordRecoveryOptionsCard";
+import { RecoveryCodeVerificationCard } from "./RecoveryCodeVerificationCard";
 
 interface PuppyLovePasswordCardProps {
   onSuccess: () => void;
@@ -14,16 +15,76 @@ interface PuppyLovePasswordCardProps {
 }
 
 export const PuppyLovePasswordCard = ({ onSuccess, onCancel }: PuppyLovePasswordCardProps) => {
+  const router = useRouter();
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  // const [isCheckingProfile, setIsCheckingProfile] = useState(true);
-  // const [needsFirstLogin, setNeedsFirstLogin] = useState(false);
-  // const [userRollNo, setUserRollNo] = useState("");
-  // const { currentUserProfile } = useGContext();
+  const [showRegistration, setShowRegistration] = useState(false);
+  const [recoveryStep, setRecoveryStep] = useState<"options" | "code" | null>(null);
+  const [isInitializing, setIsInitializing] = useState(true);
+  const [privateKey, setPrivateKey] = useState<string | null>(null);
 
-  // useEffect(() => {
-  //   checkPuppyLoveProfile();
-  // }, []);
+  // Check for private key in memory or sessionStorage on mount
+  useEffect(() => {
+    const checkStoredKey = async () => {
+      try {
+        // If privateKey is already in state, skip password prompt
+        if (privateKey) {
+          setIsInitializing(false);
+          // Fetch hearts when we have a private key
+          try {
+            initPuppyLoveWorker();
+            console.log("[PuppyLove] Fetching and claiming hearts with stored key...");
+            const claimedHearts = await fetchAndClaimHearts(privateKey);
+            console.log("[PuppyLove] Hearts claimed:", claimedHearts);
+            
+            if (claimedHearts) {
+              if (typeof window !== "undefined") {
+                if (claimedHearts.claims) {
+                  sessionStorage.setItem("puppylove_claims", JSON.stringify(claimedHearts.claims));
+                }
+                if (claimedHearts.claims_late && claimedHearts.claims_late.length > 0) {
+                  console.log("[PuppyLove] Late hearts detected:", claimedHearts.claims_late);
+                  sessionStorage.setItem("puppylove_claims_late", JSON.stringify(claimedHearts.claims_late));
+                }
+              }
+            }
+          } catch (heartErr) {
+            console.warn("[PuppyLove] Error fetching hearts (non-critical):", heartErr);
+          }
+          onSuccess();
+          return;
+        }
+
+        // Check if keys are stored in sessionStorage
+        if (typeof window !== "undefined") {
+          const storedData = sessionStorage.getItem('data');
+          if (storedData) {
+            try {
+              const parsed = JSON.parse(storedData);
+              if (parsed.k1) {
+                // Keys exist in sessionStorage, skip password prompt
+                setPrivateKey(parsed.k1);
+                setIsInitializing(false);
+                return;
+              }
+            } catch (parseErr) {
+              console.error("Error parsing stored data:", parseErr);
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Error checking stored key:", err);
+      } finally {
+        if (!privateKey) {
+          setIsInitializing(false);
+        }
+      }
+    };
+
+    if (typeof window !== "undefined") {
+      checkStoredKey();
+    }
+  }, [privateKey, onSuccess]);
 
   // const checkPuppyLoveProfile = async () => {
   //   try {
@@ -64,19 +125,33 @@ export const PuppyLovePasswordCard = ({ onSuccess, onCancel }: PuppyLovePassword
   //   onSuccess();
   // };
 
-  const checkPassword = async () => {
-    if (isSubmitting) return;
-    setIsSubmitting(true);
+  const verifyAndProceed = async (pwd: string) => {
     try {
-      initPuppyLoveWorker();
-      
-      // Verify password
-      const isValid = await verifyPuppyLovePassword(password);
-      if (!isValid) {
-        alert("Wrong password!");
-        setIsSubmitting(false);
-        return;
+      // Verify password with backend
+      const verifyRes = await fetch(`${PUPPYLOVE_POINT}/api/puppylove/users/verify-password`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ password: pwd }),
+      });
+
+      if (!verifyRes.ok) {
+        return false;
       }
+
+      const verifyData = await verifyRes.json();
+      
+      // Check if user is registered (dirty == true)
+      if (!verifyData.is_dirty) {
+        // User is unregistered - show registration flow
+        setShowRegistration(true);
+        setPassword("");
+        return false;
+      }
+
+      initPuppyLoveWorker();
 
       // Fetch encrypted private key from backend
       const res = await fetch(`${PUPPYLOVE_POINT}/api/puppylove/users/data`, {
@@ -85,39 +160,84 @@ export const PuppyLovePasswordCard = ({ onSuccess, onCancel }: PuppyLovePassword
       });
 
       if (!res.ok) {
-        alert("Failed to fetch user data");
-        setIsSubmitting(false);
-        return;
+        return false;
       }
 
       const userData = await res.json();
       const encryptedPrivKey = userData.privK;
 
       if (!encryptedPrivKey) {
-        alert("No private key found. Please contact support.");
-        setIsSubmitting(false);
-        return;
+        return false;
       }
 
       // Decrypt private key with password
-      const privateKey = await decryptPrivateKey(encryptedPrivKey, password);
+      const privateKey = await decryptPrivateKey(encryptedPrivKey, pwd);
       
       if (!privateKey) {
-        alert("Failed to decrypt private key. Wrong password?");
-        setIsSubmitting(false);
-        return;
+        return false;
       }
 
-      
       if (typeof window !== "undefined") {
-        sessionStorage.setItem("puppylove_private_key", privateKey);
+        // Store the private key and public key in sessionStorage
+        sessionStorage.setItem(
+          'data',
+          JSON.stringify({ k1: privateKey, k2: userData.pubKey || "" })
+        );
+        // Also store encrypted key for reference
         sessionStorage.setItem("puppylove_encrypted_private_key", encryptedPrivKey);
+        // Store decrypted key in state
+        setPrivateKey(privateKey);
+      }
+
+      // Fetch and claim hearts in the background
+      try {
+        console.log("[PuppyLove] Fetching and claiming hearts...");
+        const claimedHearts = await fetchAndClaimHearts(privateKey);
+        console.log("[PuppyLove] Hearts claimed:", claimedHearts);
+        
+        // Store claimed hearts and late hearts for later use
+        if (claimedHearts) {
+          if (typeof window !== "undefined") {
+            // Store normal claims
+            if (claimedHearts.claims) {
+              sessionStorage.setItem("puppylove_claims", JSON.stringify(claimedHearts.claims));
+            }
+            // Store late claims if any
+            if (claimedHearts.claims_late && claimedHearts.claims_late.length > 0) {
+              console.log("[PuppyLove] Late hearts detected:", claimedHearts.claims_late);
+              sessionStorage.setItem("puppylove_claims_late", JSON.stringify(claimedHearts.claims_late));
+            }
+          }
+        }
+      } catch (heartErr) {
+        console.warn("[PuppyLove] Error fetching hearts (non-critical):", heartErr);
       }
 
       onSuccess();
-      setPassword("");
+      return true;
     } catch (err) {
       console.error("Password verification error:", err);
+      return false;
+    }
+  };
+
+  const checkPassword = async (pwd?: string) => {
+    const passwordToUse = pwd || password;
+    if (isSubmitting) return;
+    if (!passwordToUse) {
+      alert("Please enter a password");
+      return;
+    }
+    
+    setIsSubmitting(true);
+    try {
+      const success = await verifyAndProceed(passwordToUse);
+      if (!success) {
+        alert("Wrong password or unable to verify. Please try again.");
+        setPassword("");
+      }
+    } catch (err) {
+      console.error("Password check error:", err);
       alert("Unable to verify password. Please try again.");
     } finally {
       setIsSubmitting(false);
@@ -138,57 +258,157 @@ export const PuppyLovePasswordCard = ({ onSuccess, onCancel }: PuppyLovePassword
   //   return <PuppyLoveFirstLogin rollNo={userRollNo} onSuccess={handleFirstLoginSuccess} />;
   // }
 
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md animate-in fade-in duration-300 p-4">
-      <Card className="relative w-full max-w-[20rem] overflow-hidden border-none bg-white p-8 shadow-2xl rounded-[2.5rem] text-center flex flex-col items-center transform animate-in zoom-in-95 duration-300">
-        
-        <div className="absolute -top-12 -left-12 h-32 w-32 bg-rose-50 rounded-full blur-2xl" />
+  if (showRegistration) {
+    return <PuppyLoveRegistrationCard onSuccess={onSuccess} onCancel={() => setShowRegistration(false)} />;
+  }
 
-        <div className="relative mb-6">
-          <div className="h-24 w-24 rounded-3xl overflow-hidden border-4 border-white shadow-lg rotate-3 bg-stone-50">
+  // Recovery options flow
+  if (recoveryStep === "options") {
+    return (
+      <PasswordRecoveryOptionsCard 
+        onChooseRecoveryCode={() => setRecoveryStep("code")}
+        onChooseNewPassword={() => {
+          // Redirect directly to forgot-password page
+          window.location.href = process.env.NEXT_PUBLIC_FORGOT_PASSWORD_URL || "http://localhost:3001/forgot-password";
+        }}
+        onCancel={() => {
+          setRecoveryStep(null);
+          setPassword("");
+        }}
+      />
+    );
+  }
+
+  if (recoveryStep === "code") {
+    return (
+      <RecoveryCodeVerificationCard 
+        onVerified={(recoveredPassword) => {
+          // Password recovered, auto-login
+          setPassword(recoveredPassword);
+          setRecoveryStep(null);
+          // Trigger login with recovered password
+          checkPassword(recoveredPassword);
+        }}
+        onBack={() => setRecoveryStep("options")}
+      />
+    );
+  }
+
+  // Show loading while initializing
+  if (isInitializing) {
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="flex flex-col items-center gap-2">
+              <Image 
+                src="/icons/puppyLoveLogo.png" 
+                alt="Puppy Love"
+                width={64}
+                height={64}
+                className="rounded-2xl"
+              />
+            </CardTitle>
+            <CardTitle className="text-2xl text-center">Puppy Love</CardTitle>
+          </CardHeader>
+          <CardContent className="flex justify-center py-8">
+            <p className="text-muted-foreground">Loading...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // If private key is in memory, skip password prompt and auto-login
+  if (privateKey) {
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="flex flex-col items-center gap-2">
+              <Image 
+                src="/icons/puppyLoveLogo.png" 
+                alt="Puppy Love"
+                width={64}
+                height={64}
+                className="rounded-2xl"
+              />
+            </CardTitle>
+            <CardTitle className="text-2xl text-center">Puppy Love</CardTitle>
+          </CardHeader>
+          <CardContent className="flex justify-center py-8">
+            <p className="text-muted-foreground">Logging in...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle className="flex flex-col items-center gap-2">
             <Image 
               src="/icons/puppyLoveLogo.png" 
-              alt="Puppy" 
-              fill
-              className="object-contain p-3"
+              alt="Puppy Love"
+              width={64}
+              height={64}
+              className="rounded-2xl"
             />
-          </div>
-          <div className="absolute -bottom-1 -right-1 bg-rose-500 p-2 rounded-full shadow-md border-2 border-white">
-            <Heart className="h-3.5 w-3.5 text-white fill-white" />
-          </div>
-        </div>
+          </CardTitle>
+          <CardTitle className="text-2xl text-center">Puppy Love</CardTitle>
+          <CardDescription className="text-center">Enter your password to continue</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4">
+            <div className="grid gap-2">
+              <input 
+                type="password" 
+                autoFocus
+                className="w-full px-4 py-2 border rounded-md"
+                placeholder="Enter password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && checkPassword()}
+                disabled={isSubmitting}
+              />
+            </div>
 
-        <div className="space-y-1 mb-6">
-          <p className="text-[0.7rem] text-rose-400 font-bold uppercase tracking-[0.2em]">Puppy Love</p>
-          <p className="text-stone-500 text-sm font-medium">Enter your password</p>
-        </div>
-        
-        <div className="w-full space-y-3">
-          <input 
-            type="password" 
-            autoFocus
-            className="w-full px-4 py-3 bg-stone-50 border-2 border-stone-100 rounded-xl text-center text-rose-600 placeholder-stone-300 focus:bg-white focus:border-rose-200 focus:outline-none transition-all duration-300 text-lg tracking-[0.4em]"
-            placeholder="••••"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && checkPassword()}
-            disabled={isSubmitting}
-          />
+            <Button 
+              onClick={() => checkPassword()}
+              disabled={isSubmitting}
+              className="w-full"
+            >
+             {isSubmitting ? "Verifying..." : "Submit"}
+            </Button>
 
-          <Button 
-            className="w-full py-6 bg-stone-900 hover:bg-rose-600 text-white rounded-xl font-bold transition-all active:scale-95"
-            onClick={checkPassword}
-            disabled={isSubmitting}
-          >
-           {isSubmitting ? "Verifying..." : "Submit"}
-          </Button>
-          <button 
-            className="text-xs text-stone-400 hover:text-stone-600 transition-colors font-medium"
-            onClick={onCancel}
-          >
-            Cancel
-          </button>
-        </div>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline"
+                className="flex-1"
+                onClick={onCancel}
+              >
+                Cancel
+              </Button>
+              <Button 
+                variant="outline"
+                className="flex-1"
+                onClick={() => setRecoveryStep("options")}
+              >
+                Forgot Password?
+              </Button>
+            </div>
+
+            <Button 
+              variant="outline"
+              className="w-full"
+              onClick={() => setShowRegistration(true)}
+            >
+              Register on Puppy Love
+            </Button>
+          </div>
+        </CardContent>
       </Card>
     </div>
   );

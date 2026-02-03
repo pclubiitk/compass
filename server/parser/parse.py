@@ -22,7 +22,7 @@ def average_coords(coords): # Averages out the coordinates for Polygons, Lines e
 # Connect to PSQL
 conn = psycopg2.connect( # edit these to match the Locations table
     dbname="compass",
-    user="this_is_mjk",
+    user="41530d55859f19b59c917619570d0d4b30529e96768c61f28583b0ec1534a58e",
     password="",
     host="",
     port=5432

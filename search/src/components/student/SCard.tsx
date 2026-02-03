@@ -28,6 +28,12 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
   const [isSendingHeart, setIsSendingHeart] = useState(false);
 
   const handleSendHeart = async () => {
+    // Check if trying to send heart to yourself
+    if (currentUserProfile?.rollNo === data.rollNo) {
+      alert("You cannot send a heart to yourself!");
+      return;
+    }
+
     if (!puppyLovePublicKeys || !puppyLovePublicKeys[data.rollNo]) {
       alert("Public key not found for this user");
       return;
@@ -38,21 +44,35 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
       return;
     }
 
+    // Get sender's public key and private key from session
+    const senderPublicKey = puppyLovePublicKeys[currentUserProfile.rollNo];
+    const senderPrivateKey = typeof window !== "undefined" 
+      ? sessionStorage.getItem("puppylove_private_key") 
+      : null;
+
+    if (!senderPublicKey || !senderPrivateKey) {
+      alert("Your keys are not available. Please log in to PuppyLove first.");
+      return;
+    }
+
     setIsSendingHeart(true);
+    
     try {
-      // Prepare hearts through worker (encryption happens here)
+      // Step 1: Prepare hearts with complete encryption (id_encrypt, sha_encrypt, enc)
       const heartData = await prepareSendHeart(
-        puppyLovePublicKeys[data.rollNo],
-        currentUserProfile.rollNo,
-        data.rollNo,
+        senderPublicKey,           // Your public key
+        senderPrivateKey as string,          // Your private key
+        puppyLovePublicKeys[data.rollNo],  // Receiver's public key
+        currentUserProfile.rollNo, // Your roll number
+        data.rollNo,              // Receiver's roll number
         currentUserProfile.gender
       );
 
-      // Send hearts through worker
+      // Step 2: Send ACTUAL hearts (with receiver's encrypted data)
       const result = await sendHeart({
         genderOfSender: currentUserProfile.gender,
-        enc1: heartData.hearts[0].enc,
-        sha1: heartData.hearts[0].sha,
+        enc1: heartData.hearts[0].enc,        // Encrypted with receiver's public key
+        sha1: heartData.hearts[0].sha,        // Plain SHA hash
         enc2: heartData.hearts[1].enc,
         sha2: heartData.hearts[1].sha,
         enc3: heartData.hearts[2].enc,
@@ -75,9 +95,9 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
             return updated;
           });
         }
-        alert("Heart sent successfully!");
+        alert("Heart sent successfully to " + data.name + "!");
       } else {
-        alert("Error sending heart");
+        alert("Failed to send heart. Please try again.");
       }
     } catch (err) {
       alert("Error: " + (err as Error).message);

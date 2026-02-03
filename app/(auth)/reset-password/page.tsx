@@ -51,11 +51,10 @@ function ResetPasswordPageHolder() {
             const response = await fetch(
                 `${process.env.NEXT_PUBLIC_AUTH_URL}/api/auth/reset-password`,
                 {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ token, password, id }),
-                }
-            );
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ token, password, id }),
+            });
 
             const data = await response.json();
 

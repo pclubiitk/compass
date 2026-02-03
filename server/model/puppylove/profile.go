@@ -28,5 +28,5 @@ type PuppyLoveProfile struct {
 	About                 string    `json:"about" bson:"about"`
 	Interests             string    `json:"interests" bson:"interests"`
 	SendHeartsTimestamp   time.Time `json:"send_hearts_timestamp" bson:"send_hearts_timestamp"`
-	ReturnHeartsTimestamp time.Time `json:"return_hearts_timestamp" bson:"return_hearts_timestamp"`
+	ReturnHeartsTimestamp time.Time `jsaon:"return_hearts_timestamp" bson:"return_hearts_timestamp"`
 }

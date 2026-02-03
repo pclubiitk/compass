@@ -81,6 +81,7 @@ export const fetchAndClaimHearts = (privateKey: string) => callWorkerAPI('FETCH_
 export const fetchReturnHearts = () => callWorkerAPI('FETCH_RETURN_HEARTS');
 export const claimHeart = (claimData: any) => callWorkerAPI('CLAIM_HEART', claimData);
 export const verifyReturnHearts = (verifyData: any) => callWorkerAPI('VERIFY_RETURN_HEARTS', verifyData);
+export const returnLateHearts = (lateHeartsData: any) => callWorkerAPI('RETURN_LATE_HEARTS', lateHeartsData);
 export const fetchPublicKeys = () => callWorkerAPI('FETCH_PUBLIC_KEYS');
 export const getUserData = () => callWorkerAPI('GET_USER_DATA');
 export const updateAbout = (aboutData: any) => callWorkerAPI('UPDATE_ABOUT', aboutData);
@@ -89,8 +90,22 @@ export const publishProfile = () => callWorkerAPI('PUBLISH_PROFILE');
 export const getMyMatches = () => callWorkerAPI('GET_MY_MATCHES');
 export const sentHeartDecoded = (decodedData: any) => callWorkerAPI('SENT_HEART_DECODED', decodedData);
 
-export const prepareSendHeart = (publicKey: string, rollNo: string, targetRollNo: string, gender: string): Promise<any> => {
-  return callWorkerAPI('PREPARE_SEND_HEART', { publicKey, rollNo, targetRollNo, gender });
+export const prepareSendHeart = (
+  senderPublicKey: string,
+  senderPrivateKey: string,
+  receiverPublicKey: string,
+  senderRollNo: string,
+  receiverRollNo: string,
+  gender: string
+): Promise<any> => {
+  return callWorkerAPI('PREPARE_SEND_HEART', {
+    senderPublicKey,
+    senderPrivateKey,
+    receiverPublicKey,
+    senderRollNo,
+    receiverRollNo,
+    gender
+  });
 };
 
 // First-time login operations

@@ -4,14 +4,17 @@ import (
 	"compass/connections"
 	"compass/model"
 	"compass/model/puppylove"
+	"compass/workers"
 	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
@@ -20,6 +23,12 @@ import (
 // Auth is handled by campus auth middleware, so user is already authenticated
 func UserFirstLogin(c *gin.Context) {
 	rollNo, exists := c.Get("rollNo")
+	if !exists {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "User ID not found in context"})
+		return
+	}
+
+	userID, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "User ID not found in context"})
 		return
@@ -50,6 +59,7 @@ func UserFirstLogin(c *gin.Context) {
 
 	// Update or create the profile
 	profile := puppylove.PuppyLoveProfile{
+		UserID: userID.(uuid.UUID),
 		RollNo: rollNo.(string),
 		PubK:   info.PubKey,
 		PrivK:  info.PrivKey,
@@ -69,10 +79,17 @@ func UserFirstLogin(c *gin.Context) {
 }
 
 // VerifyAccessPassword validates the PuppyLove access password using the user's login password
+// Also checks if user has an existing PuppyLove profile
 func VerifyAccessPassword(c *gin.Context) {
 	userID, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	rollNo, rollExists := c.Get("rollNo")
+	if !rollExists {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "User ID not found in context"})
 		return
 	}
 
@@ -97,7 +114,46 @@ func VerifyAccessPassword(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"valid": true})
+	// Check if user has existing PuppyLove profile
+	var existingProfile puppylove.PuppyLoveProfile
+	hasProfile := false
+	isDirty := false
+	if err := connections.DB.Where(&puppylove.PuppyLoveProfile{RollNo: rollNo.(string)}).First(&existingProfile).Error; err == nil {
+		hasProfile = true
+		isDirty = existingProfile.Dirty
+	}
+
+	action := "verify_password"
+	if !isDirty {
+		action = "verify_password_and_create_keys"
+	}
+
+	// Send action message to worker
+	profileAction := workers.PuppyLoveProfileAction{
+		Action:     action,
+		UserID:     userID.(uuid.UUID),
+		RollNo:     rollNo.(string),
+		HasProfile: hasProfile,
+		IsDirty:    isDirty,
+		Timestamp:  time.Now().Unix(),
+	}
+
+	// Convert to JSON and publish to worker queue
+	payload, err := json.Marshal(profileAction)
+	if err == nil {
+		// Publish to puppylove queue (non-blocking, errors are logged)
+		if err := workers.PublishJob(payload, "puppylove"); err != nil {
+			// Log error but don't fail the response - user should still be able to proceed
+			fmt.Printf("Warning: Failed to publish PuppyLove profile action to worker: %v\n", err)
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"valid":       true,
+		"has_profile": hasProfile,
+		"is_dirty":    isDirty,
+		"action":      action,
+	})
 }
 
 func GetUserData(c *gin.Context) {
@@ -127,6 +183,8 @@ func GetUserData(c *gin.Context) {
 		"publish":  profile.Publish,
 		"about":    profile.About,
 		"interest": profile.Interests,
+		"privK":    profile.PrivK,
+		"pubKey":   profile.PubK, //added by me(ritika)
 	})
 }
 

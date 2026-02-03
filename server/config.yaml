@@ -8,6 +8,7 @@ database:
   name: "compass"
   user: "this_is_mjk"
   port: 5432
+  
 
 rabbitmq:
   host: "localhost"
@@ -18,7 +19,7 @@ rabbitmq:
   port: 5672
 
 puppylove:
-  enabled: false
+  enabled: true
   redis:
     host: 
 

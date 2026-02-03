@@ -100,12 +100,11 @@ export default function App(props: AppProps) {
         <link rel="manifest" href="/manifest.json" />
       </Head>
 
-     <ThemeProvider>
-  <ContextProvider>
-    <AppWrapper {...props} />
-  </ContextProvider>
-</ThemeProvider>
-
+      <ThemeProvider>
+        <ContextProvider>
+          <AppWrapper {...props} />
+        </ContextProvider>
+      </ThemeProvider>
     </>
   );
 }

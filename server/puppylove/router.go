@@ -13,12 +13,15 @@ func Router(r *gin.Engine) {
 			c.JSON(200, gin.H{"message": "Hello from the other side."})
 		})
 
+		// Public password reset endpoint (no auth required)
+		puppylove.POST("/reset-password", ResetPuppyLovePasswordHandler)
+
 		users := puppylove.Group("/users")
 		{
 			users.Use(middleware.UserAuthenticator)
 			users.GET("/alluserInfo", GetAllUsersInfo)
 			users.POST("/login/first", UserFirstLogin)
-		
+
 			users.GET("/data", GetUserData)
 			users.GET("/activeusers", GetActiveUsers)
 			users.GET("/fetchPublicKeys", FetchPublicKeys)
@@ -41,6 +44,14 @@ func Router(r *gin.Engine) {
 			users.POST("/sendheartVirtual", SendHeartVirtualHandler)
 			users.POST("/sendheart", SendHeartWithReturn)
 
+		}
+
+		// Special endpoints (requires authentication + admin permission)
+		special := puppylove.Group("/special")
+		special.Use(middleware.UserAuthenticator)
+		special.Use(PuppyLovePermit())
+		{
+			special.POST("/returnclaimedheartlate", ReturnClaimedHeartLate)
 		}
 
 		// Public endpoints

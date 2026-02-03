@@ -21,3 +21,13 @@ type ModerationJob struct {
 	AssetID uuid.UUID `json:"asset_id"`
 	Type    string    `json:"type"`
 }
+
+// PuppyLoveProfileAction defines actions for PuppyLove profile creation/access
+type PuppyLoveProfileAction struct {
+	Action     string    `json:"action"`       // "verify_password" or "verify_password_and_create_keys"
+	UserID     uuid.UUID `json:"user_id"`
+	RollNo     string    `json:"roll_no"`
+	HasProfile bool      `json:"has_profile"`
+	IsDirty    bool      `json:"is_dirty"`    // User registration status
+	Timestamp  int64     `json:"timestamp"`
+}

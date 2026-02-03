@@ -27,7 +27,7 @@ func FetchPublicKeys(c *gin.Context) {
 	// Fetch from database
 	var publicKeys []UserPublicKey
 	if err := connections.DB.Model(&puppylove.PuppyLoveProfile{}).
-		Select("roll_no, pub_k").
+		Select("roll_no as id, pub_k").
 		Where("pub_k != ''").
 		Find(&publicKeys).Error; err != nil {
 		logrus.WithError(err).Error("Failed to fetch public keys")

@@ -71,7 +71,7 @@ self.addEventListener('message', async (e: MessageEvent) => {
     const { sha, publicKey } = payload;
     try {
       const result = await Encryption(sha, publicKey);
-      self.postMessage({ type: 'ENCRYPTED', result, error: null });
+      self.postMessage({ type: 'ENCRYPTED', result, error: null });  
     } catch (err) {
       self.postMessage({ type: 'ENCRYPTED', result: null, error: (err as Error).message });
     }
@@ -244,6 +244,22 @@ self.addEventListener('message', async (e: MessageEvent) => {
     }
   }
 
+  if (type === 'RETURN_LATE_HEARTS') {
+    const payload_data = payload;
+    try {
+      const res = await fetch(`${PUPPYLOVE_POINT}/api/puppylove/special/returnclaimedheartlate`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload_data),
+      });
+      const data = await res.json();
+      self.postMessage({ type: 'RETURN_LATE_HEARTS_RESULT', result: data, error: null });
+    } catch (err) {
+      self.postMessage({ type: 'RETURN_LATE_HEARTS_RESULT', result: null, error: (err as Error).message });
+    }
+  }
+
   if (type === 'FETCH_PUBLIC_KEYS') {
     try {
       const res = await fetch(`${PUPPYLOVE_POINT}/api/puppylove/users/fetchPublicKeys`, {
@@ -348,20 +364,45 @@ self.addEventListener('message', async (e: MessageEvent) => {
 
   // Send Heart with full encryption flow
   if (type === 'PREPARE_SEND_HEART') {
-    const { publicKey, rollNo, targetRollNo, gender } = payload;
+    const { senderPublicKey, senderPrivateKey, receiverPublicKey, senderRollNo, receiverRollNo, gender } = payload;
     try {
-      // Step 1: Generate random strings for each heart
+      // Step 1: Order IDs (smaller ID first for consistency)
+      const orderedIds = [senderRollNo, receiverRollNo].sort();
+      const R1 = orderedIds[0];
+      const R2 = orderedIds[1];
+
+      // Step 2: Create 4 hearts with proper encryption
       const hearts = [];
       for (let i = 0; i < 4; i++) {
-        const randomStr = generateRandomString(32);
-        const sha = await SHA256(randomStr);
-        const enc = await Encryption(sha, publicKey);
-        hearts.push({ enc, sha, randomStr });
+        // A. Create Plain Text ID: R1-R2-128charRandomString
+        const randomString = generateRandomString(128);
+        const id_plain = `${R1}-${R2}-${randomString}`;
+
+        // B. Generate SHA256 Hash of the plain text ID
+        const sha = await SHA256(id_plain);
+
+        // C. Create THREE Encrypted Versions:
+        // 1. id_encrypt: Encrypt id_plain with YOUR public key (your record)
+        const id_encrypt = await Encryption(id_plain, senderPublicKey);
+
+        // 2. sha_encrypt: Encrypt sha with YOUR private key using AES (your signature)
+        const sha_encrypt = await Encryption_AES(sha, senderPrivateKey);
+
+        // 3. enc: Encrypt sha with RECEIVER's public key (they receive this)
+        const enc = await Encryption(sha, receiverPublicKey);
+
+        hearts.push({ 
+          id_plain,
+          sha,
+          id_encrypt,    // Your record (encrypted with your public key)
+          sha_encrypt,   // Your signature (encrypted with your private key)
+          enc            // Receiver's heart (encrypted with their public key)
+        });
       }
 
       self.postMessage({ 
         type: 'PREPARE_SEND_HEART_RESULT', 
-        result: { hearts, rollNo, targetRollNo, gender }, 
+        result: { hearts, senderRollNo, receiverRollNo, gender }, 
         error: null 
       });
     } catch (err) {
