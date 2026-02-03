@@ -1,4 +1,4 @@
-import Image from "next/image";
+// import Image from "next/image";
 import Link from "next/link";
 
 export default function GuestFooter() {
@@ -14,15 +14,15 @@ export default function GuestFooter() {
               target="_blank"
               rel="noopener noreferrer"
             >
-             Centre for Mental Health and Wellbeing Team (CMHW) IITK
+             Center for Mental Health and Wellbeing Team (CMHW) IITK
             </Link>
           </p>
-          <Image
+          {/* <Image
             src="/cslogo.png" // Make sure this path is correct in your /public folder
             width={18}
             height={18}
             alt="Logo"
-          />
+          /> */}
         </div>
       </div>
     </footer>
