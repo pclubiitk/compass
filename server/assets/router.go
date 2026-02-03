@@ -12,6 +12,7 @@ func Router(r *gin.Engine) {
 	// Static Route to provide the images (public, no auth required)
 	r.Static("/assets", "./assets/public")
 	// TODO: Make it more formal, this limit
+	// TODO: set up for images, for image upload, if the similarity is > 90,can ignore it (can think)
 	r.MaxMultipartMemory = 5 << 20
 	// r.MaxMultipartMemory = 8 << 20
 
