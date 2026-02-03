@@ -6,6 +6,7 @@ import (
 	"compass/model"
 	"errors"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"encoding/json"
@@ -23,17 +24,12 @@ import (
 
 var caser = cases.Title(language.English)
 
-// func updateProfileImage(){
-// 	// TODO: set up for images, for image upload, if the similarity is > 90,can ignore it (can think)
-// }
-
 func verifyProfile(c *gin.Context, profileData model.Profile) bool {
 	// OA's verification route, do not take name input, but returns name upon verification
-	// TODO: Add logic to check if that roll no is already registered or not
+	// We request with the email and the user data provided, OA verifies and returns true and false,
+	// If the verification is successful, we receive the name of the user.
 	paramkey := fmt.Sprintf("%s:%s:%s:%s", profileData.RollNo, profileData.Course, profileData.Dept, profileData.Email)
-	// TODO: put this url in the env file
-	// req, err := http.NewRequest("GET", fmt.Sprintf("http://localhost:5000/verify?paramkey=%s", paramkey), nil)
-
+	paramkey = url.QueryEscape(paramkey) // To ensure the paramkey for "(MSc 2yr)" and such cases is correctly parsed
 	req, err := http.NewRequest("GET", fmt.Sprintf("%s?paramkey=%s", viper.GetString("oa.url"), paramkey), nil)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create request"})
@@ -191,16 +187,12 @@ func updateProfile(c *gin.Context) {
 		}
 
 	}
-
-	// TODO: resolve this.
 	var newPfpPath string
-
 	if user.ProfilePic == false {
 		if path, err := FetchAndSaveProfileImage(input.RollNo, user.Email, userID.(uuid.UUID)); err == nil && path != "" {
 			newPfpPath = path
 		}
 	}
-
 	// TODO: Test it
 	// Update into db
 	if err := connections.DB.Transaction(func(tx *gorm.DB) error {
@@ -235,7 +227,6 @@ func updateProfile(c *gin.Context) {
 				return err
 			}
 		}
-
 		// Delete any pre-existing log for this user
 		// (as it is syncing data based on change_logs table)
 		if err := tx.Where("user_id = ?", userID).Delete(&model.ChangeLog{}).Error; err != nil {
