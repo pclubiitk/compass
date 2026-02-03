@@ -91,7 +91,7 @@ export default function TermsAndConditionsPage() {
         </p>
         <ol className="list-disc ml-5 mb-2">
           <li>
-            We request SG data directly from the Centre for Mental Health and Wellbeing Team (CMHW) to validate and incorporate it into the family tree.
+            We request SG data directly from the Center for Mental Health and Wellbeing Team (CMHW) to validate and incorporate it into the family tree.
           </li>
           <li>
             The obtained profile data is cross-verified with the Computer Centre
