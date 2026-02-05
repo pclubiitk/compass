@@ -1,0 +1,28 @@
+# Use the newer Go version to fix your previous error
+FROM golang:1.25-alpine
+
+WORKDIR /app
+
+# 1. Install System Dependencies
+# Added 'libheif-dev' to fix the specific error you just saw.
+# Added 'jpeg-dev' 'libpng-dev' 'libwebp-dev' as they are common requirements for image processing.
+RUN apk add --no-cache \
+    vips-dev \
+    build-base \
+    pkgconf \
+    libheif-dev \
+    jpeg-dev \
+    libpng-dev \
+    libwebp-dev
+
+# 2. Cache Dependencies
+COPY go.mod go.sum ./
+RUN go mod download
+
+# 3. Build the Application
+COPY . .
+
+# Enable CGO and build
+RUN CGO_ENABLED=1 GOOS=linux go build -o server ./cmd/
+
+CMD ["./server"]

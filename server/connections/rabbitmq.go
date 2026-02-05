@@ -4,6 +4,7 @@ package connections
 
 import (
 	"log"
+	"strings"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/sirupsen/logrus"
@@ -17,8 +18,8 @@ func initRabbitMQ() {
 	var err error
 	url := "amqp://" + viper.GetString("rabbitmq.user") + ":" + viper.GetString("rabbitmq.password")
 	url += "@" + viper.GetString("rabbitmq.host") + ":" + viper.GetString("rabbitmq.port") + "/"
-
-	MQConn, err = amqp.Dial(url)
+	realURL := strings.ReplaceAll(url, " ", "")
+	MQConn, err = amqp.Dial(realURL)
 	if err != nil {
 		log.Fatalf("Failed to connect to RabbitMQ: %v", err)
 	}

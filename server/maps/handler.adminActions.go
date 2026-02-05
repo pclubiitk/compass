@@ -4,13 +4,13 @@ import (
 	"compass/assets"
 	"compass/connections"
 	"compass/model"
+	"compass/workers"
+	"encoding/json"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 	"gorm.io/gorm"
 )
 
@@ -60,104 +60,138 @@ func flagAction(c *gin.Context) {
 			c.JSON(500, gin.H{"error": "Failed to update review status"})
 			return
 		}
-		connections.MQChannel.Publish(
-			"",
-			viper.GetString("rabbitmq.mailqueue"), // queue name
-			false,                                 // mandatory
-			false,                                 // immediate
-			amqp.Publishing{
-				ContentType: "application/json",
-				Body:        []byte(`{"userId": "` + review.User.UserID.String() + `", "message": "` + req.Message + `"}`),
-			},
-		)
+
+		var user model.User
+		if err := connections.DB.First(&user, "user_id = ?", review.ContributedBy).Error; err != nil {
+			logrus.WithError(err).WithField("userID", review.ContributedBy).Warn("Failed to load contributor for review rejection email")
+		} else {
+			mailJob := workers.MailJob{
+				Type: "generic_notice",
+				To:   user.Email,
+				Data: map[string]interface{}{
+					"message": req.Message,
+				},
+			}
+			payload, err := json.Marshal(mailJob)
+			if err != nil {
+				logrus.WithError(err).Warn("Failed to marshal review rejection mail job")
+			} else if err := workers.PublishJob(payload, model.MailQueue); err != nil {
+				logrus.WithError(err).Warn("Failed to queue review rejection email")
+			}
+		}
 		c.JSON(200, gin.H{"message": "Review rejected", "details": req.Message})
 		return
 	}
 }
 
 func locationAction(c *gin.Context) {
-	// add the request model to the request.model.go file
+	locationID := c.Param("id")
+	logrus.WithField("locationID", locationID).Info("Location action request received")
 
-	// locationID := c.Param("id")
+	var req FlagActionRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		logrus.WithError(err).Warn("Invalid request format")
+		c.JSON(400, gin.H{"error": "Invalid request"})
+		return
+	}
 
-	// var req RequestAddLocation
-	// if err := c.ShouldBindJSON(&req); err != nil {
-	// 	c.JSON(400, gin.H{"error": "Invalid request"})
-	// 	return
-	// }
+	logrus.WithFields(logrus.Fields{
+		"locationID": locationID,
+		"action":     req.Action,
+	}).Info("Processing location action")
 
-	// var loc RequestAddLocation
-	// if err := connections.DB.Model(&RequestAddLocation{}).Where("id = ?", locationID).First(&loc).Error; err != nil {
-	// 	c.JSON(404, gin.H{"error": "Location request not found"})
-	// 	return
-	// }
+	var location model.Location
+	if err := connections.DB.Where("location_id = ?", locationID).First(&location).Error; err != nil {
+		logrus.WithError(err).WithField("locationID", locationID).Warn("Location not found")
+		c.JSON(404, gin.H{"error": "Location not found"})
+		return
+	}
 
-	// // add the location in the database if user approve it, else reject it
-	// if req.Status == "approved" {
-	// 	// Insert into final Location table (assuming model.Location exists)
-	// 	final := model.Location{
-	// 		Name:      loc.Title,
-	// 		Latitude:  loc.Latitude,
-	// 		Longitude: loc.Longitude,
-	// 		// LocationType:  loc.LocationType, // no locationType in Location
-	// 		ContributedBy: loc.Contributor_id,
-	// 		Description:   loc.Description,
-	// 		// Image:         loc.Image, // no field for image in Location
-	// 		Status: "approved", //loc.status giving type error
-	// 	}
-	// 	if err := connections.DB.Create(&final).Error; err != nil {
-	// 		c.JSON(500, gin.H{"error": "Failed to add location"})
-	// 		return
-	// 	}
+	logrus.WithFields(logrus.Fields{
+		"locationID":      locationID,
+		"currentStatus":   location.Status,
+		"requestedAction": req.Action,
+	}).Info("Location found, processing action")
 
-	// 	loc.Status = "approved" // approving in og req table
-	// 	connections.DB.Save(&loc)
+	if req.Action == "approved" {
+		// Update using Model and Updates for better control
+		if err := connections.DB.Model(&model.Location{}).
+			Where("location_id = ?", locationID).
+			Update("status", model.Approved).Error; err != nil {
+			logrus.WithError(err).Error("Failed to update location status")
+			c.JSON(500, gin.H{"error": "Failed to update location status"})
+			return
+		}
 
-	// 	// Send mail thanking contributor
-	// 	connections.MQChannel.Publish(
-	// 		"",
-	// 		viper.GetString("rabbitmq.mailqueue"),
-	// 		false,
-	// 		false,
-	// 		amqp.Publishing{
-	// 			ContentType: "application/json",
-	// 			Body:        []byte(`{"userId": "` + loc.Contributor_id.String() + `", "message": "Thanks for contributing a location! It's now live."}`),
-	// 		},
-	// 	)
+		logrus.WithField("locationID", locationID).Info("Location approved successfully")
 
-	// 	c.JSON(200, gin.H{"message": "Location approved and added"})
-	// 	return
-	// }
+		// Send mail thanking contributor
+		var user model.User
+		if err := connections.DB.First(&user, "user_id = ?", location.ContributedBy).Error; err != nil {
+			logrus.WithError(err).WithField("userID", location.ContributedBy).Warn("Failed to load contributor for approval email")
+		} else {
+			mailJob := workers.MailJob{
+				Type: "thanks_contribution",
+				To:   user.Email,
+				Data: map[string]interface{}{
+					"username":      user.Email,
+					"content_title": location.Name,
+				},
+			}
+			payload, err := json.Marshal(mailJob)
+			if err != nil {
+				logrus.WithError(err).Warn("Failed to marshal approval mail job")
+			} else if err := workers.PublishJob(payload, model.MailQueue); err != nil {
+				logrus.WithError(err).Warn("Failed to queue approval email")
+			}
+		}
 
-	// if req.Status == "rejected" {
-	// 	if req.Message == "" {
-	// 		c.JSON(400, gin.H{"error": "Rejection message required"})
-	// 		return
-	// 	}
+		c.JSON(200, gin.H{"message": "Location approved and added"})
+		return
+	}
 
-	// 	loc.Status = "rejected"
-	// 	connections.DB.Save(&loc)
+	if req.Action == "rejected" {
+		if req.Message == "" {
+			c.JSON(400, gin.H{"error": "Rejection message required"})
+			return
+		}
 
-	// 	// Send rejection mail
-	// 	connections.MQChannel.Publish(
-	// 		"",
-	// 		viper.GetString("rabbitmq.mailqueue"),
-	// 		false,
-	// 		false,
-	// 		amqp.Publishing{
-	// 			ContentType: "application/json",
-	// 			Body:        []byte(`{"userId": "` + loc.Contributor_id.String() + `", "message": "` + req.Message + `"}`),
-	// 		},
-	// 	)
+		// Update using Model and Updates for better control
+		if err := connections.DB.Model(&model.Location{}).
+			Where("location_id = ?", locationID).
+			Update("status", model.Rejected).Error; err != nil {
+			logrus.WithError(err).Error("Failed to update location status")
+			c.JSON(500, gin.H{"error": "Failed to update location status"})
+			return
+		}
 
-	// 	c.JSON(200, gin.H{"message": "Location rejected", "details": req.Message})
-	// 	return
-	// }
-	// c.JSON(400, gin.H{"error": "Invalid action"})
+		logrus.WithField("locationID", locationID).Info("Location rejected successfully")
 
-	// // in both the cases notify the user with a mail, either thanking for contribution or saying sorry
+		// Send rejection mail
+		var user model.User
+		if err := connections.DB.First(&user, "user_id = ?", location.ContributedBy).Error; err != nil {
+			logrus.WithError(err).WithField("userID", location.ContributedBy).Warn("Failed to load contributor for rejection email")
+		} else {
+			mailJob := workers.MailJob{
+				Type: "generic_notice",
+				To:   user.Email,
+				Data: map[string]interface{}{
+					"message": req.Message,
+				},
+			}
+			payload, err := json.Marshal(mailJob)
+			if err != nil {
+				logrus.WithError(err).Warn("Failed to marshal rejection mail job")
+			} else if err := workers.PublishJob(payload, model.MailQueue); err != nil {
+				logrus.WithError(err).Warn("Failed to queue rejection email")
+			}
+		}
 
-	// // Handle all the edge cases with suitable return http code, write them in the read me for later documentation
+		c.JSON(200, gin.H{"message": "Location rejected", "details": req.Message})
+		return
+	}
+
+	c.JSON(400, gin.H{"error": "Invalid action"})
 }
 
 func addNotice(c *gin.Context) {

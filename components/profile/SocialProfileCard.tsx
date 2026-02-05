@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import { useGContext } from "@/components/ContextProvider";
 import { ModeToggle } from "@/components/ui/mode-toggle";
 import { useState, useEffect } from "react";
+import { AdminReviewModal } from "./AdminReviewModal";
 
 // TODO: Add tool tips
 
@@ -17,10 +18,12 @@ export function SocialProfileCard({
   email,
   userID,
   onProfileUpdate,
+  userRole,
 }: {
   email: string;
   userID?: string;
   onProfileUpdate?: () => void;
+  userRole?: number;
 }) {
   const router = useRouter();
   const { setLoggedIn, setGlobalLoading } = useGContext();
@@ -31,6 +34,9 @@ export function SocialProfileCard({
   const [preview, setPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [timestamp, setTimestamp] = useState(Date.now());
+
+  // Check if user is admin (role >= 100)
+  const isAdmin = userRole !== undefined && userRole >= 100;
 
   // Background Image Logic Construction
   const imageUrls: string[] = [];
@@ -186,7 +192,7 @@ export function SocialProfileCard({
               size="icon"
               className="h-12 w-12 shadow-md hover:shadow-lg transition-all opacity-60 cursor-not-allowed"
               onClick={() => router.push("/")}
-              disabled
+              // disabled
             >
               <Map className="h-5 w-5" />
             </Button>
@@ -197,6 +203,9 @@ export function SocialProfileCard({
               Dev
             </Badge>
           </div>
+
+          {/* Admin Review Button - Only visible to admins */}
+          {isAdmin && <AdminReviewModal />}
 
           {/* ModeToggle with "Under Development" badge */}
           <div className="relative">

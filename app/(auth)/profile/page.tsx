@@ -151,6 +151,7 @@ export default function ProfilePage() {
             email={profile.email}
             userID={profile.UserID}
             onProfileUpdate={fetchProfile}
+            userRole={userData.role}
           />
         </div>
       </aside>
