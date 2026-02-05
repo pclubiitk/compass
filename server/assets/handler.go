@@ -135,6 +135,11 @@ func approveImage(c *gin.Context) {
 	}
 
 	image.Status = "approved"
+	util_error := MoveImageFromTmpToPublic(imageID)
+	if util_error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": util_error})
+		return
+	}
 	savedImage := connections.DB.Save(&image)
 	if savedImage.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save image"})
@@ -144,4 +149,52 @@ func approveImage(c *gin.Context) {
 	c.JSON(200, gin.H{
 		"message": "Image approved",
 	})
+}
+
+func removeImage(c *gin.Context) {
+	var image model.Image
+	imageIDParam := c.Param("id")
+	imageID, err := uuid.Parse(imageIDParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid image ID"})
+		return
+	}
+
+	if err := connections.DB.
+		Model(&model.Image{}).
+		Where("image_id = ?", imageID).
+		First(&image).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Image not found"})
+			return
+		} else {
+			logrus.Errorf("Failed to fetch image: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch image"})
+		}
+		return
+	}
+	cwd, _ := os.Getwd()
+	path := ""
+	switch image.Status {
+	case "approved":
+		path = filepath.Join(cwd, "assets", "public", imageID.String()+".webp")
+	case "pending":
+		path = filepath.Join(cwd, "assets", "tmp", imageID.String()+".webp")
+	}
+
+	util_error := deleteImage(path)
+	if util_error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": util_error})
+		return
+	}
+	deletedImage := connections.DB.Delete(&image)
+	if deletedImage.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete image"})
+		return
+	}
+
+	c.JSON(200, gin.H{
+		"message": "Image deleted",
+	})
+
 }
