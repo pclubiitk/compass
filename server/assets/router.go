@@ -21,6 +21,9 @@ func Router(r *gin.Engine) {
 	r.Use(middleware.UserAuthenticator, middleware.EmailVerified)
 	r.Static("/pfp", "./assets/pfp")
 	r.POST("/assets", uploadAsset)
+	r.GET("/gallery", imageListProvider)
+	r.GET("/gallery/:id", imageDetailProvider)
+	r.PUT("/gallery/:id", approveImage)
 
 	// Admin can see tmp files too
 	r.Use(middleware.AdminAuthenticator)
