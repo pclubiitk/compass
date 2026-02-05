@@ -27,3 +27,15 @@ export interface Notice {
   location: string;
   entity: string;
 }
+
+export interface Img {
+    CreatedAt: Date;
+    UpdatedAt: Date;
+    DeletedAt: Date;
+    ImageID: String;
+    OwnerID: String;
+    ParentAssetID: String;
+    ParentAssetType: String;
+    Status: String;
+    Submitted: Boolean;
+}
