@@ -19,7 +19,7 @@ export function GalleryPage() {
         // ]);
         fetch( `${process.env.NEXT_PUBLIC_ASSET_URL}/gallery`).then(response => response.json()).then(data => setImages(data.images))
         
-    }, []);
+    }, [images]);
     
     // const fetchImages = async() => {
     //   const res = await fetch( `${process.env.NEXT_PUBLIC_ASSET_URL}/gallery`)
