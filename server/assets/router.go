@@ -41,6 +41,9 @@ func Router(r *gin.Engine) {
 	{
 		protected.Static("/pfp", "./assets/pfp")
 		protected.POST("/assets", uploadAsset)
+	r.GET("/gallery", imageListProvider)
+	r.GET("/gallery/:id", imageDetailProvider)
+	r.PUT("/gallery/:id", approveImage)
 	}
 
 	// Admin only routes

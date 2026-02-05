@@ -5,12 +5,15 @@ import (
 	"compass/model"
 	"compass/workers"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"os"
 	"path/filepath"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 )
 
 func uploadAsset(c *gin.Context) {
@@ -57,4 +60,88 @@ func uploadAsset(c *gin.Context) {
 		}
 		c.JSON(http.StatusOK, gin.H{"ImageID": image.ImageID})
 	}
+}
+
+func imageListProvider(c *gin.Context) {
+	// Fetch images from database
+	var images []model.Image
+	if err := connections.DB.
+		Model(&model.Image{}).
+		Find(&images).Error; err != nil {
+		logrus.Errorf("Failed to fetch images: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		return
+	}
+
+	c.JSON(200, gin.H{
+		"images": images,
+	})
+
+}
+
+func imageDetailProvider(c *gin.Context) {
+	var image model.Image
+	imageIDParam := c.Param("id")
+	imageID, err := uuid.Parse(imageIDParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid image ID"})
+		return
+	}
+
+	if err := connections.DB.
+		Model(&model.Image{}).
+		Where("image_id = ?", imageID).
+		First(&image).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Image not found"})
+		} else {
+			logrus.Errorf("Failed to fetch image: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch image"})
+		}
+		return
+	}
+
+	c.JSON(200, gin.H{
+		"image": image,
+	})
+}
+
+func approveImage(c *gin.Context) {
+	var image model.Image
+	imageIDParam := c.Param("id")
+	imageID, err := uuid.Parse(imageIDParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid image ID"})
+		return
+	}
+
+	if err := connections.DB.
+		Model(&model.Image{}).
+		Where("image_id = ?", imageID).
+		First(&image).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Image not found"})
+			return
+		} else {
+			logrus.Errorf("Failed to fetch image: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch image"})
+		}
+		return
+	}
+
+	if image.Status == "approved" {
+		c.JSON(200, gin.H{"message": "image already approved"})
+		return
+	}
+
+	image.Status = "approved"
+	savedImage := connections.DB.Save(&image)
+	if savedImage.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save image"})
+		return
+	}
+
+	c.JSON(200, gin.H{
+		"message": "Image approved",
+	})
 }
