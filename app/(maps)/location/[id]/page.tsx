@@ -356,12 +356,12 @@ export default function LocationPage() {
 
               <div className="space-y-4 lg:max-h-[calc(100vh-200px)] lg:overflow-y-auto pr-2 custom-scrollbar">
                 {reviews.length > 0 ? (
-                  reviews.map((review) => (
+                  reviews.map((review,idx) => (
                     <ReviewCard
-                      key={review.id}
+                      key={idx}
                       author={review.User?.name || "Anonymous"}
                       rating={review.rating}
-                      review_body={review.description}
+                      review_body={review.id}
                       time={review.CreatedAt}
                       imgs={review.Images || []}
                     />
