@@ -9,7 +9,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
+
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
@@ -72,16 +72,7 @@ func makeAdminHandler(c *gin.Context) {
 		return
 	}
 
-	// Check if an active admin record already exists (ignore soft-deleted rows)
-	var existingAdmin model.Admin
-	if err := connections.DB.Where("email = ? AND deleted_at IS NULL", req.Email).First(&existingAdmin).Error; err == nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "An active admin with this email already exists"})
-		return
-	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-		logrus.WithError(err).Error("Database error checking admin record")
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
-		return
-	}
+	// No separate admins table used anymore; roles are stored on the users table
 
 	// Verify Profile is loaded
 	if user.Profile.Name == "" {
@@ -95,19 +86,6 @@ func makeAdminHandler(c *gin.Context) {
 		// Update user role to admin
 		if err := tx.Model(&user).Update("role", model.AdminRole).Error; err != nil {
 			logrus.WithError(err).Error("Failed to update user role")
-			return err
-		}
-
-		// Create admin record in admins table
-		admin := model.Admin{
-			AdminID: uuid.New(),
-			Email:   user.Email,
-			Name:    user.Profile.Name,
-			RollNo:  user.Profile.RollNo,
-		}
-		logrus.Infof("Creating admin record for %s with name %s", user.Email, user.Profile.Name)
-		if err := tx.Create(&admin).Error; err != nil {
-			logrus.WithError(err).Error("Failed to create admin record")
 			return err
 		}
 
@@ -150,48 +128,30 @@ type AdminListResponse struct {
 
 // listAdminsHandler returns super admins first, then regular admins from the admins table
 func listAdminsHandler(c *gin.Context) {
-	// Fetch super admins
-	var superAdmins []model.User
+	// Fetch all users that are admins or super admins, super admins first
+	var admins []model.User
 	if err := connections.DB.
-		Where("role = ?", model.SuperAdminRole).
+		Where("role IN ?", []model.Role{model.SuperAdminRole, model.AdminRole}).
 		Preload("Profile").
-		Find(&superAdmins).Error; err != nil {
-		logrus.WithError(err).Error("Database error fetching super admins")
+		Order("role DESC").
+		Find(&admins).Error; err != nil {
+		logrus.WithError(err).Error("Database error fetching admins from users table")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
 		return
 	}
 
-	// Fetch regular admins
-	var admins []model.Admin
-	if err := connections.DB.Find(&admins).Error; err != nil {
-		logrus.WithError(err).Error("Database error fetching admins")
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
-		return
-	}
+	logrus.Infof("Found %d admins (including super admins) in users table", len(admins))
 
-	logrus.Infof("Found %d super admins and %d admins in database", len(superAdmins), len(admins))
+	// Convert to response format - super admins first due to ordering
+	response := make([]AdminListResponse, 0, len(admins))
 
-	// Convert to response format - super admins first, then regular admins
-	response := make([]AdminListResponse, 0)
-
-	// Add super admins first
-	for _, sa := range superAdmins {
+	for _, u := range admins {
 		response = append(response, AdminListResponse{
-			Email:  sa.Email,
-			Name:   sa.Profile.Name,
-			RollNo: sa.Profile.RollNo,
-			Role:   int(sa.Role),
-		})
-	}
-
-	// Add regular admins
-	for _, admin := range admins {
-		response = append(response, AdminListResponse{
-			Email:   admin.Email,
-			Name:    admin.Name,
-			RollNo:  admin.RollNo,
-			AdminID: admin.AdminID.String(),
-			Role:    int(model.AdminRole),
+			Email:   u.Email,
+			Name:    u.Profile.Name,
+			RollNo:  u.Profile.RollNo,
+			AdminID: u.UserID.String(),
+			Role:    int(u.Role),
 		})
 	}
 
@@ -242,17 +202,12 @@ func demoteAdminHandler(c *gin.Context) {
 
 	// Demote user from admin back to regular user
 	if err := connections.DB.Transaction(func(tx *gorm.DB) error {
-		// Update user role back to user
+		// Update user role back to regular user
 		if err := tx.Model(&user).Update("role", model.UserRole).Error; err != nil {
 			return err
 		}
 
-		// Permanently remove admin record from admins table (hard delete)
-		// Use Unscoped() so GORM will physically delete the row instead of soft-delete
-		if err := tx.Unscoped().Where("email = ?", req.Email).Delete(&model.Admin{}).Error; err != nil {
-			return err
-		}
-
+		// No admins table to delete from; roles are maintained on users table only
 		return nil
 	}); err != nil {
 		logrus.WithError(err).Error("Failed to demote admin")

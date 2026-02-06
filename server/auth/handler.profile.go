@@ -181,10 +181,10 @@ func updateProfile(c *gin.Context) {
 		user.Profile.RollNo != profileData.RollNo ||
 		user.Profile.Dept != profileData.Dept ||
 		user.Profile.Course != profileData.Course {
-		// Verify from oa
-		// if !verifyProfile(c, profileData) {
-		// 	return
-		// }
+		Verify from oa
+		if !verifyProfile(c, profileData) {
+			return
+		}
 
 	}
 	var newPfpPath string
