@@ -153,7 +153,7 @@ export function GallerySection({ images }: GallerySectionProps) {
                     width={500}
                     height={500}
                     className="object-contain rounded"
-                    // unoptimized
+                    // unoptimized // uncomment in dev if testing by adding and deleting images with same uuid
                   />
                   </div>
                   <div>
