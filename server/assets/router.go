@@ -41,17 +41,20 @@ func Router(r *gin.Engine) {
 	{
 		protected.Static("/pfp", "./assets/pfp")
 		protected.POST("/assets", uploadAsset)
-		r.GET("/gallery", imageListProvider)
-		r.GET("/gallery/:id", imageDetailProvider)
-		r.PUT("/gallery/:id", approveImage)
-		r.DELETE("/gallery/:id", removeImage)
+
 	}
 
 	// Admin only routes
 	admin := r.Group("/")
 	admin.Use(middleware.UserAuthenticator, middleware.EmailVerified, middleware.AdminAuthenticator)
 	// admin.Use(middleware.UserAuthenticator, middleware.EmailVerified, middleware.AdminAuthenticator, noCacheMiddleware())
+	admin.Use(middleware.UserAuthenticator, middleware.EmailVerified, middleware.AdminAuthenticator)
 	{
 		admin.Static("/tmp", "./assets/tmp")
+		admin.GET("/gallery", imageListProvider)
+		admin.GET("/gallery/:id", imageDetailProvider)
+		admin.PUT("/gallery/:id", approveImage)
+		admin.DELETE("/gallery/:id", removeImage)
 	}
+
 }
