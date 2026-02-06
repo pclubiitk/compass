@@ -11,26 +11,21 @@ export function GalleryPage() {
     useEffect(() => {
         // Simulate fetching images from an API
         // In a real application, replace this with actual data fetching logic
-        // fetchImages()
-        // setImages([
-        //     "/images/photo1.jpg",
-        //     "/images/photo2.jpg",
-        //     "/images/photo3.jpg",
-        // ]);
-        fetch( `${process.env.NEXT_PUBLIC_ASSET_URL}/gallery`).then(response => response.json()).then(data => setImages(data.images))
+        // fetch(`${process.env.NEXT_PUBLIC_AUTH_URL}/api/auth/me`)
+        fetch( `${process.env.NEXT_PUBLIC_ASSET_URL}/gallery`,{
+          credentials: "include",
+        },).then(response => response.json()).then(data => setImages(data.images))
         
     }, [images]);
-    
-    // const fetchImages = async() => {
-    //   const res = await fetch( `${process.env.NEXT_PUBLIC_ASSET_URL}/gallery`)
-    //   const images = res.json()
-    //   console.log(images)
-    
 
   return (
     <div className="p-8">
-      <h1 className="text-2xl font-bold mb-4">Gallery Page</h1>
-        {/* <PhotoGallery images={images} /> */}
+      <h1 className="text-2xl font-bold mb-4 text-center">Gallery Management</h1>
+            <div className="w-[30vw] m-auto text-justify py-6 text-muted-foreground italic">
+              As an admin, you can review all the images uploaded here.
+              Images will be made publicly visible on the platform only after approval by an admin.
+              You may approve or delete any image
+      </div>
         <Gallery images={images}/>
     </div>
   );
