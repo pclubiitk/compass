@@ -63,6 +63,7 @@ func UserAuthenticator(c *gin.Context) {
 	}
 	c.Next()
 }
+
 func tryRefresh(c *gin.Context) {
 	refreshToken, err := c.Cookie("refresh_token")
 	if err != nil {
@@ -76,7 +77,6 @@ func tryRefresh(c *gin.Context) {
 			return []byte(authConfig.JWTSecretKey), nil
 		},
 	)
-
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
 		return
@@ -114,7 +114,7 @@ func tryRefresh(c *gin.Context) {
 	verified := modelUser.IsVerified
 	visibility := modelUser.Profile.Visibility
 
-	//geneate new access token
+	// generate new access token
 	newAccessToken, err := GenerateAccessToken(userID)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate access token"})
@@ -124,6 +124,7 @@ func tryRefresh(c *gin.Context) {
 	// Set context values
 
 	c.Set("userID", userID)
+	c.Set("rollNo", modelUser.Profile.RollNo)
 	c.Set("userRole", role)
 	c.Set("verified", verified)
 	c.Set("visibility", visibility)

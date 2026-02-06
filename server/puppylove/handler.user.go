@@ -9,10 +9,13 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
+
+var heartOperationsMutex sync.Mutex
 
 // UserFirstLogin handles the first login/registration for PuppyLove
 // Auth is handled by campus auth middleware, so user is already authenticated
@@ -96,7 +99,6 @@ func GetUserData(c *gin.Context) {
 	})
 }
 
-
 // SendHeartWithReturn sends hearts and handles return hearts
 func SendHeartWithReturn(c *gin.Context) {
 	info := new(SendHeartFirst)
@@ -121,7 +123,6 @@ func SendHeartWithReturn(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Hearts already sent."})
 		return
 	}
-
 
 	if info.ENC1 != "" && info.SHA1 != "" {
 		newheart1 := puppylove.SendHeart{
@@ -205,7 +206,12 @@ func SendHeartVirtualHandler(c *gin.Context) {
 		return
 	}
 
-	roll_no, _ := c.Get("rollNo")
+	roll_no, exists := c.Get("rollNo")
+	if !exists {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "User ID not found in context"})
+		return
+	}
+
 	var profile puppylove.PuppyLoveProfile
 	record := connections.DB.Where("roll_no = ?", roll_no).First(&profile)
 	if record.Error != nil {
@@ -220,6 +226,7 @@ func SendHeartVirtualHandler(c *gin.Context) {
 
 	jsonData, err := json.Marshal(info.Hearts)
 	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to process hearts data."})
 		return
 	}
 
@@ -285,49 +292,40 @@ func HeartClaimHandler(c *gin.Context) {
 	}
 
 	claimStatus := "true"
-	var heartModel puppylove.SendHeart
-	if err := connections.DB.Where("sha = ? AND enc = ?", info.SHA, info.Enc).First(&heartModel).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			claimStatus = "false"
-		} else {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-	}
 
-	// If valid, remove from sent hearts and add to claims
-	if claimStatus == "true" {
-		if err := connections.DB.Where("sha = ? AND enc = ?", info.SHA, info.Enc).Unscoped().Delete(&heartModel).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
+	heartOperationsMutex.Lock()
+	defer heartOperationsMutex.Unlock()
+
+	// use a transaction to ensure atomicity for find+delete+insert operations
+
+	err := connections.DB.Transaction(func(tx *gorm.DB) error {
+		heartModel := puppylove.SendHeart{}
+		if err := tx.Where("sha = ? AND enc = ?", info.SHA, info.Enc).First(&heartModel).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Where("sha = ? AND enc = ?", info.SHA, info.Enc).Unscoped().Delete(&heartModel).Error; err != nil {
+			return err
 		}
 
 		heartClaim := puppylove.HeartClaims{
-			Id:   info.Enc,
+			Id:       info.Enc,
 			SHA:      info.SHA,
-			Roll:      roll_no.(string),
+			Roll:     roll_no.(string),
 			SONG_ENC: heartModel.SONG_ENC,
 		}
-		if err := connections.DB.Create(&heartClaim).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
 
-		// Update user's claims
+		if err := tx.Create(&heartClaim).Error; err != nil {
+			return err
+		}
 		var profile puppylove.PuppyLoveProfile
-		if err := connections.DB.Where("roll_no = ?", roll_no).First(&profile).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "User does not exist."})
-			return
+		if err := tx.Where("roll_no = ?", roll_no.(string)).First(&profile).Error; err != nil {
+			return err
 		}
 
-		jsonClaim, err := json.Marshal(info)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to marshal claim"})
-			return
-		}
-
-		newClaim := string(jsonClaim)
-		newClaimEnc := url.QueryEscape(newClaim)
+		// Generate the appended claim string
+		jsonClaim, _ := json.Marshal(info) // Error ignored as struct is safe
+		newClaimEnc := url.QueryEscape(string(jsonClaim))
 
 		if profile.Claims == "" {
 			profile.Claims = newClaimEnc
@@ -335,10 +333,19 @@ func HeartClaimHandler(c *gin.Context) {
 			profile.Claims = profile.Claims + "+" + newClaimEnc
 		}
 
-		if err := connections.DB.Save(&profile).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not update Claims field of User."})
-			return
+		if err := tx.Save(&profile).Error; err != nil {
+			return err
 		}
+
+		return nil
+	})
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Invalid Heart Claim Request.", "claim_status": "false"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
+		return
 	}
 
 	c.JSON(http.StatusAccepted, gin.H{"message": "Heart Claim Success", "claim_status": claimStatus})
@@ -417,51 +424,68 @@ func VerifyReturnHeartHandler(c *gin.Context) {
 		return
 	}
 
-	// Hash the secret
 	h := sha256.New()
 	h.Write([]byte(info.Secret))
-	bs := h.Sum(nil)
-	hash := fmt.Sprintf("%x", bs)
+	hash := fmt.Sprintf("%x", h.Sum(nil))
 
-	// Find the return heart
-	var heartModel puppylove.ReturnHearts
-	if err := connections.DB.Where("sha = ? AND enc = ?", hash, info.Enc).First(&heartModel).Error; err != nil {
+	rollNo, _ := c.Get("rollNo")
+	userRoll := rollNo.(string) // Type assertion for safety
+
+	heartOperationsMutex.Lock()
+	defer heartOperationsMutex.Unlock()
+
+	err := connections.DB.Transaction(func(tx *gorm.DB) error {
+		var heartModel puppylove.ReturnHearts
+		if err := tx.Where("sha = ? AND enc = ?", hash, info.Enc).First(&heartModel).Error; err != nil {
+			return err // Returns error if heart not found
+		}
+
+		var heartClaim puppylove.HeartClaims
+		if err := tx.Where("sha = ?", hash).First(&heartClaim).Error; err != nil {
+			return err
+		}
+
+		var existingMatch puppylove.MatchTable
+		checkErr := tx.Where("roll1 = ? AND roll2 = ?", heartClaim.Roll, userRoll).First(&existingMatch).Error
+
+		if checkErr == nil {
+			// Error is nil, meaning a record WAS found. This is bad (Match already exists).
+			return errors.New("MATCH_EXISTS")
+		}
+		if !errors.Is(checkErr, gorm.ErrRecordNotFound) {
+			// If the error is anything other than "Not Found", it's a real DB error.
+			return checkErr
+		}
+
+		// 4. CREATE MATCH (Moved INSIDE transaction for safety)
+		match := puppylove.MatchTable{
+			Roll1:  userRoll,
+			Roll2:  heartClaim.Roll,
+			SONG12: heartClaim.SONG_ENC,
+			SONG21: heartModel.SONG_ENC, // We can access heartModel here safely
+		}
+		if err := tx.Create(&match).Error; err != nil {
+			return err
+		}
+
+		// 5. DELETE HEART (Consume the record)
+		if err := tx.Unscoped().Delete(&heartModel).Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
+	// END TRANSACTION
+	if err != nil {
+		if err.Error() == "MATCH_EXISTS" {
+			c.JSON(http.StatusAccepted, gin.H{"message": "Match Already Done from other side"})
+			return
+		}
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusForbidden, gin.H{"error": "Invalid Heart Claim Request."})
 		} else {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		}
-		return
-	}
-
-	// Delete the return heart record
-	if err := connections.DB.Where("sha = ? AND enc = ?", hash, info.Enc).Unscoped().Delete(&heartModel).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	// Find the heart claim
-	var heartClaim puppylove.HeartClaims
-	connections.DB.Where("sha = ?", hash).First(&heartClaim)
-
-	roll_no, _ := c.Get("rollNo")
-
-	// Check if match already exists
-	var existingMatch puppylove.MatchTable
-	if err := connections.DB.Where("roll1 = ? AND roll2 = ?", heartClaim.Roll, roll_no).First(&existingMatch).Error; err == nil {
-		c.JSON(http.StatusAccepted, gin.H{"message": "Match Already Done from other side"})
-		return
-	}
-
-	// Create match entry
-	match := puppylove.MatchTable{
-		Roll1:  roll_no.(string),
-		Roll2:  heartClaim.Roll,
-		SONG12: heartClaim.SONG_ENC,
-		SONG21: heartModel.SONG_ENC,
-	}
-	if err := connections.DB.Create(&match).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
