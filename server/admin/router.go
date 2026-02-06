@@ -2,7 +2,6 @@ package admin
 
 import (
 	"compass/middleware"
-
 	"github.com/gin-gonic/gin"
 )
 

@@ -33,30 +33,6 @@ export function AdminCard({
     return null;
   }
 
-  const logOut = async () => {
-    try {
-      setGlobalLoading(true);
-      const res = await fetch(`${BACKEND_URL}/api/auth/logout`, {
-        method: "GET",
-        credentials: "include",
-      });
-
-      const data = await res.json();
-
-      if (res.ok) {
-        toast.success(data.message || "Logged out");
-        setLoggedIn(false);
-        router.replace("/login");
-      } else {
-        toast.error(data.error || "Logout failed");
-      }
-    } catch {
-      toast.error("Something went wrong. Try again later.");
-    } finally {
-      setGlobalLoading(false);
-    }
-  };
-
   if (!isAdmin) return null;
 
   return (

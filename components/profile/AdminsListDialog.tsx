@@ -8,6 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,6 +35,8 @@ export function AdminsListDialog({
   const [admins, setAdmins] = useState<Admin[]>([]);
   const [loading, setLoading] = useState(false);
   const [removing, setRemoving] = useState<string | null>(null);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [adminToRemove, setAdminToRemove] = useState<Admin | null>(null);
 
   const BACKEND_URL = process.env.NEXT_PUBLIC_AUTH_URL;
 
@@ -72,24 +75,27 @@ export function AdminsListDialog({
     return () => window.removeEventListener('adminsUpdated', handleAdminsUpdated);
   }, [open, BACKEND_URL]);
 
-  const handleRemoveAdmin = async (email: string) => {
-    if (!confirm("Are you sure you want to remove this admin?")) {
-      return;
-    }
+  const handleRemoveAdmin = (admin: Admin) => {
+    setAdminToRemove(admin);
+    setConfirmDialogOpen(true);
+  };
+
+  const handleConfirmRemove = async () => {
+    if (!adminToRemove) return;
 
     try {
-      setRemoving(email);
+      setRemoving(adminToRemove.email);
       const res = await fetch(`${BACKEND_URL}/api/admin/remove-admin`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email: adminToRemove.email }),
       });
 
       const data = await res.json();
       if (res.ok) {
         toast.success("Admin removed successfully");
-        setAdmins(admins.filter((admin) => admin.email !== email));
+        setAdmins(admins.filter((admin) => admin.email !== adminToRemove.email));
       } else {
         toast.error(data.error || "Failed to remove admin");
       }
@@ -97,6 +103,8 @@ export function AdminsListDialog({
       toast.error("Error removing admin");
     } finally {
       setRemoving(null);
+      setConfirmDialogOpen(false);
+      setAdminToRemove(null);
     }
   };
 
@@ -129,7 +137,7 @@ export function AdminsListDialog({
                   key={admin.email}
                   className={`p-5 flex justify-between hover:shadow-md transition-shadow gap-4 ${
                     isSuperAdminRole
-                      ? "border-2 border-amber-500 align-right bg-gradient-to-r from-amber-50 to-transparent"
+                      ? "border-2 border-amber-500 align-right bg-gradient-to-r from-amber-transparent to-amber-0"
                       : ""
                   }`}
                 >
@@ -152,7 +160,7 @@ export function AdminsListDialog({
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleRemoveAdmin(admin.email)}
+                        onClick={() => handleRemoveAdmin(admin)}
                         disabled={removing === admin.email}
                         className="text-red-600 hover:text-red-700 hover:bg-red-50"
                         title="Remove Admin"
@@ -167,6 +175,39 @@ export function AdminsListDialog({
           </div>
         )}
       </DialogContent>
+
+      {/* Confirmation Dialog for Removing Admin */}
+      <Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Remove Admin?</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to remove {adminToRemove?.name} from admin role?
+            </DialogDescription>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Email: <span className="font-medium">{adminToRemove?.email}</span>
+          </p>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setConfirmDialogOpen(false);
+                setAdminToRemove(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmRemove}
+              disabled={removing !== null}
+            >
+              {removing ? "Removing..." : "Remove Admin"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }

@@ -3,6 +3,8 @@ package admin
 import (
 	"compass/connections"
 	"compass/model"
+	"compass/workers"
+	"encoding/json"
 	"errors"
 	"net/http"
 
@@ -114,6 +116,21 @@ func makeAdminHandler(c *gin.Context) {
 		logrus.WithError(err).Error("Failed to promote user to admin")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to promote user to admin: " + err.Error()})
 		return
+	}
+
+	// Send email notification to the new admin
+	job := workers.MailJob{
+		Type: "make_admin",
+		To:   user.Email,
+		Data: map[string]interface{}{
+			"name": user.Profile.Name,
+		},
+	}
+
+	payload, _ := json.Marshal(job)
+	if err := workers.PublishJob(payload, model.MailQueue); err != nil {
+		logrus.WithError(err).Error("Failed to enqueue admin promotion email")
+		// Don't fail the request if email fails to enqueue
 	}
 
 	c.JSON(http.StatusOK, gin.H{
