@@ -1,6 +1,6 @@
 "use client";
 
-import { Search, Megaphone, Plus, User } from "lucide-react";
+import { Search, Megaphone, Plus, User,Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRouter, usePathname } from "next/navigation";
 import { useGContext } from "@/components/ContextProvider";
@@ -16,6 +16,7 @@ import {
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { Label } from "react-aria-components";
 
 export function BottomNav() {
   const router = useRouter();
@@ -27,6 +28,7 @@ export function BottomNav() {
     { icon: Search, label: "Search", path: "/" },
     { icon: Megaphone, label: "Noticeboard", path: "/noticeboard" },
     { icon: Plus, label: "Add Location", path: "" },
+    // { icon: Star, label: "Review", path: ""},
     { icon: User, label: "Profile", path: "/profile" },
   ];
 
@@ -57,6 +59,8 @@ export function BottomNav() {
         return;
       }
 
+
+
       //  Already on map — open instantly
       const mapRef = window.mapRef.current;
       const markerRef = window.markerRef.current;
@@ -75,8 +79,29 @@ export function BottomNav() {
 
       return;
     }
+    
+    
+  //   if (label === "Review") {
+  //     if (isGlobalLoading) return;
+      
+  //     if (!isLoggedIn) {
+  //       setLoginDialogOpen(true);
+  //       return;
+  //     }
+      
+  //     if (pathname !== "/") {
+  //       toast.error("Please select a location on the map first.", {
+  //         duration: 2000,
+  //       });
+  //       router.push("/");
+  //       return;
+  //     }
+  //     console.log("REVIEW REQUEST IS SENT")
+  //     window.dispatchEvent(new Event("trigger-add-review"));
+  //     return;
+  //   }
 
-    // Normal navigation for others
+  //   // Normal navigation for others
     if (path) {
       router.push(path);
       window.scrollTo(0, 0);
