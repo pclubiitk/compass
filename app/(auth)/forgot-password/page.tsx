@@ -63,7 +63,7 @@ export default function ForgotPasswordPage() {
             body: JSON.stringify({ ...values, token }),
           });
 
-                    const data = await response.json();
+          const data = await response.json();
 
           if (response.ok) {
             toast.success(data.message || "Reset link sent.");

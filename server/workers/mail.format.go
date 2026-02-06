@@ -35,6 +35,8 @@ func FormatMail(job MailJob) (MailContent, error) {
 		return formatAccountDeletionEmail(job)
 	case "password_reset":
 		return formatPasswordResetEmail(job)
+	case "make_admin":
+		return formatMakeAdminEmail(job)
 	default:
 		return MailContent{}, fmt.Errorf("unknown mail type: %s", job.Type)
 	}
@@ -213,6 +215,29 @@ func formatPasswordResetEmail(job MailJob) (MailContent, error) {
 	return MailContent{
 		To:      job.To,
 		Subject: "Reset Your Password",
+		Body:    body,
+		IsHTML:  true,
+	}, nil
+}
+
+func formatMakeAdminEmail(job MailJob) (MailContent, error) {
+	name := job.Data["name"]
+	data := map[string]interface{}{
+		"Name": name,
+	}
+	tmpl := `
+		<h2>Congratulations, {{.Name}}!</h2>
+		<p>You have been promoted to admin by the super admin.</p>
+		<p>You now have access to admin features and can help manage the platform.</p>
+		<p>Thank you for your dedication to the Programming Club</p>
+	`
+	body, err := renderTemplate(tmpl, data)
+	if err != nil {
+		return MailContent{}, err
+	}
+	return MailContent{
+		To:      job.To,
+		Subject: "You're now an Admin!",
 		Body:    body,
 		IsHTML:  true,
 	}, nil

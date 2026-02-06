@@ -8,6 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SocialProfileCard } from "@/components/profile/SocialProfileCard";
 import { EditableProfileCard } from "@/components/profile/EditableProfileCard";
 import { ContributionsCard } from "@/components/profile/ContributionsCard";
+import { AdminCard } from "@/components/profile/admincard";
+
 import {
   useCalendar,
   CalendarProvider,
@@ -151,6 +153,15 @@ export default function ProfilePage() {
             email={profile.email}
             userID={profile.UserID}
             onProfileUpdate={fetchProfile}
+            />
+        </div>
+        <div className="h-3"></div>
+        <div>
+          <AdminCard
+            email={profile.email}
+            isAdmin={userData.role >= 100}
+            isSuperAdmin={userData.role === 101}
+            userRole={userData.role}
           />
         </div>
       </aside>

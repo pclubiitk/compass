@@ -47,4 +47,11 @@ func Router(r *gin.Engine) {
 		profile.GET("/oa", autoC)
 	}
 
+	// User routes - admin only
+	user := r.Group("/api/user")
+	{
+		user.Use(middleware.UserAuthenticator, middleware.AdminAuthenticator)
+		user.GET("", getUserByEmail)
+	}
+
 }
