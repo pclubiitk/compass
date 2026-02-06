@@ -10,10 +10,11 @@ import (
 type Role int
 
 const (
-	AdminRole Role = 100 // "admin"
-	Bot       Role = 99  // "bot"
-	UserRole  Role = 50  // "user"
-	// TODO: add roles like Super Admin, Visitors
+	SuperAdminRole Role = 101 // "super admin"
+	AdminRole      Role = 100 // "admin"
+	Bot            Role = 99  // "bot"
+	UserRole       Role = 50  // "user"
+	// TODO: add roles like Visitors
 )
 
 type User struct {

@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/viper"
 	"compass/middleware"
 	"compass/auth"
+	"compass/admin"
 )
 
 func authServer() *http.Server {
@@ -16,6 +17,7 @@ func authServer() *http.Server {
 	r.Use(gin.Logger())
 
 	auth.Router(r)
+	admin.Router(r)
 
 	server := &http.Server{
 		Addr:         ":" + PORT,

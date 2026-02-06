@@ -84,7 +84,6 @@ func loginHandler(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Email not verified"})
 		return
 	}
-
 	// Creating JWT token
 	accessToken, err := middleware.GenerateAccessToken(dbUser.UserID)
 	refreshToken, err := middleware.GenerateRefreshToken(dbUser.UserID)

@@ -182,9 +182,9 @@ func updateProfile(c *gin.Context) {
 		user.Profile.Dept != profileData.Dept ||
 		user.Profile.Course != profileData.Course {
 		// Verify from oa
-		if !verifyProfile(c, profileData) {
-			return
-		}
+		// if !verifyProfile(c, profileData) {
+		// 	return
+		// }
 
 	}
 	var newPfpPath string
@@ -338,6 +338,7 @@ func autoC(c *gin.Context) {
 		return
 	}
 
+
 	var studentDetails StudentDetails
 	if err := json.NewDecoder(resp.Body).Decode(&studentDetails); err != nil {
 		logrus.WithError(err).Error("Failed to parse auth server response")
@@ -349,3 +350,36 @@ func autoC(c *gin.Context) {
 		"automation": studentDetails,
 	})
 }
+
+// getUserByEmail fetches user name and roll number by email
+// Used by admins to get user details when promoting to admin
+func getUserByEmail(c *gin.Context) {
+	email := c.Query("email")
+	if email == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Email query parameter is required"})
+		return
+	}
+
+	var user model.User
+	err := connections.DB.
+		Where("email = ?", email).
+		Preload("Profile").
+		First(&user).Error
+
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+			return
+		}
+		logrus.WithError(err).Error("Database error fetching user")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"name":   user.Profile.Name,
+		"rollNo": user.Profile.RollNo,
+		"email":  user.Email,
+	})
+}
+

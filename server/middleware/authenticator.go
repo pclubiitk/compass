@@ -5,7 +5,7 @@ import (
 	"compass/model"
 	"net/http"
 	"time"
-
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
@@ -105,6 +105,7 @@ func tryRefresh(c *gin.Context) {
 		Where("user_id = ?", userID).
 		First(&modelUser)
 	if result.Error != nil {
+		fmt.Println("Error fetching user in refresh:", result.Error)
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
 		return
 	}
@@ -134,6 +135,15 @@ func AdminAuthenticator(c *gin.Context) {
 	// verify the role
 	if role := c.GetInt("userRole"); role < int(model.AdminRole) {
 		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Insufficient permissions"})
+		return
+	}
+	c.Next()
+}
+
+func SuperAdminAuthenticator(c *gin.Context) {
+	// verify the role - only super admins can proceed
+	if role := c.GetInt("userRole"); role < int(model.SuperAdminRole) {
+		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Only super admins can access this resource"})
 		return
 	}
 	c.Next()
