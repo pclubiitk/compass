@@ -27,6 +27,7 @@ calendar/
 ├── requests.ts                         # Fetches from noticeboard API
 ├── contexts/calendar-context.tsx       # Entity filtering
 └── components/ui/single-calendar.tsx   # react-day-picker v9 fixes
+
 ```
 
 ---
@@ -45,6 +46,7 @@ calendar/
 | `mocks.ts` | Modified | Uses `entity` instead of `user` |
 | `components/ui/single-calendar.tsx` | Modified | react-day-picker v9 compatibility |
 | `components/ui/single-day-picker.tsx` | Modified | v9 prop changes |
+| `components/entity-select.tsx` |**NEW** |Grouped Dropdown added to filter the calendar events acc. to entities| 
 
 ### Dependencies Added
 
@@ -171,6 +173,30 @@ components={{
   Chevron: ({ orientation }) => orientation === "left" ? <Left/> : <Right/>,
 }}
 ```
+### TimeZone Strategy 
+ The timezone details are stripped from the API responses, so that the timings shown are according to the users local timezone.
+ // Added to Request.ts
+const cleanStartTime = notice.eventTime.replace(/(Z|[+-]\d{2}:?\d{2})$/, '');
+const cleanEndTime = notice.eventEndTime.replace(/(Z|[+-]\d{2}:?\d{2})$/, '');
+
+### Entity Filter
+Grouped, entity type wise divided, entity dropdown in filter to switch between different events by a particular entity 
+Update the "Common Tasks" -> "Filter Events by Entity" section:
+
+The EntitySelect component (components/entity-select.tsx) handles filtering:
+
+"All Entities": Added as a pinned option at the top with a visual separator (SelectSeparator).
+
+Grouping: Entities are grouped by type (Club, Dept, Cell) for better UX.
+
+### Optional Pagination 
+Another Boolean Parameter added in getEvents that enables us to enable or disable Pagination. 
+
+// from  requests.ts
+
+export async function getEvents(page: number = 1, pagination: boolean = true): Promise<IEvent[]> {
+const mapServer = process.env.NEXT_PUBLIC_MAP_SERVER || process.env.NEXT_PUBLIC_MAPS_URL;
+```
 
 ---
 
@@ -192,6 +218,7 @@ calendar/
 │
 ├── components/
 │   ├── client-container.tsx  # Main calendar wrapper
+|   ├── entity-select.tsx     # Dropdown to filter between entities
 │   ├── header/               # Calendar navigation & view switcher
 │   ├── month-view/           # Month grid display
 │   ├── week-and-day-view/    # Detailed time slot views
