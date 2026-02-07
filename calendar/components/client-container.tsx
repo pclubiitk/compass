@@ -21,7 +21,7 @@ interface IProps {
 }
 
 export function ClientContainer({ view }: IProps) {
-  const { selectedDate, events } = useCalendar();
+  const { selectedDate, selectedEntity, events } = useCalendar();
 
   const filteredEvents = useMemo(() => {
     return events.filter(event => {
@@ -33,7 +33,8 @@ export function ClientContainer({ view }: IProps) {
         const yearEnd = new Date(selectedDate.getFullYear(), 11, 31, 23, 59, 59, 999);
         const isInSelectedYear = eventStartDate <= yearEnd && eventEndDate >= yearStart;
         // const isUserMatch = selectedUserId === "all" || event.user.id === selectedUserId;
-        return isInSelectedYear ;
+         const isEntityMatch = selectedEntity === "all" || event.entity === selectedEntity;
+        return isInSelectedYear && isEntityMatch;
       }
 
       if (view === "month" || view === "agenda") {
@@ -41,7 +42,8 @@ export function ClientContainer({ view }: IProps) {
         const monthEnd = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0, 23, 59, 59, 999);
         const isInSelectedMonth = eventStartDate <= monthEnd && eventEndDate >= monthStart;
         // const isUserMatch = selectedUserId === "all" || event.user.id === selectedUserId;
-        return isInSelectedMonth;
+         const isEntityMatch = selectedEntity === "all" || event.entity === selectedEntity;
+        return isInSelectedMonth && isEntityMatch;
       }
 
       if (view === "week") {
@@ -56,19 +58,20 @@ export function ClientContainer({ view }: IProps) {
         weekEnd.setHours(23, 59, 59, 999);
 
         const isInSelectedWeek = eventStartDate <= weekEnd && eventEndDate >= weekStart;
-        // const isUserMatch = selectedUserId === "all" || event.user.id === selectedUserId;
-        return isInSelectedWeek;
+        // const isEntityMatch = selectedEntity === "all" || event.entity === selectedEntity;
+         const isEntityMatch = selectedEntity === "all" || event.entity === selectedEntity;
+        return isInSelectedWeek && isEntityMatch;
       }
 
       if (view === "day") {
         const dayStart = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), 0, 0, 0);
         const dayEnd = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), 23, 59, 59);
         const isInSelectedDay = eventStartDate <= dayEnd && eventEndDate >= dayStart;
-        // const isUserMatch = selectedUserId === "all" || event.user.id === selectedUserId;
-        return isInSelectedDay ;
+        const isEntityMatch = selectedEntity === "all" || event.entity === selectedEntity;
+        return isInSelectedDay && isEntityMatch;
       }
     });
-  }, [selectedDate, events, view]);
+  }, [selectedDate, selectedEntity, events, view]);
 
   const singleDayEvents = filteredEvents.filter(event => {
     const startDate = parseISO(event.startDate);
@@ -98,7 +101,6 @@ export function ClientContainer({ view }: IProps) {
         {view === "day" && <CalendarDayView singleDayEvents={singleDayEvents} multiDayEvents={multiDayEvents} />}
         {view === "month" && <CalendarMonthView singleDayEvents={singleDayEvents} multiDayEvents={multiDayEvents} />}
         {view === "week" && <CalendarWeekView singleDayEvents={singleDayEvents} multiDayEvents={multiDayEvents} />}
-
         {view === "agenda" && <CalendarAgendaView singleDayEvents={singleDayEvents} multiDayEvents={multiDayEvents} />}
       </DndProviderWrapper>
     </div>

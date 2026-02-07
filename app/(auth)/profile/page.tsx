@@ -14,7 +14,7 @@ import {
   CalendarProvider,
 } from "@/calendar/contexts/calendar-context";
 import { ClientContainer } from "@/calendar/components/client-container";
-import { getEvents } from "@/calendar/requests";
+import { getEvents} from "@/calendar/requests";
 import { Calendar } from "lucide-react";
 
 import type { IEvent } from "@/calendar/interfaces";
@@ -54,7 +54,7 @@ export default function ProfilePage() {
   const fetchCalendarEvents = useCallback(async () => {
     setCalendarLoading(true);
     try {
-      const events = await getEvents();
+      const events = await getEvents(1, false);
       setCalendarEvents(events);
       return events;
     } catch (err) {

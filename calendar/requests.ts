@@ -44,8 +44,14 @@ interface NoticeAPIResponse {
  * Transform a notice from the API into a calendar event
  */
 function noticeToEvent(notice: NoticeFromAPI, index: number): IEvent | null {
-  const start = new Date(notice.eventTime);
-  const end = new Date(notice.eventEndTime);
+  //const start = new Date(notice.eventTime);
+  //const end = new Date(notice.eventEndTime);
+
+  const cleanStartTime = notice.eventTime.replace(/(Z|[+-]\d{2}:?\d{2})$/, '');
+  const cleanEndTime = notice.eventEndTime.replace(/(Z|[+-]\d{2}:?\d{2})$/, '');
+
+  const start = new Date(cleanStartTime);
+  const end = new Date(cleanEndTime);
 
   // Skip notices with invalid dates
   if (isNaN(start.getTime())) {
@@ -77,8 +83,8 @@ function noticeToEvent(notice: NoticeFromAPI, index: number): IEvent | null {
  * @param page - Page number for pagination (default: 1)
  * @returns Array of calendar events
  */
-export async function getEvents(page: number = 1): Promise<IEvent[]> {
-  const mapServer = process.env.NEXT_PUBLIC_MAPS_URL;
+export async function getEvents(page: number = 1, pagination: boolean = true): Promise<IEvent[]> {
+  const mapServer = process.env.NEXT_PUBLIC_MAP_SERVER || process.env.NEXT_PUBLIC_MAPS_URL;
   
   if (!mapServer) {
     console.error("Map server URL not configured");
@@ -86,7 +92,8 @@ export async function getEvents(page: number = 1): Promise<IEvent[]> {
   }
 
   try {
-    const res = await fetch(`${mapServer}/api/maps/notice?page=${page}`);
+    const res = await fetch(`${mapServer}/api/maps/notice?page=${page}&pagination=${pagination}`);
+   // console.log(`Fetching events from: ${mapServer}/api/maps/notice?page=${page}&pagination=${pagination}`);
     
     if (!res.ok) {
       throw new Error(`Failed to fetch notices: ${res.status}`);
