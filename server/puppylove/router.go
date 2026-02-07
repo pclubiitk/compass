@@ -2,6 +2,7 @@ package puppylove
 
 import (
 	"compass/middleware"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -12,6 +13,9 @@ func Router(r *gin.Engine) {
 			c.JSON(200, gin.H{"message": "Hello from the other side."})
 		})
 		puppylove.GET("/stats", GetStats)
+		// Public endpoints
+		puppylove.POST("/reset-password", ResetPuppyLovePasswordHandler)
+		// Public password reset endpoint (no auth required)
 
 		users := puppylove.Group("/users")
 		{
@@ -19,18 +23,28 @@ func Router(r *gin.Engine) {
 			users.GET("/alluserInfo", GetAllUsersInfo)
 			users.POST("/login/first", UserFirstLogin)
 
-			users.Use(middleware.UserAuthenticator)
+			// TODO: why?
+			// users.Use(middleware.UserAuthenticator)
 			// users.POST("/addRecovery", addRecovery)   not added recovery method in migrated version yet
 			users.GET("/data", GetUserData)
 			users.GET("/activeusers", GetActiveUsers)
+
 			users.GET("/fetchPublicKeys", FetchPublicKeys)
+
 			users.GET("/fetchReturnHearts", FetchReturnHearts)
+
+			// TODO: check it
+			users.POST("/verify-password", VerifyAccessPassword)
 
 			users.POST("/about", UpdateAbout)
 			users.POST("/interests", UpdateInterest)
 
 			users.POST("/verifyreturnhearts", VerifyReturnHeartHandler)
+
 			users.GET("/fetchall", FetchHearts)
+
+			// TODO: combine this
+			users.POST("/hearts/decoded", SentHeartDecoded)
 			users.POST("/sentHeartDecoded", SentHeartDecoded)
 			users.POST("/claimheart", HeartClaimHandler)
 
@@ -49,7 +63,7 @@ func Router(r *gin.Engine) {
 			late.POST("/returnclaimedheartlate", ReturnClaimedHeartLate)
 		}
 		// for logout, we can directly use the compass' logoutHandler at /logout
-		
+
 		// session := r.Group("/session")
 		// {
 		// 	session.POST("/admin/login", controllers.AdminLogin)

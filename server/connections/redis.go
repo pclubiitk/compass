@@ -3,9 +3,9 @@ package connections
 import (
 	"context"
 	"fmt"
-	"os"
 
 	"github.com/redis/go-redis/v9"
+	"github.com/spf13/viper"
 )
 
 var (
@@ -14,8 +14,8 @@ var (
 )
 
 func InitRedis() error {
-	host := os.Getenv("REDIS_HOST")
-	port := os.Getenv("REDIS_PORT")
+	host := viper.GetString("puppylove.redis.host")
+	port := viper.GetString("puppylove.redis.port")
 
 	// Fallback
 	if host == "" {

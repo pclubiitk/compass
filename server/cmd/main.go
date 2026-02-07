@@ -2,9 +2,9 @@ package main
 
 import (
 	_ "compass/connections" // is a blank import and it runs the init() functions in the package
+	"compass/puppylove"
 	"compass/workers"
 	"time"
-	"compass/puppylove"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"

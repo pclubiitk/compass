@@ -1,6 +1,8 @@
 module compass
 
-go 1.24.4
+go 1.24.2
+
+toolchain go1.24.4
 
 require (
 	github.com/gin-gonic/gin v1.10.1
@@ -17,13 +19,13 @@ require (
 	github.com/strukturag/libheif v1.16.2
 	golang.org/x/crypto v0.39.0
 	golang.org/x/sync v0.19.0
+	golang.org/x/text v0.33.0
 	gopkg.in/mail.v2 v2.3.1
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.30.0
 )
 
 require (
-	github.com/JGLTechnologies/gin-rate-limit v1.5.6 // indirect
 	github.com/bytedance/sonic v1.13.3 // indirect
 	github.com/bytedance/sonic/loader v0.2.4 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
@@ -66,7 +68,6 @@ require (
 	golang.org/x/arch v0.18.0 // indirect
 	golang.org/x/net v0.41.0 // indirect
 	golang.org/x/sys v0.33.0 // indirect
-	golang.org/x/text v0.33.0 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

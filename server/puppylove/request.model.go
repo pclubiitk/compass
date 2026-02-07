@@ -56,7 +56,11 @@ type UpdateInterestReq struct {
 	Interests string `json:"interests"`
 }
 
-// w'll change it later (maybee..)
+type VerifyAccessPasswordReq struct {
+	Password string `json:"password" binding:"required"`
+}
+
+// TODO: w'll change it later (maybee..)
 type AdminLogin struct {
 	Id   string `json:"id" binding:"required"`
 	Pass string `json:"pass" binding:"required"`

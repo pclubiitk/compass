@@ -1,4 +1,5 @@
-import { Decryption, Decryption_AES, SHA256, Encryption, Encryption_AES, RandInt, generateRandomString } from './Encryption';
+import { Decryption, Decryption_AES, SHA256, Encryption, Encryption_AES, RandInt, generateRandomString, GenerateKeys } from './Encryption';
+import { PUPPYLOVE_POINT } from "@/lib/constant";
 
 self.addEventListener('message', async (e: MessageEvent) => {
   const { type, payload } = e.data;
@@ -70,7 +71,7 @@ self.addEventListener('message', async (e: MessageEvent) => {
     const { sha, publicKey } = payload;
     try {
       const result = await Encryption(sha, publicKey);
-      self.postMessage({ type: 'ENCRYPTED', result, error: null });
+      self.postMessage({ type: 'ENCRYPTED', result, error: null });  
     } catch (err) {
       self.postMessage({ type: 'ENCRYPTED', result: null, error: (err as Error).message });
     }
@@ -112,6 +113,375 @@ self.addEventListener('message', async (e: MessageEvent) => {
       self.postMessage({ type: 'RANDOM_STRING_RESULT', result, error: null });
     } catch (err) {
       self.postMessage({ type: 'RANDOM_STRING_RESULT', result: null, error: (err as Error).message });
+    }
+  }
+
+  if (type === 'VERIFY_PUPPYLOVE_PASSWORD') {
+    const { password } = payload;
+    try {
+      const res = await fetch(`${PUPPYLOVE_POINT}/api/puppylove/users/verify-password`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      });
+
+      if (!res.ok) {
+        throw new Error(`Server responded with status ${res.status}`);
+      }
+
+      const data = await res.json();
+      const isValid = data?.valid === true;
+      self.postMessage({ type: 'VERIFY_PUPPYLOVE_PASSWORD_RESULT', result: isValid, error: null });
+    } catch (err) {
+      self.postMessage({ type: 'VERIFY_PUPPYLOVE_PASSWORD_RESULT', result: null, error: (err as Error).message });
+    }
+  }
+
+  // PuppyLove API Operations
+  if (type === 'SEND_HEART') {
+    const payload_data = payload;
+    try {
+      const res = await fetch(`${PUPPYLOVE_POINT}/api/puppylove/users/sendheart`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload_data),
+      });
+      const data = await res.json();
+      self.postMessage({ type: 'SEND_HEART_RESULT', result: data, error: null });
+    } catch (err) {
+      self.postMessage({ type: 'SEND_HEART_RESULT', result: null, error: (err as Error).message });
+    }
+  }
+
+  if (type === 'FETCH_AND_CLAIM_HEARTS') {
+    const { privateKey } = payload;
+    try {
+      const res = await fetch(`${PUPPYLOVE_POINT}/api/puppylove/users/fetchall`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+      const hearts = await res.json();
+
+      if (!Array.isArray(hearts)) {
+        self.postMessage({ type: 'FETCH_AND_CLAIM_HEARTS_RESULT', result: [], error: null });
+        return;
+      }
+
+      const decrypted = await Promise.all(
+        hearts.map(async (heart: any) => {
+          const sha = await Decryption(heart.enc, privateKey);
+          return { ...heart, sha };
+        })
+      );
+
+      const claims = await Promise.all(
+        decrypted.map(async (heart: any) => {
+          const claimRes = await fetch(`${PUPPYLOVE_POINT}/api/puppylove/users/claimheart`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              enc: heart.enc,
+              sha: heart.sha,
+              genderOfSender: heart.genderOfSender,
+            }),
+          });
+          const claimData = await claimRes.json();
+          return { ...heart, claim: claimData };
+        })
+      );
+
+      self.postMessage({ type: 'FETCH_AND_CLAIM_HEARTS_RESULT', result: claims, error: null });
+    } catch (err) {
+      self.postMessage({ type: 'FETCH_AND_CLAIM_HEARTS_RESULT', result: null, error: (err as Error).message });
+    }
+  }
+
+  if (type === 'FETCH_RETURN_HEARTS') {
+    try {
+      const res = await fetch(`${PUPPYLOVE_POINT}/api/puppylove/users/fetchReturnHearts`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+      const data = await res.json();
+      self.postMessage({ type: 'FETCH_RETURN_HEARTS_RESULT', result: data, error: null });
+    } catch (err) {
+      self.postMessage({ type: 'FETCH_RETURN_HEARTS_RESULT', result: null, error: (err as Error).message });
+    }
+  }
+
+  if (type === 'CLAIM_HEART') {
+    const payload_data = payload;
+    try {
+      const res = await fetch(`${PUPPYLOVE_POINT}/api/puppylove/users/claimheart`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload_data),
+      });
+      const data = await res.json();
+      self.postMessage({ type: 'CLAIM_HEART_RESULT', result: data, error: null });
+    } catch (err) {
+      self.postMessage({ type: 'CLAIM_HEART_RESULT', result: null, error: (err as Error).message });
+    }
+  }
+
+  if (type === 'VERIFY_RETURN_HEARTS') {
+    const payload_data = payload;
+    try {
+      const res = await fetch(`${PUPPYLOVE_POINT}/api/puppylove/users/verifyreturnhearts`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload_data),
+      });
+      const data = await res.json();
+      self.postMessage({ type: 'VERIFY_RETURN_HEARTS_RESULT', result: data, error: null });
+    } catch (err) {
+      self.postMessage({ type: 'VERIFY_RETURN_HEARTS_RESULT', result: null, error: (err as Error).message });
+    }
+  }
+
+  if (type === 'RETURN_LATE_HEARTS') {
+    const payload_data = payload;
+    try {
+      const res = await fetch(`${PUPPYLOVE_POINT}/api/puppylove/special/returnclaimedheartlate`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload_data),
+      });
+      const data = await res.json();
+      self.postMessage({ type: 'RETURN_LATE_HEARTS_RESULT', result: data, error: null });
+    } catch (err) {
+      self.postMessage({ type: 'RETURN_LATE_HEARTS_RESULT', result: null, error: (err as Error).message });
+    }
+  }
+
+  if (type === 'FETCH_PUBLIC_KEYS') {
+    try {
+      const res = await fetch(`${PUPPYLOVE_POINT}/api/puppylove/users/fetchPublicKeys`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+      const data = await res.json();
+      self.postMessage({ type: 'FETCH_PUBLIC_KEYS_RESULT', result: data, error: null });
+    } catch (err) {
+      self.postMessage({ type: 'FETCH_PUBLIC_KEYS_RESULT', result: null, error: (err as Error).message });
+    }
+  }
+
+  if (type === 'GET_USER_DATA') {
+    try {
+      const res = await fetch(`${PUPPYLOVE_POINT}/api/puppylove/users/data`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+      const data = await res.json();
+      self.postMessage({ type: 'GET_USER_DATA_RESULT', result: data, error: null });
+    } catch (err) {
+      self.postMessage({ type: 'GET_USER_DATA_RESULT', result: null, error: (err as Error).message });
+    }
+  }
+
+  if (type === 'UPDATE_ABOUT') {
+    const payload_data = payload;
+    try {
+      const res = await fetch(`${PUPPYLOVE_POINT}/api/puppylove/users/about`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload_data),
+      });
+      const data = await res.json();
+      self.postMessage({ type: 'UPDATE_ABOUT_RESULT', result: data, error: null });
+    } catch (err) {
+      self.postMessage({ type: 'UPDATE_ABOUT_RESULT', result: null, error: (err as Error).message });
+    }
+  }
+
+  if (type === 'UPDATE_INTERESTS') {
+    const payload_data = payload;
+    try {
+      const res = await fetch(`${PUPPYLOVE_POINT}/api/puppylove/users/interests`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload_data),
+      });
+      const data = await res.json();
+      self.postMessage({ type: 'UPDATE_INTERESTS_RESULT', result: data, error: null });
+    } catch (err) {
+      self.postMessage({ type: 'UPDATE_INTERESTS_RESULT', result: null, error: (err as Error).message });
+    }
+  }
+
+  if (type === 'PUBLISH_PROFILE') {
+    try {
+      const res = await fetch(`${PUPPYLOVE_POINT}/api/puppylove/users/publish`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      const data = await res.json();
+      self.postMessage({ type: 'PUBLISH_PROFILE_RESULT', result: data, error: null });
+    } catch (err) {
+      self.postMessage({ type: 'PUBLISH_PROFILE_RESULT', result: null, error: (err as Error).message });
+    }
+  }
+
+  if (type === 'GET_MY_MATCHES') {
+    try {
+      const res = await fetch(`${PUPPYLOVE_POINT}/api/puppylove/users/mymatches`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+      const data = await res.json();
+      self.postMessage({ type: 'GET_MY_MATCHES_RESULT', result: data, error: null });
+    } catch (err) {
+      self.postMessage({ type: 'GET_MY_MATCHES_RESULT', result: null, error: (err as Error).message });
+    }
+  }
+
+  if (type === 'SENT_HEART_DECODED') {
+    const payload_data = payload;
+    try {
+      const res = await fetch(`${PUPPYLOVE_POINT}/api/puppylove/users/sentHeartDecoded`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload_data),
+      });
+      const data = await res.json();
+      self.postMessage({ type: 'SENT_HEART_DECODED_RESULT', result: data, error: null });
+    } catch (err) {
+      self.postMessage({ type: 'SENT_HEART_DECODED_RESULT', result: null, error: (err as Error).message });
+    }
+  }
+
+  // Send Heart with full encryption flow
+  if (type === 'PREPARE_SEND_HEART') {
+    const { senderPublicKey, senderPrivateKey, receiverPublicKey, senderRollNo, receiverRollNo, gender } = payload;
+    try {
+      // Step 1: Order IDs (smaller ID first for consistency)
+      const orderedIds = [senderRollNo, receiverRollNo].sort();
+      const R1 = orderedIds[0];
+      const R2 = orderedIds[1];
+
+      // Step 2: Create 4 hearts with proper encryption
+      const hearts = [];
+      for (let i = 0; i < 4; i++) {
+        // A. Create Plain Text ID: R1-R2-128charRandomString
+        const randomString = generateRandomString(128);
+        const id_plain = `${R1}-${R2}-${randomString}`;
+
+        // B. Generate SHA256 Hash of the plain text ID
+        const sha = await SHA256(id_plain);
+
+        // C. Create THREE Encrypted Versions:
+        // 1. id_encrypt: Encrypt id_plain with YOUR public key (your record)
+        const id_encrypt = await Encryption(id_plain, senderPublicKey);
+
+        // 2. sha_encrypt: Encrypt sha with YOUR private key using AES (your signature)
+        const sha_encrypt = await Encryption_AES(sha, senderPrivateKey);
+
+        // 3. enc: Encrypt sha with RECEIVER's public key (they receive this)
+        const enc = await Encryption(sha, receiverPublicKey);
+
+        hearts.push({ 
+          id_plain,
+          sha,
+          id_encrypt,    // Your record (encrypted with your public key)
+          sha_encrypt,   // Your signature (encrypted with your private key)
+          enc            // Receiver's heart (encrypted with their public key)
+        });
+      }
+
+      self.postMessage({ 
+        type: 'PREPARE_SEND_HEART_RESULT', 
+        result: { hearts, senderRollNo, receiverRollNo, gender }, 
+        error: null 
+      });
+    } catch (err) {
+      self.postMessage({ type: 'PREPARE_SEND_HEART_RESULT', result: null, error: (err as Error).message });
+    }
+  }
+
+  // Generate RSA key pair for first-time login
+  if (type === 'GENERATE_KEYS') {
+    try {
+      const keys = await GenerateKeys();
+      self.postMessage({ type: 'GENERATE_KEYS_RESULT', result: keys, error: null });
+    } catch (err) {
+      self.postMessage({ type: 'GENERATE_KEYS_RESULT', result: null, error: (err as Error).message });
+    }
+  }
+
+  // Encrypt private key with password using AES
+  if (type === 'ENCRYPT_PRIVATE_KEY') {
+    const { privateKey, password } = payload;
+    try {
+      const encryptedPrivateKey = await Encryption_AES(privateKey, password);
+      self.postMessage({ type: 'ENCRYPT_PRIVATE_KEY_RESULT', result: encryptedPrivateKey, error: null });
+    } catch (err) {
+      self.postMessage({ type: 'ENCRYPT_PRIVATE_KEY_RESULT', result: null, error: (err as Error).message });
+    }
+  }
+
+  // Decrypt private key with password using AES
+  if (type === 'DECRYPT_PRIVATE_KEY') {
+    const { encryptedPrivateKey, password } = payload;
+    try {
+      const privateKey = await Decryption_AES(encryptedPrivateKey, password);
+      if (!privateKey) {
+        self.postMessage({ type: 'DECRYPT_PRIVATE_KEY_RESULT', result: null, error: 'Invalid password' });
+        return;
+      }
+      self.postMessage({ type: 'DECRYPT_PRIVATE_KEY_RESULT', result: privateKey, error: null });
+    } catch (err) {
+      self.postMessage({ type: 'DECRYPT_PRIVATE_KEY_RESULT', result: null, error: 'Invalid password' });
+    }
+  }
+
+  // First-time login with key generation
+  if (type === 'FIRST_LOGIN') {
+    const { rollNo, password, authCode, publicKey, encryptedPrivateKey, data } = payload;
+    try {
+      const passHash = await SHA256(password);
+      const res = await fetch(`${PUPPYLOVE_POINT}/api/puppylove/users/login/first`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          roll: rollNo,
+          authCode,
+          passHash,
+          pubKey: publicKey,
+          privKey: encryptedPrivateKey,
+          data: data || '',
+        }),
+      });
+      
+      const text = await res.text();
+      let result;
+      try {
+        result = JSON.parse(text);
+      } catch {
+        console.error("Failed to parse response:", text);
+        self.postMessage({ type: 'FIRST_LOGIN_RESULT', result: null, error: `Server error: ${text}` });
+        return;
+      }
+      
+      if (!res.ok) {
+        self.postMessage({ type: 'FIRST_LOGIN_RESULT', result: null, error: result.error || 'First login failed' });
+        return;
+      }
+      self.postMessage({ type: 'FIRST_LOGIN_RESULT', result, error: null });
+    } catch (err) {
+      self.postMessage({ type: 'FIRST_LOGIN_RESULT', result: null, error: (err as Error).message });
     }
   }
 });

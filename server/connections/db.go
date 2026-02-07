@@ -44,7 +44,7 @@ func dbConnection() {
 		&puppylove.PuppyLoveConfig{},
 		&puppylove.PuppyLoveProfile{},
 		&puppylove.ReturnHearts{},
-		&puppylove.Claim{},
+		&puppylove.HeartClaims{},
 		&puppylove.MatchTable{},
 		&puppylove.SendHeart{},
 	}

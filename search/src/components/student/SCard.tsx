@@ -1,5 +1,5 @@
 import Image from "@/components/student/UserImage";
-import React from "react";
+import React, { useState } from "react";
 import {
   Card,
   CardContent,
@@ -10,7 +10,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Student } from "@/lib/types/data";
 import { cn, convertToTitleCase } from "@/lib/utils";
-import { Mail, Home, University, Globe } from "lucide-react";
+import { Mail, Home, University, Globe, Heart } from "lucide-react";
+import { useGContext } from "@/components/ContextProvider";
+import { prepareSendHeart, sendHeart } from "@/lib/workers/puppyLoveWorkerClient";
 
 interface SCardProps {
   data: Student;
@@ -24,6 +26,87 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
   const { data, type, ...rest } = props;
   data.name = convertToTitleCase(data.name);
   data.email = data.email.startsWith("cmhw_") ? "Not Provided" : data.email;
+  const { isPuppyLove, puppyLovePublicKeys, currentUserProfile, setPuppyLoveHeartsSent } = useGContext();
+  const [isSendingHeart, setIsSendingHeart] = useState(false);
+
+  const handleSendHeart = async () => {
+    // Check if trying to send heart to yourself
+    if (currentUserProfile?.rollNo === data.rollNo) {
+      alert("You cannot send a heart to yourself!");
+      return;
+    }
+
+    if (!puppyLovePublicKeys || !puppyLovePublicKeys[data.rollNo]) {
+      alert("Public key not found for this user");
+      return;
+    }
+
+    if (!currentUserProfile?.gender) {
+      alert("Your profile gender is required to send hearts.");
+      return;
+    }
+
+    // Get sender's public key and private key from session
+    const senderPublicKey = puppyLovePublicKeys[currentUserProfile.rollNo];
+    const senderPrivateKey = typeof window !== "undefined" 
+      ? sessionStorage.getItem("puppylove_private_key") 
+      : null;
+
+    if (!senderPublicKey || !senderPrivateKey) {
+      alert("Your keys are not available. Please log in to PuppyLove first.");
+      return;
+    }
+
+    setIsSendingHeart(true);
+    
+    try {
+      // Step 1: Prepare hearts with complete encryption (id_encrypt, sha_encrypt, enc)
+      const heartData = await prepareSendHeart(
+        senderPublicKey,           // Your public key
+        senderPrivateKey as string,          // Your private key
+        puppyLovePublicKeys[data.rollNo],  // Receiver's public key
+        currentUserProfile.rollNo, // Your roll number
+        data.rollNo,              // Receiver's roll number
+        currentUserProfile.gender
+      );
+
+      // Step 2: Send ACTUAL hearts (with receiver's encrypted data)
+      const result = await sendHeart({
+        genderOfSender: currentUserProfile.gender,
+        enc1: heartData.hearts[0].enc,        // Encrypted with receiver's public key
+        sha1: heartData.hearts[0].sha,        // Plain SHA hash
+        enc2: heartData.hearts[1].enc,
+        sha2: heartData.hearts[1].sha,
+        enc3: heartData.hearts[2].enc,
+        sha3: heartData.hearts[2].sha,
+        enc4: heartData.hearts[3].enc,
+        sha4: heartData.hearts[3].sha,
+        returnhearts: [],
+      });
+
+      if (result && result.message) {
+        if (setPuppyLoveHeartsSent) {
+          const newSent = [
+            { recipientId: data.rollNo, recipientName: data.name },
+          ];
+          setPuppyLoveHeartsSent((prev: any) => {
+            const updated = Array.isArray(prev) ? [...prev, ...newSent] : newSent;
+            if (typeof window !== "undefined") {
+              sessionStorage.setItem("puppylove_sent_hearts", JSON.stringify(updated));
+            }
+            return updated;
+          });
+        }
+        alert("Heart sent successfully to " + data.name + "!");
+      } else {
+        alert("Failed to send heart. Please try again.");
+      }
+    } catch (err) {
+      alert("Error: " + (err as Error).message);
+    } finally {
+      setIsSendingHeart(false);
+    }
+  };
 
   const cardProps = {
     ref: ref,
@@ -84,7 +167,7 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
             </div>
           </CardContent>
 
-          <CardContent className="w-full p-0">
+          <CardContent className="w-full p-0 space-y-2">
             <a
               href={`https://home.iitk.ac.in/~${data.email.split("@")[0]}`}
               target="_blank"
@@ -94,6 +177,19 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
                 <Globe className="mr-2 h-4 w-4" /> Visit Homepage
               </Button>
             </a>
+            {isPuppyLove && (
+              <Button 
+                className="w-full bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-semibold"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleSendHeart();
+                }}
+                disabled={isSendingHeart}
+              >
+                <Heart className="w-4 h-4 mr-2 fill-white" />
+                {isSendingHeart ? "Sending..." : "Send Heart"}
+              </Button>
+            )}
             {props.children}
           </CardContent>
         </Card>

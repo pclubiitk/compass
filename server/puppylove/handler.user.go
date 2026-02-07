@@ -2,7 +2,9 @@ package puppylove
 
 import (
 	"compass/connections"
+	"compass/model"
 	"compass/model/puppylove"
+	"compass/workers"
 	"crypto/sha256"
 	"encoding/json"
 	"errors"
@@ -10,8 +12,11 @@ import (
 	"net/http"
 	"net/url"
 	"sync"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -86,16 +91,98 @@ func GetUserData(c *gin.Context) {
 	permit := IsPuppyLovePermitted()
 
 	c.JSON(http.StatusOK, gin.H{
-		"message":  "Data retrieved successfully !!",
-		"id":       roll_no,
-		"data":     profile.Data,
-		"gender":   profile.Gender,
-		"submit":   profile.Submit,
-		"claims":   profile.Claims,
-		"permit":   permit,
-		"publish":  profile.Publish,
-		"about":    profile.About,
-		"interest": profile.Interests,
+		"message": "Data retrieved successfully !!",
+		"id":      roll_no,
+		"data":    profile.Data,
+		"gender":  profile.Gender,
+		"submit":  profile.Submit,
+		"claims":  profile.Claims,
+		"permit":  permit,
+		"publish": profile.Publish,
+		"privK":   profile.PrivK,
+		"pubKey":  profile.PubK, //added by me(ritika)
+		// TODO: export this to the a new route, to only use on the profile page
+		// "about":    profile.About,
+		// "interest": profile.Interests,
+	})
+}
+
+// TODO: ensure the frontend and the backend are on the same page, as this route is updated for the or removed.
+// VerifyAccessPassword validates the PuppyLove access password using the user's login password
+// Also checks if user has an existing PuppyLove profile
+func VerifyAccessPassword(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	rollNo, rollExists := c.Get("rollNo")
+	if !rollExists {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "User ID not found in context"})
+		return
+	}
+
+	req := new(VerifyAccessPasswordReq)
+	if err := c.ShouldBindJSON(req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Input data format."})
+		return
+	}
+
+	var user model.User
+	if err := connections.DB.
+		Model(&model.User{}).
+		Select("user_id", "password").
+		Where("user_id = ?", userID).
+		First(&user).Error; err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+		return
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"valid": false})
+		return
+	}
+
+	// Check if user has existing PuppyLove profile
+	var existingProfile puppylove.PuppyLoveProfile
+	hasProfile := false
+	isDirty := false
+	if err := connections.DB.Where(&puppylove.PuppyLoveProfile{RollNo: rollNo.(string)}).First(&existingProfile).Error; err == nil {
+		hasProfile = true
+		isDirty = existingProfile.Dirty
+	}
+
+	action := "verify_password"
+	if !isDirty {
+		action = "verify_password_and_create_keys"
+	}
+
+	// Send action message to worker
+	profileAction := workers.PuppyLoveProfileAction{
+		Action:     action,
+		UserID:     userID.(uuid.UUID),
+		RollNo:     rollNo.(string),
+		HasProfile: hasProfile,
+		IsDirty:    isDirty,
+		Timestamp:  time.Now().Unix(),
+	}
+
+	// Convert to JSON and publish to worker queue
+	payload, err := json.Marshal(profileAction)
+	if err == nil {
+		// Publish to puppylove queue (non-blocking, errors are logged)
+		if err := workers.PublishJob(payload, "puppylove"); err != nil {
+			// Log error but don't fail the response - user should still be able to proceed
+			fmt.Printf("Warning: Failed to publish PuppyLove profile action to worker: %v\n", err)
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"valid":       true,
+		"has_profile": hasProfile,
+		"is_dirty":    isDirty,
+		"action":      action,
 	})
 }
 

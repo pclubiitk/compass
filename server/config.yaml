@@ -9,6 +9,7 @@ database:
   # FIXME(prod): Create new user id
   user: "this_is_mjk"
   port: 5432
+  
 
 rabbitmq:
   host: "localhost"
@@ -20,9 +21,10 @@ rabbitmq:
   port: 5672
 
 puppylove:
-  enabled: false
+  enabled: true
   redis:
-    host: 
+    host:"localhost"
+    port:"6379"
 
 ports:
   auth: 8080
@@ -36,7 +38,7 @@ smtp:
   port: 587
 
 # FIXME(prod): set the domain to "pclub.in"
-domain: "pclub.in"
+domain: ""
 # Browsers rewrite Domain=localhost cookies into .localhost, which breaks host-only cookie checks.
 # Fix: leave domain empty ("") in dev so the cookie is scoped only to localhost
 
