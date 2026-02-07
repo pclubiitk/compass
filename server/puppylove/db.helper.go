@@ -26,6 +26,7 @@ func SetPuppyLoveConfig(key, value string) error {
 }
 
 func InitPuppyLoveConfig() {
+	// We initialize the config table with some default values
 	defaults := map[string]string{
 		puppylove.ConfigKeyPermit:           puppylove.DefaultPermit,
 		puppylove.ConfigKeyResultsPublished: puppylove.DefaultResultsPublished,
@@ -67,7 +68,7 @@ func IsPuppyLovePermitted() bool {
 	return permit == "true"
 }
 
-// middleware
+// TODO: move this to the middleware part
 func PuppyLovePermit() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		permit := IsPuppyLovePermitted()

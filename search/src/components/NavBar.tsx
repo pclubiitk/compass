@@ -7,8 +7,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { PROFILE_POINT } from "@/lib/constant";
 import { useGContext } from "./ContextProvider";
-import { PuppyLoveHeartsCard } from "@/components/PuppyLoveHeartsCard";
-import { PuppyLovePasswordCard } from "./PuppyLovePasswordCard";
+import { PuppyLoveHeartsCard } from "@/components/puppy-love/HeartsCard";
+import { PuppyLovePasswordCard } from "./puppy-love/PasswordCard";
 
 // NOTE:
 // 1. At one place have used Showing{"\u00A0"} to add the " " space char.

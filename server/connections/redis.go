@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/redis/go-redis/v9"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
@@ -14,8 +15,8 @@ var (
 )
 
 func InitRedis() error {
-	host := viper.GetString("puppylove.redis.host")
-	port := viper.GetString("puppylove.redis.port")
+	host := viper.GetString("redis.host")
+	port := viper.GetString("redis.port")
 
 	// Fallback
 	if host == "" {
@@ -32,6 +33,12 @@ func InitRedis() error {
 		Password: "",
 		DB:       0,
 	})
+	if pong, err := RedisClient.Ping(RedisCtx).Result(); err != nil {
+		logrus.Error("Redis not working, if puppylove season enabled, it will cause an issue")
+	} else {
+		logrus.Info("Set up done for redis..., Redis response to your ping  : " + pong)
+	}
+
 	return nil
 }
 

@@ -5,7 +5,7 @@ import Head from "next/head";
 import { GlobalContextProvider, useGContext } from "@/components/ContextProvider";
 import { ThemeProvider } from "next-themes";
 import{Heart} from "lucide-react";
-import { PuppyLoveHeartsCard } from "@/components/PuppyLoveHeartsCard";
+import { PuppyLoveHeartsCard } from "@/components/puppy-love/HeartsCard";
 
 
 function randomHeartProps(i: number) {
@@ -105,6 +105,7 @@ export default function App(props: AppProps) {
         defaultTheme="system"
         enableSystem
         disableTransitionOnChange
+        forcedTheme="system"
       >
         <GlobalContextProvider>
           <AppWrapper {...props} />

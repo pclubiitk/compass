@@ -38,7 +38,7 @@ interface GlobalContextType {
   puppyLoveHeartsReceived?: any;
   setPuppyLoveHeartsSent?: (val: any) => void;
   currentUserProfile?: any;
-  
+
   needsFirstTimeLogin?: boolean;
   setNeedsFirstTimeLogin?: (val: boolean) => void;
 }
@@ -68,12 +68,14 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
   const [profileVisibility, setProfileVisibility] = useState<boolean>(false);
   const [isPuppyLove, setIsPuppyLove] = useState<boolean>(false);
   const [currentUserProfile, setCurrentUserProfile] = useState<any>(null);
-  const [needsFirstTimeLogin, setNeedsFirstTimeLogin] = useState<boolean>(false);
+  const [needsFirstTimeLogin, setNeedsFirstTimeLogin] =
+    useState<boolean>(false);
 
   // Puppy Love worker state
   const [puppyLovePublicKeys, setPuppyLovePublicKeys] = useState<any>(null);
   const [puppyLoveHeartsSent, setPuppyLoveHeartsSent] = useState<any>([]);
-  const [puppyLoveHeartsReceived, setPuppyLoveHeartsReceived] = useState<any>(null);
+  const [puppyLoveHeartsReceived, setPuppyLoveHeartsReceived] =
+    useState<any>(null);
 
   useEffect(() => {
     async function verifyingLogin() {
@@ -84,17 +86,17 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
           {
             method: "GET",
             credentials: "include",
-          }
+          },
         );
-        if (response.ok) {
+        if (response.status === 200) {
           setProfileVisibility(true);
           setLoggedIn(true);
-          setPLseason(true); 
-
+          // FIXME: Set the season based on the backend response (~ Ritika)
+          setPLseason(true);
           try {
             const profileResp = await fetch(
               `${process.env.NEXT_PUBLIC_AUTH_URL}/api/profile`,
-              { method: "GET", credentials: "include" }
+              { method: "GET", credentials: "include" },
             );
             if (profileResp.ok) {
               const profileData = await profileResp.json();
@@ -103,7 +105,8 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
           } catch (err) {
             setCurrentUserProfile(null);
           }
-        } else if (response.status === 401) {
+        } else if (response.status === 401 || response.status === 202) {
+          setProfileVisibility(false);
           setLoggedIn(false);
         } else {
           setGlobalError(true);
@@ -141,9 +144,15 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
         };
         // Trigger fetches
         worker.postMessage({ type: "FETCH_PUBLIC_KEYS" });
-        const privKey = typeof window !== "undefined" ? sessionStorage.getItem("puppylove_private_key") : null;
+        const privKey =
+          typeof window !== "undefined"
+            ? sessionStorage.getItem("puppylove_private_key")
+            : null;
         if (privKey) {
-          worker.postMessage({ type: "FETCH_AND_CLAIM_HEARTS", payload: { privateKey: privKey } });
+          worker.postMessage({
+            type: "FETCH_AND_CLAIM_HEARTS",
+            payload: { privateKey: privKey },
+          });
         } else {
           worker.postMessage({ type: "FETCH_HEARTS" });
         }

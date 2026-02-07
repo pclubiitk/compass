@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { initPuppyLoveWorker, verifyPuppyLovePassword, decryptPrivateKey, fetchAndClaimHearts } from "@/lib/workers/puppyLoveWorkerClient";
 import { PUPPYLOVE_POINT } from "@/lib/constant";
-import { PuppyLoveRegistrationCard } from "./PuppyLoveRegistrationCard";
-import { PasswordRecoveryOptionsCard } from "./PasswordRecoveryOptionsCard";
+import { PuppyLoveRegistrationCard } from "./RegistrationCard";
+import { PasswordRecoveryOptionsCard } from "../PasswordRecoveryOptionsCard";
 import { RecoveryCodeVerificationCard } from "./RecoveryCodeVerificationCard";
 
 interface PuppyLovePasswordCardProps {

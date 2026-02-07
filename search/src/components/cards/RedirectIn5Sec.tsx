@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { LOGIN_POINT } from "@/lib/constant";
+import Link from "next/link";
 export default function RedirectIn5Sec() {
   const router = useRouter();
   const [timeLeft, setTimeLeft] = useState(5); // State to hold the countdown
@@ -24,7 +25,16 @@ export default function RedirectIn5Sec() {
 
   return (
     <div className="text-center p-8">
-      You are not logged In. Redirecting in {timeLeft} seconds...
+      Either you are not{" "}
+      <span className="font-bold">
+        Logged In, or your profile is not public.{" "}
+      </span>{" "}
+      For more info please refer to{" "}
+      <Link className="underline" href="/info">
+        FAQ section.
+      </Link>
+      <br />
+      Redirecting in {timeLeft} seconds...
     </div>
   );
 }

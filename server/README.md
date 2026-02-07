@@ -27,3 +27,8 @@
    ```sh
    ./server
    ```
+
+
+### For PuppyLove mode
+
+1. Ensure you are working with the puppylove mode, then you need

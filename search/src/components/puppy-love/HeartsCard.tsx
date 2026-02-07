@@ -1,7 +1,7 @@
 import React from "react";
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
 import Image from "next/image";
-import { useGContext } from "./ContextProvider";
+import { useGContext } from "../ContextProvider";
 
 interface PuppyLoveHeartsCardProps {
   compact?: boolean;

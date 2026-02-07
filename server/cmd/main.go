@@ -17,7 +17,7 @@ const (
 )
 
 func main() {
-	// Initialize PuppyLove config with defaults
+	// Initialize config (PuppyLove, and ...) with defaults
 	puppylove.InitPuppyLoveConfig()
 
 	// Create an error group to handle errors together
