@@ -1,5 +1,4 @@
 // Set up Logrus with formatting, log levels, file outputs etc.
-//logging system(error warning etc)
 package connections
 
 import (

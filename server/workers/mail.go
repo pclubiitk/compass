@@ -32,7 +32,7 @@ func MailingWorker() error {
 	if err != nil {
 		return err
 	}
-	/// Process messages in a goroutine
+	// Process messages in a goroutine
 	for delivery := range msgs {
 		var job MailJob
 		// Try to decode the message body into a MailJob struct

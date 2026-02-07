@@ -1,4 +1,3 @@
-//connect to bot-bot is moderation bot
 package connections
 
 import (
