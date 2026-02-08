@@ -11,10 +11,12 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
+	
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
@@ -25,6 +27,12 @@ var heartOperationsMutex sync.Mutex
 // Auth is handled by campus auth middleware, so user is already authenticated
 func UserFirstLogin(c *gin.Context) {
 	rollNo, exists := c.Get("rollNo")
+	if !exists {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "User ID not found in context"})
+		return
+	}
+
+	userID, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "User ID not found in context"})
 		return
@@ -106,39 +114,6 @@ func UserFirstLogin(c *gin.Context) {
 	connections.RedisClient.HSet(connections.RedisCtx, "puppylove:public_keys", rollNo.(string), info.PubKey)
 
 	c.JSON(http.StatusCreated, gin.H{"message": "User Created Successfully."})
-}
-
-func GetUserData(c *gin.Context) {
-	roll_no, exists := c.Get("rollNo")
-	if !exists {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "User ID not found in context"})
-		return
-	}
-
-	var profile puppylove.PuppyLoveProfile
-	result := connections.DB.Where("roll_no = ?", roll_no).First(&profile)
-	if result.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
-		return
-	}
-
-	permit := IsPuppyLovePermitted()
-
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Data retrieved successfully !!",
-		"id":      roll_no,
-		"data":    profile.Data,
-		"gender":  profile.Gender,
-		"submit":  profile.Submit,
-		"claims":  profile.Claims,
-		"permit":  permit,
-		"publish": profile.Publish,
-		"privK":   profile.PrivK,
-		"pubKey":  profile.PubK, //added by me(ritika)
-		// TODO: export this to the a new route, to only use on the profile page
-		// "about":    profile.About,
-		// "interest": profile.Interests,
-	})
 }
 
 // TODO: ensure the frontend and the backend are on the same page, as this route is updated for the or removed.
