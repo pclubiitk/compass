@@ -77,6 +77,8 @@ const callWorkerAPI = (type: string, payload?: any): Promise<any> => {
 };
 
 export const sendHeart = (heartData: any) => callWorkerAPI('SEND_HEART', heartData);
+export const sendVirtualHeart = (heartData: any) => callWorkerAPI('SEND_VIRTUAL_HEART', heartData);
+export const getVirtualHeartCount = () => callWorkerAPI('GET_VIRTUAL_HEART_COUNT');
 export const fetchAndClaimHearts = (privateKey: string) => callWorkerAPI('FETCH_AND_CLAIM_HEARTS', { privateKey });
 export const fetchReturnHearts = () => callWorkerAPI('FETCH_RETURN_HEARTS');
 export const claimHeart = (claimData: any) => callWorkerAPI('CLAIM_HEART', claimData);

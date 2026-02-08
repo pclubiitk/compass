@@ -5,7 +5,6 @@ import (
 	"compass/model/puppylove"
 	"encoding/json"
 	"fmt"
-
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )

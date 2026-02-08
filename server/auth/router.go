@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/spf13/viper"
 )
 
 func Router(r *gin.Engine) {
@@ -26,14 +27,21 @@ func Router(r *gin.Engine) {
 			isVisible, ok := val.(bool)
 			if !exists || !ok {
 				// fallback
-				isVisible = false 
+				isVisible = false
 			}
 
+			puppyLoveEnabled := viper.GetBool("puppylove.enabled")
+
 			if isVisible {
-				// 200: logged in + visible
-				c.JSON(http.StatusOK, gin.H{"success": true})
+				if puppyLoveEnabled {
+					// 200: logged in + visible + puppylove enabled
+					c.JSON(http.StatusOK, gin.H{"success": true})
+				} else {
+					// 203: logged in + visible + puppylove disabled
+					c.JSON(http.StatusNonAuthoritativeInfo, gin.H{"success": true, "status": "puppylove_disabled"})
+				}
 			} else {
-				// 202: logged in + hidden 
+				// 202: logged in + hidden
 				c.JSON(http.StatusAccepted, gin.H{"success": true, "status": "hidden"})
 			}
 		})

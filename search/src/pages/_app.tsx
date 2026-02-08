@@ -1,4 +1,5 @@
 import type { AppProps } from "next/app";
+import { useEffect, useState } from "react";
 import "@/styles/styles.css";
 import "@/styles/globals.css";
 import Head from "next/head";
@@ -6,6 +7,7 @@ import { ContextProvider, useGContext } from "@/components/ContextProvider";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import{Heart} from "lucide-react";
 import { PuppyLoveHeartsCard } from "@/components/PuppyLoveHeartsCard";
+import { PuppyLoveSelectionsPanel } from "@/components/PuppyLoveSelectionsPanel";
 
 
 function randomHeartProps(i: number) {
@@ -33,6 +35,35 @@ function randomHeartProps(i: number) {
 
 function AppWrapper({ Component, pageProps }: AppProps) {
   const { isPuppyLove } = useGContext();
+  const [showSelections, setShowSelections] = useState(false);
+
+  useEffect(() => {
+    const handleToggleSelections = () => {
+      setShowSelections((prev) => {
+        const next = !prev;
+        if (next && typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("puppylove:selectionsOpen"));
+        }
+        return next;
+      });
+    };
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("puppylove:toggleSelections", handleToggleSelections);
+    }
+
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("puppylove:toggleSelections", handleToggleSelections);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isPuppyLove) {
+      setShowSelections(false);
+    }
+  }, [isPuppyLove]);
   return (
     <div
       className={`min-h-screen transition-colors duration-500 relative overflow-hidden ${
@@ -84,6 +115,14 @@ function AppWrapper({ Component, pageProps }: AppProps) {
           <div className="hidden md:block fixed top-6 left-6 z-50">
             <PuppyLoveHeartsCard compact />
           </div>
+        )}
+        {isPuppyLove && showSelections && (
+          <PuppyLoveSelectionsPanel
+            variant="desktop"
+            onClose={() => {
+              setShowSelections(false);
+            }}
+          />
         )}
       </div>
     </div>

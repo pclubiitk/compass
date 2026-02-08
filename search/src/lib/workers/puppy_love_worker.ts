@@ -155,6 +155,39 @@ self.addEventListener('message', async (e: MessageEvent) => {
     }
   }
 
+  if (type === 'SEND_VIRTUAL_HEART') {
+    const payload_data = payload;
+    console.log("📤 Sending SEND_VIRTUAL_HEART:", JSON.stringify(payload_data, null, 2));
+    try {
+      const res = await fetch(`${PUPPYLOVE_POINT}/api/puppylove/users/sendheartVirtual`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload_data),
+      });
+      const data = await res.json();
+      console.log("SEND_VIRTUAL_HEART response status:", res.status);
+      console.log("SEND_VIRTUAL_HEART response:", data);
+      self.postMessage({ type: 'SEND_VIRTUAL_HEART_RESULT', result: data, error: null });
+    } catch (err) {
+      console.error("SEND_VIRTUAL_HEART error:", err);
+      self.postMessage({ type: 'SEND_VIRTUAL_HEART_RESULT', result: null, error: (err as Error).message });
+    }
+  }
+
+  if (type === 'GET_VIRTUAL_HEART_COUNT') {
+    try {
+      const res = await fetch(`${PUPPYLOVE_POINT}/api/puppylove/users/virtualheartcount`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+      const data = await res.json();
+      self.postMessage({ type: 'GET_VIRTUAL_HEART_COUNT_RESULT', result: data, error: null });
+    } catch (err) {
+      self.postMessage({ type: 'GET_VIRTUAL_HEART_COUNT_RESULT', result: null, error: (err as Error).message });
+    }
+  }
+
   if (type === 'FETCH_AND_CLAIM_HEARTS') {
     const { privateKey } = payload;
     try {
@@ -280,8 +313,10 @@ self.addEventListener('message', async (e: MessageEvent) => {
         credentials: 'include',
       });
       const data = await res.json();
+      console.log("📥 GET_USER_DATA worker received from API:", data);
       self.postMessage({ type: 'GET_USER_DATA_RESULT', result: data, error: null });
     } catch (err) {
+      console.error("❌ GET_USER_DATA worker error:", err);
       self.postMessage({ type: 'GET_USER_DATA_RESULT', result: null, error: (err as Error).message });
     }
   }

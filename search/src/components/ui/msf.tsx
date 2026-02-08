@@ -26,6 +26,7 @@ interface MSFProps {
   label?: string;
   options: string[];
   disabled: boolean;
+  theme?: "default" | "puppylove";
 }
 
 export default function MultiSelectField(props: MSFProps) {
@@ -55,7 +56,12 @@ export default function MultiSelectField(props: MSFProps) {
         props.disabled && "cursor-not-allowed opacity-50"
       )}
     >
-      <Label htmlFor={props.name}>{displayLabel}</Label>
+      <Label
+        htmlFor={props.name}
+        className={cn(props.theme === "puppylove" && "text-rose-500")}
+      >
+        {displayLabel}
+      </Label>
       <div className={cn(props.disabled && "pointer-events-none")}>
         <MultiSelect
           options={formattedOptions}
@@ -64,6 +70,7 @@ export default function MultiSelectField(props: MSFProps) {
           placeholder={
             selectedValues.length === 0 ? `Select ${displayLabel}` : ""
           }
+          theme={props.theme}
         />
       </div>
     </div>

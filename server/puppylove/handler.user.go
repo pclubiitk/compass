@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -57,13 +58,48 @@ func UserFirstLogin(c *gin.Context) {
 		return
 	}
 
-	// Update or create the profile
+	// Fetch gender from the main compass profile
+	var compassUser model.User
+	if err := connections.DB.Where("user_id = ?", userID).First(&compassUser).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not fetch user profile. Please try again."})
+		return
+	}
+
+	// Fetch the search profile to get additional information if needed
+	var searchProfile model.Profile
+	if err := connections.DB.Where("user_id = ?", userID).First(&searchProfile).Error; err != nil {
+		// Profile might not exist, but we can still proceed with other data
+	}
+
+	// Get the gender from search profile if it has gender field, otherwise use an empty string
+	userGender := searchProfile.Gender
+	if userGender == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "PuppyLove can only be enabled if your gender is set to Male or Female. Please update your profile."})
+		return
+	}
+
+	// Validate gender is male or female
+	if userGender != "M" && userGender != "F" && userGender != "Male" && userGender != "Female" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "PuppyLove can only be enabled if your gender is Male or Female."})
+		return
+	}
+
+	// Normalize gender to single character
+	normalizedGender := userGender
+	if userGender == "Male" {
+		normalizedGender = "M"
+	} else if userGender == "Female" {
+		normalizedGender = "F"
+	}
+
+	// Update or create the profile with gender from compass profile
 	profile := puppylove.PuppyLoveProfile{
 		UserID: userID.(uuid.UUID),
 		RollNo: rollNo.(string),
 		PubK:   info.PubKey,
 		PrivK:  info.PrivKey,
 		Data:   info.Data,
+		Gender: normalizedGender,
 		Dirty:  true,
 	}
 
@@ -163,6 +199,16 @@ func GetUserData(c *gin.Context) {
 		return
 	}
 
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "User ID not found in context"})
+		return
+	}
+
+	fmt.Printf("\n=== GetUserData called ===\n")
+	fmt.Printf("Roll No: %v\n", roll_no)
+	fmt.Printf("User ID: %v\n", userID)
+
 	var profile puppylove.PuppyLoveProfile
 	result := connections.DB.Where("roll_no = ?", roll_no).First(&profile)
 	if result.Error != nil {
@@ -170,9 +216,59 @@ func GetUserData(c *gin.Context) {
 		return
 	}
 
+	fmt.Printf("PuppyLove Profile Gender (before sync): '%s'\n", profile.Gender)
+
+	// If gender is missing, fetch it from the search profile and save it
+	if profile.Gender == "" {
+		fmt.Printf("Gender is empty, attempting to fetch from compass profile...\n")
+
+		var searchProfile model.Profile
+		err := connections.DB.Where("user_id = ?", userID).First(&searchProfile).Error
+
+		if err != nil {
+			fmt.Printf("ERROR fetching compass profile: %v\n", err)
+		} else {
+			userGender := searchProfile.Gender
+			fmt.Printf("✓ Found compass profile with gender: '%s'\n", userGender)
+
+			if userGender != "" {
+				// Normalize gender - handle both full names and single letters
+				normalizedGender := userGender
+				lowerGender := strings.ToLower(userGender)
+
+				if lowerGender == "male" || lowerGender == "m" {
+					normalizedGender = "M"
+				} else if lowerGender == "female" || lowerGender == "f" {
+					normalizedGender = "F"
+				}
+
+				fmt.Printf("  Original: '%s' → Normalized: '%s'\n", userGender, normalizedGender)
+
+				// Save the gender to the puppylove profile in database
+				updateResult := connections.DB.Model(&puppylove.PuppyLoveProfile{}).
+					Where("roll_no = ?", roll_no).
+					Update("gender", normalizedGender)
+
+				if updateResult.Error == nil {
+					profile.Gender = normalizedGender
+					fmt.Printf("✓ Successfully saved gender '%s' to puppylove profile\n", normalizedGender)
+				} else {
+					fmt.Printf("✗ Failed to save gender: %v\n", updateResult.Error)
+				}
+			} else {
+				fmt.Printf("⚠ Compass profile gender is EMPTY\n")
+			}
+		}
+	} else {
+		fmt.Printf("Gender already set: '%s'\n", profile.Gender)
+	}
+
 	permit := IsPuppyLovePermitted()
 
-	c.JSON(http.StatusOK, gin.H{
+	fmt.Printf("Final gender in response: '%s'\n", profile.Gender)
+	fmt.Printf("=== End GetUserData ===\n\n")
+
+	response := gin.H{
 		"message":  "Data retrieved successfully !!",
 		"id":       roll_no,
 		"data":     profile.Data,
@@ -184,8 +280,10 @@ func GetUserData(c *gin.Context) {
 		"about":    profile.About,
 		"interest": profile.Interests,
 		"privK":    profile.PrivK,
-		"pubKey":   profile.PubK, //added by me(ritika)
-	})
+		"pubKey":   profile.PubK,
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 // SendHeartWithReturn sends hearts and handles return hearts
@@ -288,12 +386,14 @@ func SendHeartWithReturn(c *gin.Context) {
 }
 
 func SendHeartVirtualHandler(c *gin.Context) {
+	fmt.Printf("\n=== SendHeartVirtualHandler called ===\n")
 	info := new(SendHeartVirtual)
 	if err := c.BindJSON(info); err != nil {
-
+		fmt.Printf("BindJSON error: %v\n", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Wrong Format"})
 		return
 	}
+	fmt.Printf("Received info: %+v\n", info)
 
 	roll_no, _ := c.Get("rollNo")
 	var profile puppylove.PuppyLoveProfile
@@ -303,24 +403,154 @@ func SendHeartVirtualHandler(c *gin.Context) {
 		return
 	}
 
-	if profile.Submit {
-		c.JSON(http.StatusOK, gin.H{"error": "Hearts already sent."})
-		return
+	// NOTE: Virtual hearts (drafts) can be saved even after final submission
+	// Only final SendHeart submission is restricted by profile.Submit flag
+
+	// Check current virtual hearts count limit (max 4)
+	var currentHearts Hearts
+	if profile.Data != "" {
+		if err := json.Unmarshal([]byte(profile.Data), &currentHearts); err == nil {
+			// Count non-empty hearts
+			heartCount := 0
+			if currentHearts.Heart1.SHA_encrypt != "" {
+				heartCount++
+			}
+			if currentHearts.Heart2.SHA_encrypt != "" {
+				heartCount++
+			}
+			if currentHearts.Heart3.SHA_encrypt != "" {
+				heartCount++
+			}
+			if currentHearts.Heart4.SHA_encrypt != "" {
+				heartCount++
+			}
+
+			// Check if adding new hearts would exceed limit
+			newHeartCount := 0
+			if info.Hearts.Heart1.SHA_encrypt != "" {
+				newHeartCount++
+			}
+			if info.Hearts.Heart2.SHA_encrypt != "" {
+				newHeartCount++
+			}
+			if info.Hearts.Heart3.SHA_encrypt != "" {
+				newHeartCount++
+			}
+			if info.Hearts.Heart4.SHA_encrypt != "" {
+				newHeartCount++
+			}
+
+			if heartCount+newHeartCount > 4 {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "Virtual heart limit exceeded. You can save a maximum of 4 virtual hearts.", "currentCount": heartCount, "limit": 4})
+				return
+			}
+		}
 	}
 
 	jsonData, err := json.Marshal(info.Hearts)
 	if err != nil {
+		fmt.Printf("JSON Marshal error: %v\n", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to marshal hearts data"})
+		return
+	}
+	fmt.Printf("Hearts to save: %+v\n", info.Hearts)
+	fmt.Printf("JSON data: %s\n", string(jsonData))
+
+	// Merge new hearts with existing ones, but check for duplicates
+	finalHearts := currentHearts
+
+	// Check if trying to save draft for same person twice
+	if info.Hearts.Heart1.SHA_encrypt != "" && currentHearts.Heart1.SHA_encrypt != "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "You already have a draft for this person (Slot 1). Please submit or clear it first."})
+		return
+	}
+	if info.Hearts.Heart2.SHA_encrypt != "" && currentHearts.Heart2.SHA_encrypt != "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "You already have a draft for this person (Slot 2). Please submit or clear it first."})
+		return
+	}
+	if info.Hearts.Heart3.SHA_encrypt != "" && currentHearts.Heart3.SHA_encrypt != "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "You already have a draft for this person (Slot 3). Please submit or clear it first."})
+		return
+	}
+	if info.Hearts.Heart4.SHA_encrypt != "" && currentHearts.Heart4.SHA_encrypt != "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "You already have a draft for this person (Slot 4). Please submit or clear it first."})
 		return
 	}
 
-	if err := record.Updates(puppylove.PuppyLoveProfile{
-		Data: string(jsonData),
-	}).Error; err != nil {
+	// Merge new hearts into existing ones
+	if info.Hearts.Heart1.SHA_encrypt != "" {
+		finalHearts.Heart1 = info.Hearts.Heart1
+	}
+	if info.Hearts.Heart2.SHA_encrypt != "" {
+		finalHearts.Heart2 = info.Hearts.Heart2
+	}
+	if info.Hearts.Heart3.SHA_encrypt != "" {
+		finalHearts.Heart3 = info.Hearts.Heart3
+	}
+	if info.Hearts.Heart4.SHA_encrypt != "" {
+		finalHearts.Heart4 = info.Hearts.Heart4
+	}
+
+	finalJsonData, err := json.Marshal(finalHearts)
+	if err != nil {
+		fmt.Printf("JSON Marshal error for final data: %v\n", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to marshal final hearts data"})
+		return
+	}
+	fmt.Printf("Final merged data: %s\n", string(finalJsonData))
+
+	if err := connections.DB.Table("puppy_love_profiles").Where("roll_no = ?", roll_no).Update("data", string(finalJsonData)).Error; err != nil {
+		fmt.Printf("Update error: %v\n", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not update Data field of User."})
 		return
 	}
+	fmt.Printf("Successfully updated Data field\n")
 
 	c.JSON(http.StatusAccepted, gin.H{"message": "Virtual Hearts Sent Successfully !!"})
+}
+
+// GetVirtualHeartCountHandler returns the current count of virtual hearts saved by the user
+func GetVirtualHeartCountHandler(c *gin.Context) {
+	roll_no, exists := c.Get("rollNo")
+	if !exists {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "User ID not found in context"})
+		return
+	}
+
+	var profile puppylove.PuppyLoveProfile
+	if err := connections.DB.Where("roll_no = ?", roll_no).First(&profile).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "User does not exist."})
+		return
+	}
+
+	// Parse existing hearts
+	var currentHearts Hearts
+	heartCount := 0
+
+	if profile.Data != "" {
+		if err := json.Unmarshal([]byte(profile.Data), &currentHearts); err == nil {
+			// Count non-empty hearts
+			if currentHearts.Heart1.SHA_encrypt != "" {
+				heartCount++
+			}
+			if currentHearts.Heart2.SHA_encrypt != "" {
+				heartCount++
+			}
+			if currentHearts.Heart3.SHA_encrypt != "" {
+				heartCount++
+			}
+			if currentHearts.Heart4.SHA_encrypt != "" {
+				heartCount++
+			}
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"count":     heartCount,
+		"limit":     4,
+		"remaining": 4 - heartCount,
+		"submitted": profile.Submit,
+	})
 }
 
 // HeartClaimError represents an error during heart claiming

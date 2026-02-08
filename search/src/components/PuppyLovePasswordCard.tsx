@@ -138,7 +138,7 @@ export const PuppyLovePasswordCard = ({ onSuccess, onCancel }: PuppyLovePassword
       });
 
       if (!verifyRes.ok) {
-        return false;
+        return { success: false, reason: 'verification_failed' };
       }
 
       const verifyData = await verifyRes.json();
@@ -148,7 +148,7 @@ export const PuppyLovePasswordCard = ({ onSuccess, onCancel }: PuppyLovePassword
         // User is unregistered - show registration flow
         setShowRegistration(true);
         setPassword("");
-        return false;
+        return { success: false, reason: 'not_registered' };
       }
 
       initPuppyLoveWorker();
@@ -231,8 +231,15 @@ export const PuppyLovePasswordCard = ({ onSuccess, onCancel }: PuppyLovePassword
     
     setIsSubmitting(true);
     try {
-      const success = await verifyAndProceed(passwordToUse);
-      if (!success) {
+      const result = await verifyAndProceed(passwordToUse);
+      
+      // Check if result indicates registration needed
+      if (result && typeof result === 'object' && result.reason === 'not_registered') {
+        // Registration flow will be shown via showRegistration state
+        return;
+      }
+      
+      if (!result) {
         alert("Wrong password or unable to verify. Please try again.");
         setPassword("");
       }

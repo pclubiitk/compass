@@ -26,21 +26,17 @@ export async function GenerateKeys() {
   const publicKey = await crypto.subtle.exportKey('spki', keyPair.publicKey);
   const privateKey = await crypto.subtle.exportKey('pkcs8', keyPair.privateKey);
 
-  const pubKeyArray = Array.from(new Uint8Array(publicKey));
-  const privKeyArray = Array.from(new Uint8Array(privateKey));
+  const pubKeyBuffer = Buffer.from(publicKey);
+  const privKeyBuffer = Buffer.from(privateKey);
 
   return {
-    pubKey: btoa(pubKeyArray.map(b => String.fromCharCode(b)).join('')),
-    privKey: btoa(privKeyArray.map(b => String.fromCharCode(b)).join('')),
+    pubKey: pubKeyBuffer.toString('base64'),
+    privKey: privKeyBuffer.toString('base64'),
   };
 }
 
 export async function Encryption(SHA: string, publicKey: string) {
-  const binaryString = atob(publicKey);
-  const publicKeyBuffer = new Uint8Array(binaryString.length);
-  for (let i = 0; i < binaryString.length; i++) {
-    publicKeyBuffer[i] = binaryString.charCodeAt(i);
-  }
+  const publicKeyBuffer = Buffer.from(publicKey, 'base64');
   const publicKeyImported = await crypto.subtle.importKey(
     'spki',
     publicKeyBuffer as BufferSource,
@@ -56,17 +52,13 @@ export async function Encryption(SHA: string, publicKey: string) {
     encodedData
   );
 
-  const encryptedArray = Array.from(new Uint8Array(encryptedArrayBuffer));
-  return btoa(encryptedArray.map(b => String.fromCharCode(b)).join(''));
+  const encryptedBuffer = Buffer.from(encryptedArrayBuffer);
+  return encryptedBuffer.toString('base64');
 }
 
 export async function Decryption(ENC: string, privateKey: string) {
   try {
-    const binaryString = atob(privateKey);
-    const privateKeyBuffer = new Uint8Array(binaryString.length);
-    for (let i = 0; i < binaryString.length; i++) {
-      privateKeyBuffer[i] = binaryString.charCodeAt(i);
-    }
+    const privateKeyBuffer = Buffer.from(privateKey, 'base64');
     const privateKeyImported = await crypto.subtle.importKey(
       'pkcs8',
       privateKeyBuffer as BufferSource,
@@ -75,11 +67,7 @@ export async function Decryption(ENC: string, privateKey: string) {
       ['decrypt']
     );
 
-    const encBinaryString = atob(ENC);
-    const encryptedData = new Uint8Array(encBinaryString.length);
-    for (let i = 0; i < encBinaryString.length; i++) {
-      encryptedData[i] = encBinaryString.charCodeAt(i);
-    }
+    const encryptedData = Buffer.from(ENC, 'base64');
     const decryptedArrayBuffer = await crypto.subtle.decrypt(
       { name: 'RSA-OAEP' },
       privateKeyImported,
@@ -113,6 +101,10 @@ export function RandInt() {
 export const generateRandomString = (length: number): string => {
   const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   const values = crypto.getRandomValues(new Uint8Array(length));
-  return Array.from(values, (x) => possible[x % possible.length]).join("");
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += possible[values[i] % possible.length];
+  }
+  return result;
 };
 

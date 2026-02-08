@@ -2,6 +2,8 @@ import React, { useState, useCallback, useEffect, forwardRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Lightbulb, Key, Edit, Eye } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -14,6 +16,7 @@ import { debounce } from "@/lib/utils";
 import { Query, Options as OptionsType } from "@/lib/types/data";
 import { useGContext } from "../ContextProvider";
 import { cn } from "@/lib/utils";
+import { PROFILE_POINT } from "@/lib/constant";
 
 // NOTE:
 // 1. Earlier cycle of reference was made, the parent component created a ref,
@@ -64,8 +67,36 @@ function Options(props: OptionsProps) {
     }));
   }, [isPuppyLove]);
 
+  // Listen for search events from selections panel
+  useEffect(() => {
+    const handleSearch = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const { name } = customEvent.detail;
+      setQuery((prevQuery) => ({
+        ...prevQuery,
+        name: name,
+      }));
+    };
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("puppylove:search", handleSearch);
+    }
+
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("puppylove:search", handleSearch);
+      }
+    };
+  }, []);
+
   return (
-    <Card className="p-4 md:p-6 w-4/5 max-w-4xl m-auto">
+    <Card
+      className={cn(
+        "p-4 md:p-6 w-4/5 max-w-4xl m-auto",
+        isPuppyLove &&
+          "border-none bg-rose-50/90 text-rose-500 shadow-[0_10px_40px_rgba(225,29,72,0.15)]"
+      )}
+    >
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Batch */}
         <MultiSelectField
@@ -74,6 +105,7 @@ function Options(props: OptionsProps) {
           name="batch"
           options={props.listOpts.batch}
           setQuery={setQuery}
+          theme={isPuppyLove ? "puppylove" : "default"}
         />
 
         {/* Hall */}
@@ -83,6 +115,7 @@ function Options(props: OptionsProps) {
           name="hall"
           options={props.listOpts.hall}
           setQuery={setQuery}
+          theme={isPuppyLove ? "puppylove" : "default"}
         />
 
         {/* Course */}
@@ -93,6 +126,7 @@ function Options(props: OptionsProps) {
           label="Course"
           options={props.listOpts.course}
           setQuery={setQuery}
+          theme={isPuppyLove ? "puppylove" : "default"}
         />
 
         {/* Department */}
@@ -103,6 +137,7 @@ function Options(props: OptionsProps) {
           label="Department"
           options={props.listOpts.dept}
           setQuery={setQuery}
+          theme={isPuppyLove ? "puppylove" : "default"}
         />
 
         {/* Gender */}
@@ -113,7 +148,7 @@ function Options(props: OptionsProps) {
           )}
         >
           <div className="w-full">
-            <Label htmlFor="gender" className="mb-1">
+            <Label htmlFor="gender" className={cn("mb-1", isPuppyLove && "text-rose-500")}>
               Gender
             </Label>
             <Select
@@ -124,7 +159,13 @@ function Options(props: OptionsProps) {
               }
               disabled={isGlobalLoading}
             >
-              <SelectTrigger id="gender">
+              <SelectTrigger
+                id="gender"
+                className={cn(
+                  isPuppyLove &&
+                    "border-rose-200/80 bg-rose-100/70 text-rose-500 placeholder:text-rose-300"
+                )}
+              >
                 <SelectValue placeholder="Select Gender" />
               </SelectTrigger>
               <SelectContent>
@@ -139,7 +180,7 @@ function Options(props: OptionsProps) {
 
         {/* HomeTown */}
         <div className="grid w-full items-center lg:-mt-2">
-          <Label htmlFor="hometown" className="mb-1">
+          <Label htmlFor="hometown" className={cn("mb-1", isPuppyLove && "text-rose-500")}>
             Hometown
           </Label>
           <Input
@@ -149,13 +190,17 @@ function Options(props: OptionsProps) {
             value={query.address}
             onChange={(e) => setQuery({ ...query, address: e.target.value })}
             disabled={isGlobalLoading}
+            className={cn(
+              isPuppyLove &&
+                "border-rose-200/80 bg-rose-100/70 text-rose-500 placeholder:text-rose-300"
+            )}
           />
         </div>
       </div>
 
       {/* Name, roll number, username input bar */}
       <div>
-        <Label htmlFor="main-search" className="mb-2">
+        <Label htmlFor="main-search" className={cn("mb-2", isPuppyLove && "text-rose-500")}>
           Enter name, username or roll no.
         </Label>
         <div className="flex flex-row m-0 p-0">
@@ -168,10 +213,62 @@ function Options(props: OptionsProps) {
             disabled={isGlobalLoading}
             // ref={ref}      // Forward the ref here
             autoFocus
-            className="pr-10" // Add padding to the right for the clear button
+            className={cn(
+              "pr-10",
+              isPuppyLove &&
+                "border-rose-200/80 bg-rose-100/70 text-rose-500 placeholder:text-rose-300"
+            )} // Add padding to the right for the clear button
           />
         </div>
       </div>
+
+      {/* PuppyLove Action Buttons */}
+      {isPuppyLove && (
+        <div className="grid grid-cols-4 gap-2">
+          <Button 
+            variant="outline" 
+            size="icon"
+            className="w-full h-10 border-rose-200/80 text-rose-500 hover:text-rose-500 hover:bg-rose-100 shadow-sm"
+            
+          >
+            <Lightbulb className="h-4 w-4" />
+          </Button>
+          <Button 
+            variant="outline" 
+            size="icon"
+            className="w-full h-10 border-rose-200/80 text-rose-500 hover:text-rose-500 hover:bg-rose-100 shadow-sm"
+            
+          >
+            <Key className="h-4 w-4" />
+          </Button>
+          <Button 
+            variant="outline" 
+            size="icon"
+            className="w-full h-10 border-rose-200/80 text-rose-500 hover:text-rose-500 hover:bg-rose-100 shadow-sm"
+            
+            onClick={() => {
+              if (typeof window !== "undefined") {
+                window.location.href = PROFILE_POINT;
+              }
+            }}
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+          <Button 
+            variant="outline" 
+            size="icon"
+            className="w-full h-10 border-rose-200/80 text-rose-500 hover:text-rose-500 hover:bg-rose-100 shadow-sm"
+            
+            onClick={() => {
+              if (typeof window !== "undefined") {
+                window.dispatchEvent(new CustomEvent("puppylove:toggleSelections"));
+              }
+            }}
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
     </Card>
   );
 }

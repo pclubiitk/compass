@@ -27,9 +27,12 @@ interface GlobalContextType {
   setIsPuppyLove: (val: boolean) => void;
 
   puppyLovePublicKeys?: any;
+  setPuppyLovePublicKeys?: (val: any) => void;
   puppyLoveHeartsSent?: any;
   puppyLoveHeartsReceived?: any;
   setPuppyLoveHeartsSent?: (val: any) => void;
+  puppyLoveProfile?: any;
+  setPuppyLoveProfile?: (val: any) => void;
   currentUserProfile?: any;
   
   needsFirstTimeLogin?: boolean;
@@ -59,7 +62,7 @@ export const ContextProvider = ({ children }: { children: ReactNode }) => {
   const [isPLseason, setPLseason] = useState<boolean>(false);
   const [globalError, setGlobalError] = useState<boolean>(false);
   const [profileVisibility, setProfileVisibility] = useState<boolean>(false);
-  const [isPuppyLove, setIsPuppyLove] = useState<boolean>(false);
+  const [isPuppyLove, setIsPuppyLove] = useState<boolean>(false); // Always starts false, toggled by user
   const [currentUserProfile, setCurrentUserProfile] = useState<any>(null);
   const [needsFirstTimeLogin, setNeedsFirstTimeLogin] = useState<boolean>(false);
 
@@ -67,6 +70,7 @@ export const ContextProvider = ({ children }: { children: ReactNode }) => {
   const [puppyLovePublicKeys, setPuppyLovePublicKeys] = useState<any>(null);
   const [puppyLoveHeartsSent, setPuppyLoveHeartsSent] = useState<any>([]);
   const [puppyLoveHeartsReceived, setPuppyLoveHeartsReceived] = useState<any>(null);
+  const [puppyLoveProfile, setPuppyLoveProfile] = useState<any>(null);
 
   useEffect(() => {
     async function verifyingLogin() {
@@ -80,22 +84,11 @@ export const ContextProvider = ({ children }: { children: ReactNode }) => {
           }
         );
         if (response.ok) {
-          setProfileVisibility(true);
           setLoggedIn(true);
-          setPLseason(true); 
-
-          try {
-            const profileResp = await fetch(
-              `${process.env.NEXT_PUBLIC_AUTH_URL}/api/profile`,
-              { method: "GET", credentials: "include" }
-            );
-            if (profileResp.ok) {
-              const profileData = await profileResp.json();
-              setCurrentUserProfile(profileData?.profile?.profile || null);
-            }
-          } catch (err) {
-            setCurrentUserProfile(null);
-          }
+          setProfileVisibility(response.status !== 202);
+          const isPLEnabled = response.status === 200;
+          setPLseason(isPLEnabled);
+          setIsPuppyLove(false); // Always start disabled on new session, user must toggle it on
         } else if (response.status === 401) {
           setLoggedIn(false);
         } else {
@@ -110,9 +103,26 @@ export const ContextProvider = ({ children }: { children: ReactNode }) => {
     verifyingLogin();
   }, []);
 
+  // Load public keys from localStorage on mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const cachedKeys = localStorage.getItem("puppylove_public_keys");
+      if (cachedKeys) {
+        try {
+          setPuppyLovePublicKeys(JSON.parse(cachedKeys));
+        } catch {
+          localStorage.removeItem("puppylove_public_keys");
+        }
+      }
+    }
+  }, []);
+
   // Puppy Love worker initialization and message handling
   useEffect(() => {
     if (isPuppyLove) {
+      // Reset received hearts when entering mode (will be refetched from backend)
+      setPuppyLoveHeartsReceived([]);
+      
       const worker = initPuppyLoveWorker();
       if (worker) {
         worker.onmessage = (e) => {
@@ -120,6 +130,10 @@ export const ContextProvider = ({ children }: { children: ReactNode }) => {
           const payload = result ?? results;
           if (type === "FETCH_PUBLIC_KEYS_RESULT") {
             setPuppyLovePublicKeys(payload);
+            // Store in localStorage for future use
+            if (typeof window !== "undefined") {
+              localStorage.setItem("puppylove_public_keys", JSON.stringify(payload));
+            }
           }
           if (type === "FETCH_HEARTS_RESULT") {
             setPuppyLoveHeartsReceived(Array.isArray(payload) ? payload : []);
@@ -130,10 +144,16 @@ export const ContextProvider = ({ children }: { children: ReactNode }) => {
           if (type === "FETCH_RETURN_HEARTS_RESULT") {
             // optional: store returned hearts for later use
           }
+          if (type === "GET_USER_DATA_RESULT") {
+            console.log(" GET_USER_DATA_RESULT received:", payload);
+            setPuppyLoveProfile(payload ?? null);
+          }
           // Add more message types as needed
         };
         // Trigger fetches
         worker.postMessage({ type: "FETCH_PUBLIC_KEYS" });
+        console.log("📤 Sending GET_USER_DATA message to worker");
+        worker.postMessage({ type: "GET_USER_DATA" });
         const privKey = typeof window !== "undefined" ? sessionStorage.getItem("puppylove_private_key") : null;
         if (privKey) {
           worker.postMessage({ type: "FETCH_AND_CLAIM_HEARTS", payload: { privateKey: privKey } });
@@ -154,6 +174,8 @@ export const ContextProvider = ({ children }: { children: ReactNode }) => {
         } catch {
           setPuppyLoveHeartsSent([]);
         }
+      } else {
+        setPuppyLoveHeartsSent([]);
       }
     }
   }, []);
@@ -170,9 +192,12 @@ export const ContextProvider = ({ children }: { children: ReactNode }) => {
     isPuppyLove,
     setIsPuppyLove,
     puppyLovePublicKeys,
+    setPuppyLovePublicKeys,
     puppyLoveHeartsSent,
     puppyLoveHeartsReceived,
     setPuppyLoveHeartsSent,
+    puppyLoveProfile,
+    setPuppyLoveProfile,
     needsFirstTimeLogin,
     setNeedsFirstTimeLogin,
     currentUserProfile,

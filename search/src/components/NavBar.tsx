@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Info, User } from "lucide-react";
 import { InfoCard } from "./cards/InfoCard";
 import { CardDescription, Card } from "@/components/ui/card";
@@ -9,6 +9,7 @@ import { PROFILE_POINT } from "@/lib/constant";
 import { useGContext } from "./ContextProvider";
 import { PuppyLoveHeartsCard } from "@/components/PuppyLoveHeartsCard";
 import { PuppyLovePasswordCard } from "./PuppyLovePasswordCard";
+import { PuppyLoveSelectionsPanel } from "@/components/PuppyLoveSelectionsPanel";
 
 interface NavBarProps {
   length: number;
@@ -20,6 +21,23 @@ interface NavBarProps {
 export const NavBar = (props: NavBarProps) => {
   const { isPuppyLove, setIsPuppyLove } = useGContext();
   const [showPassModal, setShowPassModal] = useState(false);
+  const [showSelectionsMobile, setShowSelectionsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleToggleSelections = () => {
+      setShowSelectionsMobile((prev) => !prev);
+    };
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("puppylove:toggleSelections", handleToggleSelections);
+    }
+
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("puppylove:toggleSelections", handleToggleSelections);
+      }
+    };
+  }, []);
 
   const handleToggle = () => {
     if (isPuppyLove) setIsPuppyLove(false);
@@ -106,6 +124,19 @@ export const NavBar = (props: NavBarProps) => {
         <div className="block md:hidden w-full flex justify-center mt-2">
           <PuppyLoveHeartsCard compact />
         </div>
+      )}
+
+      {/* Puppy Love Selections Panel below hearts card in mobile view */}
+      {isPuppyLove && showSelectionsMobile && (
+        <PuppyLoveSelectionsPanel
+          variant="mobile"
+          onClose={() => {
+            setShowSelectionsMobile(false);
+            if (typeof window !== "undefined") {
+              window.dispatchEvent(new CustomEvent("puppylove:toggleSelections"));
+            }
+          }}
+        />
       )}
 
       {showPassModal && (

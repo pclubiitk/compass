@@ -42,6 +42,7 @@ func Router(r *gin.Engine) {
 
 			users.Use(PuppyLovePermit())
 			users.POST("/sendheartVirtual", SendHeartVirtualHandler)
+			users.GET("/virtualheartcount", GetVirtualHeartCountHandler)
 			users.POST("/sendheart", SendHeartWithReturn)
 
 		}
