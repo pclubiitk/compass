@@ -9,6 +9,7 @@ import { PROFILE_POINT } from "@/lib/constant";
 import { useGContext } from "./ContextProvider";
 import { PuppyLoveHeartsCard } from "@/components/puppy-love/HeartsCard";
 import { PuppyLovePasswordCard } from "@/components/puppy-love/PasswordCard";
+import { PuppyLoveSelectionsPanel } from "./puppy-love/SelectionsPanel";
 
 interface NavBarProps {
   length: number;
@@ -29,12 +30,18 @@ export const NavBar = (props: NavBarProps) => {
     };
 
     if (typeof window !== "undefined") {
-      window.addEventListener("puppylove:toggleSelections", handleToggleSelections);
+      window.addEventListener(
+        "puppylove:toggleSelections",
+        handleToggleSelections,
+      );
     }
 
     return () => {
       if (typeof window !== "undefined") {
-        window.removeEventListener("puppylove:toggleSelections", handleToggleSelections);
+        window.removeEventListener(
+          "puppylove:toggleSelections",
+          handleToggleSelections,
+        );
       }
     };
   }, []);
@@ -145,10 +152,18 @@ export const NavBar = (props: NavBarProps) => {
         </div>
       )}
 
-      {showPassModal && (
-        <PuppyLovePasswordCard 
-          onSuccess={handlePasswordSuccess}
-          onCancel={() => setShowPassModal(false)}
+      {/* Puppy Love Selections Panel below hearts card in mobile view */}
+      {isPuppyLove && showSelectionsMobile && (
+        <PuppyLoveSelectionsPanel
+          variant="mobile"
+          onClose={() => {
+            setShowSelectionsMobile(false);
+            if (typeof window !== "undefined") {
+              window.dispatchEvent(
+                new CustomEvent("puppylove:toggleSelections"),
+              );
+            }
+          }}
         />
       )}
     </>

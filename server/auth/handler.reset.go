@@ -131,29 +131,27 @@ func resetPasswordHandler(c *gin.Context) {
 		return
 	}
 	// TODO: Check if the puppylove mode true or not
-	// Clear Puppy Love profile data if it exists and is dirty
+	// Clear Puppy Love profile data if it exists (ALWAYS clear on password reset, not just if dirty)
 	var profile puppylove.PuppyLoveProfile
 	if err := connections.DB.Where("user_id = ?", user.UserID).First(&profile).Error; err == nil {
-		// Profile exists, checking if dirty and reset it
-		if profile.Dirty {
-			profile.Dirty = false          // Mark as unregistered
-			profile.PubK = ""              // Clear public key
-			profile.PrivK = ""             // Clear private key
-			profile.Data = "{}"            // Clear data
-			profile.Claims = ""            // Clear claims
-			profile.Submit = false         // Reset submit status
-			profile.Matches = []byte("[]") // Clear matches
-			profile.Publish = false        // Unpublish profile
-			profile.About = ""             // Clear about
-			profile.Interests = ""         // Clear interests
+		// Profile exists, reset it completely
+		profile.Dirty = false          // Mark as unregistered
+		profile.PubK = ""              // Clear public key
+		profile.PrivK = ""             // Clear private key
+		profile.Data = "{}"            // Clear data
+		profile.Claims = ""            // Clear claims
+		profile.Submit = false         // Reset submit status
+		profile.Matches = []byte("[]") // Clear matches
+		profile.Publish = false        // Unpublish profile
+		profile.About = ""             // Clear about
+		profile.Interests = ""         // Clear interests
 
-			if err := connections.DB.Save(&profile).Error; err != nil {
-				logrus.Error("Failed to clear Puppy Love profile:", err)
-				// Don't fail the password reset, just log the error
-			}
+		if err := connections.DB.Save(&profile).Error; err != nil {
+			logrus.Error("Failed to clear Puppy Love profile:", err)
+			// Don't fail the password reset, just log the error
 		}
 	}
 	// If profile doesn't exist or error finding it, that's fine - continue
 
-	c.JSON(http.StatusOK, gin.H{"message": "Password updated successfully"})
+	c.JSON(http.StatusOK, gin.H{"message": "Password updated successfully. If you had a Puppy Love profile, it has been cleared. You will need to re-register."})
 }

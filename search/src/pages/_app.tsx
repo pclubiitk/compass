@@ -1,4 +1,5 @@
 import type { AppProps } from "next/app";
+import { useEffect, useState } from "react";
 import "@/styles/styles.css";
 import "@/styles/globals.css";
 import Head from "next/head";
@@ -9,6 +10,7 @@ import {
 import { ThemeProvider } from "next-themes";
 import { Heart } from "lucide-react";
 import { PuppyLoveHeartsCard } from "@/components/puppy-love/HeartsCard";
+import { PuppyLoveSelectionsPanel } from "@/components/puppy-love/SelectionsPanel";
 
 function randomHeartProps(i: number) {
   // More variety in size, color, and animation
@@ -36,6 +38,41 @@ function randomHeartProps(i: number) {
 // TODO: Exract out this later.
 function AppWrapper({ Component, pageProps }: AppProps) {
   const { isPuppyLove } = useGContext();
+  const [showSelections, setShowSelections] = useState(false);
+
+  useEffect(() => {
+    const handleToggleSelections = () => {
+      setShowSelections((prev) => {
+        const next = !prev;
+        if (next && typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("puppylove:selectionsOpen"));
+        }
+        return next;
+      });
+    };
+
+    if (typeof window !== "undefined") {
+      window.addEventListener(
+        "puppylove:toggleSelections",
+        handleToggleSelections,
+      );
+    }
+
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener(
+          "puppylove:toggleSelections",
+          handleToggleSelections,
+        );
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isPuppyLove) {
+      setShowSelections(false);
+    }
+  }, [isPuppyLove]);
   return (
     <ThemeProvider
       attribute="class"
@@ -96,6 +133,14 @@ function AppWrapper({ Component, pageProps }: AppProps) {
             <div className="hidden md:block fixed top-6 left-6 z-50">
               <PuppyLoveHeartsCard compact />
             </div>
+          )}
+          {isPuppyLove && showSelections && (
+            <PuppyLoveSelectionsPanel
+              variant="desktop"
+              onClose={() => {
+                setShowSelections(false);
+              }}
+            />
           )}
         </div>
       </div>

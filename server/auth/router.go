@@ -4,10 +4,10 @@ package auth
 
 import (
 	"compass/middleware"
+	"compass/puppylove"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/spf13/viper"
 )
 
 func Router(r *gin.Engine) {
@@ -29,9 +29,8 @@ func Router(r *gin.Engine) {
 				// fallback
 				isVisible = false
 			}
-
-			puppyLoveEnabled := viper.GetBool("puppylove.enabled")
-
+			// TODO: A database query can be heavy here.
+			puppyLoveEnabled := puppylove.IsPuppyLoveEnabled()
 			// 200,202: logged in + visible
 			if isVisible {
 				if puppyLoveEnabled {
@@ -42,8 +41,8 @@ func Router(r *gin.Engine) {
 					c.JSON(http.StatusNonAuthoritativeInfo, gin.H{"success": true, "status": "puppylove_disabled"})
 				}
 			} else {
-				// 401: logged in + hidden
-				c.JSON(http.StatusUnauthorized, gin.H{"success": true, "status": "hidden"})
+				// 202: logged in + hidden
+				c.JSON(http.StatusAccepted, gin.H{"success": true, "status": "hidden"})
 			}
 		})
 	}

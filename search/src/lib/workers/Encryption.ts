@@ -117,6 +117,10 @@ export async function RandInt() {
 export const generateRandomString = (length: number): string => {
   const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   const values = crypto.getRandomValues(new Uint8Array(length));
-  return Array.from(values, (x) => possible[x % possible.length]).join("");
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += possible[values[i] % possible.length];
+  }
+  return result;
 };
 
