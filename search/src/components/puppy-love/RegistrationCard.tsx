@@ -98,6 +98,31 @@ export const PuppyLoveRegistrationCard = ({ onSuccess, onCancel }: PuppyLoveRegi
       }
 
       // Success - profile created with dirty: true
+      // Store keys in sessionStorage for immediate use
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem(
+          'data',
+          JSON.stringify({ k1: privKey, k2: pubKey })
+        );
+        sessionStorage.setItem("puppylove_encrypted_private_key", encryptedPrivKey);
+      }
+
+      // Fetch and cache all public keys
+      try {
+        const keysRes = await fetch(`${PUPPYLOVE_POINT}/api/puppylove/users/fetchPublicKeys`, {
+          method: "GET",
+          credentials: "include",
+        });
+        if (keysRes.ok) {
+          const publicKeys = await keysRes.json();
+          if (typeof window !== "undefined") {
+            localStorage.setItem("puppylove_public_keys", JSON.stringify(publicKeys));
+          }
+        }
+      } catch (err) {
+        console.warn("Could not fetch public keys after registration:", err);
+      }
+
       onSuccess();
       setPassword("");
     } catch (err) {

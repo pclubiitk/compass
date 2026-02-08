@@ -60,6 +60,20 @@ function ResetPasswordPageHolder() {
 
             if (response.ok) {
                 toast.success(data.message);
+                
+                // Clear ALL PuppyLove data from storage since profile was deleted
+                if (typeof window !== "undefined") {
+                    // Clear sessionStorage
+                    sessionStorage.removeItem("puppylove_private_key");
+                    sessionStorage.removeItem("puppylove_sent_hearts");
+                    sessionStorage.removeItem("puppylove_draft_hearts");
+                    sessionStorage.removeItem("data");
+                    
+                    // Clear localStorage
+                    localStorage.removeItem("puppylove_encrypted_private_key");
+                    localStorage.removeItem("puppylove_public_keys");
+                }
+                
                 router.push("/login");
             } else {
                 toast.error(data.error || "Failed to reset password");

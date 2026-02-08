@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Info, User } from "lucide-react";
 import { CardDescription, Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,11 +7,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { PROFILE_POINT } from "@/lib/constant";
 import { useGContext } from "./ContextProvider";
-import { PuppyLoveHeartsCard } from "@/components/puppy-love/HeartsCard";
-import { PuppyLovePasswordCard } from "./puppy-love/PasswordCard";
-
-// NOTE:
-// 1. At one place have used Showing{"\u00A0"} to add the " " space char.
+import { PuppyLoveHeartsCard } from "@/components/PuppyLoveHeartsCard";
+import { PuppyLovePasswordCard } from "./PuppyLovePasswordCard";
 
 interface NavBar {
   length: number;
@@ -24,6 +21,23 @@ export const NavBar = (props: NavBarProps) => {
   const router = useRouter();
   const { isPuppyLove, setIsPuppyLove } = useGContext();
   const [showPassModal, setShowPassModal] = useState(false);
+  const [showSelectionsMobile, setShowSelectionsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleToggleSelections = () => {
+      setShowSelectionsMobile((prev) => !prev);
+    };
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("puppylove:toggleSelections", handleToggleSelections);
+    }
+
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("puppylove:toggleSelections", handleToggleSelections);
+      }
+    };
+  }, []);
 
   const handleToggle = () => {
     if (isPuppyLove) setIsPuppyLove(false);
@@ -123,6 +137,20 @@ export const NavBar = (props: NavBarProps) => {
           </Link>
         </div>
       </Card>
+
+      {/* Puppy Love Hearts Card just below NavBar in mobile view */}
+      {isPuppyLove && (
+        <div className="block md:hidden w-full flex justify-center mt-2">
+          <PuppyLoveHeartsCard compact />
+        </div>
+      )}
+
+      {showPassModal && (
+        <PuppyLovePasswordCard 
+          onSuccess={handlePasswordSuccess}
+          onCancel={() => setShowPassModal(false)}
+        />
+      )}
     </>
   );
 };
