@@ -57,7 +57,7 @@ func Router(r *gin.Engine) {
 			users.POST("/sendheart", SendHeartWithReturn)
 
 		}
-		late := r.Group("/special")
+		late := puppylove.Group("/special")
 		{
 			late.Use(middleware.UserAuthenticator)
 			users.Use(PuppyLovePermit())

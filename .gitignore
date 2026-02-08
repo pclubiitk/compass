@@ -62,3 +62,4 @@ next-env.d.ts
 /server/db_data/
 /server/db_backup
 /server/logs
+./server

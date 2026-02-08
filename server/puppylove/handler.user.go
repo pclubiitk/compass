@@ -98,6 +98,7 @@ func UserFirstLogin(c *gin.Context) {
 
 	// Update or create the profile with gender from compass profile
 	profile := puppylove.PuppyLoveProfile{
+		UserID: userID.(uuid.UUID), // avoid setting to null -> avoiding key error
 		RollNo: rollNo.(string),
 		PubK:   info.PubKey,
 		PrivK:  info.PrivKey,
@@ -193,6 +194,7 @@ func VerifyAccessPassword(c *gin.Context) {
 		"has_profile": hasProfile,
 		"is_dirty":    isDirty,
 		"action":      action,
+		"roll":        rollNo,
 	})
 }
 
