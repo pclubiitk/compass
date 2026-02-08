@@ -19,7 +19,7 @@ var authConfig = AuthConfig{
 	RefreshTokenExpiry: 24 * 7 * time.Hour, // 7 days
 	CookieDomain:       viper.GetString("domain"),
 	// FIXME(prod): Set this value to true in prod
-	CookieSecure:       false, // Set to false in development
+	CookieSecure: false, // Set to false in development
 	// The Secure attribute is a crucial cookie configuration setting that instructs a web browser to send a cookie only over an encrypted HTTPS connection
 	CookieHTTPOnly: true, // Prevent XSS
 	SameSiteMode:   http.SameSiteLaxMode,

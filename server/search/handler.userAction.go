@@ -8,10 +8,11 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	
+	"github.com/google/uuid"
+
+	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
-	"github.com/sirupsen/logrus"
 )
 
 // restoreDummyAccount finds the soft-deleted placeholder and restores it.
@@ -54,12 +55,12 @@ func restoreDummyAccount(tx *gorm.DB, rollNo string) error {
 	}
 
 	logEntry := model.ChangeLog{
-        UserID: dummyUser.UserID,
-        Action: "signup",
-    }
+		UserID: dummyUser.UserID,
+		Action: "signup",
+	}
 	if err := tx.Create(&logEntry).Error; err != nil {
-        return err
-    }
+		return err
+	}
 
 	logrus.Infof("Restored backup dummy account for roll %s", rollNo)
 	return nil
@@ -74,7 +75,7 @@ func deleteProfileData(c *gin.Context) {
 	}
 
 	// capture the Roll No before we delete/clear it
-    userRollNo := existingProfile.RollNo
+	userRollNo := existingProfile.RollNo
 
 	if err := connections.DB.Transaction(func(tx *gorm.DB) error {
 		// Update user email to a dummy email
@@ -97,11 +98,11 @@ func deleteProfileData(c *gin.Context) {
 		}
 
 		// now that the Roll No is free, bring back the dummy account (if it exists)
-        // so the scraped data is waiting for them if they ever return in future
-        if err := restoreDummyAccount(tx, userRollNo); err != nil {
-            // log the error but do not fail the deletion, as this is a background maintenance task
-            logrus.Errorf("Failed to restore dummy backup for roll %s: %v", userRollNo, err)
-        }
+		// so the scraped data is waiting for them if they ever return in future
+		if err := restoreDummyAccount(tx, userRollNo); err != nil {
+			// log the error but do not fail the deletion, as this is a background maintenance task
+			logrus.Errorf("Failed to restore dummy backup for roll %s: %v", userRollNo, err)
+		}
 
 		// TODO: Delete bio pics
 		if err := tx.Where("parent_asset_id = ? AND parent_asset_type = ?", existingProfile.UserID, "users").Delete(&model.Image{}).Error; err != nil {

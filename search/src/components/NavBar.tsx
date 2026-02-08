@@ -7,10 +7,10 @@ import Link from "next/link";
 import Image from "next/image";
 import { PROFILE_POINT } from "@/lib/constant";
 import { useGContext } from "./ContextProvider";
-import { PuppyLoveHeartsCard } from "@/components/PuppyLoveHeartsCard";
-import { PuppyLovePasswordCard } from "./PuppyLovePasswordCard";
+import { PuppyLoveHeartsCard } from "@/components/puppy-love/HeartsCard";
+import { PuppyLovePasswordCard } from "@/components/puppy-love/PasswordCard";
 
-interface NavBar {
+interface NavBarProps {
   length: number;
   pos: number;
   isPLseason: boolean;
@@ -68,7 +68,7 @@ export const NavBar = (props: NavBarProps) => {
         className={`p-2 sticky top-2 z-1 w-4/5 max-w-4xl m-auto mt-4 flex flex-row justify-between items-center transition-all duration-500 border-none
         ${
           isPuppyLove
-            ? "bg-rose-50/90 shadow-[0_10px_40px_rgba(225,29,72,0.15)] backdrop-blur-md dark:bg-[#121212]"
+            ? "bg-rose-50/90 shadow-[0_10px_40px_rgba(225,29,72,0.15)] backdrop-blur-md"
             : ""
         }`}
       >
@@ -140,7 +140,7 @@ export const NavBar = (props: NavBarProps) => {
 
       {/* Puppy Love Hearts Card just below NavBar in mobile view */}
       {isPuppyLove && (
-        <div className="block md:hidden w-full flex justify-center mt-2">
+        <div className="md:hidden w-full flex justify-center mt-2">
           <PuppyLoveHeartsCard compact />
         </div>
       )}

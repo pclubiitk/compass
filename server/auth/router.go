@@ -32,17 +32,18 @@ func Router(r *gin.Engine) {
 
 			puppyLoveEnabled := viper.GetBool("puppylove.enabled")
 
+			// 200,202: logged in + visible
 			if isVisible {
 				if puppyLoveEnabled {
-					// 200: logged in + visible + puppylove enabled
+					// 200: puppylove enabled
 					c.JSON(http.StatusOK, gin.H{"success": true})
 				} else {
-					// 203: logged in + visible + puppylove disabled
+					// 202: puppylove disabled
 					c.JSON(http.StatusNonAuthoritativeInfo, gin.H{"success": true, "status": "puppylove_disabled"})
 				}
 			} else {
-				// 202: logged in + hidden
-				c.JSON(http.StatusAccepted, gin.H{"success": true, "status": "hidden"})
+				// 401: logged in + hidden
+				c.JSON(http.StatusUnauthorized, gin.H{"success": true, "status": "hidden"})
 			}
 		})
 	}

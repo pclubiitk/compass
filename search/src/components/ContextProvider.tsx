@@ -88,24 +88,26 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
             credentials: "include",
           },
         );
-        if (response.status === 200) {
+        if (response.ok) {
           setProfileVisibility(true);
           setLoggedIn(true);
-          // FIXME: Set the season based on the backend response (~ Ritika)
           setPLseason(true);
-          try {
-            const profileResp = await fetch(
-              `${process.env.NEXT_PUBLIC_AUTH_URL}/api/profile`,
-              { method: "GET", credentials: "include" },
-            );
-            if (profileResp.ok) {
-              const profileData = await profileResp.json();
-              setCurrentUserProfile(profileData?.profile?.profile || null);
+          if (response.status === 202) {
+            // Puppylove mode enabled
+            try {
+              const profileResp = await fetch(
+                `${process.env.NEXT_PUBLIC_AUTH_URL}/api/profile`,
+                { method: "GET", credentials: "include" },
+              );
+              if (profileResp.ok) {
+                const profileData = await profileResp.json();
+                setCurrentUserProfile(profileData?.profile?.profile || null);
+              }
+            } catch (err) {
+              setCurrentUserProfile(null);
             }
-          } catch (err) {
-            setCurrentUserProfile(null);
           }
-        } else if (response.status === 401 || response.status === 202) {
+        } else if (response.status === 401) {
           setProfileVisibility(false);
           setLoggedIn(false);
         } else {

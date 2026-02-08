@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 
 	"github.com/gin-gonic/gin"
-	
+	"github.com/google/uuid"
 )
 
 func UploadProfileImage(c *gin.Context) {

@@ -13,7 +13,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	
+	"github.com/google/uuid"
+
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"golang.org/x/text/cases"
