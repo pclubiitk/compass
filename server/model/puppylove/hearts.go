@@ -1,9 +1,6 @@
 package puppylove
 
 import (
-	"time"
-
-	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -38,17 +35,6 @@ type (
 	}
 )
 
-// Claim represents a heart claim
-type Claim struct {
-	gorm.Model
-	ID        uint      `gorm:"primaryKey"`
-	UserID    uuid.UUID `json:"user_id" gorm:"type:uuid;index"`
-	ClaimedID uuid.UUID `json:"claimed_id" gorm:"type:uuid"`
-	SHA       string    `json:"sha" gorm:"type:text"`
-	ENC       string    `json:"enc" gorm:"type:text"`
-	Verified  bool      `json:"verified" gorm:"default:false"`
-	CreatedAt time.Time `json:"created_at"`
-}
 
 type (
 	MatchTable struct {

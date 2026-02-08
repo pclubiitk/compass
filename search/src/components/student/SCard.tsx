@@ -49,7 +49,7 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
     // Get sender's public key and private key from session
     const senderPublicKey = puppyLovePublicKeys[currentUserProfile.rollNo];
     const senderPrivateKey = typeof window !== "undefined" 
-      ? sessionStorage.getItem("puppylove_private_key") 
+      ? sessionStorage.getItem("puppylove_encrypted_private_key") 
       : null;
 
     if (!senderPublicKey || !senderPrivateKey) {

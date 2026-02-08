@@ -8,6 +8,7 @@ import { PUPPYLOVE_POINT } from "@/lib/constant";
 import { PuppyLoveRegistrationCard } from "./RegistrationCard";
 import { PasswordRecoveryOptionsCard } from "../PasswordRecoveryOptionsCard";
 import { RecoveryCodeVerificationCard } from "./RecoveryCodeVerificationCard";
+import { LateMatchPrompt } from "./LateMatchPrompt";
 
 interface PuppyLovePasswordCardProps {
   onSuccess: () => void;
@@ -22,6 +23,11 @@ export const PuppyLovePasswordCard = ({ onSuccess, onCancel }: PuppyLovePassword
   const [recoveryStep, setRecoveryStep] = useState<"options" | "code" | null>(null);
   const [isInitializing, setIsInitializing] = useState(true);
   const [privateKey, setPrivateKey] = useState<string | null>(null);
+  
+  // Late hearts state
+  const [showLateMatchPrompt, setShowLateMatchPrompt] = useState(false);
+  const [lateHearts, setLateHearts] = useState<any[]>([]);
+  const [pendingSuccess, setPendingSuccess] = useState(false);
 
   // Check for private key in memory or sessionStorage on mount
   useEffect(() => {
@@ -45,6 +51,11 @@ export const PuppyLovePasswordCard = ({ onSuccess, onCancel }: PuppyLovePassword
                 if (claimedHearts.claims_late && claimedHearts.claims_late.length > 0) {
                   console.log("[PuppyLove] Late hearts detected:", claimedHearts.claims_late);
                   sessionStorage.setItem("puppylove_claims_late", JSON.stringify(claimedHearts.claims_late));
+                  // Show late match prompt instead of immediately calling onSuccess
+                  setLateHearts(claimedHearts.claims_late);
+                  setShowLateMatchPrompt(true);
+                  setPendingSuccess(true);
+                  return; // Don't call onSuccess yet - wait for user decision
                 }
               }
             }
@@ -85,6 +96,26 @@ export const PuppyLovePasswordCard = ({ onSuccess, onCancel }: PuppyLovePassword
       checkStoredKey();
     }
   }, [privateKey, onSuccess]);
+
+  // Check for existing late hearts in sessionStorage on mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storedLateHearts = sessionStorage.getItem("puppylove_claims_late");
+      if (storedLateHearts) {
+        try {
+          const parsed = JSON.parse(storedLateHearts);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            console.log("[PuppyLove] Found existing late hearts in storage:", parsed);
+            setLateHearts(parsed);
+            setShowLateMatchPrompt(true);
+            setPendingSuccess(true);
+          }
+        } catch (parseErr) {
+          console.error("Error parsing stored late hearts:", parseErr);
+        }
+      }
+    }
+  }, []);
 
   // const checkPuppyLoveProfile = async () => {
   //   try {
@@ -202,10 +233,15 @@ export const PuppyLovePasswordCard = ({ onSuccess, onCancel }: PuppyLovePassword
             if (claimedHearts.claims) {
               sessionStorage.setItem("puppylove_claims", JSON.stringify(claimedHearts.claims));
             }
-            // Store late claims if any
+            // Store late claims if any - show prompt to user
             if (claimedHearts.claims_late && claimedHearts.claims_late.length > 0) {
               console.log("[PuppyLove] Late hearts detected:", claimedHearts.claims_late);
               sessionStorage.setItem("puppylove_claims_late", JSON.stringify(claimedHearts.claims_late));
+              // Show late match prompt instead of immediately calling onSuccess
+              setLateHearts(claimedHearts.claims_late);
+              setShowLateMatchPrompt(true);
+              setPendingSuccess(true);
+              return true; // Return success but don't call onSuccess yet
             }
           }
         }
@@ -251,6 +287,23 @@ export const PuppyLovePasswordCard = ({ onSuccess, onCancel }: PuppyLovePassword
     }
   };
 
+  // Handler for late match prompt close
+  const handleLateMatchPromptClose = () => {
+    setShowLateMatchPrompt(false);
+    setLateHearts([]);
+    // If we were waiting to call onSuccess, do it now
+    if (pendingSuccess) {
+      setPendingSuccess(false);
+      onSuccess();
+    }
+  };
+
+  // Handler for late match prompt complete (after processing late hearts)
+  const handleLateMatchComplete = () => {
+    // Late hearts have been processed successfully
+    console.log("[PuppyLove] Late hearts processed successfully");
+  };
+
   // if (isCheckingProfile) {
   //   return (
   //     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md">
@@ -264,6 +317,18 @@ export const PuppyLovePasswordCard = ({ onSuccess, onCancel }: PuppyLovePassword
   // if (needsFirstLogin) {
   //   return <PuppyLoveFirstLogin rollNo={userRollNo} onSuccess={handleFirstLoginSuccess} />;
   // }
+
+  // Show late match prompt if there are late hearts
+  if (showLateMatchPrompt && lateHearts.length > 0) {
+    return (
+      <LateMatchPrompt
+        isOpen={showLateMatchPrompt}
+        onClose={handleLateMatchPromptClose}
+        lateHearts={lateHearts}
+        onComplete={handleLateMatchComplete}
+      />
+    );
+  }
 
   if (showRegistration) {
     return <PuppyLoveRegistrationCard onSuccess={onSuccess} onCancel={() => setShowRegistration(false)} />;

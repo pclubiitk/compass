@@ -72,7 +72,7 @@ func IsPuppyLovePermitted() bool {
 func PuppyLovePermit() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		permit := IsPuppyLovePermitted()
-		if permit {
+		if !permit {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Not Permitted by Admin"})
 		}
 		c.Next()
