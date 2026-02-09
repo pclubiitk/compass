@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SocialProfileCard } from "@/components/profile/SocialProfileCard";
 import { EditableProfileCard } from "@/components/profile/EditableProfileCard";
 import { ContributionsCard } from "@/components/profile/ContributionsCard";
+import { PuppyLoveProfileCard } from "@/components/profile/PuppyLoveProfileCard";
 import {
   useCalendar,
   CalendarProvider,
@@ -18,6 +19,7 @@ import { Calendar } from "lucide-react";
 
 import type { IEvent } from "@/calendar/interfaces";
 import ComingSoon from "@/components/ui/ComingSoon";
+import { useGContext } from "@/components/ContextProvider";
 
 // Data Type
 export type Profile = {
@@ -49,6 +51,12 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [calendarLoading, setCalendarLoading] = useState(true);
 
+  // PuppyLove state
+  const { isPLseason } = useGContext();
+  const [isPuppyLoveRegistered, setIsPuppyLoveRegistered] = useState(false);
+  const [puppyLoveBio, setPuppyLoveBio] = useState("");
+  const [puppyLoveInterests, setPuppyLoveInterests] = useState<string[]>([]);
+
   // Fetch calendar events using the new requests module
   const fetchCalendarEvents = useCallback(async () => {
     setCalendarLoading(true);
@@ -68,6 +76,42 @@ export default function ProfilePage() {
   useEffect(() => {
     fetchCalendarEvents();
   }, [fetchCalendarEvents]);
+
+  // Check PuppyLove status and fetch profile
+  useEffect(() => {
+    const checkPuppyLove = async () => {
+      try {
+        // Check if user is registered (has dirty = true)
+        const dataRes = await fetch(
+          `${process.env.NEXT_PUBLIC_PUPPYLOVE_URL}/api/puppylove/users/data`,
+          { credentials: "include" },
+        );
+
+        if (dataRes.ok) {
+          const data = await dataRes.json();
+          // User is registered if they have a profile with dirty = true
+          setIsPuppyLoveRegistered(data.dirty === true);
+          // Set bio and interests
+          setPuppyLoveBio(data.about || "");
+          setPuppyLoveInterests(
+            Array.isArray(data.interests)
+              ? data.interests
+              : typeof data.interests === "string"
+                ? data.interests
+                    .split(",")
+                    .map((s: string) => s.trim())
+                    .filter(Boolean)
+                : [],
+          );
+        } else if (dataRes.status === 404) {
+          setIsPuppyLoveRegistered(false);
+        }
+      } catch (err) {
+        console.error("Failed to check PuppyLove status:", err);
+      }
+    };
+    if (isPLseason) checkPuppyLove();
+  }, [isPLseason]);
 
   const fetchProfile = async () => {
     // We don't reset loading to true on refetch to avoid skeleton flashes
@@ -162,6 +206,16 @@ export default function ProfilePage() {
             profile={userData.profile}
             onUpdate={fetchProfile}
           />
+
+          {/* PuppyLove Profile Card - only visible during Valentine's mode */}
+          <PuppyLoveProfileCard
+            rollNo={profile.rollNo}
+            initialBio={puppyLoveBio}
+            initialInterests={puppyLoveInterests}
+            isPuppyLoveActive={isPLseason}
+            isRegistered={isPuppyLoveRegistered}
+          />
+
           <ContributionsCard
             locations={userData.ContributedLocations}
             reviews={userData.ContributedReview}

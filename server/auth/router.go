@@ -32,17 +32,17 @@ func Router(r *gin.Engine) {
 			// TODO: A database query can be heavy here.
 			puppyLoveEnabled := puppylove.IsPuppyLoveEnabled()
 			// 200,202: logged in + visible
-			if !isVisible {
-				if puppyLoveEnabled {
+			if isVisible {
+				if !puppyLoveEnabled {
 					// 200: puppylove disabled
 					c.JSON(http.StatusOK, gin.H{"success": true})
 				} else {
 					// 202: puppylove enabled
-					c.JSON(http.StatusNonAuthoritativeInfo, gin.H{"success": true, "status": "puppylove_disabled"})
+					c.JSON(http.StatusAccepted, gin.H{"success": true, "status": "puppylove_disabled"})
 				}
 			} else {
-				// 202: logged in + hidden
-				c.JSON(http.StatusAccepted, gin.H{"success": true, "status": "hidden"})
+				// 203: logged in + hidden
+				c.JSON(http.StatusNonAuthoritativeInfo, gin.H{"success": true, "status": "hidden"})
 			}
 		})
 	}

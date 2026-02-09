@@ -519,4 +519,68 @@ self.addEventListener('message', async (e: MessageEvent) => {
       self.postMessage({ type: 'FIRST_LOGIN_RESULT', result: null, error: (err as Error).message });
     }
   }
+
+  // Calculate Jaccard similarity between users' interests for "Suggest Match" feature
+  if (type === 'CALCULATE_SIMILAR_USERS') {
+    const { myInterests, allProfiles, excludeRolls, limit } = payload;
+    try {
+      // myInterests: string[] - current user's interests
+      // allProfiles: Record<string, { about: string; interests: string[] }> - all user profiles
+      // excludeRolls: string[] - rollNos to exclude (e.g., already sent hearts to)
+      // limit: number - max number of suggestions to return
+
+      // Jaccard similarity: |A ∩ B| / |A ∪ B|
+      const calculateJaccard = (arrA: string[], arrB: string[]): number => {
+        if (arrA.length === 0 && arrB.length === 0) return 0;
+        
+        const setB = new Set(arrB);
+        let intersection = 0;
+        for (let i = 0; i < arrA.length; i++) {
+          if (setB.has(arrA[i])) intersection++;
+        }
+        
+        // Union = |A| + |B| - |intersection|
+        const uniqueA = new Set(arrA);
+        const union = uniqueA.size + setB.size - intersection;
+        return union === 0 ? 0 : intersection / union;
+      };
+
+      const myInterestsArr: string[] = (myInterests || []).map((i: string) => i.toLowerCase().trim());
+      const excludeSet = new Set<string>(excludeRolls || []);
+      
+      const similarities: Array<{ rollNo: string; score: number; interests: string[] }> = [];
+      
+      const profileEntries = Object.entries(allProfiles || {});
+      for (let i = 0; i < profileEntries.length; i++) {
+        const [rollNo, profile] = profileEntries[i];
+        if (excludeSet.has(rollNo)) continue;
+        
+        const profileData = profile as { about: string; interests: string[] };
+        if (!profileData.interests || profileData.interests.length === 0) continue;
+        
+        const theirInterestsArr: string[] = profileData.interests.map((int: string) => int.toLowerCase().trim());
+        const score = calculateJaccard(myInterestsArr, theirInterestsArr);
+        
+        if (score > 0) {
+          similarities.push({
+            rollNo,
+            score,
+            interests: profileData.interests,
+          });
+        }
+      }
+      
+      // Sort by score descending, take top N
+      similarities.sort((a, b) => b.score - a.score);
+      const topMatches = similarities.slice(0, limit || 10);
+      
+      self.postMessage({ 
+        type: 'CALCULATE_SIMILAR_USERS_RESULT', 
+        result: topMatches, 
+        error: null 
+      });
+    } catch (err) {
+      self.postMessage({ type: 'CALCULATE_SIMILAR_USERS_RESULT', result: null, error: (err as Error).message });
+    }
+  }
 });
