@@ -59,6 +59,7 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
     }
 
     // Get sender's public key and private key from session
+    // FIXME(ppy): here the use of the keys.
     const senderPublicKey = puppyLovePublicKeys?.[activeProfile.id];
     const senderPrivateKey = typeof window !== "undefined" 
       ? sessionStorage.getItem("puppylove_encrypted_private_key") 
@@ -77,7 +78,7 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
       setIsSendingHeart(true);
       try {
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_PUPPYLOVE_URL || "http://localhost:8080"}/api/puppylove/users/fetchPublicKeys`,
+          `${process.env.NEXT_PUBLIC_PUPPYLOVE_URL}/api/puppylove/users/fetchPublicKeys`,
           {
             method: "GET",
             credentials: "include",

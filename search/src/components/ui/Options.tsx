@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect} from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -94,7 +94,7 @@ function Options(props: OptionsProps) {
       className={cn(
         "p-4 md:p-6 w-4/5 max-w-4xl m-auto",
         isPuppyLove &&
-          "border-none bg-rose-50/90 text-rose-500 shadow-[0_10px_40px_rgba(225,29,72,0.15)]"
+          "border-none bg-rose-50/90 text-rose-500 shadow-[0_10px_40px_rgba(225,29,72,0.15)]",
       )}
     >
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -144,11 +144,14 @@ function Options(props: OptionsProps) {
         <div
           className={cn(
             "grid w-full items-center lg:-mt-2",
-            isGlobalLoading && "cursor-not-allowed opacity-50"
+            isGlobalLoading && "cursor-not-allowed opacity-50",
           )}
         >
           <div className="w-full">
-            <Label htmlFor="gender" className={cn("mb-1", isPuppyLove && "text-rose-500")}>
+            <Label
+              htmlFor="gender"
+              className={cn("mb-1", isPuppyLove && "text-rose-500")}
+            >
               Gender
             </Label>
             <Select
@@ -163,7 +166,7 @@ function Options(props: OptionsProps) {
                 id="gender"
                 className={cn(
                   isPuppyLove &&
-                    "border-rose-200/80 bg-rose-100/70 text-rose-500 placeholder:text-rose-300"
+                    "border-rose-200/80 bg-rose-100/70 text-rose-500 placeholder:text-rose-300",
                 )}
               >
                 <SelectValue placeholder="Select Gender" />
@@ -180,7 +183,10 @@ function Options(props: OptionsProps) {
 
         {/* HomeTown */}
         <div className="grid w-full items-center lg:-mt-2">
-          <Label htmlFor="hometown" className={cn("mb-1", isPuppyLove && "text-rose-500")}>
+          <Label
+            htmlFor="hometown"
+            className={cn("mb-1", isPuppyLove && "text-rose-500")}
+          >
             Hometown
           </Label>
           <Input
@@ -192,7 +198,7 @@ function Options(props: OptionsProps) {
             disabled={isGlobalLoading}
             className={cn(
               isPuppyLove &&
-                "border-rose-200/80 bg-rose-100/70 text-rose-500 placeholder:text-rose-300"
+                "border-rose-200/80 bg-rose-100/70 text-rose-500 placeholder:text-rose-300",
             )}
           />
         </div>
@@ -200,7 +206,10 @@ function Options(props: OptionsProps) {
 
       {/* Name, roll number, username input bar */}
       <div>
-        <Label htmlFor="main-search" className={cn("mb-2", isPuppyLove && "text-rose-500")}>
+        <Label
+          htmlFor="main-search"
+          className={cn("mb-2", isPuppyLove && "text-rose-500")}
+        >
           Enter name, username or roll no.
         </Label>
         <div className="flex flex-row m-0 p-0">
@@ -216,7 +225,7 @@ function Options(props: OptionsProps) {
             className={cn(
               "pr-10",
               isPuppyLove &&
-                "border-rose-200/80 bg-rose-100/70 text-rose-500 placeholder:text-rose-300"
+                "border-rose-200/80 bg-rose-100/70 text-rose-500 placeholder:text-rose-300",
             )} // Add padding to the right for the clear button
           />
         </div>
@@ -225,47 +234,46 @@ function Options(props: OptionsProps) {
       {/* PuppyLove Action Buttons */}
       {isPuppyLove && (
         <div className="grid grid-cols-4 gap-2">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             size="icon"
             className="w-full h-10 border-rose-200/80 text-rose-500 hover:text-rose-500 hover:bg-rose-100 shadow-sm"
-            
           >
             <Lightbulb className="h-4 w-4" />
+            Suggest
           </Button>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             size="icon"
             className="w-full h-10 border-rose-200/80 text-rose-500 hover:text-rose-500 hover:bg-rose-100 shadow-sm"
-            
           >
-            <Key className="h-4 w-4" />
+            <Key className="h-4 w-4" /> Recovery Codes
           </Button>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             size="icon"
             className="w-full h-10 border-rose-200/80 text-rose-500 hover:text-rose-500 hover:bg-rose-100 shadow-sm"
-            
             onClick={() => {
               if (typeof window !== "undefined") {
                 window.location.href = PROFILE_POINT;
               }
             }}
           >
-            <Edit className="h-4 w-4" />
+            <Edit className="h-4 w-4" /> Edit Bio
           </Button>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             size="icon"
             className="w-full h-10 border-rose-200/80 text-rose-500 hover:text-rose-500 hover:bg-rose-100 shadow-sm"
-            
             onClick={() => {
               if (typeof window !== "undefined") {
-                window.dispatchEvent(new CustomEvent("puppylove:toggleSelections"));
+                window.dispatchEvent(
+                  new CustomEvent("puppylove:toggleSelections"),
+                );
               }
             }}
           >
-            <Eye className="h-4 w-4" />
+            <Eye className="h-4 w-4" /> View Selections
           </Button>
         </div>
       )}

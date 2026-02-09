@@ -80,6 +80,9 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
   const [puppyLoveHeartsReceived, setPuppyLoveHeartsReceived] =
     useState<any>(null);
   const [puppyLoveProfile, setPuppyLoveProfile] = useState<any>(null);
+  // Puppy Lover user keys
+  const [publicKey, setPublicKey] = useState<string | null>(null);
+  const [privateKey, setPrivateKey] = useState<string | null>(null);
 
   useEffect(() => {
     async function verifyingLogin() {
@@ -112,20 +115,6 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
       }
     }
     verifyingLogin();
-  }, []);
-
-  // Load public keys from localStorage on mount
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const cachedKeys = localStorage.getItem("puppylove_public_keys");
-      if (cachedKeys) {
-        try {
-          setPuppyLovePublicKeys(JSON.parse(cachedKeys));
-        } catch {
-          localStorage.removeItem("puppylove_public_keys");
-        }
-      }
-    }
   }, []);
 
   // Puppy Love worker initialization and message handling
@@ -184,21 +173,6 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
       }
     }
   }, [isPuppyLove]);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const storedSent = sessionStorage.getItem("puppylove_sent_hearts");
-      if (storedSent) {
-        try {
-          setPuppyLoveHeartsSent(JSON.parse(storedSent));
-        } catch {
-          setPuppyLoveHeartsSent([]);
-        }
-      } else {
-        setPuppyLoveHeartsSent([]);
-      }
-    }
-  }, []);
 
   const value = {
     isLoggedIn,

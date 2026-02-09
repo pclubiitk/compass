@@ -26,9 +26,6 @@ type TypeUserNew struct {
 }
 
 type TypeUserFirst struct {
-	Id       string `json:"roll" binding:"required"`
-	AuthCode string `json:"authCode" binding:"required"`
-	PassHash string `json:"passHash" binding:"required"`
 	PubKey   string `json:"pubKey" binding:"required"`
 	PrivKey  string `json:"privKey" binding:"required"`
 	Data     string `json:"data" binding:"required"`

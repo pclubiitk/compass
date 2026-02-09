@@ -44,10 +44,10 @@ export default function PuppyLoveFirstLogin({ rollNo, onSuccess, onCancel }: Pup
       // Use empty authCode since we're not using OTP for now
       await firstLogin(rollNo, password, "", keys.pubKey, encryptedPrivKey, "");
 
-      if (typeof window !== "undefined") {
-        sessionStorage.setItem("puppylove_encrypted_private_key", encryptedPrivKey);
-        sessionStorage.setItem("puppylove_public_key", keys.pubKey);
-      }
+      // if (typeof window !== "undefined") {
+      //   sessionStorage.setItem("puppylove_encrypted_private_key", encryptedPrivKey);
+      //   sessionStorage.setItem("puppylove_public_key", keys.pubKey);
+      // }
 
       onSuccess(encryptedPrivKey, keys.pubKey);
     } catch (err) {

@@ -4,7 +4,6 @@ import (
 	"compass/connections"
 	"compass/model"
 	"compass/model/puppylove"
-	"compass/workers"
 	"crypto/sha256"
 	"encoding/json"
 	"errors"
@@ -13,7 +12,6 @@ import (
 	"net/url"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -50,7 +48,7 @@ func UserFirstLogin(c *gin.Context) {
 	var existingProfile puppylove.PuppyLoveProfile
 	if err := connections.DB.Where(&puppylove.PuppyLoveProfile{RollNo: rollNo.(string)}).First(&existingProfile).Error; err == nil {
 		if existingProfile.Dirty {
-			c.JSON(http.StatusMethodNotAllowed, gin.H{"error": "User already registered"})
+			c.JSON(http.StatusAccepted, gin.H{"error": "User already registered"})
 			return
 		}
 	}
@@ -58,53 +56,34 @@ func UserFirstLogin(c *gin.Context) {
 	// Check if public key is already in use
 	var profileWithKey puppylove.PuppyLoveProfile
 	if err := connections.DB.Where("pub_k = ?", info.PubKey).First(&profileWithKey).Error; err == nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Please enter another public key !!"})
-		return
-	}
-
-	// Fetch gender from the main compass profile
-	var compassUser model.User
-	if err := connections.DB.Where("user_id = ?", userID).First(&compassUser).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not fetch user profile. Please try again."})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Please enter another public key, please retry !!"})
 		return
 	}
 
 	// Fetch the search profile to get additional information if needed
 	var searchProfile model.Profile
-	if err := connections.DB.Where("user_id = ?", userID).First(&searchProfile).Error; err != nil {
-		// Profile might not exist, but we can still proceed with other data
+	if err := connections.DB.Where("user_id = ?", userID).Select("gender").First(&searchProfile).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "You first need to have a student search profile to participate in PuppyLove"})
 	}
 
 	// Get the gender from search profile if it has gender field, otherwise use an empty string
-	userGender := searchProfile.Gender
-	if userGender == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "PuppyLove can only be enabled if your gender is set to Male or Female. Please update your profile."})
-		return
-	}
-
 	// Validate gender is male or female
-	if userGender != "M" && userGender != "F" && userGender != "Male" && userGender != "Female" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "PuppyLove can only be enabled if your gender is Male or Female."})
+	userGender := searchProfile.Gender
+	if userGender == "" || (userGender != "M" && userGender != "F") {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "PuppyLove can only be enabled if your sex is set to Male or Female. Please update your profile."})
 		return
-	}
-
-	// Normalize gender to single character
-	normalizedGender := userGender
-	if userGender == "Male" {
-		normalizedGender = "M"
-	} else if userGender == "Female" {
-		normalizedGender = "F"
 	}
 
 	// Update or create the profile with gender from compass profile
 	profile := puppylove.PuppyLoveProfile{
-		UserID: userID.(uuid.UUID), // avoid setting to null -> avoiding key error
+		UserID: userID.(uuid.UUID),
 		RollNo: rollNo.(string),
 		PubK:   info.PubKey,
 		PrivK:  info.PrivKey,
 		Data:   info.Data,
-		Gender: normalizedGender,
+		Gender: userGender,
 		Dirty:  true,
+		// TODO: if we have a seperate table then its of no use.
 	}
 
 	if err := connections.DB.Save(&profile).Error; err != nil {
@@ -157,45 +136,22 @@ func VerifyAccessPassword(c *gin.Context) {
 
 	// Check if user has existing PuppyLove profile
 	var existingProfile puppylove.PuppyLoveProfile
-	hasProfile := false
-	isDirty := false
 	if err := connections.DB.Where(&puppylove.PuppyLoveProfile{RollNo: rollNo.(string)}).First(&existingProfile).Error; err == nil {
-		hasProfile = true
-		isDirty = existingProfile.Dirty
+		c.JSON(http.StatusOK, gin.H{
+			"valid":       true,
+			"has_profile": true,
+			"is_dirty":    existingProfile.Dirty,
+			"roll":        rollNo,
+			"pubKey":      existingProfile.PubK,
+			"privKey":     existingProfile.PrivK,
+		})
+		return
 	}
-
-	action := "verify_password"
-	if !isDirty {
-		action = "verify_password_and_create_keys"
-	}
-
-	// Send action message to worker
-	profileAction := workers.PuppyLoveProfileAction{
-		Action:     action,
-		UserID:     userID.(uuid.UUID),
-		RollNo:     rollNo.(string),
-		HasProfile: hasProfile,
-		IsDirty:    isDirty,
-		Timestamp:  time.Now().Unix(),
-	}
-
-	// Convert to JSON and publish to worker queue
-	payload, err := json.Marshal(profileAction)
-	if err == nil {
-		// Publish to puppylove queue (non-blocking, errors are logged)
-		if err := workers.PublishJob(payload, "puppylove"); err != nil {
-			// Log error but don't fail the response - user should still be able to proceed
-			fmt.Printf("Warning: Failed to publish PuppyLove profile action to worker: %v\n", err)
-		}
-	}
-
+	// Else return true
 	c.JSON(http.StatusOK, gin.H{
-		"valid":       true,
-		"has_profile": hasProfile,
-		"is_dirty":    isDirty,
-		"action":      action,
-		"roll":        rollNo,
+		"valid": true, "is_dirty": false,
 	})
+
 }
 
 func GetUserData(c *gin.Context) {
@@ -211,9 +167,9 @@ func GetUserData(c *gin.Context) {
 		return
 	}
 
-	fmt.Printf("\n=== GetUserData called ===\n")
-	fmt.Printf("Roll No: %v\n", roll_no)
-	fmt.Printf("User ID: %v\n", userID)
+	// fmt.Printf("\n=== GetUserData called ===\n")
+	// fmt.Printf("Roll No: %v\n", roll_no)
+	// fmt.Printf("User ID: %v\n", userID)
 
 	var profile puppylove.PuppyLoveProfile
 	result := connections.DB.Where("roll_no = ?", roll_no).First(&profile)
@@ -222,7 +178,7 @@ func GetUserData(c *gin.Context) {
 		return
 	}
 
-	fmt.Printf("PuppyLove Profile Gender (before sync): '%s'\n", profile.Gender)
+	// fmt.Printf("PuppyLove Profile Gender (before sync): '%s'\n", profile.Gender)
 
 	// If gender is missing, fetch it from the search profile and save it
 	if profile.Gender == "" {
@@ -271,8 +227,8 @@ func GetUserData(c *gin.Context) {
 
 	permit := IsPuppyLovePermitted()
 
-	fmt.Printf("Final gender in response: '%s'\n", profile.Gender)
-	fmt.Printf("=== End GetUserData ===\n\n")
+	// fmt.Printf("Final gender in response: '%s'\n", profile.Gender)
+	// fmt.Printf("=== End GetUserData ===\n\n")
 
 	response := gin.H{
 		"message":  "Data retrieved successfully !!",
