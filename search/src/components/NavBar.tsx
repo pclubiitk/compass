@@ -11,6 +11,9 @@ import { PuppyLoveHeartsCard } from "@/components/puppy-love/HeartsCard";
 import { PuppyLovePasswordCard } from "@/components/puppy-love/PasswordCard";
 import { PuppyLoveSelectionsPanel } from "./puppy-love/SelectionsPanel";
 
+// NOTE:
+// 1. At one place have used Showing{"\u00A0"} to add the " " space char.
+
 interface NavBarProps {
   length: number;
   pos: number;

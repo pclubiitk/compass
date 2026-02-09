@@ -242,6 +242,7 @@ func GetUserData(c *gin.Context) {
 		"about":    profile.About,
 		"interest": profile.Interests,
 		"privK":    profile.PrivK,
+		"dirty":    profile.Dirty,
 		"pubKey":   profile.PubK,
 	}
 

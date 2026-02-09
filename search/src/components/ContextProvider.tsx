@@ -45,6 +45,10 @@ interface GlobalContextType {
   needsFirstTimeLogin?: boolean;
   setNeedsFirstTimeLogin?: (val: boolean) => void;
 
+  // Loading state for heart decryption (worker task)
+  isDecryptingHearts: boolean;
+  setIsDecryptingHearts: (val: boolean) => void;
+
   privateKey: string | null;
   setPrivateKey: (val: any) => void;
 }
@@ -64,6 +68,9 @@ const GlobalContext = createContext<GlobalContextType>({
   isPLseason: false,
   isPuppyLove: false,
   setIsPuppyLove: () => {},
+
+  isDecryptingHearts: false,
+  setIsDecryptingHearts: () => {},
 
   privateKey: null,
   setPrivateKey: () => {},
@@ -85,6 +92,7 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
   const [puppyLoveHeartsSent, setPuppyLoveHeartsSent] = useState<any>([]);
   const [puppyLoveHeartsReceived, setPuppyLoveHeartsReceived] =
     useState<any>(null);
+  const [isDecryptingHearts, setIsDecryptingHearts] = useState<boolean>(false);
   const [puppyLoveProfile, setPuppyLoveProfile] = useState<any>(null);
   // Puppy Lover user keys
   const [publicKey, setPublicKey] = useState<string | null>(null);
@@ -114,10 +122,10 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
           if (response.status === 202) {
             setPLseason(true);
             setIsPuppyLove(false); // Always start disabled on new session, user must toggle it on
+          } else if (response.status === 203) {
+            setProfileVisibility(false);
+            setLoggedIn(false);
           }
-        } else if (response.status === 401) {
-          setProfileVisibility(false);
-          setLoggedIn(false);
         } else {
           setGlobalError(true);
         }
@@ -168,6 +176,8 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
           }
           if (type === "FETCH_AND_CLAIM_HEARTS_RESULT") {
             setPuppyLoveHeartsReceived(Array.isArray(payload) ? payload : []);
+            // Clear loading state after decryption completes
+            setIsDecryptingHearts(false);
           }
           if (type === "FETCH_RETURN_HEARTS_RESULT") {
             // optional: store returned hearts for later use
@@ -217,6 +227,8 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
     currentUserProfile,
     privateKey,
     setPrivateKey,
+    isDecryptingHearts,
+    setIsDecryptingHearts,
   };
 
   return (
