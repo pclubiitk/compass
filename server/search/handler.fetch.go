@@ -31,8 +31,8 @@ func getAllProfiles(c *gin.Context) {
 	// }
 
 	var requestTime = time.Now()
-	var profiles []model.Profile
 
+	var profiles []model.Profile
 	if err := connections.DB.Find(&profiles, "visibility = ?", true).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch profiles."})
 		return

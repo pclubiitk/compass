@@ -176,6 +176,12 @@ export function PuppyLoveProfileCard({
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
 
+  // Sync local state when initial values change
+  useEffect(() => {
+    setBio(initialBio);
+    setInterests([...initialInterests]);
+  }, [initialBio, initialInterests]);
+
   // Track changes
   useEffect(() => {
     const bioChanged = bio !== initialBio;
@@ -275,7 +281,7 @@ export function PuppyLoveProfileCard({
               Your choices are encrypted and revealed only when there&apos;s a mutual match!
             </p>
             <a 
-              href={process.env.NEXT_PUBLIC_SEARCH_URL || "/"} 
+              href={process.env.NEXT_PUBLIC_SEARCH_UI_URL || "/"} 
               className="inline-flex items-center justify-center gap-2 px-6 py-2 rounded-full bg-linear-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-medium transition-all"
             >
               <Heart className="h-4 w-4" />

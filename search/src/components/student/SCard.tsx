@@ -26,6 +26,10 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
   const { data, type, ...rest } = props;
   data.name = convertToTitleCase(data.name);
   data.email = data.email.startsWith("cmhw_") ? "Not Provided" : data.email;
+  
+  // Get interests from data
+  const userInterests = data.interest;
+  
   const { isPuppyLove, puppyLovePublicKeys, puppyLoveHeartsSent, currentUserProfile, puppyLoveProfile, setPuppyLoveHeartsSent } = useGContext();
   const [isSendingHeart, setIsSendingHeart] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
@@ -324,7 +328,7 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
         data.rollNo,
         activeProfile.gender
       );
-      console.log("✅ prepareSendHeart succeeded");
+      console.log("prepareSendHeart succeeded");
 
       // Step 2: Find first empty slot and save draft there
       console.log("📤 Finding first empty slot...");
@@ -404,14 +408,14 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
         }
         alert(result?.message || "Draft saved successfully for " + data.name + "!");
       } else if (result?.error) {
-        console.error("❌ Draft save error:", result.error);
+        console.error("Draft save error:", result.error);
         alert("Error: " + result.error);
       } else {
-        console.error("❌ Unknown result received:", JSON.stringify(result));
+        console.error("Unknown result received:", JSON.stringify(result));
         alert("Failed to save draft. Result: " + JSON.stringify(result));
       }
     } catch (err) {
-      console.error("❌ Exception in handleSaveDraft:", err);
+      console.error("Exception in handleSaveDraft:", err);
       alert("Error saving draft: " + (err as Error).message);
     } finally {
       setIsSavingDraft(false);
@@ -451,6 +455,24 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
             </CardTitle>
             <CardDescription>{data.rollNo}</CardDescription>
             <CardDescription>{`${data.course} ${data.dept ? "," : ""} ${data.dept}`}</CardDescription>
+            {/* PuppyLove bio and interests */}
+            {data.about && (
+              <p className="text-sm text-muted-foreground italic mt-2 line-clamp-2">
+                {data.about}
+              </p>
+            )}
+            {userInterests && (
+              <div className="flex flex-wrap gap-1 mt-2">
+                {userInterests.split(',').map((interest: string, idx: number) => (
+                  <span
+                    key={idx}
+                    className="inline-block px-2 py-0.5 text-xs bg-rose-100 text-rose-700 rounded-full"
+                  >
+                    {interest.trim()}
+                  </span>
+                ))}
+              </div>
+            )}
           </CardHeader>
 
           <CardContent className="w-full mt-auto pt-6 text-left">
@@ -543,6 +565,24 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
             </CardTitle>
             <CardDescription>{data.rollNo}</CardDescription>
             <CardDescription>{`${data.course}${data.dept ? "," : ""} ${data.dept}`}</CardDescription>
+            {/* PuppyLove bio and interests */}
+            {data.about && (
+              <p className="text-xs text-muted-foreground italic mt-1 line-clamp-1">
+                {data.about}
+              </p>
+            )}
+            {userInterests && (
+              <div className="flex flex-wrap gap-1 mt-1">
+                {userInterests.split(',').slice(0, 3).map((interest: string, idx: number) => (
+                  <span
+                    key={idx}
+                    className="inline-block px-1.5 py-0.5 text-xs bg-rose-100 text-rose-700 rounded-full"
+                  >
+                    {interest.trim()}
+                  </span>
+                ))}
+              </div>
+            )}
           </CardHeader>
         </Card>
       );

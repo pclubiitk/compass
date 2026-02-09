@@ -11,18 +11,18 @@ type Profile struct {
 	gorm.Model
 	UserID uuid.UUID `gorm:"type:uuid;not null;uniqueIndex" json:"UserID"`
 	// Student Search Data, Personal Data
-	Name       string `json:"name"`
-	Email      string `json:"email"`
-	RollNo     string `json:"rollNo"`
-	Dept       string `json:"dept"`
-	Course     string `json:"course"`
-	Gender     string `json:"gender"`
+	Name       string  `json:"name"`
+	Email      string  `json:"email"`
+	RollNo     string  `json:"rollNo"`
+	Dept       string  `json:"dept"`
+	Course     string  `json:"course"`
+	Gender     string  `json:"gender"`
 	Hall       *string `json:"hall"`
 	RoomNumber *string `json:"roomNo"`
 	HomeTown   *string `json:"homeTown"`
-	Visibility bool   `json:"visibility"`
-	Bapu       string `json:"bapu"`
-	Bachhas    string `json:"bachhas"`
+	Visibility bool    `json:"visibility"`
+	Bapu       string  `json:"bapu"`
+	Bachhas    string  `json:"bachhas"`
 }
 
 // type ProfileWithPic struct {

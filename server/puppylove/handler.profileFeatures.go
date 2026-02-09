@@ -68,7 +68,10 @@ func GetAllUsersInfo(c *gin.Context) {
 	var userInfo []UserInfo
 
 	// later we can, modify it to only return the active users
-	fetchUsersInfo := connections.DB.Select("user_id", "about", "interests").Where("dirty = ?", true).Find(&userInfo)
+	fetchUsersInfo := connections.DB.Table("puppy_love_profiles").
+		Select("roll_no as id, about, interests").
+		Where("dirty = ?", true).
+		Find(&userInfo)
 	if fetchUsersInfo.Error != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Some error occured"})
 		return
@@ -92,5 +95,3 @@ func GetAllUsersInfo(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"about": aboutMap, "interests": interestsMap})
 }
-
-

@@ -53,7 +53,7 @@ export default function ProfilePage() {
 
   // PuppyLove state
   const { isPLseason } = useGContext();
-  const [isPuppyLoveRegistered, setIsPuppyLoveRegistered] = useState(false);
+  const [isPuppyLoveRegistered, setIsPuppyLoveRegistered] = useState(true);
   const [puppyLoveBio, setPuppyLoveBio] = useState("");
   const [puppyLoveInterests, setPuppyLoveInterests] = useState<string[]>([]);
 
@@ -91,6 +91,7 @@ export default function ProfilePage() {
           const data = await dataRes.json();
           // User is registered if they have a profile with dirty = true
           setIsPuppyLoveRegistered(data.dirty === true);
+          
           // Set bio and interests
           setPuppyLoveBio(data.about || "");
           setPuppyLoveInterests(
@@ -112,7 +113,7 @@ export default function ProfilePage() {
     };
     if (isPLseason) checkPuppyLove();
   }, [isPLseason]);
-
+ 
   const fetchProfile = async () => {
     // We don't reset loading to true on refetch to avoid skeleton flashes
     try {
@@ -185,6 +186,7 @@ export default function ProfilePage() {
   }
 
   const profile = userData.profile;
+  
 
   return (
     <div className="flex flex-col lg:flex-row min-h-screen bg-muted/40">
@@ -206,6 +208,7 @@ export default function ProfilePage() {
             profile={userData.profile}
             onUpdate={fetchProfile}
           />
+
 
           {/* PuppyLove Profile Card - only visible during Valentine's mode */}
           <PuppyLoveProfileCard

@@ -5,19 +5,21 @@ import { SEARCH_POINT } from "../constant";
 export async function fetch_student_data() {
   const apiUrl = `${SEARCH_POINT}/api/search/`;
   try {
+    // Fetch regular profiles
     const res = await fetch(apiUrl, {
       credentials: "include",
     });
 
-    if (res.ok) {
-      return await res.json();
-    } else {
+    if (!res.ok) {
       postMessage({
         status: "error",
         message: "An error occurred during fetch.",
       });
       throw new Error(`Server responded with status ${res.status}`);
     }
+
+    const data = await res.json();
+    return data;
   } catch (err) {
     postMessage({
       status: "error",
