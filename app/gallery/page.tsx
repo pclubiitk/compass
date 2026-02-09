@@ -3,10 +3,64 @@ import { useState, useEffect, use } from "react";
 import { PhotoGallery } from "../components/location/PhotoGallery";
 import { Gallery } from "../components/location/Gallery";
 import { Img } from  "@/app/components/lib/types";
+import { toast } from "sonner";
+
+
+const handleApprove = async (img: Img, load: Boolean, setLoad: (load: Boolean)=> void) => {
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_ASSET_URL}/gallery/${img.ImageID}`, { 
+        method: 'PUT',
+        credentials: "include",
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      if (!response.ok) {
+            toast.error("Some error occurred");
+
+      }
+
+      const result = await response.json();
+      console.log('Success:', result);
+      toast.success(result.message)
+      setLoad(!load)
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('Failed to update item.');
+    }
+  };
+
+const handleDelete = async (img: Img, load: Boolean, setLoad: (load: Boolean)=> void) => {
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_ASSET_URL}/gallery/${img.ImageID}`, { 
+        method: 'DELETE',
+        credentials: "include",
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      const result = await response.json();
+      toast.success(result.message);
+      setLoad(!load)
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('Failed to update item.');
+    }
+  };
+
 
 export function GalleryPage() {
 
     const [images, setImages] = useState<Img[]>([]);
+    const [load, setLoad] = useState<Boolean>(true);
 
     useEffect(() => {
         // Simulate fetching images from an API
@@ -15,8 +69,8 @@ export function GalleryPage() {
         fetch( `${process.env.NEXT_PUBLIC_ASSET_URL}/gallery`,{
           credentials: "include",
         },).then(response => response.json()).then(data => setImages(data.images))
-        
-    }, [images]);
+        // TODO: fix dependency array so that too many requests are not sent to backendx
+    }, [load]);
 
   return (
     <div className="p-8">
@@ -26,7 +80,7 @@ export function GalleryPage() {
               Images will be made publicly visible on the platform only after approval by an admin.
               You may approve or delete any image
       </div>
-        <Gallery images={images}/>
+        <Gallery images={images} handleApprove={handleApprove} handleDelete={handleDelete} load={load} setLoad={setLoad}/>
     </div>
   );
 }

@@ -29,63 +29,23 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { setLazyProp } from "next/dist/server/api-utils";
+// import { Img } from "@/app/components/lib/types";
 
 
 
 interface GallerySectionProps {
   images: Img[];
+  handleApprove: (img: Img, load: Boolean, setLoad: (load: Boolean)=> void) => void;
+  handleDelete: (img: Img, load: Boolean, setLoad: (load: Boolean)=> void) => void;
+  load: Boolean;
+  setLoad: (load:Boolean) => void;
 }
 
-const handleApprove = async (img: Img) => {
-
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_ASSET_URL}/gallery/${img.ImageID}`, { 
-        method: 'PUT',
-        credentials: "include",
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
-
-      if (!response.ok) {
-            toast.error("Some error occurred");
-
-      }
-
-      const result = await response.json();
-      console.log('Success:', result);
-      toast.success(result.message)
-    } catch (error) {
-      console.error('Error:', error);
-      toast.error('Failed to update item.');
-    }
-  };
-
-const handleDelete = async (img: Img) => {
-
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_ASSET_URL}/gallery/${img.ImageID}`, { 
-        method: 'DELETE',
-        credentials: "include",
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-
-      const result = await response.json();
-            toast.success(result.message);
-    } catch (error) {
-      console.error('Error:', error);
-      toast.error('Failed to update item.');
-    }
-  };
 
 
-export function GallerySection({ images }: GallerySectionProps) {
+
+export function GallerySection({ images, handleApprove, handleDelete, load, setLoad }: GallerySectionProps) {
 
   if (!images || images.length === 0) {
     return 
@@ -167,8 +127,8 @@ export function GallerySection({ images }: GallerySectionProps) {
               </div>
             </DrawerContent>
         </Drawer>
-        <Button className="flex-1 bg-green-500 cursor-pointer" disabled={img.Status == "approved" ? true: false} onClick={() => handleApprove(img) }>Approve</Button>
-        <Button className="flex-1 bg-red-500 cursor-pointer" onClick={() => handleDelete(img)}>Delete</Button>
+        <Button className="flex-1 bg-green-500 cursor-pointer" disabled={img.Status == "approved" ? true: false} onClick={() => handleApprove(img, load, setLoad) }>Approve</Button>
+        <Button className="flex-1 bg-red-500 cursor-pointer" onClick={() => handleDelete(img, load, setLoad)}>Delete</Button>
       </CardFooter>
     </Card>
 
