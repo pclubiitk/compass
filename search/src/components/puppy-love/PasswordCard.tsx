@@ -20,6 +20,7 @@ import { RecoveryCodeVerificationCard } from "./RecoveryCodeVerificationCard";
 import { LateMatchPrompt } from "./LateMatchPrompt";
 import { Label } from "@radix-ui/react-label";
 import { toast } from "sonner";
+import { useGContext } from "../ContextProvider";
 
 interface PuppyLovePasswordCardProps {
   onSuccess: () => void;
@@ -36,118 +37,43 @@ export const PuppyLovePasswordCard = ({
   const [recoveryStep, setRecoveryStep] = useState<"options" | "code" | null>(
     null,
   );
-  const [isInitializing, setIsInitializing] = useState(true);
-  const [privateKey, setPrivateKey] = useState<string | null>(null);
+  const [isInitializing, setIsInitializing] = useState(false);
+  const { privateKey, setPrivateKey } = useGContext();
 
   // Late hearts state
   const [showLateMatchPrompt, setShowLateMatchPrompt] = useState(false);
   const [lateHearts, setLateHearts] = useState<any[]>([]);
   const [pendingSuccess, setPendingSuccess] = useState(false);
 
-  // Check for private key in memory or sessionStorage on mount
+  // If the privatekey already exits in the state, no need.
   useEffect(() => {
-    const checkStoredKey = async () => {
-      try {
-        // If privateKey is already in state, skip password prompt
-        if (privateKey) {
-          setIsInitializing(false);
-          // Fetch hearts when we have a private key
-          try {
-            initPuppyLoveWorker();
-            // console.log("[PuppyLove] Fetching and claiming hearts with stored key...");
-            const claimedHearts = await fetchAndClaimHearts(privateKey);
-            console.log("[PuppyLove] Hearts claimed:", claimedHearts);
-            if (claimedHearts) {
-              if (typeof window !== "undefined") {
-                if (claimedHearts.claims) {
-                  sessionStorage.setItem(
-                    "puppylove_claims",
-                    JSON.stringify(claimedHearts.claims),
-                  );
-                }
-                if (
-                  claimedHearts.claims_late &&
-                  claimedHearts.claims_late.length > 0
-                ) {
-                  console.log(
-                    "[PuppyLove] Late hearts detected:",
-                    claimedHearts.claims_late,
-                  );
-                  sessionStorage.setItem(
-                    "puppylove_claims_late",
-                    JSON.stringify(claimedHearts.claims_late),
-                  );
-                  // Show late match prompt instead of immediately calling onSuccess
-                  setLateHearts(claimedHearts.claims_late);
-                  setShowLateMatchPrompt(true);
-                  setPendingSuccess(true);
-                  return; // Don't call onSuccess yet - wait for user decision
-                }
-              }
-            }
-          } catch (heartErr) {
-            console.warn(
-              "[PuppyLove] Error fetching hearts (non-critical):",
-              heartErr,
-            );
-          }
-          onSuccess();
-          return;
-        }
-
-        // Check if keys are stored in sessionStorage
-        if (privateKey === null && typeof window !== "undefined") {
-          const storedData = sessionStorage.getItem("data");
-          if (storedData) {
-            try {
-              const parsed = JSON.parse(storedData);
-              if (parsed.k1) {
-                // Keys exist in sessionStorage, skip password prompt
-                setPrivateKey(parsed.k1);
-                setIsInitializing(false);
-                return;
-              }
-            } catch (parseErr) {
-              console.error("Error parsing stored data:", parseErr);
-            }
-          }
-        }
-      } catch (err) {
-        console.error("Error checking stored key:", err);
-      } finally {
-        if (!privateKey) {
-          setIsInitializing(false);
-        }
-      }
-    };
-
-    if (typeof window !== "undefined") {
-      checkStoredKey();
+    if (privateKey) {
+      onSuccess();
     }
-  }, [privateKey, onSuccess]);
+  }, [privateKey]);
 
-  // FIXME(ppy): how ?? Check for existing late hearts in sessionStorage on mount
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const storedLateHearts = sessionStorage.getItem("puppylove_claims_late");
-      if (storedLateHearts) {
-        try {
-          const parsed = JSON.parse(storedLateHearts);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            console.log(
-              "[PuppyLove] Found existing late hearts in storage:",
-              parsed,
-            );
-            setLateHearts(parsed);
-            setShowLateMatchPrompt(true);
-            setPendingSuccess(true);
-          }
-        } catch (parseErr) {
-          console.error("Error parsing stored late hearts:", parseErr);
-        }
-      }
-    }
-  }, []);
+  // // FIXME(ppy): how ?? Check for existing late hearts in sessionStorage on mount
+  // useEffect(() => {
+  //   if (typeof window !== "undefined") {
+  //     const storedLateHearts = sessionStorage.getItem("puppylove_claims_late");
+  //     if (storedLateHearts) {
+  //       try {
+  //         const parsed = JSON.parse(storedLateHearts);
+  //         if (Array.isArray(parsed) && parsed.length > 0) {
+  //           console.log(
+  //             "[PuppyLove] Found existing late hearts in storage:",
+  //             parsed,
+  //           );
+  //           setLateHearts(parsed);
+  //           setShowLateMatchPrompt(true);
+  //           setPendingSuccess(true);
+  //         }
+  //       } catch (parseErr) {
+  //         console.error("Error parsing stored late hearts:", parseErr);
+  //       }
+  //     }
+  //   }
+  // }, []);
 
   const verifyAndProceed = async (pwd: string) => {
     try {
@@ -309,7 +235,6 @@ export const PuppyLovePasswordCard = ({
       onSuccess();
     }
   };
-
   // Handler for late match prompt complete (after processing late hearts)
   const handleLateMatchComplete = () => {
     // Late hearts have been processed successfully
@@ -384,7 +309,7 @@ export const PuppyLovePasswordCard = ({
             />
           </CardTitle>
           <CardTitle className="text-2xl text-center">Puppy Love</CardTitle>
-          {isInitializing || privateKey ? (
+          {isInitializing ? (
             <></>
           ) : (
             <CardDescription className="text-center">
@@ -397,7 +322,7 @@ export const PuppyLovePasswordCard = ({
         // OR
         // If private key is in memory, skip password prompt and auto-login
         */}
-        {isInitializing || privateKey ? (
+        {isInitializing ? (
           <CardContent className="flex justify-center py-8">
             <p className="text-muted-foreground">
               {isInitializing

@@ -44,6 +44,9 @@ interface GlobalContextType {
 
   needsFirstTimeLogin?: boolean;
   setNeedsFirstTimeLogin?: (val: boolean) => void;
+
+  privateKey: string | null;
+  setPrivateKey: (val: any) => void;
 }
 
 const GlobalContext = createContext<GlobalContextType>({
@@ -61,6 +64,9 @@ const GlobalContext = createContext<GlobalContextType>({
   isPLseason: false,
   isPuppyLove: false,
   setIsPuppyLove: () => {},
+
+  privateKey: null,
+  setPrivateKey: () => {},
 });
 
 export function GlobalContextProvider({ children }: { children: ReactNode }) {
@@ -83,6 +89,13 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
   // Puppy Lover user keys
   const [publicKey, setPublicKey] = useState<string | null>(null);
   const [privateKey, setPrivateKey] = useState<string | null>(null);
+
+  // Reset function to be called to clear all.
+  const resetForRefresh = () => {
+    setPuppyLoveHeartsReceived([]);
+    setPuppyLoveHeartsSent([]);
+    setPuppyLovePublicKeys([]);
+  };
 
   useEffect(() => {
     async function verifyingLogin() {
@@ -117,12 +130,31 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
     verifyingLogin();
   }, []);
 
-  // Puppy Love worker initialization and message handling
+  // Puppy Love mode enabled, read the private key form the session storage
   useEffect(() => {
     if (isPuppyLove) {
-      // Reset received hearts when entering mode (will be refetched from backend)
-      setPuppyLoveHeartsReceived([]);
+      const storedData = sessionStorage.getItem("data");
+      if (storedData) {
+        try {
+          const parsed = JSON.parse(storedData);
+          if (parsed.k1) {
+            setPrivateKey(parsed.k1);
+            return;
+          }
+        } catch (parseErr) {
+          console.error("Error parsing stored data:", parseErr);
+        }
+      }
+    }
+  }, [isPuppyLove]);
 
+  // Puppy Love worker initialization and message handling
+  // Fetch hearts when we have a private key
+  useEffect(() => {
+    if (isPuppyLove && privateKey) {
+      // Reset to start fresh.
+      resetForRefresh();
+      // Initialize the worker
       const worker = initPuppyLoveWorker();
       if (worker) {
         worker.onmessage = (e) => {
@@ -130,13 +162,6 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
           const payload = result ?? results;
           if (type === "FETCH_PUBLIC_KEYS_RESULT") {
             setPuppyLovePublicKeys(payload);
-            // Store in localStorage for future use
-            if (typeof window !== "undefined") {
-              localStorage.setItem(
-                "puppylove_public_keys",
-                JSON.stringify(payload),
-              );
-            }
           }
           if (type === "FETCH_HEARTS_RESULT") {
             setPuppyLoveHeartsReceived(Array.isArray(payload) ? payload : []);
@@ -151,20 +176,15 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
             console.log(" GET_USER_DATA_RESULT received:", payload);
             setPuppyLoveProfile(payload ?? null);
           }
-          // Add more message types as needed
+          // TODO: Add more message types as needed
         };
-        // Trigger fetches
+        // Trigger the reset worker messages
         worker.postMessage({ type: "FETCH_PUBLIC_KEYS" });
-        console.log("📤 Sending GET_USER_DATA message to worker");
         worker.postMessage({ type: "GET_USER_DATA" });
-        const privKey =
-          typeof window !== "undefined"
-            ? sessionStorage.getItem("puppylove_private_key")
-            : null;
-        if (privKey) {
+        if (privateKey) {
           worker.postMessage({
             type: "FETCH_AND_CLAIM_HEARTS",
-            payload: { privateKey: privKey },
+            payload: { privateKey: privateKey },
           });
         } else {
           worker.postMessage({ type: "FETCH_HEARTS" });
@@ -172,7 +192,7 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
         worker.postMessage({ type: "FETCH_RETURN_HEARTS" });
       }
     }
-  }, [isPuppyLove]);
+  }, [isPuppyLove, privateKey]);
 
   const value = {
     isLoggedIn,
@@ -195,6 +215,8 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
     needsFirstTimeLogin,
     setNeedsFirstTimeLogin,
     currentUserProfile,
+    privateKey,
+    setPrivateKey,
   };
 
   return (
