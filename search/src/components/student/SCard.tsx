@@ -12,8 +12,10 @@ import { Student } from "@/lib/types/data";
 import { cn, convertToTitleCase } from "@/lib/utils";
 import { Mail, Home, University, Globe, Heart } from "lucide-react";
 import { useGContext } from "@/components/ContextProvider";
+import { usePuppyLoveContext } from "../puppy-love/PuppyLoveContextProvider";
 import { prepareSendHeart, sendHeart, sendVirtualHeart, getVirtualHeartCount } from "@/lib/workers/puppyLoveWorkerClient";
-
+import { toast } from "sonner";
+import { puppyLoveHeartsSent, setPuppyLoveHeartsSent } from "../puppy-love/PuppyLoveContextProvider";
 interface SCardProps {
   data: Student;
   pointer?: boolean;
@@ -26,7 +28,8 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
   const { data, type, ...rest } = props;
   data.name = convertToTitleCase(data.name);
   data.email = data.email.startsWith("cmhw_") ? "Not Provided" : data.email;
-  const { isPuppyLove, puppyLovePublicKeys, puppyLoveHeartsSent, currentUserProfile, puppyLoveProfile, setPuppyLoveHeartsSent } = useGContext();
+  const { puppyLovePublicKeys, puppyLoveProfile, privateKey } = usePuppyLoveContext();
+  const { isPuppyLove, currentUserProfile } = useGContext();
   const [isSendingHeart, setIsSendingHeart] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
 
@@ -59,14 +62,11 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
     }
 
     // Get sender's public key and private key from session
-    // FIXME(ppy): here the use of the keys.
+    // DONE(ppy): here the use of the keys.
     const senderPublicKey = puppyLovePublicKeys?.[activeProfile.id];
-    const senderPrivateKey = typeof window !== "undefined" 
-      ? sessionStorage.getItem("puppylove_encrypted_private_key") 
-      : null;
-
+    const senderPrivateKey = privateKey;
     if (!senderPublicKey || !senderPrivateKey) {
-      alert("Your keys are not available. Please log in to PuppyLove first.");
+      toast.error("Your keys are not available. Please log in to PuppyLove first.");
       return;
     }
 
@@ -133,23 +133,7 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
         returnhearts: [],
       });
 
-      if (result && result.message) {
-        if (setPuppyLoveHeartsSent) {
-          const newSent = [
-            { recipientId: data.rollNo, recipientName: data.name },
-          ];
-          setPuppyLoveHeartsSent((prev: any) => {
-            const updated = Array.isArray(prev) ? [...prev, ...newSent] : newSent;
-            if (typeof window !== "undefined") {
-              sessionStorage.setItem("puppylove_sent_hearts", JSON.stringify(updated));
-            }
-            return updated;
-          });
-        }
-        alert("Heart sent successfully to " + data.name + "!");
-      } else {
-        alert("Failed to send heart. Please try again.");
-      }
+      //TODO: local state update
     } catch (err) {
       alert("Error: " + (err as Error).message);
     } finally {

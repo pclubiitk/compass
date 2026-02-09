@@ -20,7 +20,7 @@ import { RecoveryCodeVerificationCard } from "./RecoveryCodeVerificationCard";
 import { LateMatchPrompt } from "./LateMatchPrompt";
 import { Label } from "@radix-ui/react-label";
 import { toast } from "sonner";
-import { useGContext } from "../ContextProvider";
+import { usePuppyLoveContext } from "./PuppyLoveContextProvider";
 
 interface PuppyLovePasswordCardProps {
   onSuccess: () => void;
@@ -38,7 +38,7 @@ export const PuppyLovePasswordCard = ({
     null,
   );
   const [isInitializing, setIsInitializing] = useState(false);
-  const { privateKey, setPrivateKey } = useGContext();
+  const { privateKey, setPrivateKey } = usePuppyLoveContext();
 
   // Late hearts state
   const [showLateMatchPrompt, setShowLateMatchPrompt] = useState(false);

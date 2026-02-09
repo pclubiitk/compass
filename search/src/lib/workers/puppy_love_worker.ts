@@ -1,5 +1,6 @@
 import { Decryption, Decryption_AES, SHA256, Encryption, Encryption_AES, RandInt, generateRandomString, GenerateKeys } from './Encryption';
 import { PUPPYLOVE_POINT } from "@/lib/constant";
+import { setData } from './utils';
 
 self.addEventListener('message', async (e: MessageEvent) => {
   const { type, payload } = e.data;
@@ -313,6 +314,7 @@ self.addEventListener('message', async (e: MessageEvent) => {
         credentials: 'include',
       });
       const data = await res.json();
+      await setData(data.data, data.privK, data.id);
       console.log("📥 GET_USER_DATA worker received from API:", data);
       self.postMessage({ type: 'GET_USER_DATA_RESULT', result: data, error: null });
     } catch (err) {

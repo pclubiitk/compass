@@ -9,7 +9,7 @@ import { PROFILE_POINT } from "@/lib/constant";
 import { useGContext } from "./ContextProvider";
 import { PuppyLoveHeartsCard } from "@/components/puppy-love/HeartsCard";
 import { PuppyLovePasswordCard } from "@/components/puppy-love/PasswordCard";
-import { PuppyLoveSelectionsPanel } from "./puppy-love/SelectionsPanel";
+// import { PuppyLoveSelectionsPanel } from "./puppy-love/SelectionsPanel";
 
 interface NavBarProps {
   length: number;
@@ -153,7 +153,7 @@ export const NavBar = (props: NavBarProps) => {
       )}
 
       {/* Puppy Love Selections Panel below hearts card in mobile view */}
-      {isPuppyLove && showSelectionsMobile && (
+      {/* {isPuppyLove && showSelectionsMobile && (
         <PuppyLoveSelectionsPanel
           variant="mobile"
           onClose={() => {
@@ -165,7 +165,7 @@ export const NavBar = (props: NavBarProps) => {
             }
           }}
         />
-      )}
+      )} */}
     </>
   );
 };

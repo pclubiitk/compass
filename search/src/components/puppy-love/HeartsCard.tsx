@@ -13,9 +13,10 @@ import { getVirtualHeartCount } from "@/lib/workers/puppyLoveWorkerClient";
 interface PuppyLoveHeartsCardProps {
   compact?: boolean;
 }
+import { puppyLoveHeartsSent, puppyLoveHeartsReceived, getNumberOfHeartsSent } from "./PuppyLoveContextProvider";
 
 export const PuppyLoveHeartsCard = ({ compact }: PuppyLoveHeartsCardProps) => {
-  const { puppyLoveHeartsSent, puppyLoveHeartsReceived, isPuppyLove } =
+  const { isPuppyLove } =
     useGContext();
   const [draftCount, setDraftCount] = useState(0);
 
@@ -78,9 +79,9 @@ export const PuppyLoveHeartsCard = ({ compact }: PuppyLoveHeartsCardProps) => {
               />
               {!compact &&
                 puppyLoveHeartsSent &&
-                puppyLoveHeartsSent.length > 0 && (
+                getNumberOfHeartsSent() > 0 && (
                   <div className="absolute -top-2 -right-2 flex items-center justify-center bg-rose-600 text-white rounded-full w-6 h-6 text-xs font-bold">
-                    {puppyLoveHeartsSent.length}
+                    {getNumberOfHeartsSent()}
                   </div>
                 )}
             </div>
@@ -106,7 +107,7 @@ export const PuppyLoveHeartsCard = ({ compact }: PuppyLoveHeartsCardProps) => {
               Hearts Sent
             </span>
             <span className="font-bold text-rose-500">
-              {puppyLoveHeartsSent ? puppyLoveHeartsSent.length : 0}
+              {puppyLoveHeartsSent ? getNumberOfHeartsSent() : 0}
             </span>
           </div>
           <div className="flex justify-between items-center rounded-lg px-3 py-2 bg-rose-100/80">
@@ -120,11 +121,11 @@ export const PuppyLoveHeartsCard = ({ compact }: PuppyLoveHeartsCardProps) => {
           {/* Details (hidden in compact mode) */}
           {!compact &&
             puppyLoveHeartsSent &&
-            puppyLoveHeartsSent.length > 0 && (
+            getNumberOfHeartsSent() > 0 && (
               <div className="mt-2">
                 <h3 className="text-sm font-semibold mb-2">Sent To:</h3>
                 <ul className="list-disc pl-5 text-sm space-y-1">
-                  {puppyLoveHeartsSent.map((h: any, idx: number) => (
+                  {Object.values(puppyLoveHeartsSent).map((h: any, idx: number) => (
                     <li key={idx}>{h.recipientName || h.recipientId}</li>
                   ))}
                 </ul>
@@ -170,22 +171,22 @@ export const PuppyLoveHeartsCard = ({ compact }: PuppyLoveHeartsCardProps) => {
         </CardContent>
       </Card>
 
-      {!compact && puppyLoveHeartsSent && puppyLoveHeartsSent.length > 0 && (
+      {!compact && puppyLoveHeartsSent && getNumberOfHeartsSent() > 0 && (
         <Card className="w-[250px] border-none bg-rose-50/90 shadow-[0_10px_40px_rgba(225,29,72,0.15)]">
           <CardHeader>
             <CardTitle className="text-lg">Sent Hearts</CardTitle>
             <CardDescription>
-              {puppyLoveHeartsSent.length} recipient(s)
+              {getNumberOfHeartsSent()} recipient(s)
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
             <div className="max-h-[400px] overflow-y-auto space-y-2">
-              {puppyLoveHeartsSent.map((h: any, idx: number) => (
-                <div key={idx} className="p-2 bg-rose-100/80 rounded-lg">
-                  <p className="text-sm font-medium text-rose-500 truncate">
-                    {h.recipientName || h.recipientId}
-                  </p>
-                </div>
+              {puppyLoveHeartsSent && Object.entries(puppyLoveHeartsSent).map(([key, heart]: any) => (
+          <div key={key} className="p-2 bg-rose-100/80 rounded-lg">
+            <p className="text-sm font-medium text-rose-500 truncate">
+              {heart.recipientName || heart.recipientId}
+            </p>
+          </div>
               ))}
             </div>
           </CardContent>
