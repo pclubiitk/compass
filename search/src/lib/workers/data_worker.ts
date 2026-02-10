@@ -105,20 +105,29 @@ async function mergePuppyLoveData(): Promise<void> {
     let puppyLoveData = getPuppyLoveCache();
 
     if (!puppyLoveData) {
+      console.log("[PuppyLove] Cache miss, fetching from API...");
       const puppyLoveRes = await fetch(`${PUPPYLOVE_POINT}/api/puppylove/users/alluserInfo`, {
         credentials: "include",
       });
 
+      console.log(`[PuppyLove] Response status: ${puppyLoveRes.status}`);
+      
       if (!puppyLoveRes.ok) {
+        console.error(`[PuppyLove] API returned ${puppyLoveRes.status}: ${puppyLoveRes.statusText}`);
         return;
       }
 
       puppyLoveData = await puppyLoveRes.json();
+      console.log("[PuppyLove] Data fetched successfully, caching...");
       setPuppyLoveCache(puppyLoveData);
+    } else {
+      console.log("[PuppyLove] Using cached data");
     }
 
     const aboutMap = puppyLoveData.about || {};
     const interestsMap = puppyLoveData.interests || {};
+    
+    console.log(`[PuppyLove] Merging data for ${Object.keys(aboutMap).length} users`);
 
     students = students.map((profile: Student) => {
       const about = aboutMap[profile.rollNo];
@@ -141,9 +150,10 @@ async function mergePuppyLoveData(): Promise<void> {
     });
     
     // Re-prepare worker with merged data
+    console.log("[PuppyLove] Merge complete, worker prepared");
     prepare_worker(students, options);
   } catch (err) {
-    // Error caught, merging failed
+    console.error("[PuppyLove] Error during merge:", err);
   }
 }
 

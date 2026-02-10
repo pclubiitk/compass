@@ -455,13 +455,13 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
             </CardTitle>
             <CardDescription>{data.rollNo}</CardDescription>
             <CardDescription>{`${data.course} ${data.dept ? "," : ""} ${data.dept}`}</CardDescription>
-            {/* PuppyLove bio and interests */}
-            {data.about && (
-              <p className="text-sm text-muted-foreground italic mt-2 line-clamp-2">
+            {/* PuppyLove bio and interests - only visible in PuppyLove mode */}
+            {isPuppyLove && data.about && (
+              <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
                 {data.about}
               </p>
             )}
-            {userInterests && (
+            {isPuppyLove && userInterests && (
               <div className="flex flex-wrap gap-1 mt-2">
                 {userInterests.split(',').map((interest: string, idx: number) => (
                   <span
@@ -565,15 +565,15 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
             </CardTitle>
             <CardDescription>{data.rollNo}</CardDescription>
             <CardDescription>{`${data.course}${data.dept ? "," : ""} ${data.dept}`}</CardDescription>
-            {/* PuppyLove bio and interests */}
-            {data.about && (
-              <p className="text-xs text-muted-foreground italic mt-1 line-clamp-1">
+            {/* PuppyLove bio and interests - only visible in PuppyLove mode */}
+            {isPuppyLove && data.about && (
+              <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
                 {data.about}
               </p>
             )}
-            {userInterests && (
+            {isPuppyLove && userInterests && (
               <div className="flex flex-wrap gap-1 mt-1">
-                {userInterests.split(',').slice(0, 3).map((interest: string, idx: number) => (
+                {userInterests.split(',').map((interest: string, idx: number) => (
                   <span
                     key={idx}
                     className="inline-block px-1.5 py-0.5 text-xs bg-rose-100 text-rose-700 rounded-full"

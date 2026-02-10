@@ -213,12 +213,12 @@ func GetUserData(c *gin.Context) {
 
 				if updateResult.Error == nil {
 					profile.Gender = normalizedGender
-					fmt.Printf("✓ Successfully saved gender '%s' to puppylove profile\n", normalizedGender)
+					fmt.Printf("Successfully saved gender '%s' to puppylove profile\n", normalizedGender)
 				} else {
-					fmt.Printf("✗ Failed to save gender: %v\n", updateResult.Error)
+					fmt.Printf(" Failed to save gender: %v\n", updateResult.Error)
 				}
 			} else {
-				fmt.Printf("⚠ Compass profile gender is EMPTY\n")
+				fmt.Printf("Compass profile gender is EMPTY\n")
 			}
 		}
 	} else {
