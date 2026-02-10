@@ -98,44 +98,44 @@ const INTEREST_COLORS: Record<
   { bg: string; text: string; border: string }
 > = {
   "Music & Arts": {
-    bg: "bg-violet-100",
-    text: "text-violet-700",
-    border: "border-violet-300",
+    bg: "bg-violet-100 dark:bg-violet-900/40",
+    text: "text-violet-800 dark:text-violet-200",
+    border: "border-violet-300/80 dark:border-violet-600",
   },
   "Sports & Fitness": {
-    bg: "bg-green-100",
-    text: "text-green-700",
-    border: "border-green-300",
+    bg: "bg-emerald-100 dark:bg-emerald-900/40",
+    text: "text-emerald-800 dark:text-emerald-200",
+    border: "border-emerald-300/80 dark:border-emerald-600",
   },
   "Gaming & Tech": {
-    bg: "bg-blue-100",
-    text: "text-blue-700",
-    border: "border-blue-300",
+    bg: "bg-sky-100 dark:bg-sky-900/40",
+    text: "text-sky-800 dark:text-sky-200",
+    border: "border-sky-300/80 dark:border-sky-600",
   },
   Entertainment: {
-    bg: "bg-pink-100",
-    text: "text-pink-700",
-    border: "border-pink-300",
+    bg: "bg-fuchsia-100 dark:bg-fuchsia-900/40",
+    text: "text-fuchsia-800 dark:text-fuchsia-200",
+    border: "border-fuchsia-300/80 dark:border-fuchsia-600",
   },
   "Outdoor & Adventure": {
-    bg: "bg-amber-100",
-    text: "text-amber-700",
-    border: "border-amber-300",
+    bg: "bg-amber-100 dark:bg-amber-900/40",
+    text: "text-amber-800 dark:text-amber-200",
+    border: "border-amber-300/80 dark:border-amber-600",
   },
   "Books & Learning": {
-    bg: "bg-indigo-100",
-    text: "text-indigo-700",
-    border: "border-indigo-300",
+    bg: "bg-indigo-100 dark:bg-indigo-900/40",
+    text: "text-indigo-800 dark:text-indigo-200",
+    border: "border-indigo-300/80 dark:border-indigo-600",
   },
   "Food & Lifestyle": {
-    bg: "bg-orange-100",
-    text: "text-orange-700",
-    border: "border-orange-300",
+    bg: "bg-orange-100 dark:bg-orange-900/40",
+    text: "text-orange-800 dark:text-orange-200",
+    border: "border-orange-300/80 dark:border-orange-600",
   },
   Social: {
-    bg: "bg-cyan-100",
-    text: "text-cyan-700",
-    border: "border-cyan-300",
+    bg: "bg-teal-100 dark:bg-teal-900/40",
+    text: "text-teal-800 dark:text-teal-200",
+    border: "border-teal-300/80 dark:border-teal-600",
   },
 };
 
@@ -270,28 +270,31 @@ export function PuppyLoveProfileCard({
   // Show registration banner if not registered
   if (!isRegistered) {
     return (
-      <Card className="border-rose-200 bg-linear-to-br from-rose-50/50 to-pink-50/50 dark:from-rose-950/10 dark:to-pink-950/10">
+      <Card className="border-rose-200/60 bg-linear-to-br from-rose-50 via-pink-50/80 to-fuchsia-50/60 shadow-sm dark:border-rose-800/40 dark:from-rose-950/30 dark:via-pink-950/20 dark:to-fuchsia-950/20">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-rose-600">
-            <Heart className="h-5 w-5 fill-rose-500" />
+          <CardTitle className="flex items-center gap-2 text-rose-600 dark:text-rose-400">
+            <Heart className="h-5 w-5 fill-rose-500 dark:fill-rose-400" />
             PuppyLove Profile
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-rose-500/80 dark:text-rose-400/60">
             Valentine&apos;s matching is now active!
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="text-center py-4">
-            <Heart className="h-12 w-12 mx-auto mb-3 text-rose-300" />
-            <h3 className="text-lg font-semibold mb-2">Join PuppyLove</h3>
-            <p className="text-sm text-muted-foreground mb-4">
+          <div className="text-center py-6">
+            <div className="relative inline-block mb-4">
+              <Heart className="h-14 w-14 text-rose-300/80 dark:text-rose-500/50" />
+              <Heart className="h-6 w-6 absolute -top-1 -right-2 text-pink-400/60 dark:text-pink-400/40 rotate-12" />
+            </div>
+            <h3 className="text-lg font-semibold mb-2 text-rose-900 dark:text-rose-100">Join PuppyLove</h3>
+            <p className="text-sm text-rose-700/60 dark:text-rose-300/60 mb-5 max-w-xs mx-auto">
               Register on PuppyLove to find your perfect match anonymously. Your
               choices are encrypted and revealed only when there&apos;s a mutual
               match!
             </p>
             <a
               href={process.env.NEXT_PUBLIC_SEARCH_UI_URL || "/"}
-              className="inline-flex items-center justify-center gap-2 px-6 py-2 rounded-full bg-linear-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-medium transition-all"
+              className="inline-flex items-center justify-center gap-2 px-7 py-2.5 rounded-full bg-linear-to-r from-rose-500 via-pink-500 to-fuchsia-500 hover:from-rose-600 hover:via-pink-600 hover:to-fuchsia-600 text-white font-medium transition-all shadow-md shadow-rose-500/25 hover:shadow-lg hover:shadow-rose-500/30"
             >
               <Heart className="h-4 w-4" />
               Register Now
@@ -303,14 +306,14 @@ export function PuppyLoveProfileCard({
   }
 
   return (
-    <Card className="border-pink-200 bg-linear-to-br from-pink-50 to-rose-50 dark:from-pink-950/20 dark:to-rose-950/20">
+    <Card className="border-rose-200/50 bg-linear-to-br from-rose-50 via-pink-50/90 to-fuchsia-50/60 shadow-sm dark:border-rose-800/30 dark:from-rose-950/30 dark:via-pink-950/20 dark:to-fuchsia-950/15">
       <CardHeader className="flex flex-col items-start sm:flex-row justify-between gap-4">
         <div>
-          <CardTitle className="flex items-center gap-2 text-pink-600">
-            <Heart className="h-5 w-5 fill-rose-500" />
+          <CardTitle className="flex items-center gap-2 text-rose-600 dark:text-rose-400">
+            <Heart className="h-5 w-5 fill-rose-500 dark:fill-rose-400" />
             PuppyLove Profile
           </CardTitle>
-          <CardDescription className="text-pink-600/70">
+          <CardDescription className="text-rose-500/70 dark:text-rose-400/60">
             Your bio and interests are visible to other PuppyLove participants
           </CardDescription>
         </div>
@@ -319,7 +322,7 @@ export function PuppyLoveProfileCard({
             <>
               <Button
                 variant="outline"
-                className="mr-2"
+                className="mr-2 border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:border-rose-700 dark:text-rose-400 dark:hover:bg-rose-950/40"
                 onClick={handleCancel}
                 disabled={isSaving}
               >
@@ -328,6 +331,7 @@ export function PuppyLoveProfileCard({
               </Button>
               <Button
                 variant="outline"
+                className="border-rose-300 bg-rose-500/10 text-rose-600 hover:bg-rose-500/20 hover:text-rose-700 dark:border-rose-600 dark:text-rose-400 dark:hover:bg-rose-500/20"
                 onClick={handleSave}
                 disabled={isSaving || !hasChanges}
               >
@@ -336,7 +340,11 @@ export function PuppyLoveProfileCard({
               </Button>
             </>
           ) : (
-            <Button variant="outline" onClick={() => setIsEditing(true)}>
+            <Button
+              variant="outline"
+              className="border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:border-rose-700 dark:text-rose-400 dark:hover:bg-rose-950/40"
+              onClick={() => setIsEditing(true)}
+            >
               <Edit className="h-4 w-4" />
               Edit
             </Button>
@@ -346,7 +354,7 @@ export function PuppyLoveProfileCard({
       <CardContent className="space-y-6">
         {/* Bio Section */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-pink-700">About Me</label>
+          <label className="text-sm font-medium text-rose-700 dark:text-rose-300">About Me</label>
           {isEditing ? (
             <>
               <Textarea
@@ -355,15 +363,15 @@ export function PuppyLoveProfileCard({
                   setBio(e.target.value.slice(0, BIO_MAX_LENGTH))
                 }
                 placeholder="Write something about yourself..."
-                className="min-h-20 resize-none bg-white/50 border-pink-200 focus:border-pink-400"
+                className="min-h-20 resize-none bg-white/70 border-rose-200 focus:border-rose-400 placeholder:text-rose-300 dark:bg-rose-950/20 dark:border-rose-700 dark:focus:border-rose-500 dark:placeholder:text-rose-600"
               />
-              <p className="text-xs text-pink-600/70 text-right">
+              <p className="text-xs text-rose-500/70 dark:text-rose-400/60 text-right">
                 {bio.length}/{BIO_MAX_LENGTH}
               </p>
             </>
           ) : (
             <p className="text-foreground py-2">
-              {bio || <span className="text-pink-400/70">Not provided</span>}
+              {bio || <span className="text-rose-400/60 dark:text-rose-500/50 italic">Not provided</span>}
             </p>
           )}
         </div>
@@ -371,11 +379,11 @@ export function PuppyLoveProfileCard({
         {/* Interests Section */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <label className="text-sm font-medium text-pink-700">
+            <label className="text-sm font-medium text-rose-700 dark:text-rose-300">
               Interests
             </label>
             {isEditing && (
-              <span className="text-xs text-pink-600/70">
+              <span className="text-xs text-rose-500/70 dark:text-rose-400/60">
                 {interests.length}/{MAX_INTERESTS} selected
               </span>
             )}
@@ -408,7 +416,7 @@ export function PuppyLoveProfileCard({
                 {Object.entries(PUPPYLOVE_INTEREST_GROUPS).map(
                   ([category, categoryInterests]) => (
                     <div key={category} className="space-y-2">
-                      <h4 className="text-xs font-semibold text-pink-700/80 uppercase tracking-wide">
+                      <h4 className="text-xs font-semibold text-rose-600/80 dark:text-rose-400/70 uppercase tracking-wider">
                         {category}
                       </h4>
                       <div className="flex flex-wrap gap-1.5">
@@ -423,7 +431,7 @@ export function PuppyLoveProfileCard({
                                 "cursor-pointer transition-all text-xs",
                                 isSelected
                                   ? `${colors.bg} ${colors.text} ${colors.border}`
-                                  : "bg-white/60 hover:bg-white/80 border-pink-200 text-gray-700",
+                                  : "bg-white/70 hover:bg-rose-50 border-rose-200/60 text-rose-900/70 dark:bg-rose-950/20 dark:hover:bg-rose-900/30 dark:border-rose-700/40 dark:text-rose-200/70",
                               )}
                               onClick={() => toggleInterest(interest)}
                             >
@@ -453,7 +461,7 @@ export function PuppyLoveProfileCard({
                   </Badge>
                 ))
               ) : (
-                <span className="text-pink-400/70 text-sm">Not provided</span>
+                <span className="text-rose-400/60 dark:text-rose-500/50 text-sm italic">Not provided</span>
               )}
             </div>
           )}

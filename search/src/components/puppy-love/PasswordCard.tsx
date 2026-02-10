@@ -217,12 +217,12 @@ export const PuppyLovePasswordCard = ({
         return;
       }
       if (!result) {
-        toast.error("Wrong password or unable to verify. Please try again.");
+        toast.error("Profile not found. Please register to access PuppyLove.");
         setPassword("");
       }
     } catch (err) {
       console.error("Password check error:", err);
-      toast("Unable to verify password. Please try again.");
+      toast.error("Unable to verify password. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -310,12 +310,12 @@ export const PuppyLovePasswordCard = ({
               className="rounded-2xl"
             />
           </CardTitle>
-          <CardTitle className="text-2xl text-center">Puppy Love</CardTitle>
+          <CardTitle className="text-2xl text-center">Password Verification</CardTitle>
           {isInitializing ? (
             <></>
           ) : (
             <CardDescription className="text-center">
-              Enter your profile password to continue
+              Verify your login password.
             </CardDescription>
           )}
         </CardHeader>

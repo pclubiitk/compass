@@ -21,7 +21,7 @@ export const PuppyLoveHeartsCard = () => {
       <CardContent className="space-y-2 px-3 pb-3 pt-0">
         {/* Selections Counter */}
         <div className="flex justify-between items-center rounded-lg px-3 py-2 bg-linear-to-r from-rose-100/90 to-pink-100/90 border border-rose-200/50">
-          <span className="text-xs font-medium text-rose-600">Sent</span>
+          <span className="text-xs font-medium text-rose-600">Number of selections</span>
           <div className="flex items-center gap-1">
             <span className="text-lg font-bold text-rose-500">{selectionCount}</span>
             <span className="text-rose-400 text-sm">/4</span>

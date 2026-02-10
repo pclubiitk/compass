@@ -142,7 +142,7 @@ export const PuppyLoveSelectionsPanel = ({
         if (slotIndex !== -1) {
           receiverIds[slotIndex] = rollNo;
         }
-        toast.error("Error withdrawing heart: " + result.error);
+        toast.warning("Action not allowed.", {description: result.error});
       } else {
         toast.success("Heart withdrawn successfully!");
         // Update session storage and notify listeners
@@ -168,7 +168,7 @@ export const PuppyLoveSelectionsPanel = ({
         }
       }
     } catch (err) {
-      toast.error("Error withdrawing heart: " + (err as Error).message);
+      toast.warning("Action not allowed.", {description: (err as Error).message});
     } finally {
       setWithdrawingId(null);
     }
@@ -232,7 +232,7 @@ export const PuppyLoveSelectionsPanel = ({
       });
 
       if (result?.error) {
-        toast.error("Error submitting hearts: " + result.error);
+        toast.warning("Action not allowed.", {description: result.error});
       } else {
         toast.success(result?.message || "Hearts submitted successfully!");
         // Clear drafts from session storage after successful submission
@@ -242,7 +242,7 @@ export const PuppyLoveSelectionsPanel = ({
         }
       }
     } catch (err) {
-      toast.error("Error submitting hearts: " + (err as Error).message);
+      toast.warning("Action not allowed.", {description: (err as Error).message});
     } finally {
       setIsSubmitting(false);
     }

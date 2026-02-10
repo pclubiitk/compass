@@ -277,13 +277,13 @@ func SendHeartWithReturn(c *gin.Context) {
 		song := heart.SONG_ENC
 
 		if err := ReturnClaimedHeart(enc, sha, song, roll_no.(string)); err != nil {
-			c.JSON(http.StatusAccepted, gin.H{"message": "Hearts Sent Successfully !!, but found invalid Claim Requests. It will be recorded"})
+			c.JSON(http.StatusAccepted, gin.H{"message": "Hearts Sent successfully, but found invalid Claim Requests. It will be recorded."})
 			return
 		}
 	}
 
 	// TODO: cookie HeartBack
-	c.JSON(http.StatusAccepted, gin.H{"message": "Hearts Sent Successfully !!"})
+	c.JSON(http.StatusAccepted, gin.H{"message": "Hearts sent successfully!"})
 }
 func SendHeartVirtualHandler(c *gin.Context) {
 	info := new(SendHeartVirtual)
@@ -320,7 +320,7 @@ func SendHeartVirtualHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusAccepted, gin.H{"message": "Virtual Hearts Sent Successfully !!"})
+	c.JSON(http.StatusAccepted, gin.H{"message": "User selected for submit draft. Please view and click on submit button to send hearts."})
 }
 
 // HeartClaimError represents an error during heart claiming

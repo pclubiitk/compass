@@ -137,8 +137,8 @@ function Options(props: OptionsProps) {
     // NOTE: Deactivate the search, once we are showing the student cards in some other way.
     // For Ex: if we wish to render the matches, for puppylove then once its set, the query resets it to the [] array
     // For Ex: when we are suggesting
-    if ((isPuppyLove && !PLpermit) || suggestedRollNos?.length !== 0) {
-      return;
+    if ((isPuppyLove && !PLpermit) || (suggestedRollNos && suggestedRollNos.length != 0)) {
+        return;
     }
     debouncedSendQuery(query);
   }, [query, debouncedSendQuery]);

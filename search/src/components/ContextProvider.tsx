@@ -10,7 +10,7 @@ import {
   useEffect,
   ReactNode,
 } from "react";
-import { initPuppyLoveWorker } from "@/lib/workers/puppyLoveWorkerClient";
+import { fetchPublicKeys, initPuppyLoveWorker } from "@/lib/workers/puppyLoveWorkerClient";
 
 // Import and re-export shared Puppy Love state from separate file
 // This avoids circular dependencies with workers
@@ -198,7 +198,7 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
   const [isGlobalLoading, setGlobalLoading] = useState<boolean>(false);
   const [globalError, setGlobalError] = useState<boolean>(false);
   const [profileVisibility, setProfileVisibility] = useState<boolean>(false);
-  const [isPLseason, setPLseason] = useState<boolean>(false);
+  const [isPLseason, setPLseason] = useState<boolean>(true);
   const [PLpermit, setPLPermit] = useState<boolean>(true);
   const [PLpublish, setPLPublished] = useState<boolean>(false);
   const [isPuppyLove, setIsPuppyLove] = useState<boolean>(false); // Always starts false, toggled by user
@@ -300,6 +300,7 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
           const res_json = await response.json();
           setProfileVisibility(true);
           setLoggedIn(true);
+          setPuppyLovePublicKeys(await fetchPublicKeys());
           if (response.status === 202) {
             setPLseason(true);
             setPLPermit(res_json?.permit);
