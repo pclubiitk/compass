@@ -244,7 +244,7 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
           // No private key — can't claim, just fetch user data directly
           worker.postMessage({ type: "GET_USER_DATA", payload: { privateKey } });
         }
-        worker.postMessage({ type: "FETCH_RETURN_HEARTS" });
+        worker.postMessage({ type: "FETCH_RETURN_HEARTS", payload: { privateKey, puppyLoveHeartsSent }});
       }
     }
   }, [isPuppyLove, privateKey]);

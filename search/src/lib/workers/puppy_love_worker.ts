@@ -263,13 +263,65 @@ self.addEventListener('message', async (e: MessageEvent) => {
   }
 
   if (type === 'FETCH_RETURN_HEARTS') {
+    const { privateKey: privKey, puppyLoveHeartsSent } = payload || {};
     try {
       const res = await fetch(`${PUPPYLOVE_POINT}/api/puppylove/users/fetchReturnHearts`, {
         method: 'GET',
         credentials: 'include',
       });
       const data = await res.json();
-      self.postMessage({ type: 'FETCH_RETURN_HEARTS_RESULT', result: data, error: null });
+      // TODO: commented cause its giving bugs
+      
+      // if (!Array.isArray(data) || data.length === 0 || !privKey || !puppyLoveHeartsSent) {
+      //   self.postMessage({ type: 'FETCH_RETURN_HEARTS_RESULT', result: { returnHearts: data, matches: [] }, error: null });
+      //   return;
+      // }
+
+      // // Parse sent hearts if it's a string
+      // let sentHearts = puppyLoveHeartsSent;
+
+      // const matchResults: any[] = [];
+
+      // await Promise.all(
+      //   data.map(async (elem: any) => {
+      //     const encoded_sha = elem.enc;
+      //     // Decrypt enc with private key (RSA) to get the SHA
+      //     const sha = await Decryption(encoded_sha, privKey);
+      //     if (sha === 'Fail' || !sha) return;
+
+      //     // Check against each of our sent hearts
+      //     for (const key in sentHearts) {
+      //       const heart = sentHearts[key];
+      //       if (!heart || !heart.sha_encrypt || !heart.id_encrypt) continue;
+
+      //       // Decrypt sha_encrypt with private key (AES) to get our stored SHA
+      //       const my_sha = await Decryption_AES(heart.sha_encrypt, privKey);
+      //       if (my_sha === sha) {
+      //         // Match found — decrypt id_encrypt to get the secret (id_plain)
+      //         const id_plain = await Decryption(heart.id_encrypt, privKey);
+      //         if (!id_plain || id_plain === 'Fail') continue;
+      //         console.log(`Match found for heart ${key}: SHA ${sha}, ID ${id_plain}`);
+      //         // Call verifyreturnhearts to register the match on server
+      //         self.postMessage({ type: 'VERIFY_RETURN_HEARTS', payload: {encoded_sha, id_plain}}); // Optional: indicate verification started
+      //         try {
+      //           const verifyRes = await fetch(`${PUPPYLOVE_POINT}/api/puppylove/users/verifyreturnhearts`, {
+      //             method: 'POST',
+      //             credentials: 'include',
+      //             headers: { 'Content-Type': 'application/json' },
+      //             body: JSON.stringify({ enc: encoded_sha, secret: id_plain }),
+      //           });
+      //           const verifyData = await verifyRes.json();
+      //           matchResults.push({ key, sha, verified: verifyData });
+      //         } catch (verifyErr) {
+      //           console.error('Error verifying return heart:', verifyErr);
+      //         }
+      //         break; // Found the matching sent heart, no need to check others
+      //       }
+      //     }
+      //   })
+      // );
+      // 
+      // self.postMessage({ type: 'FETCH_RETURN_HEARTS_RESULT', result: { returnHearts: data, matches: matchResults }, error: null });
     } catch (err) {
       self.postMessage({ type: 'FETCH_RETURN_HEARTS_RESULT', result: null, error: (err as Error).message });
     }
@@ -292,15 +344,16 @@ self.addEventListener('message', async (e: MessageEvent) => {
   }
 
   if (type === 'VERIFY_RETURN_HEARTS') {
-    const payload_data = payload;
+    const {encoded_sha, id_plain} = payload;
     try {
       const res = await fetch(`${PUPPYLOVE_POINT}/api/puppylove/users/verifyreturnhearts`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload_data),
+        body: JSON.stringify({enc: encoded_sha, secret: id_plain}),
       });
       const data = await res.json();
+      console.log("match; ", id_plain)
       self.postMessage({ type: 'VERIFY_RETURN_HEARTS_RESULT', result: data, error: null });
     } catch (err) {
       self.postMessage({ type: 'VERIFY_RETURN_HEARTS_RESULT', result: null, error: (err as Error).message });
