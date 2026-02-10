@@ -236,6 +236,7 @@ self.addEventListener('message', async (e: MessageEvent) => {
         credentials: 'include',
       });
       const data = await res.json();
+      self.postMessage({ type: 'FETCH_RETURN_HEARTS_RESULT', result: data, error: null });
       // FIXME(ppy): more logic, matching.tsx file
       // TODO: commented cause its giving bugs
       

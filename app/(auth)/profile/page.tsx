@@ -77,6 +77,7 @@ export default function ProfilePage() {
     fetchCalendarEvents();
   }, [fetchCalendarEvents]);
 
+  console.log("first " , isPuppyLoveRegistered);
   // Check PuppyLove status and fetch profile
   useEffect(() => {
     const checkPuppyLove = async () => {
@@ -90,14 +91,15 @@ export default function ProfilePage() {
         if (dataRes.ok) {
           const data = await dataRes.json();
           // User is registered if they have a profile with dirty = true
-          setIsPuppyLoveRegistered(data.dirty === true);
+          setIsPuppyLoveRegistered(Boolean(data?.dirty ?? data?.is_dirty));
           // Set bio and interests
-          setPuppyLoveBio(data.about || "");
+          setPuppyLoveBio(data?.about || "");
+          const rawInterests = data?.interests ?? data?.interest ?? "";
           setPuppyLoveInterests(
-            Array.isArray(data.interests)
-              ? data.interests
-              : typeof data.interests === "string"
-                ? data.interests
+            Array.isArray(rawInterests)
+              ? rawInterests
+              : typeof rawInterests === "string"
+                ? rawInterests
                     .split(",")
                     .map((s: string) => s.trim())
                     .filter(Boolean)
@@ -112,6 +114,8 @@ export default function ProfilePage() {
     };
     if (isPLseason) checkPuppyLove();
   }, [isPLseason]);
+
+  console.log("2nd " , isPuppyLoveRegistered);
 
   const fetchProfile = async () => {
     // We don't reset loading to true on refetch to avoid skeleton flashes

@@ -176,6 +176,11 @@ export function PuppyLoveProfileCard({
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
 
+  useEffect(() => {
+    setBio(initialBio);
+    setInterests(initialInterests);
+  }, [initialBio, initialInterests]);
+
   // Track changes
   useEffect(() => {
     const bioChanged = bio !== initialBio;

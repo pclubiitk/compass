@@ -97,12 +97,13 @@ export const PuppyLovePasswordCard = ({
       const verifyData = await verifyRes.json();
 
       // Check if user is registered (dirty == true)
-      if (!verifyData.is_dirty) {
-        // User is unregistered - show registration flow
-        setShowRegistration(true);
-        setPassword("");
-        return { success: false, reason: "not_registered" };
-      }
+        if (!verifyData.is_dirty) {
+          // User is unregistered - show registration flow
+          setShowRegistration(true);
+          setPassword("");
+          toast("You are not registered for Puppy Love. Please register to continue.");
+          return { success: false, reason: "not_registered" };
+        }
 
       // Fetch encrypted private key from backend
       const res = await fetch(`${PUPPYLOVE_POINT}/api/puppylove/users/data`, {
