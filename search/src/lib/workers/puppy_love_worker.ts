@@ -184,6 +184,7 @@ self.addEventListener('message', async (e: MessageEvent) => {
     }
   }
 
+
   if (type === 'FETCH_AND_CLAIM_HEARTS') {
     const { privateKey } = payload;
     try {
@@ -200,7 +201,9 @@ self.addEventListener('message', async (e: MessageEvent) => {
 
       const decrypted = await Promise.all(
         hearts.map(async (heart: any) => {
+          console.log(`Attempting to decrypt heart: enc ${heart.enc}, genderOfSender ${heart.genderOfSender}, \n pvtKey ${privateKey}`);
           const sha = await Decryption(heart.enc, privateKey);
+          console.log(`Decrypted heart: enc ${heart.enc}, sha ${sha}, genderOfSender ${heart.genderOfSender}`);
           return { ...heart, sha };
         })
       );
@@ -236,59 +239,64 @@ self.addEventListener('message', async (e: MessageEvent) => {
         credentials: 'include',
       });
       const data = await res.json();
-      // FIXME(ppy): more logic, matching.tsx file
       // TODO: commented cause its giving bugs
+
+      if (!Array.isArray(data) || data.length === 0 || !privKey || !puppyLoveHeartsSent) {
+        console.warn('No return hearts found or missing private key/sent hearts data');
+        self.postMessage({ type: 'FETCH_RETURN_HEARTS_RESULT', result: { returnHearts: data, matches: [] }, error: null });
+        return;
+      }
+
+      // Parse sent hearts if it's a string
+      let sentHearts = puppyLoveHeartsSent;
+
+      const matchResults: any[] = [];
+      await Promise.all(
+        data.map(async (elem: any) => {
+          const encoded_sha = elem.enc;
+          // Decrypt enc with private key (RSA) to get the SHA
+          console.log(`Decrypted returned heart: enc ${encoded_sha}, pvtKey ${privKey}`);
+          const sha = await Decryption(encoded_sha, privKey);
+          if (sha === 'Fail' || !sha) {
+            console.error(`Failed to decrypt returned heart: enc ${encoded_sha}`);
+            return;
+          } 
+          console.log(`Decrypted returned heart: enc ${encoded_sha}, sha ${sha}`);
+          // Check against each of our sent hearts
+          for (const key in sentHearts) {
+            console.log("reached inside loop: ", key)
+            const heart = sentHearts[key];
+            if (!heart || !heart.sha_encrypt || !heart.id_encrypt) continue;
+
+            // Decrypt sha_encrypt with private key (AES) to get our stored SHA
+            const my_sha = await Decryption_AES(heart.sha_encrypt, privKey);
+            console.log(`Comparing with sent heart \n\n ${key}: \n\nmy_sha ${my_sha},\n\n returned sha ${sha}`);
+            if (my_sha === sha) {
+              // Match found — decrypt id_encrypt to get the secret (id_plain)
+              const id_plain = await Decryption(heart.id_encrypt, privKey);
+              if (!id_plain || id_plain === 'Fail') continue;
+              console.log(`Match found for heart ${key}: SHA ${sha}, ID ${id_plain}`);
+              // Call verifyreturnhearts to register the match on server
+              self.postMessage({ type: 'VERIFY_RETURN_HEARTS', payload: {encoded_sha, id_plain}}); // Optional: indicate verification started
+              try {
+                const verifyRes = await fetch(`${PUPPYLOVE_POINT}/api/puppylove/users/verifyreturnhearts`, {
+                  method: 'POST',
+                  credentials: 'include',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ enc: encoded_sha, secret: id_plain }),
+                });
+                const verifyData = await verifyRes.json();
+                matchResults.push({ key, sha, verified: verifyData });
+              } catch (verifyErr) {
+                console.error('Error verifying return heart:', verifyErr);
+              }
+              break; // Found the matching sent heart, no need to check others
+            }
+          }
+        })
+      );
       
-      // if (!Array.isArray(data) || data.length === 0 || !privKey || !puppyLoveHeartsSent) {
-      //   self.postMessage({ type: 'FETCH_RETURN_HEARTS_RESULT', result: { returnHearts: data, matches: [] }, error: null });
-      //   return;
-      // }
-
-      // // Parse sent hearts if it's a string
-      // let sentHearts = puppyLoveHeartsSent;
-
-      // const matchResults: any[] = [];
-
-      // await Promise.all(
-      //   data.map(async (elem: any) => {
-      //     const encoded_sha = elem.enc;
-      //     // Decrypt enc with private key (RSA) to get the SHA
-      //     const sha = await Decryption(encoded_sha, privKey);
-      //     if (sha === 'Fail' || !sha) return;
-
-      //     // Check against each of our sent hearts
-      //     for (const key in sentHearts) {
-      //       const heart = sentHearts[key];
-      //       if (!heart || !heart.sha_encrypt || !heart.id_encrypt) continue;
-
-      //       // Decrypt sha_encrypt with private key (AES) to get our stored SHA
-      //       const my_sha = await Decryption_AES(heart.sha_encrypt, privKey);
-      //       if (my_sha === sha) {
-      //         // Match found — decrypt id_encrypt to get the secret (id_plain)
-      //         const id_plain = await Decryption(heart.id_encrypt, privKey);
-      //         if (!id_plain || id_plain === 'Fail') continue;
-      //         console.log(`Match found for heart ${key}: SHA ${sha}, ID ${id_plain}`);
-      //         // Call verifyreturnhearts to register the match on server
-      //         self.postMessage({ type: 'VERIFY_RETURN_HEARTS', payload: {encoded_sha, id_plain}}); // Optional: indicate verification started
-      //         try {
-      //           const verifyRes = await fetch(`${PUPPYLOVE_POINT}/api/puppylove/users/verifyreturnhearts`, {
-      //             method: 'POST',
-      //             credentials: 'include',
-      //             headers: { 'Content-Type': 'application/json' },
-      //             body: JSON.stringify({ enc: encoded_sha, secret: id_plain }),
-      //           });
-      //           const verifyData = await verifyRes.json();
-      //           matchResults.push({ key, sha, verified: verifyData });
-      //         } catch (verifyErr) {
-      //           console.error('Error verifying return heart:', verifyErr);
-      //         }
-      //         break; // Found the matching sent heart, no need to check others
-      //       }
-      //     }
-      //   })
-      // );
-      // 
-      // self.postMessage({ type: 'FETCH_RETURN_HEARTS_RESULT', result: { returnHearts: data, matches: matchResults }, error: null });
+      self.postMessage({ type: 'FETCH_RETURN_HEARTS_RESULT', result: { returnHearts: data, matches: matchResults }, error: null });
     } catch (err) {
       self.postMessage({ type: 'FETCH_RETURN_HEARTS_RESULT', result: null, error: (err as Error).message });
     }
@@ -494,6 +502,7 @@ self.addEventListener('message', async (e: MessageEvent) => {
         let receiverPublicKey = puppyLovePublicKeys[id];
         // 3. encHeart: Encrypt shaHash with RECEIVER's public key (they receive this)
         const encHeart = await Encryption(shaHash, receiverPublicKey);
+        console.log(`Prepared heart for receiver ${id} with PUBLICKEY=${receiverPublicKey}: id_plain ${id_plain}, shaHash ${shaHash}, id_encrypt ${id_encrypt}, sha_encrypt ${sha_encrypt}, encHeart ${encHeart}`);
         hearts.push({ 
           id_plain,
           shaHash,

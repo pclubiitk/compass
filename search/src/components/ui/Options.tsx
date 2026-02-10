@@ -78,7 +78,6 @@ function Options(props: OptionsProps) {
   const handleSuggestMatch = async () => {
     console.log(suggestedRollNos)
     if (suggestedRollNos) {
-      console.log("deleting")
       // rest the system
       setSuggestedRollNos(null);
       return;

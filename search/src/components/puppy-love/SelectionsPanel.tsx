@@ -10,7 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { X, Send, Trash2, Heart } from "lucide-react";
-import { receiverIds, useGContext } from "@/components/ContextProvider";
+import { receiverIds, setPuppyLoveHeartsSent, useGContext } from "@/components/ContextProvider";
 import {
   prepareSendHeart,
   sendHeart,
@@ -47,7 +47,6 @@ export const PuppyLoveSelectionsPanel = ({
     privateKey,
     isPuppyLove,
     currentUserProfile,
-    puppyLoveHeartsSent,
   } = useGContext();
 
   // Derive active selections from receiverIds (the single source of truth)
@@ -217,7 +216,8 @@ export const PuppyLoveSelectionsPanel = ({
       );
 
       const returnHearts = await returnHeartsHandler(puppyLovePublicKeys);
-
+      await sendVirtualHeart(heartData);
+      setPuppyLoveHeartsSent(heartData.hearts);
       const result = await sendHeart({
         genderOfSender: userGender,
         enc1: heartData.hearts[0]?.encHeart ?? "",
