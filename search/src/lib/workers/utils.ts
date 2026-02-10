@@ -13,7 +13,6 @@ export async function setData(data: string, privateKey: string | null, idSelf: s
     let hearts: Hearts | null = null;
     try {
         hearts = JSON.parse(data) as Hearts;
-        setPuppyLoveHeartsSent(hearts);
     } catch (e) {
         console.error("Failed to parse hearts data in worker:", e);
         return decryptedReceiverIds;
@@ -50,6 +49,8 @@ export async function setData(data: string, privateKey: string | null, idSelf: s
 
     }
 
+    console.log("Decrypted Receiver IDs:", decryptedReceiverIds);
+
     return decryptedReceiverIds;
 }
 
@@ -80,7 +81,7 @@ export async function setClaims(claims: string) {
     } else {
         jsonStrings = [claims];
     }
-
+    let claimsArray: heart[] = [];
     jsonStrings.forEach((jsonString) => {
         const claim = JSON.parse(decodeURIComponent(jsonString)) as heart;
         
@@ -91,8 +92,9 @@ export async function setClaims(claims: string) {
         }
 
         // Add to claimed hearts array
-        addReceivedHeart(claim);
+        claimsArray.push(claim);
     });
+    return claimsArray;
 }
 
 export async function returnHeartsHandler(puppyLovePublicKeys: any) {

@@ -220,6 +220,9 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
                 console.error("Failed to parse hearts data:", e);
               }
             }
+            if (payload?.claimsArray) {
+              payload.claimsArray.forEach((claim: any) => addReceivedHeart(claim));
+            }
             setPuppyLoveProfile(payload ?? null);
           }
           if (type === "PREPARE_SEND_HEART_RESULT") {
@@ -230,7 +233,7 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
         };
         // Trigger the reset worker messages
         worker.postMessage({ type: "FETCH_PUBLIC_KEYS" });
-        worker.postMessage({ type: "GET_USER_DATA" });
+        worker.postMessage({ type: "GET_USER_DATA", payload: { privateKey } });
         if (privateKey) {
           worker.postMessage({
             type: "FETCH_AND_CLAIM_HEARTS",

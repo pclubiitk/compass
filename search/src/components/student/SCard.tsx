@@ -115,6 +115,9 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
 
       // send virtual heart
       const resp = await sendVirtualHeart(heartData);
+      if (resp?.message){
+        toast.success(resp.message);
+      }
       if (resp?.error) {
         toast.error("Error sending virtual heart: " + resp.error);
         setIsSendingHeart(false);

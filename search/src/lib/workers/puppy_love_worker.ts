@@ -343,9 +343,11 @@ self.addEventListener('message', async (e: MessageEvent) => {
         credentials: 'include',
       });
       const data = await res.json();
-      const decryptedReceiverIds = await setData(data.data, data.privK, data.id);
-      await setClaims(data.claims);
-      self.postMessage({ type: 'GET_USER_DATA_RESULT', result: { ...data, receiverIds: decryptedReceiverIds }, error: null });
+      const rawPrivateKey = payload?.privateKey ?? null;
+      const decryptedReceiverIds = await setData(data.data, rawPrivateKey, data.id);
+      console.log("Decrypted Receiver IDs in GET_USER_DATA:", decryptedReceiverIds);
+      let claimsArray = await setClaims(data.claims);
+      self.postMessage({ type: 'GET_USER_DATA_RESULT', result: { ...data, receiverIds: decryptedReceiverIds, claimsArray }, error: null });
     } catch (err) {
       self.postMessage({ type: 'GET_USER_DATA_RESULT', result: null, error: (err as Error).message });
     }
