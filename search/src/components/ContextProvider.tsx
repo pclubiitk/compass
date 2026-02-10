@@ -31,6 +31,7 @@ import {
   resetPuppyLoveState,
   resetReceivedHearts,
 } from "@/lib/puppyLoveState";
+import { PUPPYLOVE_POINT } from "@/lib/constant";
 
 // Re-export for backwards compatibility
 export type { Heart, Hearts };
@@ -204,7 +205,7 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
     if (isPublished) {
       try {
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_AUTH_URL}/api/puppylove/users/mymatches`,
+          `${PUPPYLOVE_POINT}/api/puppylove/users/mymatches`,
           {
             method: "GET",
             credentials: "include",
@@ -292,7 +293,10 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
                 else if (claim.genderOfSender === "F") incHeartsFemalesBy(1);
               });
             }
+            console.log("payload::::: ", payload)
             setPuppyLoveProfile(payload ?? null);
+
+            worker.postMessage({type: "FETCH_RETURN_HEARTS", payload: { privateKey, puppyLoveHeartsSent }})
           }
           if (type === "PREPARE_SEND_HEART_RESULT") {
             console.log("PREPARE_SEND_HEART_RESULT received:", payload);
@@ -315,10 +319,10 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
         //   // No private key — can't claim, just fetch user data directly
         //   worker.postMessage({ type: "GET_USER_DATA", payload: { privateKey } });
         // }
-        worker.postMessage({
-          type: "FETCH_RETURN_HEARTS",
-          payload: { privateKey, puppyLoveHeartsSent },
-        });
+        // worker.postMessage({
+        //   type: "FETCH_RETURN_HEARTS",
+        //   payload: { privateKey, puppyLoveHeartsSent },
+        // });
       }
     }
   }, [isPuppyLove, privateKey]);

@@ -101,7 +101,7 @@ func tryRefresh(c *gin.Context) {
 		Model(&model.User{}).
 		Select("role", "is_verified").
 		Preload("Profile", func(db *gorm.DB) *gorm.DB {
-			return db.Select("visibility")
+			return db.Select("visibility", "roll_no")
 		}).
 		Where("user_id = ?", userID).
 		First(&modelUser)

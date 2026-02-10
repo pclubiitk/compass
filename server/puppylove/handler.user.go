@@ -355,7 +355,11 @@ func SendHeartVirtualHandler(c *gin.Context) {
 		return
 	}
 
-	rollNo, _ := c.Get("rollNo")
+	rollNo, exists := c.Get("rollNo")
+	if !exists {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Roll Number not found in context"})
+		return
+	}
 	var profile puppylove.PuppyLoveProfile
 	record := connections.DB.Where("roll_no = ?", rollNo).First(&profile)
 	if record.Error != nil {
