@@ -13,7 +13,7 @@ import {
   decryptPrivateKey,
   fetchAndClaimHearts,
 } from "@/lib/workers/puppyLoveWorkerClient";
-import { PUPPYLOVE_POINT } from "@/lib/constant";
+import { FORGOT_POINT, PUPPYLOVE_POINT } from "@/lib/constant";
 import { PuppyLoveRegistrationCard } from "./RegistrationCard";
 import { PasswordRecoveryOptionsCard } from "../PasswordRecoveryOptionsCard";
 import { RecoveryCodeVerificationCard } from "./RecoveryCodeVerificationCard";
@@ -103,8 +103,6 @@ export const PuppyLovePasswordCard = ({
         setPassword("");
         return { success: false, reason: "not_registered" };
       }
-
-      initPuppyLoveWorker();
 
       // Fetch encrypted private key from backend
       const res = await fetch(`${PUPPYLOVE_POINT}/api/puppylove/users/data`, {
@@ -274,8 +272,7 @@ export const PuppyLovePasswordCard = ({
         onChooseRecoveryCode={() => setRecoveryStep("code")}
         onChooseNewPassword={() => {
           // Redirect directly to forgot-password page
-          window.location.href =
-            process.env.NEXT_PUBLIC_AUTH_DOMAIN + "/forgot-password";
+          window.location.href = FORGOT_POINT;
         }}
         onCancel={() => {
           setRecoveryStep(null);

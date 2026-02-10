@@ -42,7 +42,7 @@ self.addEventListener('message', async (e: MessageEvent) => {
     }
   }
 
-  
+  // TODO: The function is identically same to the DECRYPT_HEARTS
   if (type === 'DECRYPT_RETURNED_HEARTS') {
     const { items, privKey } = payload;
     try {
@@ -88,6 +88,7 @@ self.addEventListener('message', async (e: MessageEvent) => {
     }
   }
 
+  // TODO: the sha, rand_int, etc functions do not need worker to be used, later correct this.
   if (type === 'SHA256') {
     const { data } = payload;
     try {
@@ -114,28 +115,6 @@ self.addEventListener('message', async (e: MessageEvent) => {
       self.postMessage({ type: 'RANDOM_STRING_RESULT', result, error: null });
     } catch (err) {
       self.postMessage({ type: 'RANDOM_STRING_RESULT', result: null, error: (err as Error).message });
-    }
-  }
-
-  if (type === 'VERIFY_PUPPYLOVE_PASSWORD') {
-    const { password } = payload;
-    try {
-      const res = await fetch(`${PUPPYLOVE_POINT}/api/puppylove/users/verify-password`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password }),
-      });
-
-      if (!res.ok) {
-        throw new Error(`Server responded with status ${res.status}`);
-      }
-
-      const data = await res.json();
-      const isValid = data?.valid === true;
-      self.postMessage({ type: 'VERIFY_PUPPYLOVE_PASSWORD_RESULT', result: isValid, error: null });
-    } catch (err) {
-      self.postMessage({ type: 'VERIFY_PUPPYLOVE_PASSWORD_RESULT', result: null, error: (err as Error).message });
     }
   }
 
@@ -205,19 +184,6 @@ self.addEventListener('message', async (e: MessageEvent) => {
     }
   }
 
-  if (type === 'GET_VIRTUAL_HEART_COUNT') {
-    try {
-      const res = await fetch(`${PUPPYLOVE_POINT}/api/puppylove/users/virtualheartcount`, {
-        method: 'GET',
-        credentials: 'include',
-      });
-      const data = await res.json();
-      self.postMessage({ type: 'GET_VIRTUAL_HEART_COUNT_RESULT', result: data, error: null });
-    } catch (err) {
-      self.postMessage({ type: 'GET_VIRTUAL_HEART_COUNT_RESULT', result: null, error: (err as Error).message });
-    }
-  }
-
   if (type === 'FETCH_AND_CLAIM_HEARTS') {
     const { privateKey } = payload;
     try {
@@ -270,6 +236,7 @@ self.addEventListener('message', async (e: MessageEvent) => {
         credentials: 'include',
       });
       const data = await res.json();
+      // FIXME(ppy): more logic, matching.tsx file
       // TODO: commented cause its giving bugs
       
       // if (!Array.isArray(data) || data.length === 0 || !privKey || !puppyLoveHeartsSent) {
@@ -619,6 +586,70 @@ self.addEventListener('message', async (e: MessageEvent) => {
       self.postMessage({ type: 'FIRST_LOGIN_RESULT', result, error: null });
     } catch (err) {
       self.postMessage({ type: 'FIRST_LOGIN_RESULT', result: null, error: (err as Error).message });
+    }
+  }
+
+  // Calculate Jaccard similarity between users' interests for "Suggest Match" feature
+  if (type === 'CALCULATE_SIMILAR_USERS') {
+    const { myInterests, allProfiles, excludeRolls, limit } = payload;
+    try {
+      // myInterests: string[] - current user's interests
+      // allProfiles: Record<string, { about: string; interests: string[] }> - all user profiles
+      // excludeRolls: string[] - rollNos to exclude (e.g., already sent hearts to)
+      // limit: number - max number of suggestions to return
+
+      // Jaccard similarity: |A ∩ B| / |A ∪ B|
+      const calculateJaccard = (arrA: string[], arrB: string[]): number => {
+        if (arrA.length === 0 && arrB.length === 0) return 0;
+        
+        const setB = new Set(arrB);
+        let intersection = 0;
+        for (let i = 0; i < arrA.length; i++) {
+          if (setB.has(arrA[i])) intersection++;
+        }
+        
+        // Union = |A| + |B| - |intersection|
+        const uniqueA = new Set(arrA);
+        const union = uniqueA.size + setB.size - intersection;
+        return union === 0 ? 0 : intersection / union;
+      };
+
+      const myInterestsArr: string[] = (myInterests || []).map((i: string) => i.toLowerCase().trim());
+      const excludeSet = new Set<string>(excludeRolls || []);
+      
+      const similarities: Array<{ rollNo: string; score: number; interests: string[] }> = [];
+      
+      const profileEntries = Object.entries(allProfiles || {});
+      for (let i = 0; i < profileEntries.length; i++) {
+        const [rollNo, profile] = profileEntries[i];
+        if (excludeSet.has(rollNo)) continue;
+        
+        const profileData = profile as { about: string; interests: string[] };
+        if (!profileData.interests || profileData.interests.length === 0) continue;
+        
+        const theirInterestsArr: string[] = profileData.interests.map((int: string) => int.toLowerCase().trim());
+        const score = calculateJaccard(myInterestsArr, theirInterestsArr);
+        
+        if (score > 0) {
+          similarities.push({
+            rollNo,
+            score,
+            interests: profileData.interests,
+          });
+        }
+      }
+      
+      // Sort by score descending, take top N
+      similarities.sort((a, b) => b.score - a.score);
+      const topMatches = similarities.slice(0, limit || 10);
+      
+      self.postMessage({ 
+        type: 'CALCULATE_SIMILAR_USERS_RESULT', 
+        result: topMatches, 
+        error: null 
+      });
+    } catch (err) {
+      self.postMessage({ type: 'CALCULATE_SIMILAR_USERS_RESULT', result: null, error: (err as Error).message });
     }
   }
 });

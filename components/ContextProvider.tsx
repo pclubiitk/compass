@@ -14,6 +14,7 @@ interface GlobalContextType {
   setLoggedIn: (isLoggedIn: boolean | null) => void;
   isGlobalLoading: boolean;
   setGlobalLoading: (isGlobalLoading: boolean) => void;
+  isPLseason: boolean;
 }
 
 const GlobalContext = createContext<GlobalContextType>({
@@ -21,11 +22,13 @@ const GlobalContext = createContext<GlobalContextType>({
   setLoggedIn: () => {},
   isGlobalLoading: false,
   setGlobalLoading: () => {},
+  isPLseason: false,
 });
 
 export function GlobalContextProvider({ children }: { children: ReactNode }) {
   const [isLoggedIn, setLoggedIn] = useState<boolean | null>(null);
   const [isGlobalLoading, setGlobalLoading] = useState<boolean>(true);
+  const [isPLseason, setPLseason] = useState<boolean>(false);
 
   useEffect(() => {
     async function verifyingLogin() {
@@ -35,10 +38,13 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
           {
             method: "GET",
             credentials: "include",
-          }
+          },
         );
         if (response.ok) {
           setLoggedIn(true);
+          if (response.status === 202) {
+            setPLseason(true);
+          }
         } else {
           setLoggedIn(false);
         }
@@ -56,6 +62,7 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
     setLoggedIn,
     isGlobalLoading,
     setGlobalLoading,
+    isPLseason,
   };
 
   return (

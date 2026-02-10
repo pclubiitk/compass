@@ -1,5 +1,5 @@
 import Image from "@/components/student/UserImage";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   Card,
   CardContent,
@@ -11,10 +11,17 @@ import { Button } from "@/components/ui/button";
 import { Student } from "@/lib/types/data";
 import { cn, convertToTitleCase } from "@/lib/utils";
 import { Mail, Home, University, Globe, Heart } from "lucide-react";
-import { useGContext, puppyLoveHeartsSent, setPuppyLoveHeartsSent, receiverIds } from "@/components/ContextProvider";
-import { prepareSendHeart, sendHeart, sendVirtualHeart, getVirtualHeartCount, fetchPublicKeys } from "@/lib/workers/puppyLoveWorkerClient";
+// FIXME:(ppy) Module '"@/components/ContextProvider"' declares 'receiverIds' locally, but it is not exported.
+import { useGContext, receiverIds } from "@/components/ContextProvider";
+import {
+  prepareSendHeart,
+  sendHeart,
+  sendVirtualHeart,
+  fetchPublicKeys,
+} from "@/lib/workers/puppyLoveWorkerClient";
 import { toast } from "sonner";
 import { returnHeartsHandler } from "@/lib/workers/utils";
+
 interface SCardProps {
   data: Student;
   pointer?: boolean;
@@ -28,13 +35,15 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
   data.name = convertToTitleCase(data.name);
   data.email = data.email.startsWith("cmhw_") ? "Not Provided" : data.email;
   const { puppyLovePublicKeys, puppyLoveProfile, privateKey } = useGContext();
-  const { isPuppyLove, currentUserProfile, setStudentSelection } = useGContext();
+  const { isPuppyLove, currentUserProfile, setStudentSelection } =
+    useGContext();
   const [isSendingHeart, setIsSendingHeart] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
 
   const handleSendHeart = async () => {
-    const activeProfile = isPuppyLove && puppyLoveProfile ? puppyLoveProfile : currentUserProfile;
-    
+    const activeProfile =
+      isPuppyLove && puppyLoveProfile ? puppyLoveProfile : currentUserProfile;
+
     if (setStudentSelection) {
       setStudentSelection(data);
     }
@@ -53,7 +62,9 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
     // Validate gender - be more flexible with the check
     const userGender = activeProfile?.gender?.trim();
     if (!userGender) {
-      alert("Your profile gender is required to send hearts. Please update your profile and try again.");
+      toast.error(
+        "Your profile gender is required to send hearts. Please update your profile and try again.",
+      );
       return;
     }
 
@@ -67,7 +78,9 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
     const senderPublicKey = puppyLovePublicKeys?.[activeProfile.id];
     const senderPrivateKey = privateKey;
     if (!senderPublicKey || !senderPrivateKey) {
-      toast.error("Your keys are not available. Please log in to PuppyLove first.");
+      toast.error(
+        "Your keys are not available. Please log in to PuppyLove first.",
+      );
       return;
     }
 
@@ -92,12 +105,11 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
       }
     }
 
-
     setIsSendingHeart(true);
-    
+
     try {
       // Find the first empty slot in receiverIds (max 4 hearts)
-      const emptySlot = receiverIds.findIndex(id => id === '');
+      const emptySlot = receiverIds.findIndex((id) => id === "");
       if (emptySlot === -1) {
         toast.error("You have already sent the maximum number of hearts (4).");
         setIsSendingHeart(false);
@@ -106,16 +118,16 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
       receiverIds[emptySlot] = data.rollNo;
       // Step 1: Prepare hearts with complete encryption (id_encrypt, sha_encrypt, enc)
       const heartData = await prepareSendHeart(
-        senderPublicKey,           // Your public key
-        senderPrivateKey as string,          // Your private key
-        puppyLovePublicKeys,  // Receiver's public key (now guaranteed to exist)
+        senderPublicKey, // Your public key
+        senderPrivateKey as string, // Your private key
+        puppyLovePublicKeys, // Receiver's public key (guaranteed to exist)
         activeProfile.id, // Your roll number
-        receiverIds,              // Receiver's roll number
+        receiverIds, // Receiver's roll number
       );
 
       // send virtual heart
       const resp = await sendVirtualHeart(heartData);
-      if (resp?.message){
+      if (resp?.message) {
         toast.success(resp.message);
       }
       if (resp?.error) {
@@ -126,287 +138,331 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
 
       // Step 2: Send ACTUAL hearts (with receiver's encrypted data)
       if (currentUserProfile?.submit) {
-      const returnHearts = await returnHeartsHandler(puppyLovePublicKeys);
-      const result = await sendHeart({
-        genderOfSender: userGender,
-        enc1: heartData.hearts[0]?.encHeart ?? '',        // Encrypted with receiver's public key
-        sha1: heartData.hearts[0]?.shaHash ?? '',        // Plain SHA hash
-        enc2: heartData.hearts[1]?.encHeart ?? '',
-        sha2: heartData.hearts[1]?.shaHash ?? '',
-        enc3: heartData.hearts[2]?.encHeart ?? '',
-        sha3: heartData.hearts[2]?.shaHash ?? '',
-        enc4: heartData.hearts[3]?.encHeart ?? '',
-        sha4: heartData.hearts[3]?.shaHash ?? '',
-        returnhearts: returnHearts,
-      });
-
-    }
+        const returnHearts = await returnHeartsHandler(puppyLovePublicKeys);
+        const result = await sendHeart({
+          genderOfSender: userGender,
+          enc1: heartData.hearts[0]?.encHeart ?? "", // Encrypted with receiver's public key
+          sha1: heartData.hearts[0]?.shaHash ?? "", // Plain SHA hash
+          enc2: heartData.hearts[1]?.encHeart ?? "",
+          sha2: heartData.hearts[1]?.shaHash ?? "",
+          enc3: heartData.hearts[2]?.encHeart ?? "",
+          sha3: heartData.hearts[2]?.shaHash ?? "",
+          enc4: heartData.hearts[3]?.encHeart ?? "",
+          sha4: heartData.hearts[3]?.shaHash ?? "",
+          returnhearts: returnHearts,
+        });
+      }
       //TODO: local state update
     } catch (err) {
       toast.error("Error: " + (err as Error));
     } finally {
       setIsSendingHeart(false);
     }
-    
   };
 
-  const handleSaveDraft = async () => {
-    const activeProfile = isPuppyLove && puppyLoveProfile ? puppyLoveProfile : currentUserProfile;
-    console.log(activeProfile);
-    console.log(activeProfile.rollNo);
-    console.log(activeProfile.id);
-    // Debug logging
-    console.log("Active Profile:", activeProfile);
-    console.log("Gender:", activeProfile?.gender);
-    console.log("Gender type:", typeof activeProfile?.gender);
+  // const handleSaveDraft = async () => {
+  //   const activeProfile =
+  //     isPuppyLove && puppyLoveProfile ? puppyLoveProfile : currentUserProfile;
+  //   console.log(activeProfile);
+  //   console.log(activeProfile.rollNo);
+  //   console.log(activeProfile.id);
+  //   // Debug logging
+  //   console.log("Active Profile:", activeProfile);
+  //   console.log("Gender:", activeProfile?.gender);
+  //   console.log("Gender type:", typeof activeProfile?.gender);
 
-    // Check if trying to save draft for yourself
-    if (activeProfile?.rollNo === data.rollNo) {
-      alert("You cannot save a draft for yourself!");
-      return;
-    }
+  //   // Check if trying to save draft for yourself
+  //   if (activeProfile?.rollNo === data.rollNo) {
+  //     alert("You cannot save a draft for yourself!");
+  //     return;
+  //   }
 
-    // Fetch current draft count to check limit
-    setIsSavingDraft(true);
-    let currentSlots = { heart1: null, heart2: null, heart3: null, heart4: null };
-    let currentCount = 0;
-    const draftLimit = 4;
-    
-    try {
-      const countResult = await getVirtualHeartCount();
-      currentCount = countResult?.count || 0;
-      console.log("Current draft count:", currentCount, "Limit:", draftLimit);
-      
-      // Check draft limit
-      if (currentCount >= draftLimit) {
-        alert(`You have reached the maximum limit of ${draftLimit} virtual hearts. Please submit your selections before saving more.`);
-        setIsSavingDraft(false);
-        return;
-      }
+  //   // Fetch current draft count to check limit
+  //   setIsSavingDraft(true);
+  //   let currentSlots = {
+  //     heart1: null,
+  //     heart2: null,
+  //     heart3: null,
+  //     heart4: null,
+  //   };
+  //   let currentCount = 0;
+  //   const draftLimit = 4;
 
-      // Fetch existing hearts to determine which slots are occupied
-      try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_PUPPYLOVE_URL || "http://localhost:8080"}/api/puppylove/users/data`,
-          {
-            method: "GET",
-            credentials: "include",
-          }
-        );
-        if (res.ok) {
-          const userData = await res.json();
-          if (userData.data) {
-            const parsed = JSON.parse(userData.data);
-            currentSlots = {
-              heart1: parsed.heart1?.sha_encrypt || parsed.heart1?.SHA_encrypt || null,
-              heart2: parsed.heart2?.sha_encrypt || parsed.heart2?.SHA_encrypt || null,
-              heart3: parsed.heart3?.sha_encrypt || parsed.heart3?.SHA_encrypt || null,
-              heart4: parsed.heart4?.sha_encrypt || parsed.heart4?.SHA_encrypt || null,
-            };
-          }
-        }
-      } catch (err) {
-        console.warn("Could not fetch existing hearts, proceeding anyway:", err);
-      }
+  //   try {
+  //     // TODO(ppy): getVirtualHeartsCount
+  //     // const countResult = 0;
+  //     currentCount = 0;
+  //     console.log("Current draft count:", currentCount, "Limit:", draftLimit);
 
-      // Check if draft for this specific person already exists
-      const draftHearts = typeof window !== "undefined" ? sessionStorage.getItem("puppylove_draft_hearts") : null;
-      if (draftHearts) {
-        try {
-          const parsed = JSON.parse(draftHearts);
-          if (Array.isArray(parsed)) {
-            const alreadyExists = parsed.some((d: any) => d.rollNo === data.rollNo);
-            if (alreadyExists) {
-              alert(`Draft already saved in a slot for ${data.name}!`);
-              setIsSavingDraft(false);
-              return;
-            }
-          }
-        } catch {
-          // ignore parsing errors
-        }
-      }
+  //     // Check draft limit
+  //     if (currentCount >= draftLimit) {
+  //       alert(
+  //         `You have reached the maximum limit of ${draftLimit} virtual hearts. Please submit your selections before saving more.`,
+  //       );
+  //       setIsSavingDraft(false);
+  //       return;
+  //     }
 
-    } catch (err) {
-      console.error("Failed to fetch draft count:", err);
-      alert("Error checking draft limit. Please try again.");
-      setIsSavingDraft(false);
-      return;
-    }
+  //     // Fetch existing hearts to determine which slots are occupied
+  //     try {
+  //       const res = await fetch(
+  //         `${process.env.NEXT_PUBLIC_PUPPYLOVE_URL}/api/puppylove/users/data`,
+  //         {
+  //           method: "GET",
+  //           credentials: "include",
+  //         },
+  //       );
+  //       if (res.ok) {
+  //         const userData = await res.json();
+  //         if (userData.data) {
+  //           const parsed = JSON.parse(userData.data);
+  //           currentSlots = {
+  //             heart1:
+  //               parsed.heart1?.sha_encrypt ||
+  //               parsed.heart1?.SHA_encrypt ||
+  //               null,
+  //             heart2:
+  //               parsed.heart2?.sha_encrypt ||
+  //               parsed.heart2?.SHA_encrypt ||
+  //               null,
+  //             heart3:
+  //               parsed.heart3?.sha_encrypt ||
+  //               parsed.heart3?.SHA_encrypt ||
+  //               null,
+  //             heart4:
+  //               parsed.heart4?.sha_encrypt ||
+  //               parsed.heart4?.SHA_encrypt ||
+  //               null,
+  //           };
+  //         }
+  //       }
+  //     } catch (err) {
+  //       console.warn(
+  //         "Could not fetch existing hearts, proceeding anyway:",
+  //         err,
+  //       );
+  //     }
 
-    // Validate gender - be more flexible with the check
-    const userGender = activeProfile?.gender?.trim();
-    if (!userGender) {
-      console.error("Gender validation failed. Active Profile:", activeProfile);
-      alert("Your profile gender is required to save drafts. Please update your profile and try again.");
-      setIsSavingDraft(false);
-      return;
-    }
+  //     // Check if draft for this specific person already exists
+  //     const draftHearts =
+  //       typeof window !== "undefined"
+  //         ? sessionStorage.getItem("puppylove_draft_hearts")
+  //         : null;
+  //     if (draftHearts) {
+  //       try {
+  //         const parsed = JSON.parse(draftHearts);
+  //         if (Array.isArray(parsed)) {
+  //           const alreadyExists = parsed.some(
+  //             (d: any) => d.rollNo === data.rollNo,
+  //           );
+  //           if (alreadyExists) {
+  //             alert(`Draft already saved in a slot for ${data.name}!`);
+  //             setIsSavingDraft(false);
+  //             return;
+  //           }
+  //         }
+  //       } catch {
+  //         // ignore parsing errors
+  //       }
+  //     }
+  //   } catch (err) {
+  //     console.error("Failed to fetch draft count:", err);
+  //     alert("Error checking draft limit. Please try again.");
+  //     setIsSavingDraft(false);
+  //     return;
+  //   }
 
-    if (!activeProfile?.id) {
-      alert("Your PuppyLove profile data is not available. Please try again.");
-      setIsSavingDraft(false);
-      return;
-    }
+  //   // Validate gender - be more flexible with the check
+  //   const userGender = activeProfile?.gender?.trim();
+  //   if (!userGender) {
+  //     console.error("Gender validation failed. Active Profile:", activeProfile);
+  //     alert(
+  //       "Your profile gender is required to save drafts. Please update your profile and try again.",
+  //     );
+  //     setIsSavingDraft(false);
+  //     return;
+  //   }
 
-    // Get sender's public key and private key from session
-    const senderPublicKey = puppyLovePublicKeys?.[activeProfile.id];
-    const senderPrivateKey = privateKey;
+  //   if (!activeProfile?.id) {
+  //     alert("Your PuppyLove profile data is not available. Please try again.");
+  //     setIsSavingDraft(false);
+  //     return;
+  //   }
 
-    console.log(senderPublicKey);
-    console.log(senderPrivateKey);
+  //   // Get sender's public key and private key from session
+  //   const senderPublicKey = puppyLovePublicKeys?.[activeProfile.id];
+  //   const senderPrivateKey = privateKey;
 
+  //   console.log(senderPublicKey);
+  //   console.log(senderPrivateKey);
 
-    if (!senderPublicKey || !senderPrivateKey) {
-      alert("Your keys are not available. Please log in to PuppyLove first.");
-      setIsSavingDraft(false);
-      return;
-    }
+  //   if (!senderPublicKey || !senderPrivateKey) {
+  //     alert("Your keys are not available. Please log in to PuppyLove first.");
+  //     setIsSavingDraft(false);
+  //     return;
+  //   }
 
-    // Lazy-load: Check if receiver's public key is cached
-    let receiverPublicKey = puppyLovePublicKeys?.[data.rollNo];
-    
-    // If not cached, fetch from server
-    if (!receiverPublicKey) {
-      setIsSavingDraft(true);
-      try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_PUPPYLOVE_URL || "http://localhost:8080"}/api/puppylove/users/fetchPublicKeys`,
-          {
-            method: "GET",
-            credentials: "include",
-          }
-        );
-        const keys = await res.json();
-        
-        // Update localStorage and context with fresh keys
-        if (typeof window !== "undefined") {
-          localStorage.setItem("puppylove_public_keys", JSON.stringify(keys));
-        }
-        
-        receiverPublicKey = keys[data.rollNo];
-        
-        if (!receiverPublicKey) {
-          alert("Public key not found for this user");
-          setIsSavingDraft(false);
-          return;
-        }
-      } catch (err) {
-        alert("Failed to fetch public keys: " + (err as Error).message);
-        setIsSavingDraft(false);
-        return;
-      }
-    }
+  //   // Lazy-load: Check if receiver's public key is cached
+  //   let receiverPublicKey = puppyLovePublicKeys?.[data.rollNo];
 
-    setIsSavingDraft(true);
-    
-    try {
-      console.log("🔐 senderPublicKey exists?", !!senderPublicKey);
-      console.log("🔐 senderPrivateKey exists?", !!senderPrivateKey);
-      console.log("🔐 receiverPublicKey exists?", !!receiverPublicKey);
-      
-      // Step 1: Prepare hearts with complete encryption
-      console.log("📝 Calling prepareSendHeart...");
-      const heartData = await prepareSendHeart(
-        senderPublicKey,
-        senderPrivateKey as string,
-        receiverPublicKey,
-        activeProfile.rollNo,
-        data.rollNo
-        );
-      console.log("✅ prepareSendHeart succeeded");
+  //   // If not cached, fetch from server
+  //   if (!receiverPublicKey) {
+  //     setIsSavingDraft(true);
+  //     try {
+  //       const res = await fetch(
+  //         `${process.env.NEXT_PUBLIC_PUPPYLOVE_URL}/api/puppylove/users/fetchPublicKeys`,
+  //         {
+  //           method: "GET",
+  //           credentials: "include",
+  //         },
+  //       );
+  //       const keys = await res.json();
 
-      // Step 2: Find first empty slot and save draft there
-      console.log("📤 Finding first empty slot...");
-      console.log("Current slots occupied:", currentSlots);
-      
-      let targetSlot = null;
-      if (!currentSlots.heart1) targetSlot = 'heart1';
-      else if (!currentSlots.heart2) targetSlot = 'heart2';
-      else if (!currentSlots.heart3) targetSlot = 'heart3';
-      else if (!currentSlots.heart4) targetSlot = 'heart4';
-      
-      if (!targetSlot) {
-        alert("All slots are full. This shouldn't happen!");
-        setIsSavingDraft(false);
-        return;
-      }
-      
-      console.log("📤 Saving to slot:", targetSlot);
-      
-      // Build hearts object with only the target slot filled
-      const heartsPayload = {
-        heart1: targetSlot === 'heart1' ? {
-          sha_encrypt: heartData.hearts[0].id_encrypt,
-          id_encrypt: heartData.hearts[0].id_encrypt,
-          songID_enc: heartData.hearts[0].song_enc || "",
-        } : { sha_encrypt: "", id_encrypt: "", songID_enc: "" },
-        heart2: targetSlot === 'heart2' ? {
-          sha_encrypt: heartData.hearts[0].id_encrypt,
-          id_encrypt: heartData.hearts[0].id_encrypt,
-          songID_enc: heartData.hearts[0].song_enc || "",
-        } : { sha_encrypt: "", id_encrypt: "", songID_enc: "" },
-        heart3: targetSlot === 'heart3' ? {
-          sha_encrypt: heartData.hearts[0].id_encrypt,
-          id_encrypt: heartData.hearts[0].id_encrypt,
-          songID_enc: heartData.hearts[0].song_enc || "",
-        } : { sha_encrypt: "", id_encrypt: "", songID_enc: "" },
-        heart4: targetSlot === 'heart4' ? {
-          sha_encrypt: heartData.hearts[0].id_encrypt,
-          id_encrypt: heartData.hearts[0].id_encrypt,
-          songID_enc: heartData.hearts[0].song_enc || "",
-        } : { sha_encrypt: "", id_encrypt: "", songID_enc: "" },
-      };
-      
-      const result = await sendVirtualHeart({ hearts: heartsPayload });
+  //       // Update localStorage and context with fresh keys
+  //       if (typeof window !== "undefined") {
+  //         localStorage.setItem("puppylove_public_keys", JSON.stringify(keys));
+  //       }
 
-      console.log("💾 Save draft result:", result);
-      console.log("💾 Result type:", typeof result);
-      console.log("💾 Result keys:", result ? Object.keys(result) : "null");
-      
-      if (result) {
-        // Store draft recipient locally for selections panel
-        if (typeof window !== "undefined") {
-          try {
-            const stored = sessionStorage.getItem("puppylove_draft_hearts");
-            const parsed = stored ? JSON.parse(stored) : [];
-            const drafts = Array.isArray(parsed) ? parsed : [];
+  //       receiverPublicKey = keys[data.rollNo];
 
-            const exists = drafts.some((d: any) => d.rollNo === data.rollNo);
-            if (!exists) {
-              drafts.push({
-                rollNo: data.rollNo,
-                name: data.name,
-                dept: data.dept,
-                course: data.course,
-                hall: data.hall,
-                email: data.email,
-                gender: data.gender,
-              });
-              sessionStorage.setItem("puppylove_draft_hearts", JSON.stringify(drafts));
-            }
-          } catch {
-            // ignore storage errors
-          }
+  //       if (!receiverPublicKey) {
+  //         alert("Public key not found for this user");
+  //         setIsSavingDraft(false);
+  //         return;
+  //       }
+  //     } catch (err) {
+  //       alert("Failed to fetch public keys: " + (err as Error).message);
+  //       setIsSavingDraft(false);
+  //       return;
+  //     }
+  //   }
 
-          // Dispatch event to notify UI to refresh count/list
-          window.dispatchEvent(new CustomEvent('puppylove:draftSaved'));
-        }
-        alert(result?.message || "Draft saved successfully for " + data.name + "!");
-      } else if (result?.error) {
-        console.error("❌ Draft save error:", result.error);
-        alert("Error: " + result.error);
-      } else {
-        console.error("❌ Unknown result received:", JSON.stringify(result));
-        alert("Failed to save draft. Result: " + JSON.stringify(result));
-      }
-    } catch (err) {
-      console.error("❌ Exception in handleSaveDraft:", err);
-      alert("Error saving draft: " + (err as Error).message);
-    } finally {
-      setIsSavingDraft(false);
-    }
-  };
+  //   setIsSavingDraft(true);
+
+  //   try {
+  //     console.log("🔐 senderPublicKey exists?", !!senderPublicKey);
+  //     console.log("🔐 senderPrivateKey exists?", !!senderPrivateKey);
+  //     console.log("🔐 receiverPublicKey exists?", !!receiverPublicKey);
+
+  //     // Step 1: Prepare hearts with complete encryption
+  //     console.log("📝 Calling prepareSendHeart...");
+  //     const heartData = await prepareSendHeart(
+  //       senderPublicKey,
+  //       senderPrivateKey as string,
+  //       receiverPublicKey,
+  //       activeProfile.rollNo,
+  //       data.rollNo,
+  //     );
+  //     console.log("✅ prepareSendHeart succeeded");
+
+  //     // Step 2: Find first empty slot and save draft there
+  //     console.log("📤 Finding first empty slot...");
+  //     console.log("Current slots occupied:", currentSlots);
+
+  //     let targetSlot = null;
+  //     if (!currentSlots.heart1) targetSlot = "heart1";
+  //     else if (!currentSlots.heart2) targetSlot = "heart2";
+  //     else if (!currentSlots.heart3) targetSlot = "heart3";
+  //     else if (!currentSlots.heart4) targetSlot = "heart4";
+
+  //     if (!targetSlot) {
+  //       alert("All slots are full. This shouldn't happen!");
+  //       setIsSavingDraft(false);
+  //       return;
+  //     }
+
+  //     console.log("📤 Saving to slot:", targetSlot);
+
+  //     // Build hearts object with only the target slot filled
+  //     const heartsPayload = {
+  //       heart1:
+  //         targetSlot === "heart1"
+  //           ? {
+  //               sha_encrypt: heartData.hearts[0].id_encrypt,
+  //               id_encrypt: heartData.hearts[0].id_encrypt,
+  //               songID_enc: heartData.hearts[0].song_enc || "",
+  //             }
+  //           : { sha_encrypt: "", id_encrypt: "", songID_enc: "" },
+  //       heart2:
+  //         targetSlot === "heart2"
+  //           ? {
+  //               sha_encrypt: heartData.hearts[0].id_encrypt,
+  //               id_encrypt: heartData.hearts[0].id_encrypt,
+  //               songID_enc: heartData.hearts[0].song_enc || "",
+  //             }
+  //           : { sha_encrypt: "", id_encrypt: "", songID_enc: "" },
+  //       heart3:
+  //         targetSlot === "heart3"
+  //           ? {
+  //               sha_encrypt: heartData.hearts[0].id_encrypt,
+  //               id_encrypt: heartData.hearts[0].id_encrypt,
+  //               songID_enc: heartData.hearts[0].song_enc || "",
+  //             }
+  //           : { sha_encrypt: "", id_encrypt: "", songID_enc: "" },
+  //       heart4:
+  //         targetSlot === "heart4"
+  //           ? {
+  //               sha_encrypt: heartData.hearts[0].id_encrypt,
+  //               id_encrypt: heartData.hearts[0].id_encrypt,
+  //               songID_enc: heartData.hearts[0].song_enc || "",
+  //             }
+  //           : { sha_encrypt: "", id_encrypt: "", songID_enc: "" },
+  //     };
+
+  //     const result = await sendVirtualHeart({ hearts: heartsPayload });
+
+  //     console.log("💾 Save draft result:", result);
+  //     console.log("💾 Result type:", typeof result);
+  //     console.log("💾 Result keys:", result ? Object.keys(result) : "null");
+
+  //     if (result) {
+  //       // Store draft recipient locally for selections panel
+  //       if (typeof window !== "undefined") {
+  //         try {
+  //           const stored = sessionStorage.getItem("puppylove_draft_hearts");
+  //           const parsed = stored ? JSON.parse(stored) : [];
+  //           const drafts = Array.isArray(parsed) ? parsed : [];
+
+  //           const exists = drafts.some((d: any) => d.rollNo === data.rollNo);
+  //           if (!exists) {
+  //             drafts.push({
+  //               rollNo: data.rollNo,
+  //               name: data.name,
+  //               dept: data.dept,
+  //               course: data.course,
+  //               hall: data.hall,
+  //               email: data.email,
+  //               gender: data.gender,
+  //             });
+  //             sessionStorage.setItem(
+  //               "puppylove_draft_hearts",
+  //               JSON.stringify(drafts),
+  //             );
+  //           }
+  //         } catch {
+  //           // ignore storage errors
+  //         }
+
+  //         // Dispatch event to notify UI to refresh count/list
+  //         window.dispatchEvent(new CustomEvent("puppylove:draftSaved"));
+  //       }
+  //       alert(
+  //         result?.message || "Draft saved successfully for " + data.name + "!",
+  //       );
+  //     } else if (result?.error) {
+  //       console.error("❌ Draft save error:", result.error);
+  //       alert("Error: " + result.error);
+  //     } else {
+  //       console.error("❌ Unknown result received:", JSON.stringify(result));
+  //       alert("Failed to save draft. Result: " + JSON.stringify(result));
+  //     }
+  //   } catch (err) {
+  //     console.error("❌ Exception in handleSaveDraft:", err);
+  //     alert("Error saving draft: " + (err as Error).message);
+  //   } finally {
+  //     setIsSavingDraft(false);
+  //   }
+  // };
 
   const cardProps = {
     ref: ref,
@@ -479,8 +535,8 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
             </a>
             {isPuppyLove && (
               <div className="w-full space-y-2">
-                <Button 
-                  className="w-full bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-semibold"
+                <Button
+                  className="w-full bg-linear-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-semibold"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleSendHeart();
@@ -490,7 +546,7 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
                   <Heart className="w-4 h-4 mr-2 fill-white" />
                   {isSendingHeart ? "Sending..." : "Send Heart"}
                 </Button>
-                <Button 
+                {/* <Button 
                   variant="outline"
                   className="w-full border-rose-300 text-rose-600 hover:bg-rose-50 disabled:opacity-50"
                   onClick={(e) => {
@@ -500,7 +556,7 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
                   disabled={isSendingHeart || isSavingDraft}
                 >
                   {isSavingDraft ? "Sending..." : "Send Virtual Heart"}
-                </Button>
+                </Button> */}
               </div>
             )}
             {props.children}
@@ -517,7 +573,8 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
           className={cn(
             "w-full max-w-xs p-2 flex items-center transition-shadow hover:shadow-md flex-row align-top",
             props.pointer && "cursor-pointer",
-            type === "self" && "border-yellow-400 border-4 dark:border-amber-500",
+            type === "self" &&
+              "border-yellow-400 border-4 dark:border-amber-500",
           )}
         >
           <Image

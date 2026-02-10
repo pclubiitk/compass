@@ -1,10 +1,21 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { X, Send, Trash2 } from "lucide-react";
 import { receiverIds, useGContext } from "@/components/ContextProvider";
-import { prepareSendHeart, sendHeart, sendVirtualHeart } from "@/lib/workers/puppyLoveWorkerClient";
+import {
+  prepareSendHeart,
+  sendHeart,
+  sendVirtualHeart,
+} from "@/lib/workers/puppyLoveWorkerClient";
 import { returnHeartsHandler } from "@/lib/workers/utils";
 import { toast } from "sonner";
 
@@ -20,26 +31,37 @@ interface DraftEntry {
 
 interface PuppyLoveSelectionsPanelProps {
   onClose: () => void;
-  variant?: "desktop" | "mobile";
 }
 
-export const PuppyLoveSelectionsPanel = ({ onClose, variant = "desktop" }: PuppyLoveSelectionsPanelProps) => {
+export const PuppyLoveSelectionsPanel = ({
+  onClose,
+}: PuppyLoveSelectionsPanelProps) => {
   const [nameCache, setNameCache] = useState<Record<string, DraftEntry>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [withdrawingId, setWithdrawingId] = useState<string | null>(null);
-  const { puppyLovePublicKeys, puppyLoveProfile, privateKey, isPuppyLove, currentUserProfile } = useGContext();
+  const {
+    puppyLovePublicKeys,
+    puppyLoveProfile,
+    privateKey,
+    isPuppyLove,
+    currentUserProfile,
+    puppyLoveHeartsSent,
+  } = useGContext();
 
   // Derive active selections from receiverIds (the single source of truth)
-  const activeSelections = useMemo(() => receiverIds.filter((id) => id !== ''), [receiverIds]);
-
+  const activeSelections = useMemo(
+    () => receiverIds.filter((id) => id !== ""),
+    [receiverIds],
+  );
   const handleSearchClick = (searchTerm: string) => {
     if (typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent('puppylove:search', { detail: { name: searchTerm } }));
+      window.dispatchEvent(
+        new CustomEvent("puppylove:search", { detail: { name: searchTerm } }),
+      );
     }
   };
 
-  // Load name cache from session storage for display purposes
   const loadNameCache = () => {
     if (typeof window === "undefined") return;
     try {
@@ -48,7 +70,9 @@ export const PuppyLoveSelectionsPanel = ({ onClose, variant = "desktop" }: Puppy
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed)) {
           const cache: Record<string, DraftEntry> = {};
-          parsed.forEach((d: DraftEntry) => { cache[d.rollNo] = d; });
+          parsed.forEach((d: DraftEntry) => {
+            cache[d.rollNo] = d;
+          });
           setNameCache(cache);
           return;
         }
@@ -73,7 +97,8 @@ export const PuppyLoveSelectionsPanel = ({ onClose, variant = "desktop" }: Puppy
   }, []);
 
   const handleWithdraw = async (rollNo: string) => {
-    const activeProfile = isPuppyLove && puppyLoveProfile ? puppyLoveProfile : currentUserProfile;
+    const activeProfile =
+      isPuppyLove && puppyLoveProfile ? puppyLoveProfile : currentUserProfile;
 
     if (!activeProfile?.id) {
       toast.error("Your PuppyLove profile data is not available.");
@@ -83,7 +108,9 @@ export const PuppyLoveSelectionsPanel = ({ onClose, variant = "desktop" }: Puppy
     const senderPublicKey = puppyLovePublicKeys?.[activeProfile.id];
     const senderPrivateKey = privateKey;
     if (!senderPublicKey || !senderPrivateKey) {
-      toast.error("Your keys are not available. Please log in to PuppyLove first.");
+      toast.error(
+        "Your keys are not available. Please log in to PuppyLove first.",
+      );
       return;
     }
 
@@ -92,7 +119,7 @@ export const PuppyLoveSelectionsPanel = ({ onClose, variant = "desktop" }: Puppy
       // Remove the heart from receiverIds (find its slot and clear it)
       const slotIndex = receiverIds.indexOf(rollNo);
       if (slotIndex !== -1) {
-        receiverIds[slotIndex] = '';
+        receiverIds[slotIndex] = "";
       }
 
       // Re-encrypt and send updated virtual hearts with the withdrawn heart removed
@@ -121,14 +148,19 @@ export const PuppyLoveSelectionsPanel = ({ onClose, variant = "desktop" }: Puppy
             if (stored) {
               const parsed = JSON.parse(stored);
               if (Array.isArray(parsed)) {
-                const updated = parsed.filter((d: DraftEntry) => d.rollNo !== rollNo);
-                sessionStorage.setItem("puppylove_draft_hearts", JSON.stringify(updated));
+                const updated = parsed.filter(
+                  (d: DraftEntry) => d.rollNo !== rollNo,
+                );
+                sessionStorage.setItem(
+                  "puppylove_draft_hearts",
+                  JSON.stringify(updated),
+                );
               }
             }
           } catch {
             // ignore
           }
-          window.dispatchEvent(new CustomEvent('puppylove:draftSaved'));
+          window.dispatchEvent(new CustomEvent("puppylove:draftSaved"));
         }
       }
     } catch (err) {
@@ -139,10 +171,13 @@ export const PuppyLoveSelectionsPanel = ({ onClose, variant = "desktop" }: Puppy
   };
 
   const handleSubmit = async () => {
-    const activeProfile = isPuppyLove && puppyLoveProfile ? puppyLoveProfile : currentUserProfile;
+    const activeProfile =
+      isPuppyLove && puppyLoveProfile ? puppyLoveProfile : currentUserProfile;
 
     if (!activeProfile?.id) {
-      toast.error("Your PuppyLove profile data is not available. Please try again.");
+      toast.error(
+        "Your PuppyLove profile data is not available. Please try again.",
+      );
       return;
     }
 
@@ -155,7 +190,9 @@ export const PuppyLoveSelectionsPanel = ({ onClose, variant = "desktop" }: Puppy
     const senderPublicKey = puppyLovePublicKeys?.[activeProfile.id];
     const senderPrivateKey = privateKey;
     if (!senderPublicKey || !senderPrivateKey) {
-      toast.error("Your keys are not available. Please log in to PuppyLove first.");
+      toast.error(
+        "Your keys are not available. Please log in to PuppyLove first.",
+      );
       return;
     }
 
@@ -178,14 +215,14 @@ export const PuppyLoveSelectionsPanel = ({ onClose, variant = "desktop" }: Puppy
 
       const result = await sendHeart({
         genderOfSender: userGender,
-        enc1: heartData.hearts[0]?.encHeart ?? '',
-        sha1: heartData.hearts[0]?.shaHash ?? '',
-        enc2: heartData.hearts[1]?.encHeart ?? '',
-        sha2: heartData.hearts[1]?.shaHash ?? '',
-        enc3: heartData.hearts[2]?.encHeart ?? '',
-        sha3: heartData.hearts[2]?.shaHash ?? '',
-        enc4: heartData.hearts[3]?.encHeart ?? '',
-        sha4: heartData.hearts[3]?.shaHash ?? '',
+        enc1: heartData.hearts[0]?.encHeart ?? "",
+        sha1: heartData.hearts[0]?.shaHash ?? "",
+        enc2: heartData.hearts[1]?.encHeart ?? "",
+        sha2: heartData.hearts[1]?.shaHash ?? "",
+        enc3: heartData.hearts[2]?.encHeart ?? "",
+        sha3: heartData.hearts[2]?.shaHash ?? "",
+        enc4: heartData.hearts[3]?.encHeart ?? "",
+        sha4: heartData.hearts[3]?.shaHash ?? "",
         returnhearts: returnHearts,
       });
 
@@ -196,7 +233,7 @@ export const PuppyLoveSelectionsPanel = ({ onClose, variant = "desktop" }: Puppy
         // Clear drafts from session storage after successful submission
         if (typeof window !== "undefined") {
           sessionStorage.removeItem("puppylove_draft_hearts");
-          window.dispatchEvent(new CustomEvent('puppylove:draftSaved'));
+          window.dispatchEvent(new CustomEvent("puppylove:draftSaved"));
         }
       }
     } catch (err) {
@@ -205,38 +242,35 @@ export const PuppyLoveSelectionsPanel = ({ onClose, variant = "desktop" }: Puppy
       setIsSubmitting(false);
     }
   };
-
-  const wrapperClassName =
-    variant === "desktop"
-      ? "hidden md:block fixed top-6 right-6 z-50 w-[260px] max-h-[80vh]"
-      : "md:hidden w-full px-4 flex justify-center mt-2";
-
   return (
-    <div className={wrapperClassName}>
-      <Card
-        className={
-          variant === "mobile"
-            ? "w-full max-w-md overflow-hidden border-none bg-rose-50/90 shadow-[0_10px_40px_rgba(225,29,72,0.15)]"
-            : "h-full overflow-hidden border-none bg-rose-50/90 shadow-[0_10px_40px_rgba(225,29,72,0.15)]"
-        }
-      >
+    <div>
+      <Card className="border-none bg-rose-50/90 shadow-[0_10px_40px_rgba(225,29,72,0.15)]">
         <CardHeader className="flex flex-row items-center justify-between border-b border-rose-200/70 px-2">
-          <CardTitle className="text-lg text-rose-500">Your Selections</CardTitle>
-          <Button variant="ghost" size="icon" onClick={onClose} className="text-rose-500">
+          <CardTitle className="text-lg text-rose-500">
+            Your Selections
+          </CardTitle>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            className="text-rose-500"
+          >
             <X className="h-4 w-4" />
           </Button>
         </CardHeader>
         <CardContent className="space-y-4 overflow-auto max-h-[70vh] px-2 pr-1">
           <div>
             {activeSelections.length === 0 ? (
-              <p className="text-xs text-muted-foreground">No selections yet. Send virtual hearts to add people here.</p>
+              <p className="text-xs text-muted-foreground">
+                No selections yet. Send virtual hearts to add people here.
+              </p>
             ) : (
               <div className="space-y-2">
                 {activeSelections.map((id, idx) => {
                   const cached = nameCache[id];
                   return (
-                    <div 
-                      key={`${id}-${idx}`} 
+                    <div
+                      key={`${id}-${idx}`}
                       className="rounded-lg bg-rose-100/80 px-3 py-2 flex items-center justify-between gap-2"
                     >
                       <div
@@ -247,7 +281,8 @@ export const PuppyLoveSelectionsPanel = ({ onClose, variant = "desktop" }: Puppy
                           {cached?.name || `Heart #${idx + 1}`}
                         </div>
                         <div className="text-xs text-rose-400">
-                          {id}{cached?.dept ? ` • ${cached.dept}` : ""}
+                          {id}
+                          {cached?.dept ? ` • ${cached.dept}` : ""}
                         </div>
                       </div>
                       <Button
@@ -272,7 +307,7 @@ export const PuppyLoveSelectionsPanel = ({ onClose, variant = "desktop" }: Puppy
 
           <div className="pt-2">
             <Button
-              className="w-full bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-semibold"
+              className="w-full bg-linear-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-semibold"
               onClick={() => setShowConfirm(true)}
               disabled={isSubmitting || activeSelections.length === 0}
             >
@@ -286,9 +321,12 @@ export const PuppyLoveSelectionsPanel = ({ onClose, variant = "desktop" }: Puppy
       <Dialog open={showConfirm} onOpenChange={setShowConfirm}>
         <DialogContent className="bg-rose-50 border-rose-200 max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-rose-600">Confirm Submission</DialogTitle>
+            <DialogTitle className="text-rose-600">
+              Confirm Submission
+            </DialogTitle>
             <DialogDescription className="text-rose-500/80">
-              Are you sure you want to submit your selections? This action cannot be undone.
+              Are you sure you want to submit your selections? This action
+              cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-0">

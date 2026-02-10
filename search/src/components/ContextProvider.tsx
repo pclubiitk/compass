@@ -65,23 +65,40 @@ interface GlobalContextType {
   setGlobalError: (globalError: boolean) => void;
 
   isPLseason: boolean;
+  PLpermit: boolean;
+  PLpublish: boolean;
   isPuppyLove: boolean;
   setIsPuppyLove: (val: boolean) => void;
 
+  puppyLovePublicKeys?: any;
+  setPuppyLovePublicKeys?: (val: any) => void;
+  puppyLoveHeartsSent?: any;
+  puppyLoveHeartsReceived?: any;
+  setPuppyLoveHeartsSent?: (val: any) => void;
+  puppyLoveProfile?: any;
+  setPuppyLoveProfile?: (val: any) => void;
   currentUserProfile?: any;
+
+  matchedIds?: string[];
+  setMatchedIds?: (val: any) => void;
 
   needsFirstTimeLogin?: boolean;
   setNeedsFirstTimeLogin?: (val: boolean) => void;
 
+  // Loading state for heart decryption (worker task)
+  isDecryptingHearts: boolean;
+  setIsDecryptingHearts: (val: boolean) => void;
+
   // Puppy Love specific context
-  puppyLovePublicKeys?: any;
-  setPuppyLovePublicKeys?: (val: any) => void;
-  puppyLoveProfile?: any;
-  setPuppyLoveProfile?: (val: any) => void;
   privateKey: string | null;
   setPrivateKey: (val: any) => void;
+  // TODO: Where it is used?
   studentSelection?: any;
   setStudentSelection?: (val: any) => void;
+
+  // Selections panel visibility
+  showSelections: boolean;
+  setShowSelections: (val: boolean) => void;
 }
 
 const GlobalContext = createContext<GlobalContextType>({
@@ -97,34 +114,50 @@ const GlobalContext = createContext<GlobalContextType>({
   setGlobalError: () => {},
 
   isPLseason: false,
+  PLpermit: true,
+  PLpublish: false,
   isPuppyLove: false,
   setIsPuppyLove: () => {},
 
+  isDecryptingHearts: false,
+  setIsDecryptingHearts: () => {},
+
   privateKey: null,
   setPrivateKey: () => {},
+
+  showSelections: false,
+  setShowSelections: () => {},
 });
 
 export function GlobalContextProvider({ children }: { children: ReactNode }) {
   const [isLoggedIn, setLoggedIn] = useState<boolean>(false);
   const [isGlobalLoading, setGlobalLoading] = useState<boolean>(false);
-  const [isPLseason, setPLseason] = useState<boolean>(false);
   const [globalError, setGlobalError] = useState<boolean>(false);
   const [profileVisibility, setProfileVisibility] = useState<boolean>(false);
+  const [isPLseason, setPLseason] = useState<boolean>(false);
+  const [PLpermit, setPLPermit] = useState<boolean>(true);
+  const [PLpublish, setPLPublished] = useState<boolean>(false);
   const [isPuppyLove, setIsPuppyLove] = useState<boolean>(false); // Always starts false, toggled by user
   const [currentUserProfile, setCurrentUserProfile] = useState<any>(null);
   const [needsFirstTimeLogin, setNeedsFirstTimeLogin] =
     useState<boolean>(false);
 
-  // Puppy Love specific state
-  const [puppyLovePublicKeys, setPuppyLovePublicKeys] = useState<any>(null);
+  // Puppy Love worker state
+  const [puppyLovePublicKeys, setPuppyLovePublicKeys] = useState<Object>({});
+  // const [puppyLoveHeartsSent, setPuppyLoveHeartsSent] = useState<any>([]);
+  // const [puppyLoveHeartsReceived, setPuppyLoveHeartsReceived] = useState<any>(null);
+  const [isDecryptingHearts, setIsDecryptingHearts] = useState<boolean>(false);
+  const [matchedIds, setMatchedIds] = useState<string[]>([]);
   const [puppyLoveProfile, setPuppyLoveProfile] = useState<any>(null);
   const [privateKey, setPrivateKey] = useState<string | null>(null);
+  // Selections panel visibility
   const [studentSelection, setStudentSelection] = useState<any>(null);
+  const [showSelections, setShowSelections] = useState<boolean>(false);
 
   // Reset function to be called to clear all puppy love data
   const resetForRefresh = () => {
     resetPuppyLoveState();
-    setPuppyLovePublicKeys([]);
+    setPuppyLovePublicKeys({});
   };
 
   useEffect(() => {
@@ -139,15 +172,21 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
           },
         );
         if (response.ok) {
+          const res_json = await response.json();
           setProfileVisibility(true);
           setLoggedIn(true);
           if (response.status === 202) {
             setPLseason(true);
+            setPLPermit(res_json?.permit);
+            setPLPublished(res_json?.publish);
+            if (res_json?.publish) {
+              await fetchMatches(res_json?.publish);
+            }
             setIsPuppyLove(false); // Always start disabled on new session, user must toggle it on
+          } else if (response.status === 203) {
+            setProfileVisibility(false);
+            setLoggedIn(false);
           }
-        } else if (response.status === 401) {
-          setProfileVisibility(false);
-          setLoggedIn(false);
         } else {
           setGlobalError(true);
         }
@@ -160,23 +199,47 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
     verifyingLogin();
   }, []);
 
-  // Puppy Love mode: read private key from session storage
-  useEffect(() => {
-    if (isPuppyLove) {
-      const storedData = sessionStorage.getItem("data");
-      if (storedData) {
-        try {
-          const parsed = JSON.parse(storedData);
-          if (parsed.k1) {
-            setPrivateKey(parsed.k1);
-            return;
+  // Fetch Matches - pass publish flag directly to avoid stale closure
+  const fetchMatches = async (isPublished: boolean) => {
+    if (isPublished) {
+      try {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_AUTH_URL}/api/puppylove/users/mymatches`,
+          {
+            method: "GET",
+            credentials: "include",
+          },
+        );
+        if (response.ok) {
+          const res_json = await response.json();
+          if (response.status === 202) {
+            // User chose not to publish the results
+            // TODO: set user publish to false
           }
-        } catch (parseErr) {
-          console.error("Error parsing stored data:", parseErr);
+          setMatchedIds(Object.keys(res_json.matches));
+          // Can later do the song decryption part.
         }
+      } catch {
+        console.log("Unable to fetch my matches");
       }
     }
-  }, [isPuppyLove]);
+  };
+
+  // On mount, read the private key from sessionStorage if it exists
+  // This runs once on refresh to restore the key
+  useEffect(() => {
+    const storedData = sessionStorage.getItem("data");
+    if (storedData) {
+      try {
+        const parsed = JSON.parse(storedData);
+        if (parsed.k1) {
+          setPrivateKey(parsed.k1);
+        }
+      } catch (parseErr) {
+        console.error("Error parsing stored data:", parseErr);
+      }
+    }
+  }, []);
 
   // Puppy Love worker initialization and message handling
   // Fetch hearts when we have a private key
@@ -194,20 +257,26 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
             setPuppyLovePublicKeys(payload);
           }
           if (type === "FETCH_AND_CLAIM_HEARTS_RESULT") {
+            // Clear loading state after decryption completes
+            setIsDecryptingHearts(false);
             // Claiming is done on the server. Now fetch user data
             // so GET_USER_DATA_RESULT has the complete claims list.
-            worker.postMessage({ type: "GET_USER_DATA", payload: { privateKey } });
+            worker.postMessage({
+              type: "GET_USER_DATA",
+              payload: { privateKey },
+            });
           }
           if (type === "FETCH_RETURN_HEARTS_RESULT") {
-            // optional: store returned hearts for later use
+            // Nothing to do right now,
+            // The function would have, fetched the returned hearts, and if it were of user, then its a match, hence save in the backend.
           }
           if (type === "GET_USER_DATA_RESULT") {
-            console.log(" GET_USER_DATA_RESULT received:", payload);
+            // console.log(" GET_USER_DATA_RESULT received:", payload);
             if (payload?.receiverIds) {
               setReceiverIds(payload.receiverIds);
             }
             // Parse hearts data on the main thread so getNumberOfHeartsSent() works
-            if (payload?.data && payload.data !== 'FIRST_LOGIN') {
+            if (payload?.data && payload.data !== "FIRST_LOGIN") {
               try {
                 setPuppyLoveHeartsSent(JSON.parse(payload.data) as Hearts);
               } catch (e) {
@@ -219,32 +288,37 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
             if (payload?.claimsArray) {
               payload.claimsArray.forEach((claim: any) => {
                 addReceivedHeart(claim);
-                if (claim.genderOfSender === 'M') incHeartsMalesBy(1);
-                else if (claim.genderOfSender === 'F') incHeartsFemalesBy(1);
+                if (claim.genderOfSender === "M") incHeartsMalesBy(1);
+                else if (claim.genderOfSender === "F") incHeartsFemalesBy(1);
               });
             }
             setPuppyLoveProfile(payload ?? null);
           }
           if (type === "PREPARE_SEND_HEART_RESULT") {
             console.log("PREPARE_SEND_HEART_RESULT received:", payload);
-            // optional: handle any state updates needed after preparing heart
           }
           // TODO: Add more message types as needed
         };
-        // Trigger the reset worker messages
+        // Fetch public keys and set them into the global state.
         worker.postMessage({ type: "FETCH_PUBLIC_KEYS" });
         // First claim any new hearts, then GET_USER_DATA is triggered
         // in FETCH_AND_CLAIM_HEARTS_RESULT handler to get the complete picture.
         if (privateKey) {
+          setIsDecryptingHearts(true);
           worker.postMessage({
             type: "FETCH_AND_CLAIM_HEARTS",
             payload: { privateKey: privateKey },
           });
-        } else {
-          // No private key — can't claim, just fetch user data directly
-          worker.postMessage({ type: "GET_USER_DATA", payload: { privateKey } });
         }
-        worker.postMessage({ type: "FETCH_RETURN_HEARTS", payload: { privateKey, puppyLoveHeartsSent }});
+        // TODO: No Need, can look into it more.
+        // else {
+        //   // No private key — can't claim, just fetch user data directly
+        //   worker.postMessage({ type: "GET_USER_DATA", payload: { privateKey } });
+        // }
+        worker.postMessage({
+          type: "FETCH_RETURN_HEARTS",
+          payload: { privateKey, puppyLoveHeartsSent },
+        });
       }
     }
   }, [isPuppyLove, privateKey]);
@@ -258,7 +332,11 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
     globalError,
     setGlobalError,
     isPLseason,
+    PLpermit,
+    PLpublish,
     isPuppyLove,
+    matchedIds,
+    setMatchedIds,
     setIsPuppyLove,
     needsFirstTimeLogin,
     setNeedsFirstTimeLogin,
@@ -269,6 +347,10 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
     setPuppyLoveProfile,
     privateKey,
     setPrivateKey,
+    isDecryptingHearts,
+    setIsDecryptingHearts,
+    showSelections,
+    setShowSelections,
     studentSelection,
     setStudentSelection,
   };

@@ -242,6 +242,7 @@ func GetUserData(c *gin.Context) {
 		"about":    profile.About,
 		"interest": profile.Interests,
 		"privK":    profile.PrivK,
+		"dirty":    profile.Dirty,
 		"pubKey":   profile.PubK,
 	}
 
@@ -380,49 +381,6 @@ func SendHeartVirtualHandler(c *gin.Context) {
 	c.JSON(http.StatusAccepted, gin.H{"message": "Virtual Hearts Sent Successfully !!"})
 }
 
-// GetVirtualHeartCountHandler returns the current count of virtual hearts saved by the user
-func GetVirtualHeartCountHandler(c *gin.Context) {
-	roll_no, exists := c.Get("rollNo")
-	if !exists {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "User ID not found in context"})
-		return
-	}
-
-	var profile puppylove.PuppyLoveProfile
-	if err := connections.DB.Where("roll_no = ?", roll_no).First(&profile).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "User does not exist."})
-		return
-	}
-
-	// Parse existing hearts
-	var currentHearts Hearts
-	heartCount := 0
-
-	if profile.Data != "" {
-		if err := json.Unmarshal([]byte(profile.Data), &currentHearts); err == nil {
-			// Count non-empty hearts
-			if currentHearts.Heart1.SHA_encrypt != "" {
-				heartCount++
-			}
-			if currentHearts.Heart2.SHA_encrypt != "" {
-				heartCount++
-			}
-			if currentHearts.Heart3.SHA_encrypt != "" {
-				heartCount++
-			}
-			if currentHearts.Heart4.SHA_encrypt != "" {
-				heartCount++
-			}
-		}
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"count":     heartCount,
-		"limit":     4,
-		"remaining": 4 - heartCount,
-		"submitted": profile.Submit,
-	})
-}
 
 // HeartClaimError represents an error during heart claiming
 type HeartClaimError struct {
@@ -495,7 +453,7 @@ func HeartClaimHandler(c *gin.Context) {
 		heartClaim := puppylove.HeartClaims{
 			Id:       info.Enc,
 			SHA:      info.SHA,
-			Roll:     roll_no.(string),
+			RollNo:     roll_no.(string),
 			SONG_ENC: heartModel.SONG_ENC,
 		}
 
@@ -630,7 +588,7 @@ func VerifyReturnHeartHandler(c *gin.Context) {
 		}
 
 		var existingMatch puppylove.MatchTable
-		checkErr := tx.Where("roll1 = ? AND roll2 = ?", heartClaim.Roll, userRoll).First(&existingMatch).Error
+		checkErr := tx.Where("roll1 = ? AND roll2 = ?", heartClaim.RollNo, userRoll).First(&existingMatch).Error
 
 		if checkErr == nil {
 			// Error is nil, meaning a record WAS found. This is bad (Match already exists).
@@ -644,7 +602,7 @@ func VerifyReturnHeartHandler(c *gin.Context) {
 		// 4. CREATE MATCH (Moved INSIDE transaction for safety)
 		match := puppylove.MatchTable{
 			Roll1:  userRoll,
-			Roll2:  heartClaim.Roll,
+			Roll2:  heartClaim.RollNo,
 			SONG12: heartClaim.SONG_ENC,
 			SONG21: heartModel.SONG_ENC, // We can access heartModel here safely
 		}
@@ -692,7 +650,7 @@ func MatchesHandler(c *gin.Context) {
 		}
 
 		if !profile.Publish {
-			c.JSON(http.StatusOK, gin.H{"msg": "You chose not to publish results"})
+			c.JSON(http.StatusAccepted, gin.H{"message": "You chose not to publish results"})
 			return
 		}
 
@@ -707,6 +665,5 @@ func MatchesHandler(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"matches": matches})
 		return
 	}
-
-	c.JSON(http.StatusOK, gin.H{"msg": "Matches not yet published"})
+	c.JSON(http.StatusBadRequest, gin.H{"message": "Matches not yet published"})
 }

@@ -13,6 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import ComingSoon from "@/components/ui/ComingSoon";
+import Link from "next/link";
 
 // Static team data for 2025
 const TEAM_MEMBERS = [
@@ -68,6 +69,11 @@ export default function InfoPage() {
           </h1>
           <p className="text-muted-foreground">FAQs, Team, and Stats.</p>
         </header>
+        <div className="text-center">
+          <Link href="/" className="text-rose-600 hover:underline font-medium">
+            &larr; Back to Student Search
+          </Link>
+        </div>
 
         <section className="rounded-2xl bg-card/80 backdrop-blur-xl border shadow-xl p-8">
           <div className="mb-6">
@@ -241,6 +247,12 @@ export default function InfoPage() {
           </a>{" "}
           for more details.
         </section>
+      </div>
+      <br></br>
+      <div className="text-center">
+        <Link href="/" className="text-rose-600 hover:underline font-medium">
+          &larr; Back to Student Search
+        </Link>
       </div>
     </div>
   );

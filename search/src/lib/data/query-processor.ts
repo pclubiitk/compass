@@ -15,7 +15,7 @@ function rollToYear(roll: string): string {
 
 function check_bacchas(
   bacchas: string | string[],
-  students: Student[]
+  students: Student[],
 ): Student[] {
   if (bacchas === "Not Available" || bacchas === "") {
     return [];
@@ -29,9 +29,36 @@ function check_bacchas(
   } else return [];
 }
 
-function check_query(query: Query, students: Student[]): Student[] {
+function find_all_by_rollNo(
+  rollNos: string[],
+  students: Student[],
+  publicKeys: Object | null,
+): Student[] {
+  // PuppyLove Mode Specific
+  // Filter students on the basis if the public key is present in the state or not
+  if (publicKeys && Object.keys(publicKeys).length > 0) {
+    students = students.filter(
+      (s) => s.rollNo in publicKeys && rollNos.includes(s.rollNo),
+    );
+  } else {
+    students = students.filter((s) => rollNos.includes(s.rollNo));
+  }
+  return students;
+}
+
+function check_query(
+  query: Query,
+  students: Student[],
+  publicKeys: Object | null,
+): Student[] {
   // Goes through the array of students and selects only those that match the query given.
   // Filtering first on the basis of name (Fuzzy Search)
+
+  // PuppyLove Mode Specific
+  // Filter students on the basis if the public key is present in the state or not
+  if (publicKeys && Object.keys(publicKeys).length > 0) {
+    students = students.filter((s) => s.rollNo in publicKeys);
+  }
 
   let filtered_student = students; // Currently unfiltered
 
@@ -50,8 +77,8 @@ function check_query(query: Query, students: Student[]): Student[] {
       students.filter(
         (s) =>
           s.rollNo.toLowerCase().includes(lowercased_name) || // Roll number
-          s.email.toLowerCase().startsWith(lowercased_name) // Username
-      )
+          s.email.toLowerCase().startsWith(lowercased_name), // Username
+      ),
     );
     // Above snippet checks if the students include roll no.
     // or starts with username, if so add it to the filtered array
@@ -59,6 +86,7 @@ function check_query(query: Query, students: Student[]): Student[] {
     // Removing duplicates by creating a set and then back to array
     filtered_student = Array.from(new Set(filtered_student));
   }
+
   filtered_student = filtered_student.filter((student: Student) => {
     let key: keyof Query;
     let entry = false;
@@ -85,8 +113,8 @@ function check_query(query: Query, students: Student[]): Student[] {
         }
       } else if (key === "address") {
         if (
-          // Fix: if the hometown was empty it was just never evualted.
-          !(student.homeTown?.toLowerCase().includes(query.address.toLowerCase()))
+          // Fix: if the hometown was empty it was just never evaluated.
+          !student.homeTown?.toLowerCase().includes(query.address.toLowerCase())
         )
           return false;
       } else if (key !== "name") {
@@ -116,4 +144,10 @@ function check_query(query: Query, students: Student[]): Student[] {
   }
 }
 
-export { rollToYear, check_bacchas, check_query, type StudentKey };
+export {
+  rollToYear,
+  check_bacchas,
+  check_query,
+  find_all_by_rollNo,
+  type StudentKey,
+};

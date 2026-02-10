@@ -8,7 +8,11 @@ import {
   delete_IDB,
 } from "@/lib/data/indexeddb-manager";
 import { prepare_worker } from "@/lib/workers/prepare_worker";
-import { check_bacchas, check_query } from "@/lib/data/query-processor";
+import {
+  check_bacchas,
+  check_query,
+  find_all_by_rollNo,
+} from "@/lib/data/query-processor";
 
 let students: Student[] = [];
 let new_students: Student[] | undefined = undefined;
@@ -26,29 +30,25 @@ self.onmessage = async (event: MessageEvent) => {
 
   switch (command) {
     case "initialize":
-
       await initializeData();
       break;
     case "query":
       self.postMessage({
         status: "query_results",
-        results: check_query(payload, students),
+        results: check_query(payload.query, students, payload.publicKeys),
       });
       break;
-    case "get_team": {
-      const rollNos: string[] = payload.map(String); 
-      const teamResults: Student[] = [];
-      rollNos.map((rollNo) => {
-        const found = check_query({ batch: [], hall: [], course: [], dept: [], name: rollNo, gender: "", address: "" }, students);
-        teamResults.push(...found);
-      });
-      self.postMessage({
-        status: "team_results",
-        results: teamResults,
-      });
-      break;
-    }
 
+    case "find_all_by_rollNo":
+      self.postMessage({
+        status: "find_all_by_rollNo_results",
+        results: find_all_by_rollNo(
+          payload.rollNos,
+          students,
+          payload.publicKeys,
+        ),
+      });
+      break;
     case "get_family_tree":
       const student: Student = payload;
       const baapu = students.filter(
