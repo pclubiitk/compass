@@ -346,132 +346,36 @@ func SendHeartWithReturn(c *gin.Context) {
 	// TODO: cookie HeartBack
 	c.JSON(http.StatusAccepted, gin.H{"message": "Hearts Sent Successfully !!"})
 }
-
 func SendHeartVirtualHandler(c *gin.Context) {
-	fmt.Printf("\n=== SendHeartVirtualHandler called ===\n")
 	info := new(SendHeartVirtual)
 	if err := c.BindJSON(info); err != nil {
-		fmt.Printf("BindJSON error: %v\n", err)
+
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Wrong Format"})
 		return
 	}
-	fmt.Printf("Received info: %+v\n", info)
 
-	roll_no, exists := c.Get("rollNo")
-	if !exists {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "User ID not found in context"})
-		return
-	}
-
+	rollNo, _ := c.Get("rollNo")
 	var profile puppylove.PuppyLoveProfile
-	record := connections.DB.Where("roll_no = ?", roll_no).First(&profile)
+	record := connections.DB.Where("roll_no = ?", rollNo).First(&profile)
 	if record.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "User does not exist."})
 		return
 	}
 
-	// NOTE: Virtual hearts (drafts) can be saved even after final submission
-	// Only final SendHeart submission is restricted by profile.Submit flag
-
-	// Check current virtual hearts count limit (max 4)
-	var currentHearts Hearts
-	if profile.Data != "" {
-		if err := json.Unmarshal([]byte(profile.Data), &currentHearts); err == nil {
-			// Count non-empty hearts
-			heartCount := 0
-			if currentHearts.Heart1.SHA_encrypt != "" {
-				heartCount++
-			}
-			if currentHearts.Heart2.SHA_encrypt != "" {
-				heartCount++
-			}
-			if currentHearts.Heart3.SHA_encrypt != "" {
-				heartCount++
-			}
-			if currentHearts.Heart4.SHA_encrypt != "" {
-				heartCount++
-			}
-
-			// Check if adding new hearts would exceed limit
-			newHeartCount := 0
-			if info.Hearts.Heart1.SHA_encrypt != "" {
-				newHeartCount++
-			}
-			if info.Hearts.Heart2.SHA_encrypt != "" {
-				newHeartCount++
-			}
-			if info.Hearts.Heart3.SHA_encrypt != "" {
-				newHeartCount++
-			}
-			if info.Hearts.Heart4.SHA_encrypt != "" {
-				newHeartCount++
-			}
-
-			if heartCount+newHeartCount > 4 {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "Virtual heart limit exceeded. You can save a maximum of 4 virtual hearts.", "currentCount": heartCount, "limit": 4})
-				return
-			}
-		}
+	if profile.Submit {
+		c.JSON(http.StatusOK, gin.H{"error": "Hearts already sent."})
+		return
 	}
 
 	jsonData, err := json.Marshal(info.Hearts)
 	if err != nil {
-		fmt.Printf("JSON Marshal error: %v\n", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to marshal hearts data"})
-		return
-	}
-	fmt.Printf("Hearts to save: %+v\n", info.Hearts)
-	fmt.Printf("JSON data: %s\n", string(jsonData))
-
-	// Merge new hearts with existing ones, but check for duplicates
-	finalHearts := currentHearts
-
-	// Check if trying to save draft for same person twice
-	if info.Hearts.Heart1.SHA_encrypt != "" && currentHearts.Heart1.SHA_encrypt != "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "You already have a draft for this person (Slot 1). Please submit or clear it first."})
-		return
-	}
-	if info.Hearts.Heart2.SHA_encrypt != "" && currentHearts.Heart2.SHA_encrypt != "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "You already have a draft for this person (Slot 2). Please submit or clear it first."})
-		return
-	}
-	if info.Hearts.Heart3.SHA_encrypt != "" && currentHearts.Heart3.SHA_encrypt != "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "You already have a draft for this person (Slot 3). Please submit or clear it first."})
-		return
-	}
-	if info.Hearts.Heart4.SHA_encrypt != "" && currentHearts.Heart4.SHA_encrypt != "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "You already have a draft for this person (Slot 4). Please submit or clear it first."})
 		return
 	}
 
-	// Merge new hearts into existing ones
-	if info.Hearts.Heart1.SHA_encrypt != "" {
-		finalHearts.Heart1 = info.Hearts.Heart1
-	}
-	if info.Hearts.Heart2.SHA_encrypt != "" {
-		finalHearts.Heart2 = info.Hearts.Heart2
-	}
-	if info.Hearts.Heart3.SHA_encrypt != "" {
-		finalHearts.Heart3 = info.Hearts.Heart3
-	}
-	if info.Hearts.Heart4.SHA_encrypt != "" {
-		finalHearts.Heart4 = info.Hearts.Heart4
-	}
-
-	finalJsonData, err := json.Marshal(finalHearts)
-	if err != nil {
-		fmt.Printf("JSON Marshal error for final data: %v\n", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to marshal final hearts data"})
-		return
-	}
-	fmt.Printf("Final merged data: %s\n", string(finalJsonData))
-
-	if err := connections.DB.Table("puppy_love_profiles").Where("roll_no = ?", roll_no).Update("data", string(finalJsonData)).Error; err != nil {
-		fmt.Printf("Update error: %v\n", err)
+	if err := connections.DB.Model(&puppylove.PuppyLoveProfile{}).Where("roll_no = ?", rollNo).Update("data", string(jsonData)).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not update Data field of User."})
 		return
 	}
-	fmt.Printf("Successfully updated Data field\n")
 
 	c.JSON(http.StatusAccepted, gin.H{"message": "Virtual Hearts Sent Successfully !!"})
 }

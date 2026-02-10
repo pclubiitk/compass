@@ -43,6 +43,12 @@ export function incHeartsFemalesBy(heartsFemales: number) {
   heartsReceivedFromFemales += heartsFemales;
 }
 
+export function resetReceivedHearts() {
+  puppyLoveHeartsReceived.length = 0;
+  heartsReceivedFromMales = 0;
+  heartsReceivedFromFemales = 0;
+}
+
 export function setReceiverIds(ids: string[]) {
   // Replace contents of receiverIds in-place, maintaining 4 slots
   for (let i = 0; i < 4; i++) {

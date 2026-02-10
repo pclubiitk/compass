@@ -29,6 +29,7 @@ import {
   incHeartsFemalesBy,
   setReceiverIds,
   resetPuppyLoveState,
+  resetReceivedHearts,
 } from "@/lib/puppyLoveState";
 
 // Re-export for backwards compatibility
@@ -192,17 +193,10 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
           if (type === "FETCH_PUBLIC_KEYS_RESULT") {
             setPuppyLovePublicKeys(payload);
           }
-          if (type === "FETCH_HEARTS_RESULT") {
-            puppyLoveHeartsReceived.length = 0;
-            if (Array.isArray(payload)) {
-              payload.forEach((heart: any) => addReceivedHeart(heart));
-            }
-          }
           if (type === "FETCH_AND_CLAIM_HEARTS_RESULT") {
-            puppyLoveHeartsReceived.length = 0;
-            if (Array.isArray(payload)) {
-              payload.forEach((heart: any) => addReceivedHeart(heart));
-            }
+            // Claiming is done on the server. Now fetch user data
+            // so GET_USER_DATA_RESULT has the complete claims list.
+            worker.postMessage({ type: "GET_USER_DATA", payload: { privateKey } });
           }
           if (type === "FETCH_RETURN_HEARTS_RESULT") {
             // optional: store returned hearts for later use
@@ -220,8 +214,14 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
                 console.error("Failed to parse hearts data:", e);
               }
             }
+            // Reset received hearts state before re-populating to avoid double counting
+            resetReceivedHearts();
             if (payload?.claimsArray) {
-              payload.claimsArray.forEach((claim: any) => addReceivedHeart(claim));
+              payload.claimsArray.forEach((claim: any) => {
+                addReceivedHeart(claim);
+                if (claim.genderOfSender === 'M') incHeartsMalesBy(1);
+                else if (claim.genderOfSender === 'F') incHeartsFemalesBy(1);
+              });
             }
             setPuppyLoveProfile(payload ?? null);
           }
@@ -233,14 +233,16 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
         };
         // Trigger the reset worker messages
         worker.postMessage({ type: "FETCH_PUBLIC_KEYS" });
-        worker.postMessage({ type: "GET_USER_DATA", payload: { privateKey } });
+        // First claim any new hearts, then GET_USER_DATA is triggered
+        // in FETCH_AND_CLAIM_HEARTS_RESULT handler to get the complete picture.
         if (privateKey) {
           worker.postMessage({
             type: "FETCH_AND_CLAIM_HEARTS",
             payload: { privateKey: privateKey },
           });
         } else {
-          worker.postMessage({ type: "FETCH_HEARTS" });
+          // No private key — can't claim, just fetch user data directly
+          worker.postMessage({ type: "GET_USER_DATA", payload: { privateKey } });
         }
         worker.postMessage({ type: "FETCH_RETURN_HEARTS" });
       }
