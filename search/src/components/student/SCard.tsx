@@ -41,14 +41,13 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
   const [isSavingDraft, setIsSavingDraft] = useState(false);
 
   const handleSendHeart = async () => {
-    const activeProfile =
-      isPuppyLove && puppyLoveProfile ? puppyLoveProfile : currentUserProfile;
-
+    const activeProfile = isPuppyLove && puppyLoveProfile ? puppyLoveProfile : currentUserProfile;
+    const senderRollNo = (isPuppyLove && puppyLoveProfile?.rollNo) || currentUserProfile?.rollNo;
     if (setStudentSelection) {
       setStudentSelection(data);
     }
-    // Check if trying to send heart to yourself
-    if (activeProfile?.rollNo === data.rollNo) {
+    // Block if sender's rollNo matches displayed card's rollNo
+    if (senderRollNo === data.rollNo) {
       toast.error("You cannot send a heart to yourself!");
       return;
     }
@@ -160,7 +159,16 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
     }
   };
 
-  // const handleSaveDraft = async () => {
+  const handleSaveDraft = async () => {
+    // Only block if sender's rollNo matches displayed card's rollNo
+    const senderRollNo = (isPuppyLove && puppyLoveProfile?.rollNo) || currentUserProfile?.rollNo;
+    if (senderRollNo === data.rollNo) {
+      toast.error("You cannot send a virtual heart to yourself!");
+      return;
+    }
+
+    // ...existing code (uncomment and use your draft logic here)...
+  };
   //   const activeProfile =
   //     isPuppyLove && puppyLoveProfile ? puppyLoveProfile : currentUserProfile;
   //   console.log(activeProfile);
@@ -340,12 +348,10 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
   //   setIsSavingDraft(true);
 
   //   try {
-  //     console.log("🔐 senderPublicKey exists?", !!senderPublicKey);
-  //     console.log("🔐 senderPrivateKey exists?", !!senderPrivateKey);
-  //     console.log("🔐 receiverPublicKey exists?", !!receiverPublicKey);
+ 
 
   //     // Step 1: Prepare hearts with complete encryption
-  //     console.log("📝 Calling prepareSendHeart...");
+  //     console.log(" Calling prepareSendHeart...");
   //     const heartData = await prepareSendHeart(
   //       senderPublicKey,
   //       senderPrivateKey as string,
@@ -353,10 +359,10 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
   //       activeProfile.rollNo,
   //       data.rollNo,
   //     );
-  //     console.log("✅ prepareSendHeart succeeded");
+  //     console.log("prepareSendHeart succeeded");
 
   //     // Step 2: Find first empty slot and save draft there
-  //     console.log("📤 Finding first empty slot...");
+  //     console.log(" Finding first empty slot...");
   //     console.log("Current slots occupied:", currentSlots);
 
   //     let targetSlot = null;
@@ -371,7 +377,7 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
   //       return;
   //     }
 
-  //     console.log("📤 Saving to slot:", targetSlot);
+  //     console.log("Saving to slot:", targetSlot);
 
   //     // Build hearts object with only the target slot filled
   //     const heartsPayload = {
@@ -411,9 +417,6 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
 
   //     const result = await sendVirtualHeart({ hearts: heartsPayload });
 
-  //     console.log("💾 Save draft result:", result);
-  //     console.log("💾 Result type:", typeof result);
-  //     console.log("💾 Result keys:", result ? Object.keys(result) : "null");
 
   //     if (result) {
   //       // Store draft recipient locally for selections panel
@@ -450,14 +453,14 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
   //         result?.message || "Draft saved successfully for " + data.name + "!",
   //       );
   //     } else if (result?.error) {
-  //       console.error("❌ Draft save error:", result.error);
+  //       console.error("Draft save error:", result.error);
   //       alert("Error: " + result.error);
   //     } else {
-  //       console.error("❌ Unknown result received:", JSON.stringify(result));
+  //       console.error(" Unknown result received:", JSON.stringify(result));
   //       alert("Failed to save draft. Result: " + JSON.stringify(result));
   //     }
   //   } catch (err) {
-  //     console.error("❌ Exception in handleSaveDraft:", err);
+  //     console.error(" Exception in handleSaveDraft:", err);
   //     alert("Error saving draft: " + (err as Error).message);
   //   } finally {
   //     setIsSavingDraft(false);
@@ -546,7 +549,7 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
                   <Heart className="w-4 h-4 mr-2 fill-white" />
                   {isSendingHeart ? "Sending..." : "Send Heart"}
                 </Button>
-                {/* <Button 
+                <Button 
                   variant="outline"
                   className="w-full border-rose-300 text-rose-600 hover:bg-rose-50 disabled:opacity-50"
                   onClick={(e) => {
@@ -556,7 +559,7 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
                   disabled={isSendingHeart || isSavingDraft}
                 >
                   {isSavingDraft ? "Sending..." : "Send Virtual Heart"}
-                </Button> */}
+                </Button>
               </div>
             )}
             {props.children}

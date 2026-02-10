@@ -311,7 +311,7 @@ export const PuppyLovePasswordCard = ({
               className="rounded-2xl"
             />
           </CardTitle>
-          <CardTitle className="text-2xl text-center">Puppy Love</CardTitle>
+          <CardTitle className="text-2xl text-center">Puppy Love Login</CardTitle>
           {isInitializing ? (
             <></>
           ) : (
