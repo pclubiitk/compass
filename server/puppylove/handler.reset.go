@@ -4,12 +4,12 @@ import (
 	"compass/connections"
 	"compass/model"
 	"compass/model/puppylove"
+	"errors"
 	"net/http"
-	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 type PuppyLoveResetPasswordRequest struct {
@@ -18,85 +18,82 @@ type PuppyLoveResetPasswordRequest struct {
 	Password string `json:"password" binding:"required,min=8"`
 }
 
-// ResetPuppyLovePasswordHandler resets the Compass password and clears all Puppy Love data
-func ResetPuppyLovePasswordHandler(c *gin.Context) {
-	var req PuppyLoveResetPasswordRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+func AddRecovery(c *gin.Context) {
+	// Validate the input format
+	data := new(RecoveryCodeReq)
+	if err := c.BindJSON(data); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Input data format."})
+		return
+	}
+	roll_no, exists := c.Get("rollNo")
+	if !exists {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "User ID not found in context"})
+		return
+	}
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User ID not found in context"})
 		return
 	}
 
 	var user model.User
-	// Find user by ID
-	if err := connections.DB.Where("user_id = ?", req.UserID).First(&user).Error; err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "User not found"})
+	if err := connections.DB.
+		Model(&model.User{}).
+		Select("user_id", "password").
+		Where("user_id = ?", userID).
+		First(&user).Error; err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+		return
+	}
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(data.Pass)); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"valid": false})
 		return
 	}
 
-	// Verify token format "token<>expiry"
-	tokenSplit := strings.Split(user.VerificationToken, "<>")
-	if len(tokenSplit) != 2 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid token format or no token pending"})
-		return
-	}
-
-	// Verify expiry
-	expiryTime, err := time.Parse(time.RFC3339, tokenSplit[1])
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid token time"})
-		return
-	}
-
-	if time.Now().After(expiryTime) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Reset token has expired"})
-		return
-	}
-
-	// Verify token content
-	if tokenSplit[0] != req.Token {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid reset token"})
-		return
-	}
-
-	// Hash new password
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to process password"})
-		return
-	}
-
-	// Update Compass user password
-	user.Password = string(hashedPassword)
-	user.VerificationToken = "" // Clear token
-
-	if err := connections.DB.Save(&user).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update password"})
-		return
-	}
-
-	// Clear Puppy Love profile data
-	var profile puppylove.PuppyLoveProfile
-	if err := connections.DB.Where("user_id = ?", user.UserID).First(&profile).Error; err == nil {
-		// Profile exists, reset it
-		profile.Dirty = false          // Mark as unregistered
-		profile.PubK = ""              // Clear public key
-		profile.PrivK = ""             // Clear private key
-		profile.Data = "{}"            // Clear data
-		profile.Claims = ""            // Clear claims
-		profile.Submit = false         // Reset submit status
-		profile.Matches = []byte("[]") // Clear matches
-		profile.Publish = false        // Unpublish profile
-		profile.About = ""             // Clear about
-		profile.Interests = ""         // Clear interests
-
-		if err := connections.DB.Save(&profile).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to clear Puppy Love data"})
+	profile := puppylove.PuppyLoveProfile{}
+	// First find the profile
+	if err := connections.DB.Where("roll_no = ?", roll_no).First(&profile).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Please register for puppy love"})
 			return
 		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Some Error occurred. Please try later"})
+		return
 	}
-	// If profile doesn't exist, that's fine - nothing to clear
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Password updated and Puppy Love data cleared. You will need to re-register on Puppy Love.",
-	})
+	// Update the code field
+	profile.Code = data.Code
+	if err := connections.DB.Save(&profile).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Some Error occurred. Please try later"})
+		return
+	}
+
+	c.JSON(http.StatusAccepted, gin.H{"message": "Recovery Code Added Successfully!"})
+}
+
+func RetrievePass(c *gin.Context) {
+	roll_no, exists := c.Get("rollNo")
+	if !exists {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "User ID not found in context"})
+		return
+	}
+
+	user := puppylove.PuppyLoveProfile{}
+	record := connections.DB.Model(&user).Where("roll_no = ?", roll_no).First(&user)
+	if record.Error != nil {
+		if errors.Is(record.Error, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Puppy Love User Does Not Exist"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Some Error occured Please try later"})
+		return
+	} else {
+		passCode := user.Code
+		if passCode == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Didn't Registered With Recovery Codes"})
+			return
+		}
+		c.JSON(http.StatusAccepted, gin.H{"message": "Successfully retrived code", "code": passCode})
+		return
+	}
 }

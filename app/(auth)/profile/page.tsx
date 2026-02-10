@@ -53,7 +53,7 @@ export default function ProfilePage() {
 
   // PuppyLove state
   const { isPLseason } = useGContext();
-  const [isPuppyLoveRegistered, setIsPuppyLoveRegistered] = useState(true);
+  const [isPuppyLoveRegistered, setIsPuppyLoveRegistered] = useState(false);
   const [puppyLoveBio, setPuppyLoveBio] = useState("");
   const [puppyLoveInterests, setPuppyLoveInterests] = useState<string[]>([]);
 
@@ -88,7 +88,6 @@ export default function ProfilePage() {
 
       if (dataRes.ok) {
         const data = await dataRes.json();
-        console.log("[PuppyLove] API Response:", data);
         // User is registered if they have a profile with dirty = true
         setIsPuppyLoveRegistered(data.dirty === true);
         
@@ -97,10 +96,10 @@ export default function ProfilePage() {
         // console.log("[PuppyLove] Raw interest field:", data.interest);
         // Note: Backend returns "interest" (singular), not "interests" (plural)
         setPuppyLoveInterests(
-          Array.isArray(data.interest)
-            ? data.interest
-            : typeof data.interest === "string"
-              ? data.interest
+          Array.isArray(data.interests)
+            ? data.interests
+            : typeof data.interests === "string"
+              ? data.interests
                   .split(",")
                   .map((s: string) => s.trim())
                   .filter(Boolean)
@@ -216,7 +215,6 @@ export default function ProfilePage() {
 
           {/* PuppyLove Profile Card - only visible during Valentine's mode */}
           <PuppyLoveProfileCard
-            rollNo={profile.rollNo}
             initialBio={puppyLoveBio}
             initialInterests={puppyLoveInterests}
             isPuppyLoveActive={isPLseason}

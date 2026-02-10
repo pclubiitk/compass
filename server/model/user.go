@@ -11,10 +11,10 @@ import (
 type Role int
 
 const (
-	AdminRole     Role = 200 // "admin"
-	PuppyLoveRole Role = 100
-	Bot           Role = 99 // "bot"
-	UserRole      Role = 50 // "user"
+	AdminRole          Role = 200 // "admin"
+	PuppyLoveAdminRole Role = 100
+	Bot                Role = 99 // "bot"
+	UserRole           Role = 50 // "user"
 	// TODO: add roles like Super Admin, Visitors
 )
 

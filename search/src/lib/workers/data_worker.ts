@@ -1,6 +1,5 @@
 import { Student, Options } from "@/lib/types/data";
 import { fetch_student_data, fetch_changelog } from "@/lib/data/api-client";
-import { SEARCH_POINT , PUPPYLOVE_POINT} from "@/lib/constant";
 import {
   get_time_IDB,
   update_IDB,
@@ -9,39 +8,16 @@ import {
   delete_IDB,
 } from "@/lib/data/indexeddb-manager";
 import { prepare_worker } from "@/lib/workers/prepare_worker";
-import { check_bacchas, check_query } from "@/lib/data/query-processor";
+import {
+  check_bacchas,
+  check_query,
+  find_all_by_rollNo,
+} from "@/lib/data/query-processor";
 
 let students: Student[] = [];
 let new_students: Student[] | undefined = undefined;
 
-// In-memory cache for PuppyLove data with 30-minute expiry
-// Using in-memory instead of localStorage because Web Workers don't have access to localStorage
-const CACHE_EXPIRY_MS = 30 * 60 * 1000; // 30 minutes
-let puppyLoveCache: { data: any; expiry: number } | null = null;
-
-function setPuppyLoveCache(data: any): void {
-  const now = new Date();
-  puppyLoveCache = {
-    data: data,
-    expiry: now.getTime() + CACHE_EXPIRY_MS,
-  };
-}
-
-function getPuppyLoveCache(): any | null {
-  if (!puppyLoveCache) return null;
-
-  const now = new Date();
-
-  // Check if cache has expired
-  if (now.getTime() > puppyLoveCache.expiry) {
-    puppyLoveCache = null;
-    return null;
-  }
-
-  return puppyLoveCache.data;
-}
-
-//setting up the values for the fields in the Options component
+// Setting up the values for the fields in the Options component
 const options: Options = {
   batch: [],
   hall: [],
@@ -54,29 +30,25 @@ self.onmessage = async (event: MessageEvent) => {
 
   switch (command) {
     case "initialize":
-
       await initializeData();
       break;
     case "query":
       self.postMessage({
         status: "query_results",
-        results: check_query(payload, students),
+        results: check_query(payload.query, students, payload.publicKeys),
       });
       break;
-    case "get_team": {
-      const rollNos: string[] = payload.map(String); 
-      const teamResults: Student[] = [];
-      rollNos.map((rollNo) => {
-        const found = check_query({ batch: [], hall: [], course: [], dept: [], name: rollNo, gender: "", address: "" }, students);
-        teamResults.push(...found);
-      });
-      self.postMessage({
-        status: "team_results",
-        results: teamResults,
-      });
-      break;
-    }
 
+    case "find_all_by_rollNo":
+      self.postMessage({
+        status: "find_all_by_rollNo_results",
+        results: find_all_by_rollNo(
+          payload.rollNos,
+          students,
+          payload.publicKeys,
+        ),
+      });
+      break;
     case "get_family_tree":
       const student: Student = payload;
       const baapu = students.filter(
@@ -100,62 +72,9 @@ self.onmessage = async (event: MessageEvent) => {
   }
 };
 
-async function mergePuppyLoveData(): Promise<void> {
-  try {
-    let puppyLoveData = getPuppyLoveCache();
-
-    if (!puppyLoveData) {
-      console.log("[PuppyLove] Cache miss, fetching from API...");
-      const puppyLoveRes = await fetch(`${PUPPYLOVE_POINT}/api/puppylove/users/alluserInfo`, {
-        credentials: "include",
-      });
-
-      console.log(`[PuppyLove] Response status: ${puppyLoveRes.status}`);
-      
-      if (!puppyLoveRes.ok) {
-        console.error(`[PuppyLove] API returned ${puppyLoveRes.status}: ${puppyLoveRes.statusText}`);
-        return;
-      }
-
-      puppyLoveData = await puppyLoveRes.json();
-      console.log("[PuppyLove] Data fetched successfully, caching...");
-      setPuppyLoveCache(puppyLoveData);
-    } else {
-      console.log("[PuppyLove] Using cached data");
-    }
-
-    const aboutMap = puppyLoveData.about || {};
-    const interestsMap = puppyLoveData.interests || {};
-    
-    console.log(`[PuppyLove] Merging data for ${Object.keys(aboutMap).length} users`);
-
-    students = students.map((profile: Student) => {
-      const about = aboutMap[profile.rollNo];
-      const interest = interestsMap[profile.rollNo];
-      
-      if (about || interest) {
-        return {
-          ...profile,
-          about: about,
-          interest: interest,
-        };
-      }
-      return profile;
-    });
-    
-    // Save merged data to IndexedDB cache
-    await update_IDB({
-      profiles: students,
-      requestTime: Date.now(),
-    });
-    
-    // Re-prepare worker with merged data
-    console.log("[PuppyLove] Merge complete, worker prepared");
-    prepare_worker(students, options);
-  } catch (err) {
-    console.error("[PuppyLove] Error during merge:", err);
-  }
-}
+// NOTE: mergePuppyLoveData removed - PuppyLove data (interests/bio) is now
+// fetched via ContextProvider and cached in localStorage with 1hr expiry.
+// The data is accessed directly from context in SCard component.
 
 async function initializeData(): Promise<void> {
   let noLastTimeStamp = false;
@@ -213,7 +132,7 @@ async function initializeData(): Promise<void> {
         "Could not find data locally or fetch it. This web app will not work.",
     });
   } else {
-    // First merge PuppyLove data, THEN prepare worker with merged data
-    await mergePuppyLoveData();
+    // Prepare worker with student data (PuppyLove data is now handled via context)
+    prepare_worker(students, options);
   }
 }

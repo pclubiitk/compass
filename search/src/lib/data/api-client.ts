@@ -1,4 +1,3 @@
-import { Student } from "@/lib/types/data";
 import { Timestamp } from "next/dist/server/lib/cache-handlers/types";
 import { SEARCH_POINT } from "../constant";
 

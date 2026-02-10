@@ -157,7 +157,6 @@ function getInterestColorClass(interest: string): string {
 }
 
 interface PuppyLoveProfileCardProps {
-  rollNo: string;
   initialBio?: string;
   initialInterests?: string[];
   isPuppyLoveActive?: boolean;
@@ -166,7 +165,6 @@ interface PuppyLoveProfileCardProps {
 }
 
 export function PuppyLoveProfileCard({
-  rollNo,
   initialBio = "",
   initialInterests = [],
   isPuppyLoveActive = false,
@@ -217,16 +215,13 @@ export function PuppyLoveProfileCard({
     setIsSaving(true);
     try {
       // Save bio (max 70 chars per backend)
-      const puppyLoveUrl = process.env.NEXT_PUBLIC_PUPPYLOVE_URL || process.env.NEXT_PUBLIC_AUTH_URL;
-      const bioRes = await fetch(
-        `${puppyLoveUrl}/api/puppylove/users/about`,
-        {
-          method: "POST",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ about: bio }),
-        },
-      );
+      const puppyLoveUrl = process.env.NEXT_PUBLIC_PUPPYLOVE_URL;
+      const bioRes = await fetch(`${puppyLoveUrl}/api/puppylove/users/about`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ about: bio }),
+      });
 
       if (!bioRes.ok) {
         throw new Error("Failed to save bio");
@@ -253,7 +248,9 @@ export function PuppyLoveProfileCard({
         throw new Error("Failed to save interests");
       }
 
-      toast.success("PuppyLove profile updated!");
+      toast.success(
+        "PuppyLove profile updated, it will be reflected onto portal in few hours",
+      );
       setHasChanges(false);
       setIsEditing(false);
       onUpdate?.();
@@ -288,11 +285,12 @@ export function PuppyLoveProfileCard({
             <Heart className="h-12 w-12 mx-auto mb-3 text-rose-300" />
             <h3 className="text-lg font-semibold mb-2">Join PuppyLove</h3>
             <p className="text-sm text-muted-foreground mb-4">
-              Register on PuppyLove to find your perfect match anonymously. 
-              Your choices are encrypted and revealed only when there&apos;s a mutual match!
+              Register on PuppyLove to find your perfect match anonymously. Your
+              choices are encrypted and revealed only when there&apos;s a mutual
+              match!
             </p>
-            <a 
-              href={process.env.NEXT_PUBLIC_SEARCH_UI_URL || "/"} 
+            <a
+              href={process.env.NEXT_PUBLIC_SEARCH_UI_URL || "/"}
               className="inline-flex items-center justify-center gap-2 px-6 py-2 rounded-full bg-linear-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-medium transition-all"
             >
               <Heart className="h-4 w-4" />
@@ -305,7 +303,7 @@ export function PuppyLoveProfileCard({
   }
 
   return (
-    <Card className="border-pink-200 bg-gradient-to-br from-pink-50 to-rose-50 dark:from-pink-950/20 dark:to-rose-950/20">
+    <Card className="border-pink-200 bg-linear-to-br from-pink-50 to-rose-50 dark:from-pink-950/20 dark:to-rose-950/20">
       <CardHeader className="flex flex-col items-start sm:flex-row justify-between gap-4">
         <div>
           <CardTitle className="flex items-center gap-2 text-pink-600">
@@ -353,7 +351,9 @@ export function PuppyLoveProfileCard({
             <>
               <Textarea
                 value={bio}
-                onChange={(e) => setBio(e.target.value.slice(0, BIO_MAX_LENGTH))}
+                onChange={(e) =>
+                  setBio(e.target.value.slice(0, BIO_MAX_LENGTH))
+                }
                 placeholder="Write something about yourself..."
                 className="min-h-20 resize-none bg-white/50 border-pink-200 focus:border-pink-400"
               />
@@ -371,7 +371,9 @@ export function PuppyLoveProfileCard({
         {/* Interests Section */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <label className="text-sm font-medium text-pink-700">Interests</label>
+            <label className="text-sm font-medium text-pink-700">
+              Interests
+            </label>
             {isEditing && (
               <span className="text-xs text-pink-600/70">
                 {interests.length}/{MAX_INTERESTS} selected
@@ -426,7 +428,9 @@ export function PuppyLoveProfileCard({
                               onClick={() => toggleInterest(interest)}
                             >
                               {interest}
-                              {isSelected && <Check className="h-2.5 w-2.5 ml-1" />}
+                              {isSelected && (
+                                <Check className="h-2.5 w-2.5 ml-1" />
+                              )}
                             </Badge>
                           );
                         })}
@@ -443,10 +447,7 @@ export function PuppyLoveProfileCard({
                 interests.map((interest) => (
                   <Badge
                     key={interest}
-                    className={cn(
-                      "text-xs",
-                      getInterestColorClass(interest),
-                    )}
+                    className={cn("text-xs", getInterestColorClass(interest))}
                   >
                     {interest}
                   </Badge>

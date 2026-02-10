@@ -21,7 +21,7 @@ type (
 		gorm.Model
 		Id       string `json:"enc" bson:"enc" gorm:"unique"`
 		SHA      string `json:"sha" bson:"sha" gorm:"unique"`
-		Roll     string `json:"roll"`
+		RollNo     string `json:"roll_no" bson:"roll_no"`
 		SONG_ENC string `json:"songID_enc" bson:"song"`
 	}
 )

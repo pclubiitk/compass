@@ -13,15 +13,15 @@ import {
   decryptPrivateKey,
   fetchAndClaimHearts,
 } from "@/lib/workers/puppyLoveWorkerClient";
-import { PUPPYLOVE_POINT } from "@/lib/constant";
+import { FORGOT_POINT, PUPPYLOVE_POINT } from "@/lib/constant";
 import { PuppyLoveRegistrationCard } from "./RegistrationCard";
 import { PasswordRecoveryOptionsCard } from "../PasswordRecoveryOptionsCard";
 import { RecoveryCodeVerificationCard } from "./RecoveryCodeVerificationCard";
 import { LateMatchPrompt } from "./LateMatchPrompt";
 import { Label } from "@radix-ui/react-label";
 import { toast } from "sonner";
-import { useGContext } from "../ContextProvider";
-
+// import { usePuppyLoveContext } from "./PuppyLoveContextProvider";
+import { useGContext } from "@/components/ContextProvider";
 interface PuppyLovePasswordCardProps {
   onSuccess: () => void;
   onCancel: () => void;
@@ -103,8 +103,6 @@ export const PuppyLovePasswordCard = ({
         setPassword("");
         return { success: false, reason: "not_registered" };
       }
-
-      initPuppyLoveWorker();
 
       // Fetch encrypted private key from backend
       const res = await fetch(`${PUPPYLOVE_POINT}/api/puppylove/users/data`, {
@@ -202,7 +200,7 @@ export const PuppyLovePasswordCard = ({
     setIsSubmitting(true);
     try {
       const result = await verifyAndProceed(passwordToUse);
-
+      
       // Check if result indicates registration needed
       if (
         result &&
@@ -213,8 +211,13 @@ export const PuppyLovePasswordCard = ({
         return;
       }
 
+      if (result && typeof result === "object" && result.reason === "verification_failed") {
+        toast.error("Wrong password. Please try again.");
+        setPassword("");
+        return;
+      }
       if (!result) {
-        toast("Wrong password or unable to verify. Please try again.");
+        toast.error("Wrong password or unable to verify. Please try again.");
         setPassword("");
       }
     } catch (err) {
@@ -269,8 +272,7 @@ export const PuppyLovePasswordCard = ({
         onChooseRecoveryCode={() => setRecoveryStep("code")}
         onChooseNewPassword={() => {
           // Redirect directly to forgot-password page
-          window.location.href =
-            process.env.NEXT_PUBLIC_AUTH_DOMAIN + "/forgot-password";
+          window.location.href = FORGOT_POINT;
         }}
         onCancel={() => {
           setRecoveryStep(null);

@@ -9,21 +9,16 @@ database:
   # FIXME(prod): Create new user id
   user: "this_is_mjk"
   port: 5432
-  
 
 rabbitmq:
   host: "localhost"
   # FIXME(prod): Create new user id and pwd
-  user: "this_is_mjk"
+  user: "guest"
   mailqueue: "mail_queue" # Keep the names consistent <type>queue for protect the publish logic correct
   moderationqueue: "moderation_queue"
   port: 5672
 
-puppylove:
-  enabled: true
-  
-redis:
-  host:"localhost"
+redis: host:"localhost"
   port:"6379"
 
 ports:

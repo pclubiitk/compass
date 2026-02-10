@@ -13,9 +13,6 @@ export interface Student {
   email: string; //username
   bapu: string; //roll number of baapu/amma
   bachhas: string; //array containing roll numbers of bacchas (or the words "not available")
-  // PuppyLove fields (only available in PuppyLove mode)
-  about?: string; //bio/about text
-  interest?: string; //comma-separated interests
 }
 
 export interface Query {
