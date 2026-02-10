@@ -477,49 +477,6 @@ func SendHeartVirtualHandler(c *gin.Context) {
 	c.JSON(http.StatusAccepted, gin.H{"message": "Virtual Hearts Sent Successfully !!"})
 }
 
-// GetVirtualHeartCountHandler returns the current count of virtual hearts saved by the user
-func GetVirtualHeartCountHandler(c *gin.Context) {
-	roll_no, exists := c.Get("rollNo")
-	if !exists {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "User ID not found in context"})
-		return
-	}
-
-	var profile puppylove.PuppyLoveProfile
-	if err := connections.DB.Where("roll_no = ?", roll_no).First(&profile).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "User does not exist."})
-		return
-	}
-
-	// Parse existing hearts
-	var currentHearts Hearts
-	heartCount := 0
-
-	if profile.Data != "" {
-		if err := json.Unmarshal([]byte(profile.Data), &currentHearts); err == nil {
-			// Count non-empty hearts
-			if currentHearts.Heart1.SHA_encrypt != "" {
-				heartCount++
-			}
-			if currentHearts.Heart2.SHA_encrypt != "" {
-				heartCount++
-			}
-			if currentHearts.Heart3.SHA_encrypt != "" {
-				heartCount++
-			}
-			if currentHearts.Heart4.SHA_encrypt != "" {
-				heartCount++
-			}
-		}
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"count":     heartCount,
-		"limit":     4,
-		"remaining": 4 - heartCount,
-		"submitted": profile.Submit,
-	})
-}
 
 // HeartClaimError represents an error during heart claiming
 type HeartClaimError struct {
@@ -789,7 +746,7 @@ func MatchesHandler(c *gin.Context) {
 		}
 
 		if !profile.Publish {
-			c.JSON(http.StatusOK, gin.H{"msg": "You chose not to publish results"})
+			c.JSON(http.StatusAccepted, gin.H{"message": "You chose not to publish results"})
 			return
 		}
 
@@ -804,6 +761,5 @@ func MatchesHandler(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"matches": matches})
 		return
 	}
-
-	c.JSON(http.StatusOK, gin.H{"msg": "Matches not yet published"})
+	c.JSON(http.StatusBadRequest, gin.H{"message": "Matches not yet published"})
 }

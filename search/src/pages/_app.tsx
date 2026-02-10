@@ -1,5 +1,4 @@
 import type { AppProps } from "next/app";
-import { useEffect, useState } from "react";
 import "@/styles/styles.css";
 import "@/styles/globals.css";
 import Head from "next/head";
@@ -9,8 +8,6 @@ import {
 } from "@/components/ContextProvider";
 import { ThemeProvider } from "next-themes";
 import { Heart } from "lucide-react";
-import { PuppyLoveHeartsCard } from "@/components/puppy-love/HeartsCard";
-import { PuppyLoveSelectionsPanel } from "@/components/puppy-love/SelectionsPanel";
 import { Toaster } from "sonner";
 
 function randomHeartProps(i: number) {
@@ -36,44 +33,10 @@ function randomHeartProps(i: number) {
   };
 }
 
-// TODO: Exract out this later.
+// TODO: Extract out app wrapper later.
 function AppWrapper({ Component, pageProps }: AppProps) {
   const { isPuppyLove } = useGContext();
-  const [showSelections, setShowSelections] = useState(false);
 
-  useEffect(() => {
-    const handleToggleSelections = () => {
-      setShowSelections((prev) => {
-        const next = !prev;
-        if (next && typeof window !== "undefined") {
-          window.dispatchEvent(new CustomEvent("puppylove:selectionsOpen"));
-        }
-        return next;
-      });
-    };
-
-    if (typeof window !== "undefined") {
-      window.addEventListener(
-        "puppylove:toggleSelections",
-        handleToggleSelections,
-      );
-    }
-
-    return () => {
-      if (typeof window !== "undefined") {
-        window.removeEventListener(
-          "puppylove:toggleSelections",
-          handleToggleSelections,
-        );
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!isPuppyLove) {
-      setShowSelections(false);
-    }
-  }, [isPuppyLove]);
   return (
     <ThemeProvider
       attribute="class"
@@ -82,70 +45,58 @@ function AppWrapper({ Component, pageProps }: AppProps) {
       disableTransitionOnChange
       forcedTheme={isPuppyLove ? "light" : "system"}
     >
-    <div
-      className={`min-h-screen transition-colors duration-500 relative overflow-hidden ${
-        isPuppyLove ? "puppy-love-mode" : ""
-      }`}
-    >
-      {isPuppyLove && (
-        <div className="hearts-container pointer-events-none fixed inset-0 z-0">
-          {[...Array(22)].map((_, i) => {
-            const props = randomHeartProps(i);
-            return (
+      <div
+        className={`min-h-screen transition-colors duration-500 relative ${
+          isPuppyLove ? "puppy-love-mode" : ""
+        }`}
+      >
+        {/* Background hearts animation */}
+        {isPuppyLove && (
+          <div className="hearts-container pointer-events-none fixed inset-0 z-0">
+            {[...Array(22)].map((_, i) => {
+              const props = randomHeartProps(i);
+              return (
+                <div
+                  key={i}
+                  className={`heart-particle ${props.size} ${props.rotate} ${props.blur}`}
+                  style={{
+                    left: props.left,
+                    opacity: props.opacity,
+                    animationDelay: props.animationDelay,
+                    animationDuration: props.animationDuration,
+                  }}
+                >
+                  <Heart
+                    className={`${props.size} ${props.color} drop-shadow-[0_0_6px_rgba(255,0,128,0.25)] animate-pulse`}
+                  />
+                </div>
+              );
+            })}
+            {/* Occasional floating/fading hearts for extra flair */}
+            {[...Array(4)].map((_, i) => (
               <div
-                key={i}
-                className={`heart-particle ${props.size} ${props.rotate} ${props.blur}`}
+                key={"float-" + i}
+                className="heart-float-particle w-10 h-10 absolute"
                 style={{
-                  left: props.left,
-                  opacity: props.opacity,
-                  animationDelay: props.animationDelay,
-                  animationDuration: props.animationDuration,
+                  left: `${10 + Math.random() * 80}%`,
+                  top: `${Math.random() * 80}%`,
+                  animationDelay: `${Math.random() * 6}s`,
+                  animationDuration: `${6 + Math.random() * 6}s`,
+                  opacity: 0.5 + Math.random() * 0.5,
                 }}
               >
-                <Heart
-                  className={`${props.size} ${props.color} drop-shadow-[0_0_6px_rgba(255,0,128,0.25)] animate-pulse`}
-                />
+                <Heart className="w-10 h-10 text-pink-300/70 animate-none" />
               </div>
-            );
-          })}
-          {/* Occasional floating/fading hearts for extra flair */}
-          {[...Array(4)].map((_, i) => (
-            <div
-              key={"float-" + i}
-              className="heart-float-particle w-10 h-10 absolute"
-              style={{
-                left: `${10 + Math.random() * 80}%`,
-                top: `${Math.random() * 80}%`,
-                animationDelay: `${Math.random() * 6}s`,
-                animationDuration: `${6 + Math.random() * 6}s`,
-                opacity: 0.5 + Math.random() * 0.5,
-              }}
-            >
-              <Heart className="w-10 h-10 text-pink-300/70 animate-none" />
-            </div>
-          ))}
-        </div>
-      )}
-
-      <div className="relative z-10 w-full h-full">
-        {/* Main content stays centered, Puppy Love card floats as overlay */}
-        <Component {...pageProps} />
-        {isPuppyLove && (
-          <div className="hidden md:block fixed top-6 left-6 z-50">
-            <PuppyLoveHeartsCard compact />
+            ))}
           </div>
         )}
-        {isPuppyLove && showSelections && (
-          <PuppyLoveSelectionsPanel
-            variant="desktop"
-            onClose={() => {
-              setShowSelections(false);
-            }}
-          />
-        )}
+
+        <div className="relative z-10 w-full h-full">
+          {/* Main content stays centered, Puppy Love card floats as overlay */}
+          <Component {...pageProps} />
+        </div>
+        <Toaster theme={isPuppyLove ? "light" : "system"} />
       </div>
-      <Toaster theme={isPuppyLove ? "light" : "system"}/>
-    </div>
     </ThemeProvider>
   );
 }

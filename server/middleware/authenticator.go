@@ -141,6 +141,15 @@ func AdminAuthenticator(c *gin.Context) {
 	c.Next()
 }
 
+func PuppyLoveAdminAuthenticator(c *gin.Context) {
+	// verify the role
+	if role := c.GetInt("userRole"); role < int(model.PuppyLoveAdminRole) {
+		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Insufficient permissions"})
+		return
+	}
+	c.Next()
+}
+
 // But once the user verifies the email, the cookie will remain same hence will need to login again
 // TODO: I can fetch db and check if it is false and update it
 func EmailVerified(c *gin.Context) {

@@ -12,7 +12,7 @@ import { Student } from "@/lib/types/data";
 import { cn, convertToTitleCase } from "@/lib/utils";
 import { Mail, Home, University, Globe, Heart } from "lucide-react";
 import { useGContext } from "@/components/ContextProvider";
-import { prepareSendHeart, sendHeart, sendVirtualHeart, getVirtualHeartCount } from "@/lib/workers/puppyLoveWorkerClient";
+import { prepareSendHeart, sendHeart, sendVirtualHeart} from "@/lib/workers/puppyLoveWorkerClient";
 
 interface SCardProps {
   data: Student;
@@ -180,8 +180,9 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
     const draftLimit = 4;
     
     try {
-      const countResult = await getVirtualHeartCount();
-      currentCount = countResult?.count || 0;
+      // TODO(ppy): getVirtualHeartsCount
+      // const countResult = 0;
+      currentCount = 0;
       console.log("Current draft count:", currentCount, "Limit:", draftLimit);
       
       // Check draft limit
@@ -194,7 +195,7 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
       // Fetch existing hearts to determine which slots are occupied
       try {
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_PUPPYLOVE_URL || "http://localhost:8080"}/api/puppylove/users/data`,
+          `${process.env.NEXT_PUBLIC_PUPPYLOVE_URL}/api/puppylove/users/data`,
           {
             method: "GET",
             credentials: "include",

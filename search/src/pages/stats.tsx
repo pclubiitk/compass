@@ -23,32 +23,24 @@ import {
   Heart,
   Users,
   HeartHandshake,
-  ArrowLeft,
   TrendingUp,
   BarChart3,
   Sparkles,
 } from "lucide-react";
-import { useRouter } from "next/router";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 
 interface PuppyLoveStats {
-  totalRegistrations: number;
-  maleRegistrations: number;
-  femaleRegistrations: number;
-  totalHeartsSent: number;
+  totalRegisters: number;
+  maleRegisters: number;
+  femaleRegisters: number;
+  batchwiseRegistration: Record<string, number>;
   totalMatches: number;
-  lastUpdated: string;
-  eventPhase:
-    | "registration"
-    | "heart-sending"
-    | "matching"
-    | "results"
-    | "closed";
+  batchwiseMatches: Record<string, number>;
+  msg?: string;
 }
 
 export default function StatsPage() {
-  const router = useRouter();
   const [stats, setStats] = useState<PuppyLoveStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -57,7 +49,7 @@ export default function StatsPage() {
     const fetchStats = async () => {
       try {
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_AUTH_URL}/api/puppylove/stats`,
+          `${process.env.NEXT_PUBLIC_PUPPYLOVE_URL}/api/puppylove/stats`,
           { credentials: "include" },
         );
 
@@ -66,7 +58,12 @@ export default function StatsPage() {
         }
 
         const data = await res.json();
-        setStats(data);
+        if (data.msg) {
+          // Stats not yet published
+          setError(data.msg);
+        } else {
+          setStats(data);
+        }
       } catch (err) {
         console.error("[PuppyLove Stats] Error:", err);
         setError("Could not load statistics");
@@ -78,80 +75,33 @@ export default function StatsPage() {
     fetchStats();
   }, []);
 
-  const getPhaseInfo = (phase: PuppyLoveStats["eventPhase"]) => {
-    switch (phase) {
-      case "registration":
-        return {
-          label: "Registration Open",
-          color: "text-blue-500",
-          bgColor: "bg-blue-100",
-        };
-      case "heart-sending":
-        return {
-          label: "Sending Hearts",
-          color: "text-rose-500",
-          bgColor: "bg-rose-100",
-        };
-      case "matching":
-        return {
-          label: "Processing Matches",
-          color: "text-amber-500",
-          bgColor: "bg-amber-100",
-        };
-      case "results":
-        return {
-          label: "Results Available",
-          color: "text-green-500",
-          bgColor: "bg-green-100",
-        };
-      case "closed":
-        return {
-          label: "Event Ended",
-          color: "text-gray-500",
-          bgColor: "bg-gray-100",
-        };
-      default:
-        return {
-          label: "Unknown",
-          color: "text-gray-500",
-          bgColor: "bg-gray-100",
-        };
-    }
-  };
+  // Sort batches for display
+  const sortedBatches = stats?.batchwiseRegistration 
+    ? Object.entries(stats.batchwiseRegistration).sort(([a], [b]) => b.localeCompare(a))
+    : [];
+
+  const sortedMatchBatches = stats?.batchwiseMatches
+    ? Object.entries(stats.batchwiseMatches).sort(([a], [b]) => b.localeCompare(a))
+    : [];
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-rose-50 via-pink-50 to-purple-50 dark:from-gray-900 dark:via-rose-950/10 dark:to-purple-950/10">
-      {/* Header */}
-      <div className="sticky top-0 z-10 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b">
-        <div className="container mx-auto px-4 py-3 flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => router.push("/")}
-            className="shrink-0"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div className="flex items-center gap-3">
+    <div className="min-h-screen bg-linear-to-br from-rose-50 via-pink-50 to-purple-50 dark:from-gray-900 dark:via-rose-950/10 dark:to-purple-950/10 px-6 py-12">
+      <div className="mx-auto w-full max-w-5xl space-y-10">
+        <header className="space-y-3 text-center">
+          <div className="flex justify-center">
             <Image
               src="/icons/puppyLoveLogo.png"
               alt="PuppyLove"
-              width={40}
-              height={40}
+              width={64}
+              height={64}
               className="rounded-lg"
             />
-            <div>
-              <h1 className="font-bold text-lg">PuppyLove Stats</h1>
-              <p className="text-xs text-muted-foreground">
-                Valentine&apos;s 2025
-              </p>
-            </div>
           </div>
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="container mx-auto px-4 py-8">
+          <h1 className="text-4xl font-bold tracking-wide text-rose-600">
+            PuppyLove Stats
+          </h1>
+          <p className="text-muted-foreground">Valentine&apos;s 2026 Statistics</p>
+        </header>
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -175,7 +125,7 @@ export default function StatsPage() {
         ) : stats ? (
           <div className="space-y-8">
             {/* Event Phase Banner */}
-            <Card className="overflow-hidden">
+            <Card className="overflow-hidden p-0">
               <div
                 className={cn(
                   "p-6 flex items-center justify-between",
@@ -185,7 +135,7 @@ export default function StatsPage() {
                 <div className="flex items-center gap-4">
                   <Sparkles className="h-8 w-8" />
                   <div>
-                    <h2 className="text-2xl font-bold">PuppyLove 2025</h2>
+                    <h2 className="text-2xl font-bold">PuppyLove 2026</h2>
                     <p className="text-rose-100">Find your Valentine</p>
                   </div>
                 </div>
@@ -195,7 +145,7 @@ export default function StatsPage() {
                     "bg-white/20 backdrop-blur-sm",
                   )}
                 >
-                  {getPhaseInfo(stats.eventPhase).label}
+                  Results Published
                 </div>
               </div>
             </Card>
@@ -212,46 +162,23 @@ export default function StatsPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-4xl font-bold text-blue-600">
-                    {stats.totalRegistrations.toLocaleString()}
+                    {stats.totalRegisters.toLocaleString()}
                   </div>
                   <div className="mt-2 flex gap-4 text-sm text-muted-foreground">
                     <span className="flex items-center gap-1">
                       <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                      {stats.maleRegistrations} Male
+                      {stats.maleRegisters} Male
                     </span>
                     <span className="flex items-center gap-1">
                       <span className="w-2 h-2 rounded-full bg-pink-500"></span>
-                      {stats.femaleRegistrations} Female
+                      {stats.femaleRegisters} Female
                     </span>
                   </div>
-                </CardContent>
-              </Card>
-
-              {/* Hearts Sent */}
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <Heart className="h-5 w-5 text-rose-500" />
-                    Hearts Sent
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-4xl font-bold text-rose-600">
-                    {stats.totalHeartsSent.toLocaleString()}
-                  </div>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    Across all participants
-                  </p>
                 </CardContent>
               </Card>
 
               {/* Matches */}
-              <Card
-                className={cn(
-                  stats.eventPhase === "results" &&
-                    "border-green-200 bg-green-50/50",
-                )}
-              >
+              <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <HeartHandshake className="h-5 w-5 text-green-500" />
@@ -259,27 +186,105 @@ export default function StatsPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {stats.eventPhase === "results" ||
-                  stats.eventPhase === "closed" ? (
-                    <>
-                      <div className="text-4xl font-bold text-green-600">
-                        {stats.totalMatches.toLocaleString()}
-                      </div>
-                      <p className="mt-2 text-sm text-muted-foreground">
-                        Successful matches
-                      </p>
-                    </>
-                  ) : (
-                    <div className="py-4 text-center text-muted-foreground">
-                      <BarChart3 className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
-                      <p className="text-sm">Available after matching</p>
-                    </div>
-                  )}
+                  <div className="text-4xl font-bold text-green-600">
+                    {stats.totalMatches.toLocaleString()}
+                  </div>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Successful matches
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* Match Rate */}
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <TrendingUp className="h-5 w-5 text-purple-500" />
+                    Match Rate
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-4xl font-bold text-purple-600">
+                    {stats.totalRegisters > 0
+                      ? ((stats.totalMatches * 2 / stats.totalRegisters) * 100).toFixed(1)
+                      : "0"}%
+                  </div>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Of participants matched
+                  </p>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Fun Stats */}
+            {/* Batch-wise Registration */}
+            {sortedBatches.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5 text-blue-500" />
+                    Batch-wise Registrations
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {sortedBatches.map(([batch, count]) => {
+                      const maxCount = Math.max(...sortedBatches.map(([, c]) => c));
+                      const percentage = (count / maxCount) * 100;
+                      return (
+                        <div key={batch} className="space-y-1">
+                          <div className="flex justify-between text-sm">
+                            <span className="font-medium">{batch}</span>
+                            <span className="text-muted-foreground">{count}</span>
+                          </div>
+                          <div className="h-2 bg-muted rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-linear-to-r from-blue-400 to-blue-600 rounded-full transition-all"
+                              style={{ width: `${percentage}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Batch-wise Matches */}
+            {sortedMatchBatches.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <HeartHandshake className="h-5 w-5 text-rose-500" />
+                    Batch-wise Matches
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {sortedMatchBatches.map(([batch, count]) => {
+                      const maxCount = Math.max(...sortedMatchBatches.map(([, c]) => c));
+                      const percentage = (count / maxCount) * 100;
+                      return (
+                        <div key={batch} className="space-y-1">
+                          <div className="flex justify-between text-sm">
+                            <span className="font-medium">{batch}</span>
+                            <span className="text-muted-foreground">{count}</span>
+                          </div>
+                          <div className="h-2 bg-muted rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-linear-to-r from-rose-400 to-rose-600 rounded-full transition-all"
+                              style={{ width: `${percentage}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Quick Facts */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -290,59 +295,36 @@ export default function StatsPage() {
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="text-center p-4 bg-muted rounded-lg">
-                    <div className="text-2xl font-bold text-purple-600">
-                      {stats.totalRegistrations > 0
-                        ? (
-                            stats.totalHeartsSent / stats.totalRegistrations
-                          ).toFixed(1)
-                        : "0"}
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Avg hearts per person
-                    </p>
-                  </div>
-                  <div className="text-center p-4 bg-muted rounded-lg">
-                    <div className="text-2xl font-bold text-rose-600">4</div>
+                    <div className="text-2xl font-bold text-purple-600">4</div>
                     <p className="text-xs text-muted-foreground">
                       Max hearts allowed
                     </p>
                   </div>
                   <div className="text-center p-4 bg-muted rounded-lg">
                     <div className="text-2xl font-bold text-blue-600">
-                      {stats.totalRegistrations > 0
-                        ? (
-                            (stats.maleRegistrations /
-                              stats.totalRegistrations) *
-                            100
-                          ).toFixed(0)
-                        : "0"}
-                      %
+                      {stats.totalRegisters > 0
+                        ? ((stats.maleRegisters / stats.totalRegisters) * 100).toFixed(0)
+                        : "0"}%
                     </div>
                     <p className="text-xs text-muted-foreground">Male ratio</p>
                   </div>
                   <div className="text-center p-4 bg-muted rounded-lg">
                     <div className="text-2xl font-bold text-pink-600">
-                      {stats.totalRegistrations > 0
-                        ? (
-                            (stats.femaleRegistrations /
-                              stats.totalRegistrations) *
-                            100
-                          ).toFixed(0)
-                        : "0"}
-                      %
+                      {stats.totalRegisters > 0
+                        ? ((stats.femaleRegisters / stats.totalRegisters) * 100).toFixed(0)
+                        : "0"}%
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      Female ratio
-                    </p>
+                    <p className="text-xs text-muted-foreground">Female ratio</p>
+                  </div>
+                  <div className="text-center p-4 bg-muted rounded-lg">
+                    <div className="text-2xl font-bold text-green-600">
+                      {sortedBatches.length}
+                    </div>
+                    <p className="text-xs text-muted-foreground">Batches participating</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
-
-            {/* Last Updated */}
-            <p className="text-center text-xs text-muted-foreground">
-              Last updated: {new Date(stats.lastUpdated).toLocaleString()}
-            </p>
           </div>
         ) : null}
       </div>

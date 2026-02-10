@@ -14,8 +14,6 @@ func Router(r *gin.Engine) {
 		})
 		puppylove.GET("/stats", GetStats)
 		// Public endpoints
-		puppylove.POST("/reset-password", ResetPuppyLovePasswordHandler)
-		// Public password reset endpoint (no auth required)
 
 		users := puppylove.Group("/users")
 		{
@@ -23,9 +21,8 @@ func Router(r *gin.Engine) {
 			users.GET("/alluserInfo", GetAllUsersInfo)
 			users.POST("/login/first", UserFirstLogin)
 
-			// TODO: why?
-			// users.Use(middleware.UserAuthenticator)
-			// users.POST("/addRecovery", addRecovery)   not added recovery method in migrated version yet
+			users.POST("/addRecovery", AddRecovery)
+			users.GET("/retrieve", RetrievePass)
 			users.GET("/data", GetUserData)
 			users.GET("/activeusers", GetActiveUsers)
 
@@ -53,7 +50,6 @@ func Router(r *gin.Engine) {
 
 			users.Use(PuppyLovePermit())
 			users.POST("/sendheartVirtual", SendHeartVirtualHandler)
-			users.GET("/virtualheartcount", GetVirtualHeartCountHandler)
 			users.POST("/sendheart", SendHeartWithReturn)
 
 		}
@@ -63,14 +59,13 @@ func Router(r *gin.Engine) {
 			users.Use(PuppyLovePermit())
 			late.POST("/returnclaimedheartlate", ReturnClaimedHeartLate)
 		}
-		// for logout, we can directly use the compass' logoutHandler at /logout
 
-		// session := r.Group("/session")
-		// {
-		// 	session.POST("/admin/login", controllers.AdminLogin)
-		// 	// session.POST("/login", controllers.UserLogin)
-		// 	session.GET("/logout", controllers.UserLogout)
-		// }
+		admin := puppylove.Group("/admin")
+		{
+			admin.Use(middleware.UserAuthenticator, middleware.PuppyLoveAdminAuthenticator)
+			admin.GET("/publish", PublishResults)
+			admin.GET("/togglepermit", TogglePermit)
+		}
 
 	}
 }

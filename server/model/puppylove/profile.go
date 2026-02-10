@@ -12,6 +12,7 @@ type PuppyLoveProfile struct {
 	RollNo    string    `json:"rollNo" gorm:"type:varchar(20);index"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+	Code      string    `json:"code" bson:"code"`
 
 	Gender string `json:"gender" gorm:"type:varchar(10);index"`
 

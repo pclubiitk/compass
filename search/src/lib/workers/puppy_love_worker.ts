@@ -41,7 +41,7 @@ self.addEventListener('message', async (e: MessageEvent) => {
     }
   }
 
-  
+  // TODO: The function is identically same to the DECRYPT_HEARTS
   if (type === 'DECRYPT_RETURNED_HEARTS') {
     const { items, privKey } = payload;
     try {
@@ -87,6 +87,7 @@ self.addEventListener('message', async (e: MessageEvent) => {
     }
   }
 
+  // TODO: the sha, rand_int, etc functions do not need worker to be used, later correct this.
   if (type === 'SHA256') {
     const { data } = payload;
     try {
@@ -113,28 +114,6 @@ self.addEventListener('message', async (e: MessageEvent) => {
       self.postMessage({ type: 'RANDOM_STRING_RESULT', result, error: null });
     } catch (err) {
       self.postMessage({ type: 'RANDOM_STRING_RESULT', result: null, error: (err as Error).message });
-    }
-  }
-
-  if (type === 'VERIFY_PUPPYLOVE_PASSWORD') {
-    const { password } = payload;
-    try {
-      const res = await fetch(`${PUPPYLOVE_POINT}/api/puppylove/users/verify-password`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password }),
-      });
-
-      if (!res.ok) {
-        throw new Error(`Server responded with status ${res.status}`);
-      }
-
-      const data = await res.json();
-      const isValid = data?.valid === true;
-      self.postMessage({ type: 'VERIFY_PUPPYLOVE_PASSWORD_RESULT', result: isValid, error: null });
-    } catch (err) {
-      self.postMessage({ type: 'VERIFY_PUPPYLOVE_PASSWORD_RESULT', result: null, error: (err as Error).message });
     }
   }
 
@@ -172,19 +151,6 @@ self.addEventListener('message', async (e: MessageEvent) => {
     } catch (err) {
       console.error("SEND_VIRTUAL_HEART error:", err);
       self.postMessage({ type: 'SEND_VIRTUAL_HEART_RESULT', result: null, error: (err as Error).message });
-    }
-  }
-
-  if (type === 'GET_VIRTUAL_HEART_COUNT') {
-    try {
-      const res = await fetch(`${PUPPYLOVE_POINT}/api/puppylove/users/virtualheartcount`, {
-        method: 'GET',
-        credentials: 'include',
-      });
-      const data = await res.json();
-      self.postMessage({ type: 'GET_VIRTUAL_HEART_COUNT_RESULT', result: data, error: null });
-    } catch (err) {
-      self.postMessage({ type: 'GET_VIRTUAL_HEART_COUNT_RESULT', result: null, error: (err as Error).message });
     }
   }
 
@@ -239,6 +205,7 @@ self.addEventListener('message', async (e: MessageEvent) => {
         credentials: 'include',
       });
       const data = await res.json();
+      // FIXME(ppy): more logic, matching.tsx file
       self.postMessage({ type: 'FETCH_RETURN_HEARTS_RESULT', result: data, error: null });
     } catch (err) {
       self.postMessage({ type: 'FETCH_RETURN_HEARTS_RESULT', result: null, error: (err as Error).message });
