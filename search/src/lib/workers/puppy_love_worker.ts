@@ -1,6 +1,6 @@
 import { Decryption, Decryption_AES, SHA256, Encryption, Encryption_AES, RandInt, generateRandomString, GenerateKeys } from './Encryption';
 import { PUPPYLOVE_POINT } from "@/lib/constant";
-import { setData } from './utils';
+import { setClaims, setData } from './utils';
 
 self.addEventListener('message', async (e: MessageEvent) => {
   const { type, payload } = e.data;
@@ -157,18 +157,47 @@ self.addEventListener('message', async (e: MessageEvent) => {
   }
 
   if (type === 'SEND_VIRTUAL_HEART') {
-    const payload_data = payload;
-    console.log("📤 Sending SEND_VIRTUAL_HEART:", JSON.stringify(payload_data, null, 2));
+    const payload_data = payload.hearts;
+    const body = JSON.stringify({
+        hearts: {
+          heart1: {
+            sha_encrypt: payload_data[0]?.sha_encrypt ?? '',
+            id_encrypt: payload_data[0]?.id_encrypt ?? '',
+            songID_enc: payload_data[0]?.songID_enc ?? '',
+          },
+          heart2: {
+            sha_encrypt: payload_data[1]?.sha_encrypt ?? '',
+            id_encrypt: payload_data[1]?.id_encrypt ?? '',
+            songID_enc: payload_data[1]?.songID_enc ?? '',
+          },
+          heart3: {
+            sha_encrypt: payload_data[2]?.sha_encrypt ?? '',
+            id_encrypt: payload_data[2]?.id_encrypt ?? '',
+            songID_enc: payload_data[2]?.songID_enc ?? '',
+          },
+          heart4: {
+            sha_encrypt: payload_data[3]?.sha_encrypt ?? '',
+            id_encrypt: payload_data[3]?.id_encrypt ?? '',
+            songID_enc: payload_data[3]?.songID_enc ?? '',
+          },
+        },
+      })
     try {
       const res = await fetch(`${PUPPYLOVE_POINT}/api/puppylove/users/sendheartVirtual`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload_data),
+        body: body,
       });
       const data = await res.json();
       console.log("SEND_VIRTUAL_HEART response status:", res.status);
       console.log("SEND_VIRTUAL_HEART response:", data);
+      
+      if (res.status === 400) {
+        self.postMessage({ type: 'SEND_VIRTUAL_HEART_RESULT', result: data, error: data?.error || 'Failed to send virtual heart' });
+        return;
+      }
+      
       self.postMessage({ type: 'SEND_VIRTUAL_HEART_RESULT', result: data, error: null });
     } catch (err) {
       console.error("SEND_VIRTUAL_HEART error:", err);
@@ -314,11 +343,10 @@ self.addEventListener('message', async (e: MessageEvent) => {
         credentials: 'include',
       });
       const data = await res.json();
-      await setData(data.data, data.privK, data.id);
-      console.log("📥 GET_USER_DATA worker received from API:", data);
-      self.postMessage({ type: 'GET_USER_DATA_RESULT', result: data, error: null });
+      const decryptedReceiverIds = await setData(data.data, data.privK, data.id);
+      await setClaims(data.claims);
+      self.postMessage({ type: 'GET_USER_DATA_RESULT', result: { ...data, receiverIds: decryptedReceiverIds }, error: null });
     } catch (err) {
-      console.error("❌ GET_USER_DATA worker error:", err);
       self.postMessage({ type: 'GET_USER_DATA_RESULT', result: null, error: (err as Error).message });
     }
   }
@@ -401,45 +429,62 @@ self.addEventListener('message', async (e: MessageEvent) => {
 
   // Send Heart with full encryption flow
   if (type === 'PREPARE_SEND_HEART') {
-    const { senderPublicKey, senderPrivateKey, receiverPublicKey, senderRollNo, receiverRollNo, gender } = payload;
-    try {
-      // Step 1: Order IDs (smaller ID first for consistency)
-      const orderedIds = [senderRollNo, receiverRollNo].sort();
-      const R1 = orderedIds[0];
-      const R2 = orderedIds[1];
+    const { senderPublicKey,
+    senderPrivateKey,
+    puppyLovePublicKeys,
+    senderRollNo,
+    receiverIds } = payload;
 
-      // Step 2: Create 4 hearts with proper encryption
+    try {
+      const encList: string[] = [];
+      const shaList: string[] = [];
+      const sha_encryptList: string[] = [];
+      const ids_encryptList: string[] = [];
       const hearts = [];
-      for (let i = 0; i < 4; i++) {
-        // A. Create Plain Text ID: R1-R2-128charRandomString
+
+      // Step 1: Order IDs (smaller ID first for consistency)
+      for (const id of receiverIds){
+        if (id === '') {
+          encList.push('');
+          shaList.push('');
+          ids_encryptList.push('');
+          sha_encryptList.push('');
+          continue;
+        }
+        const orderedIds = [senderRollNo, id].sort();
+        const R1 = orderedIds[0];
+        const R2 = orderedIds[1];
+        // Step 2: Create 4 hearts with proper encryption
+          // A. Create Plain Text ID: R1-R2-128charRandomString
         const randomString = generateRandomString(128);
         const id_plain = `${R1}-${R2}-${randomString}`;
 
         // B. Generate SHA256 Hash of the plain text ID
-        const sha = await SHA256(id_plain);
+        const shaHash = await SHA256(id_plain);
 
         // C. Create THREE Encrypted Versions:
         // 1. id_encrypt: Encrypt id_plain with YOUR public key (your record)
         const id_encrypt = await Encryption(id_plain, senderPublicKey);
 
-        // 2. sha_encrypt: Encrypt sha with YOUR private key using AES (your signature)
-        const sha_encrypt = await Encryption_AES(sha, senderPrivateKey);
+        // 2. sha_encrypt: Encrypt shaHash with YOUR private key using AES (your signature)
+        const sha_encrypt = await Encryption_AES(shaHash, senderPrivateKey);
 
-        // 3. enc: Encrypt sha with RECEIVER's public key (they receive this)
-        const enc = await Encryption(sha, receiverPublicKey);
-
+        let receiverPublicKey = puppyLovePublicKeys[id];
+        // 3. encHeart: Encrypt shaHash with RECEIVER's public key (they receive this)
+        const encHeart = await Encryption(shaHash, receiverPublicKey);
         hearts.push({ 
           id_plain,
-          sha,
+          shaHash,
           id_encrypt,    // Your record (encrypted with your public key)
           sha_encrypt,   // Your signature (encrypted with your private key)
-          enc            // Receiver's heart (encrypted with their public key)
+          encHeart       // Receiver's heart (encrypted with their public key)
         });
       }
+    
 
       self.postMessage({ 
         type: 'PREPARE_SEND_HEART_RESULT', 
-        result: { hearts, senderRollNo, receiverRollNo, gender }, 
+        result: { hearts }, 
         error: null 
       });
     } catch (err) {

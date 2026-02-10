@@ -10,7 +10,7 @@ import {
 import { ThemeProvider } from "next-themes";
 import { Heart } from "lucide-react";
 import { PuppyLoveHeartsCard } from "@/components/puppy-love/HeartsCard";
-// import { PuppyLoveSelectionsPanel } from "@/components/puppy-love/SelectionsPanel";
+import { PuppyLoveSelectionsPanel } from "@/components/puppy-love/SelectionsPanel";
 import { Toaster } from "sonner";
 
 function randomHeartProps(i: number) {
@@ -43,6 +43,7 @@ function AppWrapper({ Component, pageProps }: AppProps) {
 
   useEffect(() => {
     const handleToggleSelections = () => {
+      
       setShowSelections((prev) => {
         const next = !prev;
         if (next && typeof window !== "undefined") {
@@ -135,14 +136,14 @@ function AppWrapper({ Component, pageProps }: AppProps) {
             <PuppyLoveHeartsCard compact />
           </div>
         )}
-        {/* {isPuppyLove && showSelections && (
+        {isPuppyLove && showSelections && (
           <PuppyLoveSelectionsPanel
             variant="desktop"
             onClose={() => {
               setShowSelections(false);
             }}
           />
-        )} */}
+        )}
       </div>
       <Toaster theme={isPuppyLove ? "light" : "system"}/>
     </div>

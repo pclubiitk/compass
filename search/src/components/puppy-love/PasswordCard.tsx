@@ -20,8 +20,8 @@ import { RecoveryCodeVerificationCard } from "./RecoveryCodeVerificationCard";
 import { LateMatchPrompt } from "./LateMatchPrompt";
 import { Label } from "@radix-ui/react-label";
 import { toast } from "sonner";
-import { usePuppyLoveContext } from "./PuppyLoveContextProvider";
-
+// import { usePuppyLoveContext } from "./PuppyLoveContextProvider";
+import { useGContext } from "@/components/ContextProvider";
 interface PuppyLovePasswordCardProps {
   onSuccess: () => void;
   onCancel: () => void;
@@ -38,7 +38,7 @@ export const PuppyLovePasswordCard = ({
     null,
   );
   const [isInitializing, setIsInitializing] = useState(false);
-  const { privateKey, setPrivateKey } = usePuppyLoveContext();
+  const { privateKey, setPrivateKey } = useGContext();
 
   // Late hearts state
   const [showLateMatchPrompt, setShowLateMatchPrompt] = useState(false);
@@ -202,7 +202,7 @@ export const PuppyLovePasswordCard = ({
     setIsSubmitting(true);
     try {
       const result = await verifyAndProceed(passwordToUse);
-
+      
       // Check if result indicates registration needed
       if (
         result &&
@@ -213,8 +213,13 @@ export const PuppyLovePasswordCard = ({
         return;
       }
 
+      if (result && typeof result === "object" && result.reason === "verification_failed") {
+        toast.error("Wrong password. Please try again.");
+        setPassword("");
+        return;
+      }
       if (!result) {
-        toast("Wrong password or unable to verify. Please try again.");
+        toast.error("Wrong password or unable to verify. Please try again.");
         setPassword("");
       }
     } catch (err) {

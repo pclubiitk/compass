@@ -7,13 +7,12 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import Image from "next/image";
-import { useGContext } from "@/components/ContextProvider";
+import { useGContext, puppyLoveHeartsSent, puppyLoveHeartsReceived, getNumberOfHeartsSent } from "@/components/ContextProvider";
 import { getVirtualHeartCount } from "@/lib/workers/puppyLoveWorkerClient";
 
 interface PuppyLoveHeartsCardProps {
   compact?: boolean;
 }
-import { puppyLoveHeartsSent, puppyLoveHeartsReceived, getNumberOfHeartsSent } from "./PuppyLoveContextProvider";
 
 export const PuppyLoveHeartsCard = ({ compact }: PuppyLoveHeartsCardProps) => {
   const { isPuppyLove } =

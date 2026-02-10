@@ -95,18 +95,16 @@ export const sentHeartDecoded = (decodedData: any) => callWorkerAPI('SENT_HEART_
 export const prepareSendHeart = (
   senderPublicKey: string,
   senderPrivateKey: string,
-  receiverPublicKey: string,
+  puppyLovePublicKeys: Record<string, string>,
   senderRollNo: string,
-  receiverRollNo: string,
-  gender: string
+  receiverIds: string[]
 ): Promise<any> => {
   return callWorkerAPI('PREPARE_SEND_HEART', {
     senderPublicKey,
     senderPrivateKey,
-    receiverPublicKey,
+    puppyLovePublicKeys,
     senderRollNo,
-    receiverRollNo,
-    gender
+    receiverIds
   });
 };
 

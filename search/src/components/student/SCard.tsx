@@ -11,11 +11,10 @@ import { Button } from "@/components/ui/button";
 import { Student } from "@/lib/types/data";
 import { cn, convertToTitleCase } from "@/lib/utils";
 import { Mail, Home, University, Globe, Heart } from "lucide-react";
-import { useGContext } from "@/components/ContextProvider";
-import { usePuppyLoveContext } from "../puppy-love/PuppyLoveContextProvider";
-import { prepareSendHeart, sendHeart, sendVirtualHeart, getVirtualHeartCount } from "@/lib/workers/puppyLoveWorkerClient";
+import { useGContext, puppyLoveHeartsSent, setPuppyLoveHeartsSent, receiverIds } from "@/components/ContextProvider";
+import { prepareSendHeart, sendHeart, sendVirtualHeart, getVirtualHeartCount, fetchPublicKeys } from "@/lib/workers/puppyLoveWorkerClient";
 import { toast } from "sonner";
-import { puppyLoveHeartsSent, setPuppyLoveHeartsSent } from "../puppy-love/PuppyLoveContextProvider";
+import { returnHeartsHandler } from "@/lib/workers/utils";
 interface SCardProps {
   data: Student;
   pointer?: boolean;
@@ -28,24 +27,26 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
   const { data, type, ...rest } = props;
   data.name = convertToTitleCase(data.name);
   data.email = data.email.startsWith("cmhw_") ? "Not Provided" : data.email;
-  const { puppyLovePublicKeys, puppyLoveProfile, privateKey } = usePuppyLoveContext();
-  const { isPuppyLove, currentUserProfile } = useGContext();
+  const { puppyLovePublicKeys, puppyLoveProfile, privateKey } = useGContext();
+  const { isPuppyLove, currentUserProfile, setStudentSelection } = useGContext();
   const [isSendingHeart, setIsSendingHeart] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
 
   const handleSendHeart = async () => {
     const activeProfile = isPuppyLove && puppyLoveProfile ? puppyLoveProfile : currentUserProfile;
-
+    
+    if (setStudentSelection) {
+      setStudentSelection(data);
+    }
     // Check if trying to send heart to yourself
     if (activeProfile?.rollNo === data.rollNo) {
-      alert("You cannot send a heart to yourself!");
+      toast.error("You cannot send a heart to yourself!");
       return;
     }
 
-    const alreadySent = Array.isArray(puppyLoveHeartsSent) &&
-      puppyLoveHeartsSent.some((h: any) => h.recipientId === data.rollNo);
-    if (alreadySent) {
-      alert("You have already sent a heart to this user.");
+    // Check if already sent a heart to this person (check receiverIds array)
+    if (receiverIds.includes(data.rollNo)) {
+      toast.error("You have already sent a heart to this user.");
       return;
     }
 
@@ -70,36 +71,22 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
       return;
     }
 
-    // Lazy-load: Check if receiver's public key is cached
+    // Lazy-load: Check if receiver's public key is in global context
     let receiverPublicKey = puppyLovePublicKeys?.[data.rollNo];
-    
-    // If not cached, fetch from server
+
+    // If not in global context, fetch from server
     if (!receiverPublicKey) {
       setIsSendingHeart(true);
       try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_PUPPYLOVE_URL}/api/puppylove/users/fetchPublicKeys`,
-          {
-            method: "GET",
-            credentials: "include",
-          }
-        );
-        const keys = await res.json();
-        
-        // Update localStorage and context with fresh keys
-        if (typeof window !== "undefined") {
-          localStorage.setItem("puppylove_public_keys", JSON.stringify(keys));
-        }
-        
-        receiverPublicKey = keys[data.rollNo];
-        
+        await fetchPublicKeys();
+        receiverPublicKey = puppyLovePublicKeys?.[data.rollNo];
         if (!receiverPublicKey) {
-          alert("Public key not found for this user");
+          toast.error("Public key not found for this user");
           setIsSendingHeart(false);
           return;
         }
       } catch (err) {
-        alert("Failed to fetch public keys: " + (err as Error).message);
+        toast.error("Failed to fetch public keys: " + (err as Error).message);
         setIsSendingHeart(false);
         return;
       }
@@ -109,36 +96,55 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
     setIsSendingHeart(true);
     
     try {
+      // Find the first empty slot in receiverIds (max 4 hearts)
+      const emptySlot = receiverIds.findIndex(id => id === '');
+      if (emptySlot === -1) {
+        toast.error("You have already sent the maximum number of hearts (4).");
+        setIsSendingHeart(false);
+        return;
+      }
+      receiverIds[emptySlot] = data.rollNo;
       // Step 1: Prepare hearts with complete encryption (id_encrypt, sha_encrypt, enc)
       const heartData = await prepareSendHeart(
         senderPublicKey,           // Your public key
         senderPrivateKey as string,          // Your private key
-        receiverPublicKey,  // Receiver's public key (now guaranteed to exist)
-        activeProfile.rollNo, // Your roll number
-        data.rollNo,              // Receiver's roll number
-        userGender
+        puppyLovePublicKeys,  // Receiver's public key (now guaranteed to exist)
+        activeProfile.id, // Your roll number
+        receiverIds,              // Receiver's roll number
       );
 
+      // send virtual heart
+      const resp = await sendVirtualHeart(heartData);
+      if (resp?.error) {
+        toast.error("Error sending virtual heart: " + resp.error);
+        setIsSendingHeart(false);
+        return;
+      }
+
       // Step 2: Send ACTUAL hearts (with receiver's encrypted data)
+      if (currentUserProfile?.submit) {
+      const returnHearts = await returnHeartsHandler(puppyLovePublicKeys);
       const result = await sendHeart({
         genderOfSender: userGender,
-        enc1: heartData.hearts[0].enc,        // Encrypted with receiver's public key
-        sha1: heartData.hearts[0].sha,        // Plain SHA hash
-        enc2: heartData.hearts[1].enc,
-        sha2: heartData.hearts[1].sha,
-        enc3: heartData.hearts[2].enc,
-        sha3: heartData.hearts[2].sha,
-        enc4: heartData.hearts[3].enc,
-        sha4: heartData.hearts[3].sha,
-        returnhearts: [],
+        enc1: heartData.hearts[0]?.encHeart ?? '',        // Encrypted with receiver's public key
+        sha1: heartData.hearts[0]?.shaHash ?? '',        // Plain SHA hash
+        enc2: heartData.hearts[1]?.encHeart ?? '',
+        sha2: heartData.hearts[1]?.shaHash ?? '',
+        enc3: heartData.hearts[2]?.encHeart ?? '',
+        sha3: heartData.hearts[2]?.shaHash ?? '',
+        enc4: heartData.hearts[3]?.encHeart ?? '',
+        sha4: heartData.hearts[3]?.shaHash ?? '',
+        returnhearts: returnHearts,
       });
 
+    }
       //TODO: local state update
     } catch (err) {
-      alert("Error: " + (err as Error).message);
+      toast.error("Error: " + (err as Error));
     } finally {
       setIsSendingHeart(false);
     }
+    
   };
 
   const handleSaveDraft = async () => {
@@ -242,9 +248,7 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
 
     // Get sender's public key and private key from session
     const senderPublicKey = puppyLovePublicKeys?.[activeProfile.id];
-    const senderPrivateKey = typeof window !== "undefined" 
-      ? sessionStorage.getItem("puppylove_encrypted_private_key") 
-      : null;
+    const senderPrivateKey = privateKey;
 
     console.log(senderPublicKey);
     console.log(senderPrivateKey);
@@ -305,9 +309,8 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
         senderPrivateKey as string,
         receiverPublicKey,
         activeProfile.rollNo,
-        data.rollNo,
-        activeProfile.gender
-      );
+        data.rollNo
+        );
       console.log("✅ prepareSendHeart succeeded");
 
       // Step 2: Find first empty slot and save draft there
