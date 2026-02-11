@@ -285,7 +285,7 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
     setPuppyLovePublicKeys({});
   };
 
-  useEffect(() => {
+    useEffect(() => {
     async function verifyingLogin() {
       try {
         setGlobalLoading(true);
@@ -308,22 +308,44 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
             if (res_json?.publish) {
               await fetchMatches(res_json?.publish);
             }
-            setIsPuppyLove(false); // Always start disabled on new session, user must toggle it on
+            setIsPuppyLove(false);
           } else if (response.status === 203) {
             setProfileVisibility(false);
             setLoggedIn(false);
           }
         } else {
+          setLoggedIn(false);
           setGlobalError(true);
         }
-      } catch (error) {
-        setGlobalLoading(false);
+      } catch {
+        setLoggedIn(false);
       } finally {
         setGlobalLoading(false);
       }
     }
     verifyingLogin();
   }, []);
+
+  // Centralized cleanup effect (ONLY addition)
+  useEffect(() => {
+    if (!isLoggedIn) {
+      // console.log("Logged out : clearing all storage on 3000");
+
+      sessionStorage.clear();
+      localStorage.clear();
+
+      // also clear in-memory state
+      resetPuppyLoveState();
+      setPrivateKey(null);
+      setPuppyLovePublicKeys({});
+      setMatchedIds([]);
+      setPuppyLoveProfile(null);
+      setIsPuppyLove(false);
+    }
+  }, [isLoggedIn]);
+
+  
+
 
   // Fetch Matches - pass publish flag directly to avoid stale closure
   const fetchMatches = async (isPublished: boolean) => {

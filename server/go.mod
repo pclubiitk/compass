@@ -2,7 +2,7 @@ module compass
 
 go 1.24.2
 
-toolchain go1.24.4
+// toolchain go1.24.4
 
 require (
 	github.com/gin-gonic/gin v1.11.0
