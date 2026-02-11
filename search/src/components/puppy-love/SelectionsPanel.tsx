@@ -351,7 +351,7 @@ export const PuppyLoveSelectionsPanel = ({
               Cancel
             </Button>
             <Button
-              className="bg-linear-to-r from-rose-500 ml-4 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-semibold"
+              className="bg-linear-to-r from-rose-500  to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-semibold"
               onClick={() => {
                 setShowConfirm(false);
                 handleSubmit();

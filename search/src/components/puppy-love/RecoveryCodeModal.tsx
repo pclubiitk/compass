@@ -28,7 +28,10 @@ const generateCode = (): string => {
   return `${code.slice(0, 8)}-${code.slice(8, 16)}`;
 };
 
-export const RecoveryCodeModal = ({ isOpen, onClose }: RecoveryCodeModalProps) => {
+export const RecoveryCodeModal = ({
+  isOpen,
+  onClose,
+}: RecoveryCodeModalProps) => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [code, setCode] = useState("");
@@ -61,21 +64,26 @@ export const RecoveryCodeModal = ({ isOpen, onClose }: RecoveryCodeModalProps) =
     try {
       // Encrypt password with recovery code using AES
       const encrypted = await Encryption_AES(password, code);
-      
-      const res = await fetch(`${PUPPYLOVE_POINT}/api/puppylove/users/addRecovery`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ passHash: password, code: encrypted }),
-      });
+
+      const res = await fetch(
+        `${PUPPYLOVE_POINT}/api/puppylove/users/addRecovery`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ passHash: password, code: encrypted }),
+        },
+      );
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || "Failed to save");
+      } else if (res.status === 401) {
+        toast.error("Unauthorized Invalid Password");
+      } else {
+        toast.success("Recovery code saved!");
+        handleClose();
       }
-
-      toast.success("Recovery code saved!");
-      handleClose();
     } catch (err: any) {
       toast.error(err.message || "Failed to save");
     } finally {
@@ -114,18 +122,32 @@ export const RecoveryCodeModal = ({ isOpen, onClose }: RecoveryCodeModalProps) =
                   {code}
                 </div>
                 <div className="flex gap-2">
-                  <Button onClick={handleCopy} variant="outline" size="sm" className="flex-1">
+                  <Button
+                    onClick={handleCopy}
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                  >
                     <Copy className="h-3 w-3 mr-1" />
                     {copied ? "Copied!" : "Copy"}
                   </Button>
-                  <Button onClick={handleDownload} variant="outline" size="sm" className="flex-1">
+                  <Button
+                    onClick={handleDownload}
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                  >
                     <Download className="h-3 w-3 mr-1" />
                     Download
                   </Button>
                 </div>
               </>
             ) : (
-              <Button onClick={() => setCode(generateCode())} variant="outline" className="w-full">
+              <Button
+                onClick={() => setCode(generateCode())}
+                variant="outline"
+                className="w-full"
+              >
                 Generate Code
               </Button>
             )}
@@ -151,10 +173,16 @@ export const RecoveryCodeModal = ({ isOpen, onClose }: RecoveryCodeModalProps) =
                   className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
                   onClick={() => setShowPassword(!showPassword)}
                 >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
                 </Button>
               </div>
-              <p className="text-xs text-amber-600">⚠️ Save the code before continuing!</p>
+              <p className="text-xs text-amber-600">
+                ⚠️ Save the code before continuing!
+              </p>
             </div>
           )}
 

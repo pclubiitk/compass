@@ -53,7 +53,7 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
 
   const handleSendHeart = async () => {
     const activeProfile = isPuppyLove && puppyLoveProfile ? puppyLoveProfile : currentUserProfile;
-    const senderRollNo = (isPuppyLove && puppyLoveProfile?.rollNo) || currentUserProfile?.rollNo;
+    const senderRollNo = (isPuppyLove && puppyLoveProfile?.id) || currentUserProfile?.id;
     if (setStudentSelection) {
       setStudentSelection(data);
     }

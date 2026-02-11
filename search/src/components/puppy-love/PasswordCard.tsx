@@ -17,7 +17,7 @@ import { FORGOT_POINT, PUPPYLOVE_POINT } from "@/lib/constant";
 import { PuppyLoveRegistrationCard } from "./RegistrationCard";
 import { PasswordRecoveryOptionsCard } from "../PasswordRecoveryOptionsCard";
 import { RecoveryCodeVerificationCard } from "./RecoveryCodeVerificationCard";
-import { LateMatchPrompt } from "./LateMatchPrompt";
+// import { LateMatchPrompt } from "./LateMatchPrompt";
 import { Label } from "@radix-ui/react-label";
 import { toast } from "sonner";
 // import { usePuppyLoveContext } from "./PuppyLoveContextProvider";
@@ -40,10 +40,10 @@ export const PuppyLovePasswordCard = ({
   const [isInitializing, setIsInitializing] = useState(false);
   const { privateKey, setPrivateKey } = useGContext();
 
-  // Late hearts state
-  const [showLateMatchPrompt, setShowLateMatchPrompt] = useState(false);
-  const [lateHearts, setLateHearts] = useState<any[]>([]);
-  const [pendingSuccess, setPendingSuccess] = useState(false);
+  // // Late hearts state
+  // const [showLateMatchPrompt, setShowLateMatchPrompt] = useState(false);
+  // const [lateHearts, setLateHearts] = useState<any[]>([]);
+  // const [pendingSuccess, setPendingSuccess] = useState(false);
 
   // If the privatekey already exits in the state, no need.
   useEffect(() => {
@@ -97,13 +97,15 @@ export const PuppyLovePasswordCard = ({
       const verifyData = await verifyRes.json();
 
       // Check if user is registered (dirty == true)
-        if (!verifyData.is_dirty) {
-          // User is unregistered - show registration flow
-          setShowRegistration(true);
-          setPassword("");
-          toast("You are not registered for Puppy Love. Please register to continue.");
-          return { success: false, reason: "not_registered" };
-        }
+      if (!verifyData.is_dirty) {
+        // User is unregistered - show registration flow
+        setShowRegistration(true);
+        setPassword("");
+        toast(
+          "You are not registered for Puppy Love. Please register to continue.",
+        );
+        return { success: false, reason: "not_registered" };
+      }
 
       // Fetch encrypted private key from backend
       const res = await fetch(`${PUPPYLOVE_POINT}/api/puppylove/users/data`, {
@@ -133,55 +135,59 @@ export const PuppyLovePasswordCard = ({
         // Store the private key and public key in sessionStorage
         sessionStorage.setItem(
           "data",
-          JSON.stringify({ k1: privateKey, k2: userData.pubKey || "" }),
+          JSON.stringify({
+            id: userData?.id || "",
+            k1: privateKey,
+            k2: userData.pubKey || "",
+          }),
         );
         // Store decrypted key in state
         setPrivateKey(privateKey);
       }
 
       // Fetch and claim hearts in the background
-      try {
-        console.log("[PuppyLove] Fetching and claiming hearts...");
-        const claimedHearts = await fetchAndClaimHearts(privateKey);
-        console.log("[PuppyLove] Hearts claimed:", claimedHearts);
+      // try {
+      //   console.log("[PuppyLove] Fetching and claiming hearts...");
+      //   const claimedHearts = await fetchAndClaimHearts(privateKey);
+      //   console.log("[PuppyLove] Hearts claimed:", claimedHearts);
 
-        // Store claimed hearts and late hearts for later use
-        if (claimedHearts) {
-          if (typeof window !== "undefined") {
-            // Store normal claims
-            if (claimedHearts.claims) {
-              sessionStorage.setItem(
-                "puppylove_claims",
-                JSON.stringify(claimedHearts.claims),
-              );
-            }
-            // Store late claims if any - show prompt to user
-            if (
-              claimedHearts.claims_late &&
-              claimedHearts.claims_late.length > 0
-            ) {
-              console.log(
-                "[PuppyLove] Late hearts detected:",
-                claimedHearts.claims_late,
-              );
-              sessionStorage.setItem(
-                "puppylove_claims_late",
-                JSON.stringify(claimedHearts.claims_late),
-              );
-              // Show late match prompt instead of immediately calling onSuccess
-              setLateHearts(claimedHearts.claims_late);
-              setShowLateMatchPrompt(true);
-              setPendingSuccess(true);
-              return true; // Return success but don't call onSuccess yet
-            }
-          }
-        }
-      } catch (heartErr) {
-        console.warn(
-          "[PuppyLove] Error fetching hearts (non-critical):",
-          heartErr,
-        );
-      }
+      //   // Store claimed hearts and late hearts for later use
+      //   if (claimedHearts) {
+      //     if (typeof window !== "undefined") {
+      //       // Store normal claims
+      //       if (claimedHearts.claims) {
+      //         sessionStorage.setItem(
+      //           "puppylove_claims",
+      //           JSON.stringify(claimedHearts.claims),
+      //         );
+      //       }
+      //       // Store late claims if any - show prompt to user
+      //       if (
+      //         claimedHearts.claims_late &&
+      //         claimedHearts.claims_late.length > 0
+      //       ) {
+      //         console.log(
+      //           "[PuppyLove] Late hearts detected:",
+      //           claimedHearts.claims_late,
+      //         );
+      //         sessionStorage.setItem(
+      //           "puppylove_claims_late",
+      //           JSON.stringify(claimedHearts.claims_late),
+      //         );
+      //         // Show late match prompt instead of immediately calling onSuccess
+      //         setLateHearts(claimedHearts.claims_late);
+      //         setShowLateMatchPrompt(true);
+      //         setPendingSuccess(true);
+      //         return true; // Return success but don't call onSuccess yet
+      //       }
+      //     }
+      //   }
+      // } catch (heartErr) {
+      //   console.warn(
+      //     "[PuppyLove] Error fetching hearts (non-critical):",
+      //     heartErr,
+      //   );
+      // }
 
       onSuccess();
       return true;
@@ -201,7 +207,7 @@ export const PuppyLovePasswordCard = ({
     setIsSubmitting(true);
     try {
       const result = await verifyAndProceed(passwordToUse);
-      
+
       // Check if result indicates registration needed
       if (
         result &&
@@ -212,7 +218,11 @@ export const PuppyLovePasswordCard = ({
         return;
       }
 
-      if (result && typeof result === "object" && result.reason === "verification_failed") {
+      if (
+        result &&
+        typeof result === "object" &&
+        result.reason === "verification_failed"
+      ) {
         toast.error("Wrong password. Please try again.");
         setPassword("");
         return;
@@ -229,33 +239,33 @@ export const PuppyLovePasswordCard = ({
     }
   };
 
-  // Handler for late match prompt close
-  const handleLateMatchPromptClose = () => {
-    setShowLateMatchPrompt(false);
-    setLateHearts([]);
-    // If we were waiting to call onSuccess, do it now
-    if (pendingSuccess) {
-      setPendingSuccess(false);
-      onSuccess();
-    }
-  };
+  // // Handler for late match prompt close
+  // const handleLateMatchPromptClose = () => {
+  //   setShowLateMatchPrompt(false);
+  //   setLateHearts([]);
+  //   // If we were waiting to call onSuccess, do it now
+  //   if (pendingSuccess) {
+  //     setPendingSuccess(false);
+  //     onSuccess();
+  //   }
+  // };
   // Handler for late match prompt complete (after processing late hearts)
-  const handleLateMatchComplete = () => {
-    // Late hearts have been processed successfully
-    console.log("[PuppyLove] Late hearts processed successfully");
-  };
+  // const handleLateMatchComplete = () => {
+  //   // Late hearts have been processed successfully
+  //   console.log("[PuppyLove] Late hearts processed successfully");
+  // };
 
   // Show late match prompt if there are late hearts
-  if (showLateMatchPrompt && lateHearts.length > 0) {
-    return (
-      <LateMatchPrompt
-        isOpen={showLateMatchPrompt}
-        onClose={handleLateMatchPromptClose}
-        lateHearts={lateHearts}
-        onComplete={handleLateMatchComplete}
-      />
-    );
-  }
+  // if (showLateMatchPrompt && lateHearts.length > 0) {
+  //   return (
+  //     <LateMatchPrompt
+  //       isOpen={showLateMatchPrompt}
+  //       onClose={handleLateMatchPromptClose}
+  //       lateHearts={lateHearts}
+  //       onComplete={handleLateMatchComplete}
+  //     />
+  //   );
+  // }
 
   if (showRegistration) {
     return (
@@ -311,7 +321,9 @@ export const PuppyLovePasswordCard = ({
               className="rounded-2xl"
             />
           </CardTitle>
-          <CardTitle className="text-2xl text-center">Puppy Love Login</CardTitle>
+          <CardTitle className="text-2xl text-center">
+            Puppy Love Login
+          </CardTitle>
           {isInitializing ? (
             <></>
           ) : (

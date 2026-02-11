@@ -66,24 +66,29 @@ export const NavBar = (props: NavBarProps) => {
         </div>
       )}
       <Card
-        className={`p-2 w-4/5 sticky top-2 z-10 max-w-4xl m-auto flex flex-row justify-between items-center transition-all duration-500 border-none mt-4
+        className={`p-2 w-4/5 sticky top-2 z-10 max-w-4xl m-auto flex flex-row justify-between items-center transition-all duration-500 border-none mt-4 mb-4
         ${isPuppyLove && "bg-rose-50/90 shadow-[0_10px_40px_rgba(225,29,72,0.15)] backdrop-blur-md"}`}
       >
         {/* Left Side: Results Counter */}
         <CardDescription
           className={`flex flex-row items-center px-4 font-medium transition-colors duration-500 ${isPuppyLove ? "text-rose-500" : "text-stone-400"}`}
         >
-          {isPuppyLove && !PLpermit ? (
-            <span className="hidden sm:inline">My Matches</span>
-          ) : (
-            <>
-              <span className="hidden sm:inline">Showing{"\u00A0"}</span>
-              <span className="text-sm">
-                {Math.min(props.pos, props.length)} of {props.length}
-                {props.length === 1 ? " result" : " results"}
-              </span>
-            </>
-          )}
+          <div className={`${isPuppyLove && "hidden sm:inline"}`}>
+            {isPuppyLove && !PLpermit ? (
+              <>
+                <span className="hidden sm:inline">My</span>
+                <span className="sm:inline"> Matches</span>
+              </>
+            ) : (
+              <>
+                <span className="hidden sm:inline">Showing{"\u00A0"}</span>
+                <span className="text-sm">
+                  {Math.min(props.pos, props.length)} of {props.length}
+                  {props.length === 1 ? " result" : " results"}
+                </span>
+              </>
+            )}
+          </div>
         </CardDescription>
 
         {/* Right Side: Actions & Logos */}

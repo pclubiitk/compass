@@ -255,27 +255,27 @@ self.addEventListener('message', async (e: MessageEvent) => {
         data.map(async (elem: any) => {
           const encoded_sha = elem.enc;
           // Decrypt enc with private key (RSA) to get the SHA
-          console.log(`Decrypted returned heart: enc ${encoded_sha}, pvtKey ${privKey}`);
+          // console.log(`Decrypted returned heart: enc ${encoded_sha}, pvtKey ${privKey}`);
           const sha = await Decryption(encoded_sha, privKey);
           if (sha === 'Fail' || !sha) {
             console.error(`Failed to decrypt returned heart: enc ${encoded_sha}`);
             return;
           } 
-          console.log(`Decrypted returned heart: enc ${encoded_sha}, sha ${sha}`);
+          // console.log(`Decrypted returned heart: enc ${encoded_sha}, sha ${sha}`);
           // Check against each of our sent hearts
           for (const key in sentHearts) {
-            console.log("reached inside loop: ", key)
+            // console.log("reached inside loop: ", key)
             const heart = sentHearts[key];
             if (!heart || !heart.sha_encrypt || !heart.id_encrypt) continue;
 
             // Decrypt sha_encrypt with private key (AES) to get our stored SHA
             const my_sha = await Decryption_AES(heart.sha_encrypt, privKey);
-            console.log(`Comparing with sent heart \n\n ${key}: \n\nmy_sha ${my_sha},\n\n returned sha ${sha}`);
+            // console.log(`Comparing with sent heart \n\n ${key}: \n\nmy_sha ${my_sha},\n\n returned sha ${sha}`);
             if (my_sha === sha) {
               // Match found — decrypt id_encrypt to get the secret (id_plain)
               const id_plain = await Decryption(heart.id_encrypt, privKey);
               if (!id_plain || id_plain === 'Fail') continue;
-              console.log(`Match found for heart ${key}: SHA ${sha}, ID ${id_plain}`);
+              // console.log(`Match found for heart ${key}: SHA ${sha}, ID ${id_plain}`);
               // Call verifyreturnhearts to register the match on server
               self.postMessage({ type: 'VERIFY_RETURN_HEARTS', payload: {encoded_sha, id_plain}}); // Optional: indicate verification started
               try {
@@ -288,7 +288,7 @@ self.addEventListener('message', async (e: MessageEvent) => {
                 const verifyData = await verifyRes.json();
                 matchResults.push({ key, sha, verified: verifyData });
               } catch (verifyErr) {
-                console.error('Error verifying return heart:', verifyErr);
+                // console.error('Error verifying return heart:', verifyErr);
               }
               break; // Found the matching sent heart, no need to check others
             }

@@ -59,6 +59,7 @@ export const PuppyLoveRegistrationCard = ({
       }
       let pubKey: string = "";
       let privKey: string = "";
+      let rollNo: string = "";
       // Confirm user is still unregistered
       if (!verifyData.is_dirty) {
         initPuppyLoveWorker();
@@ -84,23 +85,26 @@ export const PuppyLoveRegistrationCard = ({
             }),
           },
         );
-        if (!registerRes.ok) {
-          const errorData = await registerRes.json();
+        const errorData = await registerRes.json();
+        if (registerRes.status !== 201) {
           toast(errorData.error || "Registration failed. Please try again.");
           setIsSubmitting(false);
           return;
+        } else {
+          rollNo = errorData?.id || "";
         }
       } else {
         toast("You are already registered for PuppyLove!");
         pubKey = verifyData.pubKey;
         privKey = await decryptPrivateKey(verifyData.privKey, password);
+        rollNo = verifyData?.roll;
       }
       // Success - profile created with dirty: true
       // Store keys in sessionStorage for immediate use
       if (typeof window !== "undefined") {
         sessionStorage.setItem(
           "data",
-          JSON.stringify({ k1: privKey, k2: pubKey }),
+          JSON.stringify({id: rollNo, k1: privKey, k2: pubKey }),
         );
       }
 

@@ -314,6 +314,7 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
           const res_json = await response.json();
           setProfileVisibility(true);
           setLoggedIn(true);
+          // FIXME: when puppy route do not exist, then the await will cause the error, resulting into catch statement.
           setPuppyLovePublicKeys(await fetchPublicKeys());
           if (response.status === 202) {
             setPLseason(true);
@@ -322,6 +323,8 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
             if (res_json?.publish) {
               await fetchMatches(res_json?.publish);
             }
+            // Load local keys
+            loadLocalKeys(res_json?.rollNo);
             setIsPuppyLove(false); // Always start disabled on new session, user must toggle it on
           } else if (response.status === 203) {
             notLoggedInReset();
@@ -386,21 +389,34 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // On mount, read the private key from sessionStorage if it exists
-  // This runs once on refresh to restore the key
-  useEffect(() => {
+  // Read the private key from sessionStorage if it exists
+  // This runs once on refresh to restore the key, after
+  const loadLocalKeys = (rollNo: string | null): boolean => {
+    if (!rollNo) return false;
     const storedData = sessionStorage.getItem("data");
     if (storedData) {
       try {
         const parsed = JSON.parse(storedData);
-        if (parsed.k1) {
-          setPrivateKey(parsed.k1);
+        if (rollNo != "" && parsed.k1) {
+          if (parsed.id !== rollNo) {
+            console.log("Clearing session storage, as old keys");
+            sessionStorage.clear();
+            setIsPuppyLove(false);
+            return false;
+          } else {
+            setPrivateKey(parsed.k1);
+            return true;
+          }
         }
       } catch (parseErr) {
+        sessionStorage.clear();
+        setIsPuppyLove(false);
         console.error("Error parsing stored data:", parseErr);
+        return false;
       }
     }
-  }, []);
+    return false;
+  };
 
   // Fetch PuppyLove all users data (interests/bio) when PuppyLove mode is enabled
   useEffect(() => {

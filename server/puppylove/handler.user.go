@@ -93,7 +93,7 @@ func UserFirstLogin(c *gin.Context) {
 	// Store public key in Redis
 	connections.RedisClient.HSet(connections.RedisCtx, "puppylove:public_keys", rollNo.(string), info.PubKey)
 
-	c.JSON(http.StatusCreated, gin.H{"message": "User Created Successfully."})
+	c.JSON(http.StatusCreated, gin.H{"message": "User Created Successfully.", "id": rollNo})
 }
 
 // TODO: ensure the frontend and the backend are on the same page, as this route is updated for the or removed.

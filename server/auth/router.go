@@ -22,6 +22,7 @@ func Router(r *gin.Engine) {
 		// Middleware will handel not login state
 		auth.GET("/me", middleware.UserAuthenticator, func(c *gin.Context) {
 			val, exists := c.Get("visibility")
+			rollNo, _ := c.Get("rollNo")
 
 			// ensure it exists and is a boolean
 			isVisible, ok := val.(bool)
@@ -40,11 +41,11 @@ func Router(r *gin.Engine) {
 					c.JSON(http.StatusOK, gin.H{"success": true})
 				} else {
 					// 202: puppylove enabled
-					c.JSON(http.StatusAccepted, gin.H{"success": true, "permit": puppyLovePermitted, "publish": puppyLovePublished})
+					c.JSON(http.StatusAccepted, gin.H{"success": true, "permit": puppyLovePermitted, "publish": puppyLovePublished, "rollNo": rollNo})
 				}
 			} else {
 				// 203: logged in + hidden
-				c.JSON(http.StatusNonAuthoritativeInfo, gin.H{"success": true, "status": "hidden"})
+				c.JSON(http.StatusNonAuthoritativeInfo, gin.H{"success": true, "status": "hidden", "rollNo": rollNo})
 			}
 		})
 	}

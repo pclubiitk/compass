@@ -444,7 +444,11 @@ function Options(props: OptionsProps) {
                   variant="outline"
                   size="icon"
                   className="w-full text-wrap h-10 border-rose-300/70 text-rose-600 hover:text-rose-700 hover:bg-rose-100/80 shadow-sm dark:border-rose-600 dark:text-rose-400 dark:hover:bg-rose-950/40"
-                  onClick={() => {}}
+                  onClick={() => {
+                    toast(
+                      "Its fine, you can leave it behind ;), but the option will be available till deadline.",
+                    );
+                  }}
                 >
                   NO
                 </Button>
@@ -454,7 +458,7 @@ function Options(props: OptionsProps) {
         )
       ) : (
         // TODO: If User agreed to publish (the state in the user data), then we can show the results, else it will be empty.
-        <Card className="border-rose-200/40 bg-gradient-to-br from-rose-50/80 via-pink-50/60 to-fuchsia-50/40 dark:border-rose-800/30 dark:from-rose-950/20 dark:via-pink-950/15 dark:to-fuchsia-950/10">
+        <Card className="border-rose-200/40 bg-linear-to-br from-rose-50/80 via-pink-50/60 to-fuchsia-50/40 dark:border-rose-800/30 dark:from-rose-950/20 dark:via-pink-950/15 dark:to-fuchsia-950/10">
           <CardHeader className="text-center pb-4">
             <div className="mx-auto mb-2 text-rose-400 dark:text-rose-500">
               <Heart className="h-10 w-10 fill-rose-400/40" />
@@ -517,7 +521,9 @@ function Options(props: OptionsProps) {
             variant="outline"
             size="icon"
             className="w-full h-10 border-rose-300/60 bg-white/50 text-rose-600 hover:text-rose-700 hover:bg-rose-100/80 shadow-sm transition-colors dark:border-rose-600 dark:bg-rose-950/20 dark:text-rose-400 dark:hover:bg-rose-950/40"
-            onClick={() => setShowSelections && setShowSelections(true)}
+            onClick={() =>
+              setShowSelections && setShowSelections(!showSelections)
+            }
           >
             <Eye className="h-4 w-4" /> View Selections
           </Button>
