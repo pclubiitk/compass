@@ -52,8 +52,10 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
   const [isSendingHeart, setIsSendingHeart] = useState(false);
 
   const handleSendHeart = async () => {
-    const activeProfile = isPuppyLove && puppyLoveProfile ? puppyLoveProfile : currentUserProfile;
-    const senderRollNo = (isPuppyLove && puppyLoveProfile?.id) || currentUserProfile?.id;
+    const activeProfile =
+      isPuppyLove && puppyLoveProfile ? puppyLoveProfile : currentUserProfile;
+    const senderRollNo =
+      (isPuppyLove && puppyLoveProfile?.id) || currentUserProfile?.id;
     if (setStudentSelection) {
       setStudentSelection(data);
     }
@@ -62,7 +64,6 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
       toast.error("You cannot send a heart to yourself!");
       return;
     }
-
     // Check if already sent a heart to this person (check receiverIds array)
     if (receiverIds.includes(data.rollNo)) {
       toast.error("You have already sent a heart to this user.");
@@ -104,7 +105,9 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
         await fetchPublicKeys();
         receiverPublicKey = puppyLovePublicKeys?.[data.rollNo];
         if (!receiverPublicKey) {
-          toast.error("Public key not found for this user");
+          toast.error(
+            "User Not Registered, Refresh to check again (Public key not found)",
+          );
           setIsSendingHeart(false);
           return;
         }

@@ -169,8 +169,8 @@ self.addEventListener('message', async (e: MessageEvent) => {
         body: body,
       });
       const data = await res.json();
-      console.log("SEND_VIRTUAL_HEART response status:", res.status);
-      console.log("SEND_VIRTUAL_HEART response:", data);
+      // console.log("SEND_VIRTUAL_HEART response status:", res.status);
+      // console.log("SEND_VIRTUAL_HEART response:", data);
       
       if (res.status === 400) {
         self.postMessage({ type: 'SEND_VIRTUAL_HEART_RESULT', result: data, error: data?.error || 'Failed to send virtual heart' });
@@ -201,9 +201,9 @@ self.addEventListener('message', async (e: MessageEvent) => {
 
       const decrypted = await Promise.all(
         hearts.map(async (heart: any) => {
-          console.log(`Attempting to decrypt heart: enc ${heart.enc}, genderOfSender ${heart.genderOfSender}, \n pvtKey ${privateKey}`);
+          // console.log(`Attempting to decrypt heart: enc ${heart.enc}, genderOfSender ${heart.genderOfSender}, \n pvtKey ${privateKey}`);
           const sha = await Decryption(heart.enc, privateKey);
-          console.log(`Decrypted heart: enc ${heart.enc}, sha ${sha}, genderOfSender ${heart.genderOfSender}`);
+          // console.log(`Decrypted heart: enc ${heart.enc}, sha ${sha}, genderOfSender ${heart.genderOfSender}`);
           return { ...heart, sha };
         })
       );
@@ -373,7 +373,7 @@ self.addEventListener('message', async (e: MessageEvent) => {
       const data = await res.json();
       const rawPrivateKey = payload?.privateKey ?? null;
       const decryptedReceiverIds = await setData(data.data, rawPrivateKey, data.id);
-      console.log("Decrypted Receiver IDs in GET_USER_DATA:", decryptedReceiverIds);
+      // console.log("Decrypted Receiver IDs in GET_USER_DATA:", decryptedReceiverIds);
       let claimsArray = await setClaims(data.claims);
       self.postMessage({ type: 'GET_USER_DATA_RESULT', result: { ...data, receiverIds: decryptedReceiverIds, claimsArray }, error: null });
     } catch (err) {
@@ -502,7 +502,7 @@ self.addEventListener('message', async (e: MessageEvent) => {
         let receiverPublicKey = puppyLovePublicKeys[id];
         // 3. encHeart: Encrypt shaHash with RECEIVER's public key (they receive this)
         const encHeart = await Encryption(shaHash, receiverPublicKey);
-        console.log(`Prepared heart for receiver ${id} with PUBLICKEY=${receiverPublicKey}: id_plain ${id_plain}, shaHash ${shaHash}, id_encrypt ${id_encrypt}, sha_encrypt ${sha_encrypt}, encHeart ${encHeart}`);
+        // console.log(`Prepared heart for receiver ${id} with PUBLICKEY=${receiverPublicKey}: id_plain ${id_plain}, shaHash ${shaHash}, id_encrypt ${id_encrypt}, sha_encrypt ${sha_encrypt}, encHeart ${encHeart}`);
         hearts.push({ 
           id_plain,
           shaHash,

@@ -342,7 +342,7 @@ export const PuppyLoveSelectionsPanel = ({
               cannot be undone.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="gap-2 sm:gap-0">
+          <DialogFooter className="gap-2">
             <Button
               variant="outline"
               className="border-rose-300 text-rose-600 hover:bg-rose-100"

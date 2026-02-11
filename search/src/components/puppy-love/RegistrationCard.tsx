@@ -20,6 +20,7 @@ import {
 } from "@/lib/workers/puppyLoveWorkerClient";
 import { toast } from "sonner";
 import { useRouter } from "next/router";
+import { useGContext } from "@/components/ContextProvider";
 
 interface PuppyLoveRegistrationCardProps {
   onSuccess: () => void;
@@ -34,6 +35,7 @@ export const PuppyLoveRegistrationCard = ({
   const [agreedToTnC, setAgreedToTnC] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
+  const { setPrivateKey } = useGContext();
 
   const handleRegister = async () => {
     if (isSubmitting) return;
@@ -104,10 +106,10 @@ export const PuppyLoveRegistrationCard = ({
       if (typeof window !== "undefined") {
         sessionStorage.setItem(
           "data",
-          JSON.stringify({id: rollNo, k1: privKey, k2: pubKey }),
+          JSON.stringify({ id: rollNo, k1: privKey, k2: pubKey }),
         );
       }
-
+      setPrivateKey(privKey);
       // TODO: later shift this public keys fetching into the sent heart feature.
       // Fetch and cache all public keys
       try {
@@ -196,7 +198,9 @@ export const PuppyLoveRegistrationCard = ({
                   placeholder="Enter your profile password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleRegister()}
+                  onKeyDown={(e) =>
+                    e.key === "Enter" && agreedToTnC && handleRegister()
+                  }
                   disabled={isSubmitting}
                 />
               </div>
