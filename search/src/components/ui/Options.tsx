@@ -242,15 +242,16 @@ function Options(props: OptionsProps) {
           "border-rose-200/40 bg-linear-to-br from-rose-50 via-pink-50/90 to-fuchsia-50/60 text-rose-600 shadow-[0_10px_40px_rgba(225,29,72,0.12)] dark:border-rose-800/30 dark:from-rose-950/30 dark:via-pink-950/20 dark:to-fuchsia-950/15 dark:text-rose-400",
       )}
     >
-      {/* PuppyLove badge */}
       {isPuppyLove && (
-        <div className="flex justify-end mb-2">
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-500/10 border border-rose-300/50 text-xs font-bold text-rose-500 dark:bg-rose-500/15 dark:border-rose-500/40 dark:text-rose-400 select-none">
-            <Heart className="h-3.5 w-3.5 fill-rose-500/60" />
-            PuppyLove
-          </div>
+        <div>
+          <CardTitle>Puppy Love Mode active.</CardTitle>
+          <CardDescription className="flex-col sm:flex-row">
+            You can search other users here.
+          </CardDescription>
         </div>
       )}
+      {/* PuppyLove badge */}
+
       {/* Show only when not (puppylove mode and permit is off) */}
       {(isPuppyLove && PLpermit) || !isPuppyLove ? (
         <>

@@ -322,7 +322,7 @@ export const PuppyLovePasswordCard = ({
             />
           </CardTitle>
           <CardTitle className="text-2xl text-center">
-            Puppy Love Login
+            Login Into PuppyLove Mode
           </CardTitle>
           {isInitializing ? (
             <></>
