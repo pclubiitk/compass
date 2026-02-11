@@ -224,7 +224,6 @@ self.addEventListener('message', async (e: MessageEvent) => {
           return { ...heart, claim: claimData };
         })
       );
-
       self.postMessage({ type: 'FETCH_AND_CLAIM_HEARTS_RESULT', result: claims, error: null });
     } catch (err) {
       self.postMessage({ type: 'FETCH_AND_CLAIM_HEARTS_RESULT', result: null, error: (err as Error).message });
@@ -374,6 +373,7 @@ self.addEventListener('message', async (e: MessageEvent) => {
       const rawPrivateKey = payload?.privateKey ?? null;
       const decryptedReceiverIds = await setData(data.data, rawPrivateKey, data.id);
       // console.log("Decrypted Receiver IDs in GET_USER_DATA:", decryptedReceiverIds);
+      console.log("INSIDE GET_USER_DATA -> Data.Claims received in GET_USER_DATA:", data.claims);
       let claimsArray = await setClaims(data.claims);
       self.postMessage({ type: 'GET_USER_DATA_RESULT', result: { ...data, receiverIds: decryptedReceiverIds, claimsArray }, error: null });
     } catch (err) {

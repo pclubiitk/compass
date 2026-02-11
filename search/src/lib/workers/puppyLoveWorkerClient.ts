@@ -58,7 +58,7 @@ export const fetchReturnHearts = () => callWorkerAPI('FETCH_RETURN_HEARTS');
 export const verifyReturnHearts = (verifyData: any) => callWorkerAPI('VERIFY_RETURN_HEARTS', verifyData);
 export const returnLateHearts = (lateHeartsData: any) => callWorkerAPI('RETURN_LATE_HEARTS', lateHeartsData);
 export const fetchPublicKeys = () => callWorkerAPI('FETCH_PUBLIC_KEYS');
-export const getUserData = () => callWorkerAPI('GET_USER_DATA');
+export const getUserData = (privateKey?: string) => callWorkerAPI('GET_USER_DATA', privateKey ? { privateKey } : {});
 export const updateAbout = (aboutData: any) => callWorkerAPI('UPDATE_ABOUT', aboutData);
 export const updateInterests = (interestData: any) => callWorkerAPI('UPDATE_INTERESTS', interestData);
 export const publishProfile = () => callWorkerAPI('PUBLISH_PROFILE');

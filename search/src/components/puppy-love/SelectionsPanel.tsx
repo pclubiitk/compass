@@ -17,11 +17,21 @@ import {
 } from "@/components/ContextProvider";
 import {
   fetchAndClaimHearts,
+  getUserData,
   prepareSendHeart,
   sendHeart,
   sendVirtualHeart,
 } from "@/lib/workers/puppyLoveWorkerClient";
 import { returnHeartsHandler } from "@/lib/workers/utils";
+import {
+  resetReceivedHearts,
+  addReceivedHeart,
+  incHeartsMalesBy,
+  incHeartsFemalesBy,
+  setReceiverIds,
+  setPuppyLoveHeartsSent as setPuppyLoveHeartsSentState,
+  type Hearts,
+} from "@/lib/puppyLoveState";
 import { toast } from "sonner";
 
 interface DraftEntry {
@@ -219,8 +229,37 @@ export const PuppyLoveSelectionsPanel = ({
         activeProfile.id,
         receiverIds,
       );
-      await fetchAndClaimHearts(privateKey); // Ensure we have the latest hearts before submitting
+
+      // 1. Fetch and claim any hearts sent to us (server-side claiming)
+      await fetchAndClaimHearts(privateKey);
+
+      // 2. Re-fetch full user data so puppyLoveHeartsReceived reflects
+      //    ALL claims (old ones + freshly claimed ones)
+      const userData = await getUserData(senderPrivateKey as string);
+      if (userData) {
+        resetReceivedHearts();
+        if (userData.claimsArray) {
+          userData.claimsArray.forEach((claim: any) => {
+            addReceivedHeart(claim);
+            if (claim.genderOfSender === "M") incHeartsMalesBy(1);
+            else if (claim.genderOfSender === "F") incHeartsFemalesBy(1);
+          });
+        }
+        if (userData.receiverIds) {
+          setReceiverIds(userData.receiverIds);
+        }
+        if (userData.data && userData.data !== "FIRST_LOGIN") {
+          try {
+            setPuppyLoveHeartsSentState(JSON.parse(userData.data) as Hearts);
+          } catch (e) {
+            console.error("Failed to parse hearts data:", e);
+          }
+        }
+      }
+
+      // 3. Now generate return hearts with up-to-date claimed hearts
       const returnHearts = await returnHeartsHandler(puppyLovePublicKeys);
+      
       await sendVirtualHeart(heartData);
       setPuppyLoveHeartsSent(heartData.hearts);
       const result = await sendHeart({
