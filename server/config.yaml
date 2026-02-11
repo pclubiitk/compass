@@ -14,7 +14,7 @@ database:
 rabbitmq:
   host: "localhost"
   # FIXME(prod): Create new user id and pwd
-  user: "this_is_mjk"
+  user: "guest"
   mailqueue: "mail_queue" # Keep the names consistent <type>queue for protect the publish logic correct
   moderationqueue: "moderation_queue"
   port: 5672

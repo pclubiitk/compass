@@ -145,7 +145,7 @@ export default function StatsPage() {
                     "bg-white/20 backdrop-blur-sm",
                   )}
                 >
-                  Results Published
+                  Matches Published
                 </div>
               </div>
             </Card>

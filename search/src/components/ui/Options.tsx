@@ -9,7 +9,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Lightbulb, Key, Edit, Eye } from "lucide-react";
+import { Lightbulb, Key, Edit, Eye, Heart } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -69,6 +69,14 @@ function Options(props: OptionsProps) {
   // Recovery code modal state
   const [showRecoveryModal, setShowRecoveryModal] = useState(false);
   const [isYesLoading, setIsYesLoading] = useState(false);
+  const [hasOptedIn, setHasOptedIn] = useState(!!puppyLoveProfile?.publish);
+
+  // Sync hasOptedIn when puppyLoveProfile loads asynchronously
+  useEffect(() => {
+    if (puppyLoveProfile?.publish) {
+      setHasOptedIn(true);
+    }
+  }, [puppyLoveProfile?.publish]);
 
   // Debounced query
   const debouncedSendQuery = useCallback(debounce(props.sendQuery, 300), [
@@ -135,9 +143,10 @@ function Options(props: OptionsProps) {
         return;
       }
       
+      setHasOptedIn(true);
       // Then fetch return hearts
       await fetchReturnHearts();
-      toast.success("You're now opted-in! Checking for matches...");
+      toast.success("You're now opted-in for matching!");
     } catch (err) {
       toast.error("Failed to opt-in for matching.");
       console.error("[PuppyLove] handleYesClick failed:", err);
@@ -151,9 +160,18 @@ function Options(props: OptionsProps) {
       className={cn(
         "p-4 md:p-6 w-4/5 max-w-4xl m-auto",
         isPuppyLove &&
-          "border-none bg-rose-50/90 text-rose-500 shadow-[0_10px_40px_rgba(225,29,72,0.15)]",
+          "border-rose-200/40 bg-gradient-to-br from-rose-50 via-pink-50/90 to-fuchsia-50/60 text-rose-600 shadow-[0_10px_40px_rgba(225,29,72,0.12)] dark:border-rose-800/30 dark:from-rose-950/30 dark:via-pink-950/20 dark:to-fuchsia-950/15 dark:text-rose-400",
       )}
     >
+      {/* PuppyLove badge */}
+      {isPuppyLove && (
+        <div className="flex justify-end mb-2">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-500/10 border border-rose-300/50 text-xs font-bold text-rose-500 dark:bg-rose-500/15 dark:border-rose-500/40 dark:text-rose-400 select-none">
+            <Heart className="h-3.5 w-3.5 fill-rose-500/60" />
+            PuppyLove
+          </div>
+        </div>
+      )}
       {/* Show only when not (puppylove mode and permit is off) */}
       {(isPuppyLove && PLpermit) || !isPuppyLove ? (
         <>
@@ -210,7 +228,7 @@ function Options(props: OptionsProps) {
               <div className="w-full">
                 <Label
                   htmlFor="gender"
-                  className={cn("mb-1", isPuppyLove && "text-rose-500")}
+                  className={cn("mb-1", isPuppyLove && "text-rose-600 dark:text-rose-400")}
                 >
                   Gender
                 </Label>
@@ -229,7 +247,7 @@ function Options(props: OptionsProps) {
                     id="gender"
                     className={cn(
                       isPuppyLove &&
-                        "border-rose-200/80 bg-rose-100/70 text-rose-500 placeholder:text-rose-300",
+                        "border-rose-200/60 bg-white/70 text-rose-600 placeholder:text-rose-300 focus:border-rose-400 dark:bg-rose-950/20 dark:border-rose-700 dark:text-rose-300",
                     )}
                   >
                     <SelectValue placeholder="Select Gender" />
@@ -248,7 +266,7 @@ function Options(props: OptionsProps) {
             <div className="grid w-full items-center lg:-mt-2">
               <Label
                 htmlFor="hometown"
-                className={cn("mb-1", isPuppyLove && "text-rose-500")}
+                className={cn("mb-1", isPuppyLove && "text-rose-600 dark:text-rose-400")}
               >
                 Hometown
               </Label>
@@ -263,7 +281,7 @@ function Options(props: OptionsProps) {
                 disabled={isGlobalLoading}
                 className={cn(
                   isPuppyLove &&
-                    "border-rose-200/80 bg-rose-100/70 text-rose-500 placeholder:text-rose-300",
+                    "border-rose-200/60 bg-white/70 text-rose-600 placeholder:text-rose-300 focus:border-rose-400 dark:bg-rose-950/20 dark:border-rose-700 dark:text-rose-300",
                 )}
               />
             </div>
@@ -272,7 +290,7 @@ function Options(props: OptionsProps) {
           <div>
             <Label
               htmlFor="main-search"
-              className={cn("mb-2", isPuppyLove && "text-rose-500")}
+              className={cn("mb-2", isPuppyLove && "text-rose-600 dark:text-rose-400")}
             >
               Enter name, username or roll no.
             </Label>
@@ -289,49 +307,64 @@ function Options(props: OptionsProps) {
                 className={cn(
                   "pr-10",
                   isPuppyLove &&
-                    "border-rose-200/80 bg-rose-100/70 text-rose-500 placeholder:text-rose-300",
+                    "border-rose-200/60 bg-white/70 text-rose-600 placeholder:text-rose-300 focus:border-rose-400 dark:bg-rose-950/20 dark:border-rose-700 dark:text-rose-300",
                 )} // Add padding to the right for the clear button
               />
             </div>
           </div>
         </>
       ) : !PLpublish ? (
-        // TODO: And userPublish should be false.
-        // This will happen only when, PLpermit is false, hence if admin has not published yet then, ask user.
-        <Card>
-          <CardHeader>
-            <CardTitle>Puppy Love Mode active.</CardTitle>
-            <CardDescription>Do you want to get matched?</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="md:grid grid-cols-4 gap-2 flex flex-col">
-              <Button
-                variant="outline"
-                size="icon"
-                className="w-full text-wrap h-10 border-rose-200/80 text-rose-500 hover:text-rose-500 hover:bg-rose-100 shadow-sm"
-                onClick={handleYesClick}
-                disabled={isYesLoading}
-              >
-                YES
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                className="w-full text-wrap h-10 border-rose-200/80 text-rose-500 hover:text-rose-500 hover:bg-rose-100 shadow-sm"
-                onClick={() => {}}
-              >
-                NO
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        hasOptedIn ? (
+          <Card className="border-rose-200/40 bg-gradient-to-br from-rose-50/80 via-pink-50/60 to-fuchsia-50/40 dark:border-rose-800/30 dark:from-rose-950/20 dark:via-pink-950/15 dark:to-fuchsia-950/10">
+            <CardHeader className="text-center pb-4">
+              <div className="mx-auto mb-2 text-rose-400 dark:text-rose-500">
+                <Heart className="h-10 w-10 fill-rose-400/30" />
+              </div>
+              <CardTitle className="text-rose-700 dark:text-rose-300">You&apos;re all set! 💌</CardTitle>
+              <CardDescription className="text-rose-500/80 dark:text-rose-400/60">
+                Your profile will be considered in the matching algorithm. Results will be out soon; stay tuned!
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        ) : (
+          <Card className="border-rose-200/40 bg-gradient-to-br from-rose-50/80 via-pink-50/60 to-fuchsia-50/40 dark:border-rose-800/30 dark:from-rose-950/20 dark:via-pink-950/15 dark:to-fuchsia-950/10">
+            <CardHeader>
+              <CardTitle className="text-rose-700 dark:text-rose-300">Puppy Love Mode active.</CardTitle>
+              <CardDescription className="text-rose-500/80 dark:text-rose-400/60">Do you want to get matched? If clicked yes, your profile will be considered in the matching algorithm.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="md:grid grid-cols-4 gap-2 flex flex-col">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="w-full text-wrap h-10 border-rose-300/70 text-rose-600 hover:text-rose-700 hover:bg-rose-100/80 shadow-sm dark:border-rose-600 dark:text-rose-400 dark:hover:bg-rose-950/40"
+                  onClick={handleYesClick}
+                  disabled={isYesLoading}
+                >
+                  YES
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="w-full text-wrap h-10 border-rose-300/70 text-rose-600 hover:text-rose-700 hover:bg-rose-100/80 shadow-sm dark:border-rose-600 dark:text-rose-400 dark:hover:bg-rose-950/40"
+                  onClick={() => {}}
+                >
+                  NO
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )
       ) : (
         // TODO: If User agreed to publish (the state in the user data), then we can show the results, else it will be empty.
-        <Card>
-          <CardHeader>
-            <CardTitle>Puppy Love Mode active.</CardTitle>
-            <CardDescription>
-              The PuppyLove Match Results are now Out!
+        <Card className="border-rose-200/40 bg-gradient-to-br from-rose-50/80 via-pink-50/60 to-fuchsia-50/40 dark:border-rose-800/30 dark:from-rose-950/20 dark:via-pink-950/15 dark:to-fuchsia-950/10">
+          <CardHeader className="text-center pb-4">
+            <div className="mx-auto mb-2 text-rose-400 dark:text-rose-500">
+              <Heart className="h-10 w-10 fill-rose-400/40" />
+            </div>
+            <CardTitle className="text-rose-700 dark:text-rose-300">Puppy Love Mode active.</CardTitle>
+            <CardDescription className="text-rose-500/80 dark:text-rose-400/60">
+              The PuppyLove Match Results are now Out! 🎉
             </CardDescription>
           </CardHeader>
         </Card>
@@ -345,7 +378,7 @@ function Options(props: OptionsProps) {
             <Button
               variant="outline"
               size="icon"
-              className="w-full text-wrap h-10 border-rose-200/80 text-rose-500 hover:text-rose-500 hover:bg-rose-100 shadow-sm"
+              className="w-full text-wrap h-10 border-rose-300/60 bg-white/50 text-rose-600 hover:text-rose-700 hover:bg-rose-100/80 shadow-sm transition-colors dark:border-rose-600 dark:bg-rose-950/20 dark:text-rose-400 dark:hover:bg-rose-950/40"
             >
               <Lightbulb className="h-4 w-4" />
               Suggest
@@ -354,7 +387,7 @@ function Options(props: OptionsProps) {
           <Button
             variant="outline"
             size="icon"
-            className="w-full h-10 border-rose-200/80 text-rose-500 hover:text-rose-500 hover:bg-rose-100 shadow-sm"
+            className="w-full h-10 border-rose-300/60 bg-white/50 text-rose-600 hover:text-rose-700 hover:bg-rose-100/80 shadow-sm transition-colors dark:border-rose-600 dark:bg-rose-950/20 dark:text-rose-400 dark:hover:bg-rose-950/40"
             onClick={() => setShowRecoveryModal(true)}
           >
             <Key className="h-4 w-4" /> Recovery Codes
@@ -362,7 +395,7 @@ function Options(props: OptionsProps) {
           <Button
             variant="outline"
             size="icon"
-            className="w-full text-wrap h-10 border-rose-200/80 text-rose-500 hover:text-rose-500 hover:bg-rose-100 shadow-sm"
+            className="w-full text-wrap h-10 border-rose-300/60 bg-white/50 text-rose-600 hover:text-rose-700 hover:bg-rose-100/80 shadow-sm transition-colors dark:border-rose-600 dark:bg-rose-950/20 dark:text-rose-400 dark:hover:bg-rose-950/40"
             onClick={() => {
               if (typeof window !== "undefined") {
                 window.location.href = PROFILE_POINT;
@@ -374,7 +407,7 @@ function Options(props: OptionsProps) {
           <Button
             variant="outline"
             size="icon"
-            className="w-full h-10 border-rose-200/80 text-rose-500 hover:text-rose-500 hover:bg-rose-100 shadow-sm"
+            className="w-full h-10 border-rose-300/60 bg-white/50 text-rose-600 hover:text-rose-700 hover:bg-rose-100/80 shadow-sm transition-colors dark:border-rose-600 dark:bg-rose-950/20 dark:text-rose-400 dark:hover:bg-rose-950/40"
             onClick={() => setShowSelections && setShowSelections(true)}
           >
             <Eye className="h-4 w-4" /> View Selections
