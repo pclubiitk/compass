@@ -31,16 +31,17 @@ export function MultiSelect({
   };
 
   const selectables = options.filter(
-    (option) => !selected.includes(option.value)
+    (option) => !selected.includes(option.value),
   );
 
   return (
     <Command className="overflow-visible bg-transparent">
       <div
         className={cn(
-          "group border border-input px-3 py-2 text-sm ring-offset-background rounded-md focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2",
+          "group border border-input px-3 py-2 text-sm ring-offset-background rounded-md transition-colors focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2",
+          // Matching the Gender SelectTrigger theme
           theme === "puppylove" &&
-            "border-rose-200/80 bg-rose-100/70 text-rose-500 focus-within:ring-rose-300"
+            "border-rose-200/60 bg-white/70 text-rose-600 focus-within:border-rose-400 focus-within:ring-rose-300 dark:bg-rose-950/20 dark:border-rose-700 dark:text-rose-300",
         )}
       >
         <div className="flex gap-1 flex-wrap">
@@ -52,7 +53,7 @@ export function MultiSelect({
                 variant="secondary"
                 className={cn(
                   theme === "puppylove" &&
-                    "bg-rose-100 text-rose-500 border border-rose-200/80"
+                    "bg-rose-100 text-rose-500 border border-rose-200/80",
                 )}
               >
                 {option?.label}
@@ -63,7 +64,8 @@ export function MultiSelect({
                   <X
                     className={cn(
                       "h-3 w-3 text-muted-foreground hover:text-foreground",
-                      theme === "puppylove" && "text-rose-400 hover:text-rose-500"
+                      theme === "puppylove" &&
+                        "text-rose-400 hover:text-rose-500",
                     )}
                   />
                 </button>
@@ -79,7 +81,8 @@ export function MultiSelect({
             placeholder={placeholder ? placeholder : undefined}
             className={cn(
               "ml-2 bg-transparent outline-none placeholder:text-muted-foreground flex-1",
-              theme === "puppylove" && "text-rose-500 placeholder:text-rose-300"
+              theme === "puppylove" &&
+                "text-rose-500 placeholder:text-rose-300",
             )}
           />
         </div>
@@ -90,7 +93,7 @@ export function MultiSelect({
             className={cn(
               "absolute w-full z-10 top-0 rounded-md border bg-popover text-popover-foreground shadow-md outline-none animate-in",
               theme === "puppylove" &&
-                "border-rose-200/80 bg-rose-50 text-rose-600"
+                "border-rose-200/80 bg-rose-50 text-rose-600",
             )}
           >
             <CommandGroup className="h-full max-h-60 overflow-auto">
@@ -107,7 +110,7 @@ export function MultiSelect({
                   }}
                   className={cn(
                     "cursor-pointer",
-                    theme === "puppylove" && "focus:bg-rose-100"
+                    theme === "puppylove" && "focus:bg-rose-100",
                   )}
                 >
                   {option.label}
