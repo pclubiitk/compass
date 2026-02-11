@@ -10,7 +10,10 @@ import {
   useEffect,
   ReactNode,
 } from "react";
-import { fetchPublicKeys, initPuppyLoveWorker } from "@/lib/workers/puppyLoveWorkerClient";
+import {
+  fetchPublicKeys,
+  initPuppyLoveWorker,
+} from "@/lib/workers/puppyLoveWorkerClient";
 
 // Import and re-export shared Puppy Love state from separate file
 // This avoids circular dependencies with workers
@@ -296,7 +299,7 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
     setPuppyLovePublicKeys({});
   };
 
-    useEffect(() => {
+  useEffect(() => {
     async function verifyingLogin() {
       try {
         setGlobalLoading(true);
@@ -319,12 +322,14 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
             if (res_json?.publish) {
               await fetchMatches(res_json?.publish);
             }
-            setIsPuppyLove(false);
+            setIsPuppyLove(false); // Always start disabled on new session, user must toggle it on
           } else if (response.status === 203) {
+            notLoggedInReset();
             setProfileVisibility(false);
             setLoggedIn(false);
           }
         } else {
+          notLoggedInReset();
           setLoggedIn(false);
           setGlobalError(true);
         }
@@ -338,7 +343,7 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // Centralized cleanup effect (ONLY addition)
-  useEffect(() => {
+  const notLoggedInReset = () => {
     if (!isLoggedIn) {
       // console.log("Logged out : clearing all storage on 3000");
 
@@ -353,10 +358,7 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
       setPuppyLoveProfile(null);
       setIsPuppyLove(false);
     }
-  }, [isLoggedIn]);
-
-  
-
+  };
 
   // Fetch Matches - pass publish flag directly to avoid stale closure
   const fetchMatches = async (isPublished: boolean) => {
