@@ -90,7 +90,7 @@ const PUPPYLOVE_INTEREST_GROUPS = {
 } as const;
 
 // Backend limits: about max 70 chars, interests max 50 chars total (comma-separated)
-const BIO_MAX_LENGTH = 70;
+const BIO_MAX_LENGTH = 200;
 const MAX_INTERESTS = 4;
 
 const INTEREST_COLORS: Record<

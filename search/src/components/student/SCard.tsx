@@ -52,14 +52,13 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
   const [isSendingHeart, setIsSendingHeart] = useState(false);
 
   const handleSendHeart = async () => {
-    const activeProfile =
-      isPuppyLove && puppyLoveProfile ? puppyLoveProfile : currentUserProfile;
-
+    const activeProfile = isPuppyLove && puppyLoveProfile ? puppyLoveProfile : currentUserProfile;
+    const senderRollNo = (isPuppyLove && puppyLoveProfile?.rollNo) || currentUserProfile?.rollNo;
     if (setStudentSelection) {
       setStudentSelection(data);
     }
-    // Check if trying to send heart to yourself
-    if (activeProfile?.rollNo === data.rollNo) {
+    // Block if sender's rollNo matches displayed card's rollNo
+    if (senderRollNo === data.rollNo) {
       toast.error("You cannot send a heart to yourself!");
       return;
     }
@@ -268,7 +267,7 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
                   disabled={isSendingHeart}
                 >
                   <Heart className="w-4 h-4 mr-2 fill-white" />
-                  {isSendingHeart ? "Sending..." : "Send Heart"}
+                  {isSendingHeart ? "Selecting..." : "Select User"}
                 </Button>
               </div>
             )}

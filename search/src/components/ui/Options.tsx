@@ -22,8 +22,9 @@ import { debounce } from "@/lib/utils";
 import { Query, Options as OptionsType } from "@/lib/types/data";
 import { receiverIds, useGContext } from "../ContextProvider";
 import { cn } from "@/lib/utils";
-import { PROFILE_POINT } from "@/lib/constant";
+import { PROFILE_POINT, PUPPYLOVE_POINT } from "@/lib/constant";
 import { RecoveryCodeModal } from "@/components/puppy-love/RecoveryCodeModal";
+import { fetchReturnHearts } from "@/lib/workers/puppyLoveWorkerClient";
 import { calculateSimilarUsers } from "@/lib/workers/puppyLoveWorkerClient";
 import { toast } from "sonner";
 
@@ -78,6 +79,7 @@ function Options(props: OptionsProps) {
 
   // Recovery code modal state
   const [showRecoveryModal, setShowRecoveryModal] = useState(false);
+  const [isYesLoading, setIsYesLoading] = useState(false);
 
   const handleSuggestMatch = async () => {
     if (isSuggestionModeOn) {
@@ -189,6 +191,38 @@ function Options(props: OptionsProps) {
       }
     };
   }, []);
+
+  const handleYesClick = async () => {
+    if (isYesLoading) return;
+    if (PLpermit) return;
+    try {
+      setIsYesLoading(true);
+      
+      // Mark user as willing to publish matches
+      const publishRes = await fetch(
+        `${PUPPYLOVE_POINT}/api/puppylove/users/publish`,
+        {
+          method: "POST",
+          credentials: "include",
+        }
+      );
+      
+      if (!publishRes.ok) {
+        const errData = await publishRes.json();
+        toast.error(errData?.error || "Failed to opt-in for matching.");
+        return;
+      }
+      
+      // Then fetch return hearts
+      await fetchReturnHearts();
+      toast.success("You're now opted-in! Checking for matches...");
+    } catch (err) {
+      toast.error("Failed to opt-in for matching.");
+      console.error("[PuppyLove] handleYesClick failed:", err);
+    } finally {
+      setIsYesLoading(false);
+    }
+  };
 
   return (
     <Card
@@ -359,7 +393,8 @@ function Options(props: OptionsProps) {
                 variant="outline"
                 size="icon"
                 className="w-full text-wrap h-10 border-rose-200/80 text-rose-500 hover:text-rose-500 hover:bg-rose-100 shadow-sm"
-                onClick={() => {}}
+                onClick={handleYesClick}
+                disabled={isYesLoading}
               >
                 YES
               </Button>

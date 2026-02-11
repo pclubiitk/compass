@@ -107,6 +107,11 @@ export function SocialProfileCard({
       const data = await res.json();
 
       if (res.ok) {
+        // Clear all sessionStorage on logout
+        if (typeof window !== "undefined") {
+          sessionStorage.clear();
+        }
+        
         toast(data.message);
         setLoggedIn(false);
         router.replace("/login");

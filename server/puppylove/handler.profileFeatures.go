@@ -15,7 +15,7 @@ func UpdateAbout(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Input data format."})
 		return
 	}
-	if len(about.About) > 70 {
+	if len(about.About) > 200 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Too long about."})
 		return
 	}
