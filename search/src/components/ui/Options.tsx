@@ -9,7 +9,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Lightbulb, Key, Edit, Eye } from "lucide-react";
+import { Lightbulb, Key, Edit, Eye, Loader2 } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -20,11 +20,12 @@ import {
 import MultiSelectField from "@/components/ui/msf"; // Using our refactored MSF
 import { debounce } from "@/lib/utils";
 import { Query, Options as OptionsType } from "@/lib/types/data";
-import { useGContext } from "../ContextProvider";
+import { receiverIds, useGContext } from "../ContextProvider";
 import { cn } from "@/lib/utils";
 import { PROFILE_POINT, PUPPYLOVE_POINT } from "@/lib/constant";
 import { RecoveryCodeModal } from "@/components/puppy-love/RecoveryCodeModal";
 import { fetchReturnHearts } from "@/lib/workers/puppyLoveWorkerClient";
+import { calculateSimilarUsers } from "@/lib/workers/puppyLoveWorkerClient";
 import { toast } from "sonner";
 
 // NOTE:
@@ -53,7 +54,13 @@ function Options(props: OptionsProps) {
     PLpermit,
     PLpublish,
     setShowSelections,
+    showSelections,
     puppyLoveProfile,
+    puppyLoveAllUsersData,
+    suggestedRollNos,
+    setSuggestedRollNos,
+    setIsSuggestLoading,
+    isSuggestLoading,
   } = useGContext();
 
   const [query, setQuery] = useState<Query>({
@@ -70,6 +77,59 @@ function Options(props: OptionsProps) {
   const [showRecoveryModal, setShowRecoveryModal] = useState(false);
   const [isYesLoading, setIsYesLoading] = useState(false);
 
+  const handleSuggestMatch = async () => {
+    console.log(suggestedRollNos)
+    if (suggestedRollNos) {
+      // rest the system
+      setSuggestedRollNos(null);
+      return;
+    }
+    // Get current user's interests from their profile
+    let myInterests: string[] = [];
+
+    // Parse comma-separated interests from user's profile
+    const rawInterests = puppyLoveProfile?.interests
+      ?.split(",")
+      .map((s: string) => s.trim())
+      .filter((s: string) => s.length > 0);
+    if (Array.isArray(rawInterests) && rawInterests.length > 0) {
+      myInterests = rawInterests;
+    }
+
+    if (myInterests.length === 0) {
+      toast.error("Add some interests to your profile first!");
+      return;
+    }
+
+    if (!puppyLoveAllUsersData?.interests) {
+      toast.error("Loading user data... Please try again.");
+      return;
+    }
+
+    setIsSuggestLoading(true);
+    try {
+      const suggestions = await calculateSimilarUsers(
+        myInterests,
+        puppyLoveAllUsersData?.interests,
+        [],
+      );
+
+      if (suggestions.length === 0) {
+        toast.info("No similar users found. Try adding more interests!");
+        setIsSuggestLoading(false);
+        return;
+      }
+
+      // Set suggested rollNos in global context for index.tsx to pick up
+      const rollNos = suggestions.map((s) => s.rollNo);
+      setSuggestedRollNos(rollNos);
+      toast.success(`Found ${suggestions.length} similar users!`);
+    } catch (err) {
+      toast.error("Error finding suggestions");
+      setIsSuggestLoading(false);
+    }
+  };
+
   // Debounced query
   const debouncedSendQuery = useCallback(debounce(props.sendQuery, 300), [
     props.sendQuery,
@@ -78,7 +138,8 @@ function Options(props: OptionsProps) {
   useEffect(() => {
     // NOTE: Deactivate the search, once we are showing the student cards in some other way.
     // For Ex: if we wish to render the matches, for puppylove then once its set, the query resets it to the [] array
-    if (isPuppyLove && !PLpermit) {
+    // For Ex: when we are suggesting
+    if ((isPuppyLove && !PLpermit) || suggestedRollNos?.length !== 0) {
       return;
     }
     debouncedSendQuery(query);
@@ -346,9 +407,19 @@ function Options(props: OptionsProps) {
               variant="outline"
               size="icon"
               className="w-full text-wrap h-10 border-rose-200/80 text-rose-500 hover:text-rose-500 hover:bg-rose-100 shadow-sm"
+              onClick={handleSuggestMatch}
+              disabled={isSuggestLoading}
             >
-              <Lightbulb className="h-4 w-4" />
-              Suggest
+              {isSuggestLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Lightbulb className="h-4 w-4" />
+              )}
+              {isSuggestLoading
+                ? "Finding..."
+                : suggestedRollNos
+                  ? "Suggestions Off"
+                  : "Suggest"}
             </Button>
           )}
           <Button
@@ -375,7 +446,7 @@ function Options(props: OptionsProps) {
             variant="outline"
             size="icon"
             className="w-full h-10 border-rose-200/80 text-rose-500 hover:text-rose-500 hover:bg-rose-100 shadow-sm"
-            onClick={() => setShowSelections && setShowSelections(true)}
+            onClick={() => setShowSelections(!showSelections)}
           >
             <Eye className="h-4 w-4" /> View Selections
           </Button>

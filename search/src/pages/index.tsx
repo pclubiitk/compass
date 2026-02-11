@@ -91,6 +91,8 @@ export default function Home(props: Object) {
     puppyLovePublicKeys,
     PLpermit,
     matchedIds,
+    suggestedRollNos,
+    setIsSuggestLoading,
   } = useGContext();
 
   // [Display Managers] - Overlay for showing info and errors
@@ -252,6 +254,15 @@ export default function Home(props: Object) {
       sendFindAllQuery(matchedIds);
     }
   }, [matchedIds, isPuppyLove]);
+
+  // Listen for PuppyLove suggest match from context
+  useEffect(() => {
+    if (suggestedRollNos && suggestedRollNos.length > 0) {
+      sendFindAllQuery(suggestedRollNos);
+      console.log(suggestedRollNos)
+      setIsSuggestLoading(false);
+    } else setStudents([])
+  }, [suggestedRollNos]);
 
   return (
     <div>

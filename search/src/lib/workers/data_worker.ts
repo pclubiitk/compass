@@ -17,7 +17,7 @@ import {
 let students: Student[] = [];
 let new_students: Student[] | undefined = undefined;
 
-//setting up the values for the fields in the Options component
+// Setting up the values for the fields in the Options component
 const options: Options = {
   batch: [],
   hall: [],
@@ -71,6 +71,10 @@ self.onmessage = async (event: MessageEvent) => {
       break;
   }
 };
+
+// NOTE: mergePuppyLoveData removed - PuppyLove data (interests/bio) is now
+// fetched via ContextProvider and cached in localStorage with 1hr expiry.
+// The data is accessed directly from context in SCard component.
 
 async function initializeData(): Promise<void> {
   let noLastTimeStamp = false;
@@ -128,6 +132,7 @@ async function initializeData(): Promise<void> {
         "Could not find data locally or fetch it. This web app will not work.",
     });
   } else {
+    // Prepare worker with student data (PuppyLove data is now handled via context)
     prepare_worker(students, options);
   }
 }

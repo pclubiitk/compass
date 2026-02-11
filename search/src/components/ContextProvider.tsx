@@ -31,6 +31,7 @@ import {
   resetPuppyLoveState,
   resetReceivedHearts,
 } from "@/lib/puppyLoveState";
+import { PUPPYLOVE_POINT } from "@/lib/constant";
 
 // Re-export for backwards compatibility
 export type { Heart, Hearts };
@@ -51,6 +52,47 @@ export {
 // 1. Logged In (if not logged in redirect to login in 5 seconds)
 // 2. Profile Visibility (if not, then delete all the local data)
 // 3. Puppy Love Season (if so, received hearts, etc)
+
+// PuppyLove all users data type (interests and bio)
+interface PuppyLoveAllUsersData {
+  about: Record<string, string>;
+  interests: Record<string, string>;
+}
+
+// LocalStorage cache key and expiry for PuppyLove data
+const PUPPYLOVE_CACHE_KEY = "puppylove_all_users_data";
+const PUPPYLOVE_CACHE_EXPIRY_MS = 60 * 60 * 1000; // 1 hour
+
+// Helper functions for localStorage cache
+function getPuppyLoveDataFromCache(): PuppyLoveAllUsersData | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const cached = localStorage.getItem(PUPPYLOVE_CACHE_KEY);
+    if (!cached) return null;
+    const parsed = JSON.parse(cached);
+    const now = Date.now();
+    if (now > parsed.expiry) {
+      localStorage.removeItem(PUPPYLOVE_CACHE_KEY);
+      return null;
+    }
+    return parsed.data as PuppyLoveAllUsersData;
+  } catch {
+    return null;
+  }
+}
+
+function setPuppyLoveDataInCache(data: PuppyLoveAllUsersData): void {
+  if (typeof window === "undefined") return;
+  try {
+    const cacheEntry = {
+      data,
+      expiry: Date.now() + PUPPYLOVE_CACHE_EXPIRY_MS,
+    };
+    localStorage.setItem(PUPPYLOVE_CACHE_KEY, JSON.stringify(cacheEntry));
+  } catch {
+    console.error("[PuppyLove] Failed to cache data in localStorage");
+  }
+}
 
 interface GlobalContextType {
   isLoggedIn: boolean;
@@ -99,6 +141,17 @@ interface GlobalContextType {
   // Selections panel visibility
   showSelections: boolean;
   setShowSelections: (val: boolean) => void;
+
+  // Suggested roll numbers for PuppyLove suggest match feature
+  suggestedRollNos: string[] | null;
+  setSuggestedRollNos: (val: any) => void;
+  isSuggestLoading: boolean;
+  setIsSuggestLoading: (val: boolean) => void;
+
+  // PuppyLove all users interests/bio data (cached in localStorage)
+  puppyLoveAllUsersData: PuppyLoveAllUsersData | null;
+  isPuppyLoveDataLoading: boolean;
+  refreshPuppyLoveData: () => Promise<void>;
 }
 
 const GlobalContext = createContext<GlobalContextType>({
@@ -127,6 +180,17 @@ const GlobalContext = createContext<GlobalContextType>({
 
   showSelections: false,
   setShowSelections: () => {},
+
+  // Suggested roll numbers defaults
+  suggestedRollNos: null,
+  setSuggestedRollNos: () => {},
+  isSuggestLoading: false,
+  setIsSuggestLoading: () => {},
+
+  // PuppyLove all users data defaults
+  puppyLoveAllUsersData: null,
+  isPuppyLoveDataLoading: false,
+  refreshPuppyLoveData: async () => {},
 });
 
 export function GlobalContextProvider({ children }: { children: ReactNode }) {
@@ -153,6 +217,67 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
   // Selections panel visibility
   const [studentSelection, setStudentSelection] = useState<any>(null);
   const [showSelections, setShowSelections] = useState<boolean>(false);
+
+  // Suggested roll numbers for PuppyLove suggest match feature
+  const [suggestedRollNos, setSuggestedRollNos] = useState<string[] | null>(
+    null,
+  );
+  const [isSuggestLoading, setIsSuggestLoading] = useState<boolean>(false);
+
+  // PuppyLove all users interests/bio data (cached in localStorage with 1hr expiry)
+  const [puppyLoveAllUsersData, setPuppyLoveAllUsersData] =
+    useState<PuppyLoveAllUsersData | null>(null);
+  const [isPuppyLoveDataLoading, setIsPuppyLoveDataLoading] =
+    useState<boolean>(false);
+
+  // Fetch PuppyLove all users data (interests/bio) with localStorage caching
+  const fetchPuppyLoveAllUsersData = async (
+    forceRefresh = false,
+  ): Promise<void> => {
+    // Check localStorage cache first (unless force refresh)
+    if (!forceRefresh) {
+      const cached = getPuppyLoveDataFromCache();
+      if (cached) {
+        // console.log("[PuppyLove] Using cached data from localStorage");
+        setPuppyLoveAllUsersData(cached);
+        return;
+      }
+    }
+
+    setIsPuppyLoveDataLoading(true);
+    try {
+      // console.log("[PuppyLove] Fetching all users data from API...");
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_PUPPYLOVE_URL}/api/puppylove/users/alluserInfo`,
+        { credentials: "include" },
+      );
+      if (!res.ok) {
+        console.error(
+          `[PuppyLove] API returned ${res.status}: ${res.statusText}`,
+        );
+        return;
+      }
+
+      const data = await res.json();
+      const allUsersData: PuppyLoveAllUsersData = {
+        about: data.about || {},
+        interests: data.interests || {},
+      };
+      // console.log(`[PuppyLove] Fetched data for ${Object.keys(allUsersData.about).length} users`);
+      // Cache in localStorage
+      setPuppyLoveDataInCache(allUsersData);
+      setPuppyLoveAllUsersData(allUsersData);
+    } catch (err) {
+      console.error("[PuppyLove] Error fetching all users data:", err);
+    } finally {
+      setIsPuppyLoveDataLoading(false);
+    }
+  };
+
+  // Refresh function exposed via context
+  const refreshPuppyLoveData = async (): Promise<void> => {
+    await fetchPuppyLoveAllUsersData(true);
+  };
 
   // Reset function to be called to clear all puppy love data
   const resetForRefresh = () => {
@@ -204,7 +329,7 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
     if (isPublished) {
       try {
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_AUTH_URL}/api/puppylove/users/mymatches`,
+          `${PUPPYLOVE_POINT}/api/puppylove/users/mymatches`,
           {
             method: "GET",
             credentials: "include",
@@ -240,6 +365,13 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
       }
     }
   }, []);
+
+  // Fetch PuppyLove all users data (interests/bio) when PuppyLove mode is enabled
+  useEffect(() => {
+    if (isPuppyLove) {
+      fetchPuppyLoveAllUsersData();
+    }
+  }, [isPuppyLove]);
 
   // Puppy Love worker initialization and message handling
   // Fetch hearts when we have a private key
@@ -293,6 +425,11 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
               });
             }
             setPuppyLoveProfile(payload ?? null);
+
+            worker.postMessage({
+              type: "FETCH_RETURN_HEARTS",
+              payload: { privateKey, puppyLoveHeartsSent },
+            });
           }
           if (type === "PREPARE_SEND_HEART_RESULT") {
             console.log("PREPARE_SEND_HEART_RESULT received:", payload);
@@ -315,10 +452,10 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
         //   // No private key — can't claim, just fetch user data directly
         //   worker.postMessage({ type: "GET_USER_DATA", payload: { privateKey } });
         // }
-        worker.postMessage({
-          type: "FETCH_RETURN_HEARTS",
-          payload: { privateKey, puppyLoveHeartsSent },
-        });
+        // worker.postMessage({
+        //   type: "FETCH_RETURN_HEARTS",
+        //   payload: { privateKey, puppyLoveHeartsSent },
+        // });
       }
     }
   }, [isPuppyLove, privateKey]);
@@ -353,6 +490,15 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
     setShowSelections,
     studentSelection,
     setStudentSelection,
+    // Suggested roll numbers
+    suggestedRollNos,
+    setSuggestedRollNos,
+    isSuggestLoading,
+    setIsSuggestLoading,
+    // PuppyLove all users interests/bio data
+    puppyLoveAllUsersData,
+    isPuppyLoveDataLoading,
+    refreshPuppyLoveData,
   };
 
   return (

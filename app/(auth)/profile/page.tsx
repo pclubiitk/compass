@@ -79,44 +79,45 @@ export default function ProfilePage() {
 
   console.log("first " , isPuppyLoveRegistered);
   // Check PuppyLove status and fetch profile
-  useEffect(() => {
-    const checkPuppyLove = async () => {
-      try {
-        // Check if user is registered (has dirty = true)
-        const dataRes = await fetch(
-          `${process.env.NEXT_PUBLIC_PUPPYLOVE_URL}/api/puppylove/users/data`,
-          { credentials: "include" },
+  const fetchPuppyLoveProfile = useCallback(async () => {
+    try {
+      // Check if user is registered (has dirty = true)
+      const dataRes = await fetch(
+        `${process.env.NEXT_PUBLIC_PUPPYLOVE_URL}/api/puppylove/users/data`,
+        { credentials: "include" },
+      );
+
+      if (dataRes.ok) {
+        const data = await dataRes.json();
+        // User is registered if they have a profile with dirty = true
+        setIsPuppyLoveRegistered(data.dirty === true);
+        
+        // Set bio and interests
+        setPuppyLoveBio(data.about || "");
+        // console.log("[PuppyLove] Raw interest field:", data.interest);
+        // Note: Backend returns "interest" (singular), not "interests" (plural)
+        setPuppyLoveInterests(
+          Array.isArray(data.interests)
+            ? data.interests
+            : typeof data.interests === "string"
+              ? data.interests
+                  .split(",")
+                  .map((s: string) => s.trim())
+                  .filter(Boolean)
+              : [],
         );
-
-        if (dataRes.ok) {
-          const data = await dataRes.json();
-          // User is registered if they have a profile with dirty = true
-          setIsPuppyLoveRegistered(Boolean(data?.dirty ?? data?.is_dirty));
-          // Set bio and interests
-          setPuppyLoveBio(data?.about || "");
-          const rawInterests = data?.interests ?? data?.interest ?? "";
-          setPuppyLoveInterests(
-            Array.isArray(rawInterests)
-              ? rawInterests
-              : typeof rawInterests === "string"
-                ? rawInterests
-                    .split(",")
-                    .map((s: string) => s.trim())
-                    .filter(Boolean)
-                : [],
-          );
-        } else if (dataRes.status === 404) {
-          setIsPuppyLoveRegistered(false);
-        }
-      } catch (err) {
-        console.error("Failed to check PuppyLove status:", err);
+      } else if (dataRes.status === 404) {
+        setIsPuppyLoveRegistered(false);
       }
-    };
-    if (isPLseason) checkPuppyLove();
-  }, [isPLseason]);
+    } catch (err) {
+      console.error("Failed to check PuppyLove status:", err);
+    }
+  }, []);
 
-  console.log("2nd " , isPuppyLoveRegistered);
-
+  useEffect(() => {
+    if (isPLseason) fetchPuppyLoveProfile();
+  }, [isPLseason, fetchPuppyLoveProfile]);
+ 
   const fetchProfile = async () => {
     // We don't reset loading to true on refetch to avoid skeleton flashes
     try {
@@ -189,6 +190,7 @@ export default function ProfilePage() {
   }
 
   const profile = userData.profile;
+  
 
   return (
     <div className="flex flex-col lg:flex-row min-h-screen bg-muted/40">
@@ -211,13 +213,14 @@ export default function ProfilePage() {
             onUpdate={fetchProfile}
           />
 
+
           {/* PuppyLove Profile Card - only visible during Valentine's mode */}
           <PuppyLoveProfileCard
-            rollNo={profile.rollNo}
             initialBio={puppyLoveBio}
             initialInterests={puppyLoveInterests}
             isPuppyLoveActive={isPLseason}
             isRegistered={isPuppyLoveRegistered}
+            onUpdate={fetchPuppyLoveProfile}
           />
 
           <ContributionsCard

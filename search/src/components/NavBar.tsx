@@ -138,18 +138,19 @@ export const NavBar = (props: NavBarProps) => {
           onCancel={() => setShowPassModal(false)}
         />
       )}
-      {/* Puppy Love Hearts Card above NavBar*/}
-      {isPuppyLove ? (
-        <div className="w-4/5 max-w-4xl m-auto flex justify-center mt-4">
-          <PuppyLoveHeartsCard />
+      {/* Puppy Love Hearts Card and Selections Panel - responsive row/column layout */}
+      {isPuppyLove && (
+        <div className="w-4/5 max-w-4xl m-auto flex flex-col sm:flex-row gap-4 mt-4 mb-4">
+          <div className="flex-1 min-w-0">
+            <PuppyLoveHeartsCard />
+          </div>
+          {showSelections && (
+            <div className="flex-1 min-w-0">
+              <PuppyLoveSelectionsPanel onClose={() => setShowSelections(false)} />
+            </div>
+          )}
         </div>
-      ) : null}
-      {/* Puppy Love Selections Panel hearts card */}
-      {isPuppyLove && showSelections ? (
-        <div className="w-4/5 max-w-4xl m-auto mt-4 bg-white rounded-lg">
-          <PuppyLoveSelectionsPanel onClose={() => setShowSelections(false)} />
-        </div>
-      ) : null}
+      )}
     </>
   );
 };

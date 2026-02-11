@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"strings"
 	"sync"
 
 	"github.com/gin-gonic/gin"
@@ -161,16 +160,6 @@ func GetUserData(c *gin.Context) {
 		return
 	}
 
-	userID, exists := c.Get("userID")
-	if !exists {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "User ID not found in context"})
-		return
-	}
-
-	// fmt.Printf("\n=== GetUserData called ===\n")
-	// fmt.Printf("Roll No: %v\n", roll_no)
-	// fmt.Printf("User ID: %v\n", userID)
-
 	var profile puppylove.PuppyLoveProfile
 	result := connections.DB.Where("roll_no = ?", roll_no).First(&profile)
 	if result.Error != nil {
@@ -178,74 +167,23 @@ func GetUserData(c *gin.Context) {
 		return
 	}
 
-	// fmt.Printf("PuppyLove Profile Gender (before sync): '%s'\n", profile.Gender)
-
-	// If gender is missing, fetch it from the search profile and save it
-	if profile.Gender == "" {
-		fmt.Printf("Gender is empty, attempting to fetch from compass profile...\n")
-
-		var searchProfile model.Profile
-		err := connections.DB.Where("user_id = ?", userID).First(&searchProfile).Error
-
-		if err != nil {
-			fmt.Printf("ERROR fetching compass profile: %v\n", err)
-		} else {
-			userGender := searchProfile.Gender
-			fmt.Printf("✓ Found compass profile with gender: '%s'\n", userGender)
-
-			if userGender != "" {
-				// Normalize gender - handle both full names and single letters
-				normalizedGender := userGender
-				lowerGender := strings.ToLower(userGender)
-
-				if lowerGender == "male" || lowerGender == "m" {
-					normalizedGender = "M"
-				} else if lowerGender == "female" || lowerGender == "f" {
-					normalizedGender = "F"
-				}
-
-				fmt.Printf("  Original: '%s' → Normalized: '%s'\n", userGender, normalizedGender)
-
-				// Save the gender to the puppylove profile in database
-				updateResult := connections.DB.Model(&puppylove.PuppyLoveProfile{}).
-					Where("roll_no = ?", roll_no).
-					Update("gender", normalizedGender)
-
-				if updateResult.Error == nil {
-					profile.Gender = normalizedGender
-					fmt.Printf("✓ Successfully saved gender '%s' to puppylove profile\n", normalizedGender)
-				} else {
-					fmt.Printf("✗ Failed to save gender: %v\n", updateResult.Error)
-				}
-			} else {
-				fmt.Printf("⚠ Compass profile gender is EMPTY\n")
-			}
-		}
-	} else {
-		fmt.Printf("Gender already set: '%s'\n", profile.Gender)
-	}
-
 	permit := IsPuppyLovePermitted()
 
-	// fmt.Printf("Final gender in response: '%s'\n", profile.Gender)
-	// fmt.Printf("=== End GetUserData ===\n\n")
-
 	response := gin.H{
-		"message":  "Data retrieved successfully !!",
-		"id":       roll_no,
-		"data":     profile.Data,
-		"gender":   profile.Gender,
-		"submit":   profile.Submit,
-		"claims":   profile.Claims,
-		"permit":   permit,
-		"publish":  profile.Publish,
-		"about":    profile.About,
-		"interest": profile.Interests,
-		"privK":    profile.PrivK,
-		"dirty":    profile.Dirty,
-		"pubKey":   profile.PubK,
+		"message":   "Data retrieved successfully !!",
+		"id":        roll_no,
+		"data":      profile.Data,
+		"gender":    profile.Gender,
+		"submit":    profile.Submit,
+		"claims":    profile.Claims,
+		"permit":    permit,
+		"publish":   profile.Publish,
+		"about":     profile.About,
+		"interests": profile.Interests,
+		"privK":     profile.PrivK,
+		"dirty":     profile.Dirty,
+		"pubKey":    profile.PubK,
 	}
-
 	c.JSON(http.StatusOK, response)
 }
 
@@ -355,7 +293,11 @@ func SendHeartVirtualHandler(c *gin.Context) {
 		return
 	}
 
-	rollNo, _ := c.Get("rollNo")
+	rollNo, exists := c.Get("rollNo")
+	if !exists {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Roll Number not found in context"})
+		return
+	}
 	var profile puppylove.PuppyLoveProfile
 	record := connections.DB.Where("roll_no = ?", rollNo).First(&profile)
 	if record.Error != nil {
@@ -380,7 +322,6 @@ func SendHeartVirtualHandler(c *gin.Context) {
 
 	c.JSON(http.StatusAccepted, gin.H{"message": "Virtual Hearts Sent Successfully !!"})
 }
-
 
 // HeartClaimError represents an error during heart claiming
 type HeartClaimError struct {
@@ -453,7 +394,7 @@ func HeartClaimHandler(c *gin.Context) {
 		heartClaim := puppylove.HeartClaims{
 			Id:       info.Enc,
 			SHA:      info.SHA,
-			RollNo:     roll_no.(string),
+			RollNo:   roll_no.(string),
 			SONG_ENC: heartModel.SONG_ENC,
 		}
 

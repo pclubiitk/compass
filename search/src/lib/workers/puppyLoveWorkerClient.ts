@@ -50,43 +50,20 @@ const callWorkerAPI = (type: string, payload?: any): Promise<any> => {
   });
 };
 
-// Define wrapper functions to call the worker using callWorkerAPI;
-export const sendHeart = (heartData: any) =>
-  callWorkerAPI("SEND_HEART", heartData);
-
-export const sendVirtualHeart = (heartData: any) =>
-  callWorkerAPI("SEND_VIRTUAL_HEART", heartData);
-
-export const fetchAndClaimHearts = (privateKey: string) =>
-  callWorkerAPI("FETCH_AND_CLAIM_HEARTS", { privateKey });
-
-export const fetchReturnHearts = () => callWorkerAPI("FETCH_RETURN_HEARTS");
-
-export const claimHeart = (claimData: any) =>
-  callWorkerAPI("CLAIM_HEART", claimData);
-
-export const verifyReturnHearts = (verifyData: any) =>
-  callWorkerAPI("VERIFY_RETURN_HEARTS", verifyData);
-
-export const returnLateHearts = (lateHeartsData: any) =>
-  callWorkerAPI("RETURN_LATE_HEARTS", lateHeartsData);
-
-export const fetchPublicKeys = () => callWorkerAPI("FETCH_PUBLIC_KEYS");
-
-export const getUserData = () => callWorkerAPI("GET_USER_DATA");
-
-export const updateAbout = (aboutData: any) =>
-  callWorkerAPI("UPDATE_ABOUT", aboutData);
-
-export const updateInterests = (interestData: any) =>
-  callWorkerAPI("UPDATE_INTERESTS", interestData);
-
-export const publishProfile = () => callWorkerAPI("PUBLISH_PROFILE");
-
-export const getMyMatches = () => callWorkerAPI("GET_MY_MATCHES");
-
-export const sentHeartDecoded = (decodedData: any) =>
-  callWorkerAPI("SENT_HEART_DECODED", decodedData);
+export const sendHeart = (heartData: any) => callWorkerAPI('SEND_HEART', heartData);
+export const sendVirtualHeart = (heartData: any) => callWorkerAPI('SEND_VIRTUAL_HEART', heartData);
+export const getVirtualHeartCount = () => callWorkerAPI('GET_VIRTUAL_HEART_COUNT');
+export const fetchAndClaimHearts = (privateKey: string) => callWorkerAPI('FETCH_AND_CLAIM_HEARTS', { privateKey });
+export const fetchReturnHearts = () => callWorkerAPI('FETCH_RETURN_HEARTS');
+export const verifyReturnHearts = (verifyData: any) => callWorkerAPI('VERIFY_RETURN_HEARTS', verifyData);
+export const returnLateHearts = (lateHeartsData: any) => callWorkerAPI('RETURN_LATE_HEARTS', lateHeartsData);
+export const fetchPublicKeys = () => callWorkerAPI('FETCH_PUBLIC_KEYS');
+export const getUserData = () => callWorkerAPI('GET_USER_DATA');
+export const updateAbout = (aboutData: any) => callWorkerAPI('UPDATE_ABOUT', aboutData);
+export const updateInterests = (interestData: any) => callWorkerAPI('UPDATE_INTERESTS', interestData);
+export const publishProfile = () => callWorkerAPI('PUBLISH_PROFILE');
+export const getMyMatches = () => callWorkerAPI('GET_MY_MATCHES');
+export const sentHeartDecoded = (decodedData: any) => callWorkerAPI('SENT_HEART_DECODED', decodedData);
 
 export const prepareSendHeart = (
   senderPublicKey: string,
@@ -164,6 +141,20 @@ export const hashPassword = (data: string): Promise<string> => {
     worker.postMessage({ type: "SHA256", payload: { data } });
   });
 };
+
+// Calculate similar users based on Jaccard similarity of interests
+export const calculateSimilarUsers = (
+  myInterests: string[],
+  allProfiles: Record<string, string>,
+  excludeRolls: string[],
+): Promise<Array<{ rollNo: string }>> => {
+  return callWorkerAPI("CALCULATE_SIMILAR_USERS", {
+    myInterests,
+    allProfiles,
+    excludeRolls,
+  });
+};
+
 export const decryptAES = (
   encrypted: string,
   password: string,

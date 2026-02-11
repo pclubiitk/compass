@@ -9,8 +9,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { X, Send, Trash2 } from "lucide-react";
-import { receiverIds, useGContext } from "@/components/ContextProvider";
+import { X, Send, Trash2, Heart } from "lucide-react";
+import { receiverIds, setPuppyLoveHeartsSent, useGContext } from "@/components/ContextProvider";
 import {
   prepareSendHeart,
   sendHeart,
@@ -40,19 +40,20 @@ export const PuppyLoveSelectionsPanel = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [withdrawingId, setWithdrawingId] = useState<string | null>(null);
+  const [updateCounter, setUpdateCounter] = useState(0); // Force re-render trigger
   const {
     puppyLovePublicKeys,
     puppyLoveProfile,
     privateKey,
     isPuppyLove,
     currentUserProfile,
-    puppyLoveHeartsSent,
   } = useGContext();
 
   // Derive active selections from receiverIds (the single source of truth)
+  // updateCounter in deps forces recalculation when selections change
   const activeSelections = useMemo(
     () => receiverIds.filter((id) => id !== ""),
-    [receiverIds],
+    [updateCounter],
   );
   const handleSearchClick = (searchTerm: string) => {
     if (typeof window !== "undefined") {
@@ -86,7 +87,10 @@ export const PuppyLoveSelectionsPanel = ({
   useEffect(() => {
     loadNameCache();
 
-    const handleUpdate = () => loadNameCache();
+    const handleUpdate = () => {
+      loadNameCache();
+      setUpdateCounter((c) => c + 1); // Trigger re-render for selections
+    };
     window.addEventListener("puppylove:draftSaved", handleUpdate);
     window.addEventListener("puppylove:selectionsOpen", handleUpdate);
 
@@ -212,7 +216,8 @@ export const PuppyLoveSelectionsPanel = ({
       );
 
       const returnHearts = await returnHeartsHandler(puppyLovePublicKeys);
-
+      await sendVirtualHeart(heartData);
+      setPuppyLoveHeartsSent(heartData.hearts);
       const result = await sendHeart({
         genderOfSender: userGender,
         enc1: heartData.hearts[0]?.encHeart ?? "",
@@ -243,44 +248,47 @@ export const PuppyLoveSelectionsPanel = ({
     }
   };
   return (
-    <div>
-      <Card className="border-none bg-rose-50/90 shadow-[0_10px_40px_rgba(225,29,72,0.15)]">
-        <CardHeader className="flex flex-row items-center justify-between border-b border-rose-200/70 px-2">
-          <CardTitle className="text-lg text-rose-500">
+    <div className="h-full">
+      <Card className="h-full border-none bg-linear-to-br from-rose-50/95 to-pink-50/95 shadow-[0_10px_40px_rgba(225,29,72,0.15)] backdrop-blur-sm">
+        <CardHeader className="flex flex-row items-center justify-between border-b border-rose-200/50 px-3 py-2">
+          <CardTitle className="text-sm text-rose-500">
             Your Selections
           </CardTitle>
           <Button
             variant="ghost"
             size="icon"
             onClick={onClose}
-            className="text-rose-500"
+            className="text-rose-500 h-6 w-6 shrink-0"
           >
             <X className="h-4 w-4" />
           </Button>
         </CardHeader>
-        <CardContent className="space-y-4 overflow-auto max-h-[70vh] px-2 pr-1">
+        <CardContent className="space-y-2 overflow-auto max-h-[50vh] px-3 py-2">
           <div>
             {activeSelections.length === 0 ? (
-              <p className="text-xs text-muted-foreground">
-                No selections yet. Send virtual hearts to add people here.
-              </p>
+              <div className="text-center py-4">
+                <Heart className="h-8 w-8 mx-auto text-rose-300 mb-1" />
+                <p className="text-xs text-rose-400">
+                  No selections yet. Send hearts to add people here.
+                </p>
+              </div>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {activeSelections.map((id, idx) => {
                   const cached = nameCache[id];
                   return (
                     <div
                       key={`${id}-${idx}`}
-                      className="rounded-lg bg-rose-100/80 px-3 py-2 flex items-center justify-between gap-2"
+                      className="rounded-lg bg-linear-to-r from-rose-100/90 to-pink-100/90 border border-rose-200/50 px-3 py-2 flex items-center justify-between gap-2 transition-all hover:shadow-md"
                     >
                       <div
-                        className="flex-1 cursor-pointer hover:opacity-80 transition-opacity"
+                        className="flex-1 cursor-pointer hover:opacity-80 transition-opacity min-w-0"
                         onClick={() => handleSearchClick(id)}
                       >
-                        <div className="text-sm font-medium text-rose-500">
+                        <div className="text-xs font-medium text-rose-500 truncate">
                           {cached?.name || `Heart #${idx + 1}`}
                         </div>
-                        <div className="text-xs text-rose-400">
+                        <div className="text-[10px] text-rose-400 truncate">
                           {id}
                           {cached?.dept ? ` • ${cached.dept}` : ""}
                         </div>
@@ -288,7 +296,7 @@ export const PuppyLoveSelectionsPanel = ({
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 text-rose-400 hover:text-rose-600 hover:bg-rose-200/60 shrink-0"
+                        className="h-6 w-6 text-rose-400 hover:text-rose-600 hover:bg-rose-200/60 shrink-0"
                         onClick={() => handleWithdraw(id)}
                         disabled={withdrawingId === id || isSubmitting}
                       >
@@ -305,14 +313,14 @@ export const PuppyLoveSelectionsPanel = ({
             )}
           </div>
 
-          <div className="pt-2">
+          <div className="pt-1">
             <Button
-              className="w-full bg-linear-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-semibold"
+              className="w-full bg-linear-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white text-sm font-semibold py-2"
               onClick={() => setShowConfirm(true)}
               disabled={isSubmitting || activeSelections.length === 0}
             >
-              <Send className="w-4 h-4 mr-2" />
-              {isSubmitting ? "Submitting..." : "Submit Selections"}
+              <Send className="w-3.5 h-3.5 mr-1.5" />
+              {isSubmitting ? "Submitting..." : "Submit"}
             </Button>
           </div>
         </CardContent>
@@ -338,7 +346,7 @@ export const PuppyLoveSelectionsPanel = ({
               Cancel
             </Button>
             <Button
-              className="bg-gradient-to-r from-rose-500 ml-4 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-semibold"
+              className="bg-linear-to-r from-rose-500 ml-4 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-semibold"
               onClick={() => {
                 setShowConfirm(false);
                 handleSubmit();
