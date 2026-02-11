@@ -16,6 +16,7 @@ import {
   useGContext,
 } from "@/components/ContextProvider";
 import {
+  fetchAndClaimHearts,
   prepareSendHeart,
   sendHeart,
   sendVirtualHeart,
@@ -218,7 +219,7 @@ export const PuppyLoveSelectionsPanel = ({
         activeProfile.id,
         receiverIds,
       );
-
+      await fetchAndClaimHearts(privateKey); // Ensure we have the latest hearts before submitting
       const returnHearts = await returnHeartsHandler(puppyLovePublicKeys);
       await sendVirtualHeart(heartData);
       setPuppyLoveHeartsSent(heartData.hearts);
