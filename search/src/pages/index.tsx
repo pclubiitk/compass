@@ -69,6 +69,8 @@ import { ErrorCard } from "@/components/cards/ErrorCard";
 export default function Home(props: Object) {
   // [For: Worker Object] [Use a ref to hold the worker instance so it persists across re-renders]
   const workerRef = useRef<Worker>();
+  // Ref to track display blocked state for debounced query checks
+  const isDisplayBlockedRef = useRef<boolean>(false);
   // Array of Students to be rendered in the display
   const [students, setStudents]: [Array<StudentType>, Function] = useState([]);
   // Overlay on the display element state
@@ -93,7 +95,17 @@ export default function Home(props: Object) {
     matchedIds,
     suggestedRollNos,
     setIsSuggestLoading,
+    isDisplayBlocked,
+    setIsDisplayBlocked,
   } = useGContext();
+
+  // Block display queries when PuppyLove mode is on but permit is off
+  // (after deadline, showing match results instead of search)
+  useEffect(() => {
+    if (isPuppyLove && !PLpermit) {
+      setIsDisplayBlocked(true);
+    }
+  }, [isPuppyLove, PLpermit, setIsDisplayBlocked]);
 
   // [Display Managers] - Overlay for showing info and errors
   const clearOverlay = () => {
@@ -180,8 +192,18 @@ export default function Home(props: Object) {
     if (globalError) displayElement(<ErrorCard />);
   }, [globalError]);
 
+  // Keep ref in sync with isDisplayBlocked state
+  // This ref is needed because debounced queries may fire after state changes,
+  // and we need to check the current value at execution time
+  useEffect(() => {
+    isDisplayBlockedRef.current = isDisplayBlocked;
+  }, [isDisplayBlocked]);
+
   // [Onclick functions] Render Helper Functions
   const sendQuery = (query: QueryType) => {
+    // Skip if display is blocked (prevents stale debounced queries from overwriting
+    // suggestions or PuppyLove match results)
+    if (isDisplayBlockedRef.current) return;
     workerRef.current?.postMessage({
       command: "query",
       payload: {
@@ -259,7 +281,6 @@ export default function Home(props: Object) {
   useEffect(() => {
     if (suggestedRollNos && suggestedRollNos.length > 0) {
       sendFindAllQuery(suggestedRollNos);
-      console.log(suggestedRollNos)
       setIsSuggestLoading(false);
     } else setStudents([])
   }, [suggestedRollNos]);

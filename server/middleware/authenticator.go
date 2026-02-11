@@ -99,9 +99,9 @@ func tryRefresh(c *gin.Context) {
 	var modelUser model.User
 	result := connections.DB.
 		Model(&model.User{}).
-		Select("role", "is_verified").
+		Select("user_id", "role", "is_verified").
 		Preload("Profile", func(db *gorm.DB) *gorm.DB {
-			return db.Select("visibility", "roll_no")
+			return db.Select("user_id", "visibility", "roll_no")
 		}).
 		Where("user_id = ?", userID).
 		First(&modelUser)

@@ -10,7 +10,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { X, Send, Trash2, Heart } from "lucide-react";
-import { receiverIds, setPuppyLoveHeartsSent, useGContext } from "@/components/ContextProvider";
+import {
+  receiverIds,
+  setPuppyLoveHeartsSent,
+  useGContext,
+} from "@/components/ContextProvider";
 import {
   prepareSendHeart,
   sendHeart,
@@ -263,17 +267,17 @@ export const PuppyLoveSelectionsPanel = ({
             <X className="h-4 w-4" />
           </Button>
         </CardHeader>
-        <CardContent className="space-y-2 overflow-auto max-h-[50vh] px-3 py-2">
+        <CardContent className="space-y-2  overflow-auto max-h-[50vh] px-3">
           <div>
             {activeSelections.length === 0 ? (
-              <div className="text-center py-4">
+              <div className="text-center py-1">
                 <Heart className="h-8 w-8 mx-auto text-rose-300 mb-1" />
                 <p className="text-xs text-rose-400">
                   No selections yet. Send hearts to add people here.
                 </p>
               </div>
             ) : (
-              <div className="space-y-1.5">
+              <div className={activeSelections.length === 4 ? "grid grid-cols-2 gap-1.5" : "space-y-1.5"}>
                 {activeSelections.map((id, idx) => {
                   const cached = nameCache[id];
                   return (
@@ -307,6 +311,7 @@ export const PuppyLoveSelectionsPanel = ({
                         )}
                       </Button>
                     </div>
+                    
                   );
                 })}
               </div>

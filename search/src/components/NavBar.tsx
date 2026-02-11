@@ -44,6 +44,27 @@ export const NavBar = (props: NavBarProps) => {
 
   return (
     <>
+      {showPassModal && (
+        <PuppyLovePasswordCard
+          onSuccess={handlePasswordSuccess}
+          onCancel={() => setShowPassModal(false)}
+        />
+      )}
+      {/* Puppy Love Hearts Card and Selections Panel - responsive row/column layout */}
+      {isPuppyLove && (
+        <div className="w-4/5 max-w-4xl m-auto flex flex-col sm:flex-row gap-4 mt-4 mb-4">
+          <div className="flex-1 min-w-0">
+            <PuppyLoveHeartsCard />
+          </div>
+          {showSelections && (
+            <div className="flex-1 min-w-0">
+              <PuppyLoveSelectionsPanel
+                onClose={() => setShowSelections(false)}
+              />
+            </div>
+          )}
+        </div>
+      )}
       <Card
         className={`p-2 w-4/5 sticky top-2 z-10 max-w-4xl m-auto flex flex-row justify-between items-center transition-all duration-500 border-none mt-4
         ${isPuppyLove && "bg-rose-50/90 shadow-[0_10px_40px_rgba(225,29,72,0.15)] backdrop-blur-md"}`}
@@ -132,25 +153,6 @@ export const NavBar = (props: NavBarProps) => {
           </Link>
         </div>
       </Card>
-      {showPassModal && (
-        <PuppyLovePasswordCard
-          onSuccess={handlePasswordSuccess}
-          onCancel={() => setShowPassModal(false)}
-        />
-      )}
-      {/* Puppy Love Hearts Card and Selections Panel - responsive row/column layout */}
-      {isPuppyLove && (
-        <div className="w-4/5 max-w-4xl m-auto flex flex-col sm:flex-row gap-4 mt-4 mb-4">
-          <div className="flex-1 min-w-0">
-            <PuppyLoveHeartsCard />
-          </div>
-          {showSelections && (
-            <div className="flex-1 min-w-0">
-              <PuppyLoveSelectionsPanel onClose={() => setShowSelections(false)} />
-            </div>
-          )}
-        </div>
-      )}
     </>
   );
 };

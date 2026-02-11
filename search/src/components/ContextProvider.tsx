@@ -143,8 +143,16 @@ interface GlobalContextType {
   setShowSelections: (val: boolean) => void;
 
   // Suggested roll numbers for PuppyLove suggest match feature
-  suggestedRollNos: string[] | null;
+  suggestedRollNos: string[];
   setSuggestedRollNos: (val: any) => void;
+  // Display Block State:
+  // When true, prevents search queries from executing and allows the Display component
+  // to show alternative content (e.g., suggested matches, PuppyLove results).
+  // Activated when:
+  // 1. Suggestions mode is active (user clicked "Suggest" button)
+  // 2. PuppyLove mode is on but permit is off (showing match results after deadline)
+  isDisplayBlocked: boolean;
+  setIsDisplayBlocked: (val: boolean) => void;
   isSuggestLoading: boolean;
   setIsSuggestLoading: (val: boolean) => void;
 
@@ -182,8 +190,10 @@ const GlobalContext = createContext<GlobalContextType>({
   setShowSelections: () => {},
 
   // Suggested roll numbers defaults
-  suggestedRollNos: null,
+  suggestedRollNos: [],
   setSuggestedRollNos: () => {},
+  isDisplayBlocked: false,
+  setIsDisplayBlocked: () => {},
   isSuggestLoading: false,
   setIsSuggestLoading: () => {},
 
@@ -219,9 +229,10 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
   const [showSelections, setShowSelections] = useState<boolean>(false);
 
   // Suggested roll numbers for PuppyLove suggest match feature
-  const [suggestedRollNos, setSuggestedRollNos] = useState<string[] | null>(
-    null,
-  );
+  const [suggestedRollNos, setSuggestedRollNos] = useState<string[]>([]);
+  // Display Block State: blocks search queries to preserve Display content
+  // (see interface definition for full documentation)
+  const [isDisplayBlocked, setIsDisplayBlocked] = useState<boolean>(false);
   const [isSuggestLoading, setIsSuggestLoading] = useState<boolean>(false);
 
   // PuppyLove all users interests/bio data (cached in localStorage with 1hr expiry)
@@ -494,6 +505,8 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
     // Suggested roll numbers
     suggestedRollNos,
     setSuggestedRollNos,
+    isDisplayBlocked,
+    setIsDisplayBlocked,
     isSuggestLoading,
     setIsSuggestLoading,
     // PuppyLove all users interests/bio data

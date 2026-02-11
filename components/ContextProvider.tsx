@@ -45,6 +45,7 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
           if (response.status === 202) {
             setPLseason(true);
           }
+          setPLseason(false);
         } else {
           setLoggedIn(false);
         }

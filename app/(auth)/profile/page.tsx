@@ -90,7 +90,7 @@ export default function ProfilePage() {
         const data = await dataRes.json();
         // User is registered if they have a profile with dirty = true
         setIsPuppyLoveRegistered(data.dirty === true);
-        
+
         // Set bio and interests
         setPuppyLoveBio(data.about || "");
         // console.log("[PuppyLove] Raw interest field:", data.interest);
@@ -116,7 +116,7 @@ export default function ProfilePage() {
   useEffect(() => {
     if (isPLseason) fetchPuppyLoveProfile();
   }, [isPLseason, fetchPuppyLoveProfile]);
- 
+
   const fetchProfile = async () => {
     // We don't reset loading to true on refetch to avoid skeleton flashes
     try {
@@ -189,7 +189,6 @@ export default function ProfilePage() {
   }
 
   const profile = userData.profile;
-  
 
   return (
     <div className="flex flex-col lg:flex-row min-h-screen bg-muted/40">
@@ -207,12 +206,6 @@ export default function ProfilePage() {
       {/* --- Right Column (Scrollable) --- */}
       <main className="flex-1 lg:h-screen lg:overflow-y-auto p-4 sm:p-6 lg:p-8 lg:pl-0">
         <div className="space-y-8">
-          <EditableProfileCard
-            profile={userData.profile}
-            onUpdate={fetchProfile}
-          />
-
-
           {/* PuppyLove Profile Card - only visible during Valentine's mode */}
           <PuppyLoveProfileCard
             initialBio={puppyLoveBio}
@@ -221,7 +214,10 @@ export default function ProfilePage() {
             isRegistered={isPuppyLoveRegistered}
             onUpdate={fetchPuppyLoveProfile}
           />
-
+          <EditableProfileCard
+            profile={userData.profile}
+            onUpdate={fetchProfile}
+          />
           <ContributionsCard
             locations={userData.ContributedLocations}
             reviews={userData.ContributedReview}

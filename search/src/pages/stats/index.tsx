@@ -206,7 +206,7 @@ export default function StatsPage() {
                 <CardContent>
                   <div className="text-4xl font-bold text-purple-600">
                     {stats.totalRegisters > 0
-                      ? ((stats.totalMatches * 2 / stats.totalRegisters) * 100).toFixed(1)
+                      ? ((stats.totalMatches / stats.totalRegisters) * 100).toFixed(1)
                       : "0"}%
                   </div>
                   <p className="mt-2 text-sm text-muted-foreground">

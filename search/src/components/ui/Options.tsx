@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Card,
   CardDescription,
@@ -56,11 +56,15 @@ function Options(props: OptionsProps) {
     showSelections,
     puppyLoveProfile,
     puppyLoveAllUsersData,
-    suggestedRollNos,
     setSuggestedRollNos,
+    isDisplayBlocked,
+    setIsDisplayBlocked,
     setIsSuggestLoading,
     isSuggestLoading,
   } = useGContext();
+
+  // Local state to track if suggestions mode is active (subset of isDisplayBlocked)
+  const [isSuggestionModeOn, setIsSuggestionModeOn] = useState(false);
 
   const [query, setQuery] = useState<Query>({
     gender: "",
@@ -76,11 +80,16 @@ function Options(props: OptionsProps) {
   const [showRecoveryModal, setShowRecoveryModal] = useState(false);
 
   const handleSuggestMatch = async () => {
-    console.log(suggestedRollNos)
-    if (suggestedRollNos) {
-      // rest the system
-      setSuggestedRollNos(null);
+    if (isSuggestionModeOn) {
+      // Turn off suggestion mode
+      setSuggestedRollNos([]);
+      setIsSuggestionModeOn(false);
+      setIsDisplayBlocked(false);
       return;
+    } else {
+      // Turn on suggestion mode - blocks display from being overwritten by queries
+      setIsSuggestionModeOn(true);
+      setIsDisplayBlocked(true);
     }
     // Get current user's interests from their profile
     let myInterests: string[] = [];
@@ -103,7 +112,6 @@ function Options(props: OptionsProps) {
       toast.error("Loading user data... Please try again.");
       return;
     }
-
     setIsSuggestLoading(true);
     try {
       const suggestions = await calculateSimilarUsers(
@@ -128,20 +136,29 @@ function Options(props: OptionsProps) {
     }
   };
 
-  // Debounced query
-  const debouncedSendQuery = useCallback(debounce(props.sendQuery, 300), [
-    props.sendQuery,
-  ]);
+  // Debounced query - use useMemo to create stable reference that supports cancel
+  const debouncedSendQuery = useMemo(
+    () => debounce(props.sendQuery, 300),
+    [props.sendQuery],
+  );
+
+  // Cancel pending debounced queries when display is blocked
+  // (e.g., suggestions active or PuppyLove results showing)
+  useEffect(() => {
+    if (isDisplayBlocked) {
+      debouncedSendQuery.cancel();
+    }
+  }, [isDisplayBlocked, debouncedSendQuery]);
 
   useEffect(() => {
-    // NOTE: Deactivate the search, once we are showing the student cards in some other way.
-    // For Ex: if we wish to render the matches, for puppylove then once its set, the query resets it to the [] array
-    // For Ex: when we are suggesting
-    if ((isPuppyLove && !PLpermit) || (suggestedRollNos && suggestedRollNos.length != 0)) {
-        return;
+    // Block search queries when display is showing alternative content:
+    // 1. Suggestions mode is active (user clicked "Suggest" button)
+    // 2. PuppyLove mode is on but permit is off (showing match results after deadline)
+    if (isDisplayBlocked) {
+      return;
     }
     debouncedSendQuery(query);
-  }, [query, debouncedSendQuery]);
+  }, [query, debouncedSendQuery, isDisplayBlocked]);
 
   // Clear search field when puppy love mode is toggled to prevent autofill
   useEffect(() => {
@@ -187,7 +204,7 @@ function Options(props: OptionsProps) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Batch */}
             <MultiSelectField
-              disabled={isGlobalLoading}
+              disabled={isGlobalLoading || isDisplayBlocked}
               query={query}
               name="batch"
               options={props.listOpts.batch || []}
@@ -197,7 +214,7 @@ function Options(props: OptionsProps) {
 
             {/* Hall */}
             <MultiSelectField
-              disabled={isGlobalLoading}
+              disabled={isGlobalLoading || isDisplayBlocked}
               query={query}
               name="hall"
               options={props.listOpts.hall || []}
@@ -207,7 +224,7 @@ function Options(props: OptionsProps) {
 
             {/* Course */}
             <MultiSelectField
-              disabled={isGlobalLoading}
+              disabled={isGlobalLoading || isDisplayBlocked}
               query={query}
               name="course"
               label="Course"
@@ -218,7 +235,7 @@ function Options(props: OptionsProps) {
 
             {/* Department */}
             <MultiSelectField
-              disabled={isGlobalLoading}
+              disabled={isGlobalLoading || isDisplayBlocked}
               query={query}
               name="dept"
               label="Department"
@@ -231,7 +248,8 @@ function Options(props: OptionsProps) {
             <div
               className={cn(
                 "grid w-full items-center lg:-mt-2",
-                isGlobalLoading && "cursor-not-allowed opacity-50",
+                (isGlobalLoading || isDisplayBlocked) &&
+                  "cursor-not-allowed opacity-50",
               )}
             >
               <div className="w-full">
@@ -250,7 +268,7 @@ function Options(props: OptionsProps) {
                       gender: value === "none" ? "" : value,
                     })
                   }
-                  disabled={isGlobalLoading}
+                  disabled={isGlobalLoading || isDisplayBlocked}
                 >
                   <SelectTrigger
                     id="gender"
@@ -287,7 +305,7 @@ function Options(props: OptionsProps) {
                 onChange={(e) =>
                   setQuery({ ...query, address: e.target.value })
                 }
-                disabled={isGlobalLoading}
+                disabled={isGlobalLoading || isDisplayBlocked}
                 className={cn(
                   isPuppyLove &&
                     "border-rose-200/80 bg-rose-100/70 text-rose-500 placeholder:text-rose-300",
@@ -310,7 +328,7 @@ function Options(props: OptionsProps) {
                 placeholder="Search"
                 value={query.name}
                 onChange={(e) => setQuery({ ...query, name: e.target.value })}
-                disabled={isGlobalLoading}
+                disabled={isGlobalLoading || isDisplayBlocked}
                 // ref={ref}      // Forward the ref here
                 autoFocus
                 className={cn(
@@ -326,9 +344,14 @@ function Options(props: OptionsProps) {
         // TODO: And userPublish should be false.
         // This will happen only when, PLpermit is false, hence if admin has not published yet then, ask user.
         <Card>
-          <CardHeader>
-            <CardTitle>Puppy Love Mode active.</CardTitle>
-            <CardDescription>Do you want to get matched?</CardDescription>
+          <CardHeader className="text-rose-500 placeholder:text-rose-300">
+            <CardTitle className="">
+              Puppy Love Mode active. Heart Sent Deadline Over.
+            </CardTitle>
+            <CardDescription>
+              Results will be out soon! Do you want to get matched? Or you can
+              ignore it.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="md:grid grid-cols-4 gap-2 flex flex-col">
@@ -354,11 +377,9 @@ function Options(props: OptionsProps) {
       ) : (
         // TODO: If User agreed to publish (the state in the user data), then we can show the results, else it will be empty.
         <Card>
-          <CardHeader>
-            <CardTitle>Puppy Love Mode active.</CardTitle>
-            <CardDescription>
-              The PuppyLove Match Results are now Out!
-            </CardDescription>
+          <CardHeader className="text-rose-500 placeholder:text-rose-300">
+            <CardTitle>Puppy Love Mode active. Results are now out!</CardTitle>
+            <CardDescription>You can check your matches below.</CardDescription>
           </CardHeader>
         </Card>
       )}
@@ -382,7 +403,7 @@ function Options(props: OptionsProps) {
               )}
               {isSuggestLoading
                 ? "Finding..."
-                : suggestedRollNos
+                : isSuggestionModeOn
                   ? "Suggestions Off"
                   : "Suggest"}
             </Button>
