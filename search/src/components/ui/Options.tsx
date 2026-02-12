@@ -245,9 +245,11 @@ function Options(props: OptionsProps) {
       {isPuppyLove && (
         <div>
           <CardTitle>Puppy Love Mode active.</CardTitle>
-          <CardDescription className="flex-col sm:flex-row">
-            You can search other users here.
-          </CardDescription>
+          {PLpermit && (
+            <CardDescription className="flex-col sm:flex-row">
+              You can search other users here.
+            </CardDescription>
+          )}
         </div>
       )}
       {/* PuppyLove badge */}
@@ -422,9 +424,6 @@ function Options(props: OptionsProps) {
         ) : (
           <Card className="border-rose-200/40 bg-linear-to-br from-rose-50/80 via-pink-50/60 to-fuchsia-50/40 dark:border-rose-800/30 dark:from-rose-950/20 dark:via-pink-950/15 dark:to-fuchsia-950/10">
             <CardHeader>
-              <CardTitle className="text-rose-700 dark:text-rose-300">
-                Puppy Love Mode active.
-              </CardTitle>
               <CardDescription className="text-rose-500/80 dark:text-rose-400/60">
                 Do you want to get matched? If clicked yes, your profile will be
                 considered in the matching algorithm.

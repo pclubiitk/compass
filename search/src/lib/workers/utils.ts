@@ -49,8 +49,7 @@ export async function setData(data: string, privateKey: string | null, idSelf: s
 
     }
 
-    console.log("Decrypted Receiver IDs:", decryptedReceiverIds);
-
+    // console.log("Decrypted Receiver IDs:", decryptedReceiverIds);
     return decryptedReceiverIds;
 }
 

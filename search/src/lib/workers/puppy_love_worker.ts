@@ -210,6 +210,13 @@ self.addEventListener('message', async (e: MessageEvent) => {
 
       const claims = await Promise.all(
         decrypted.map(async (heart: any) => {
+          // FIX: Here if we had the decryption, result "Fail", still we were requesting the backend, checking if a sha value "Fail" exists, hence making the server overwhelmed when deadline.
+          if(heart.sha === "Fail") {
+            // console.log("Not sending the claim request as already decryption failed");
+            return {...heart, claim: {
+            "error": "Invalid Heart Claim Request.",
+            "claim_status": "false"}
+          };}
           const claimRes = await fetch(`${PUPPYLOVE_POINT}/api/puppylove/users/claimheart`, {
             method: 'POST',
             credentials: 'include',
