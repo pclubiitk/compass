@@ -47,6 +47,21 @@ func forgotPasswordHandler(c *gin.Context) {
 		return
 	}
 
+	if user.VerificationToken != "" {
+		// Check if existing token is still valid and was issued recently (rate limiting)
+		tokenSplit := strings.Split(user.VerificationToken, "<>")
+		if len(tokenSplit) == 2 {
+			if expiryTime, err := time.Parse(time.RFC3339, tokenSplit[1]); err == nil {
+				// Token expiry is set to 15 min after creation, so creation time = expiry - 15 min
+				createdAt := expiryTime.Add(-15 * time.Minute)
+				if time.Since(createdAt) < 1*time.Hour {
+					c.JSON(http.StatusTooManyRequests, gin.H{"error": "A reset link was already sent recently. Please try again later."})
+					return
+				}
+			}
+		}
+	}
+
 	// Generate reset token
 	token := uuid.New().String()
 	expiry := time.Now().Add(15 * time.Minute)
