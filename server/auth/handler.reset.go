@@ -25,6 +25,15 @@ func forgotPasswordHandler(c *gin.Context) {
 		return
 	}
 
+	// FOR DEV: BYPASS RE-CAPTCHA
+	// ----------------------------------------------------------------------------- //
+	if viper.GetString("env") == "prod" {
+		if !verifyRecaptcha(req.Token) {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Failed captcha verification"})
+			return
+		}
+	}
+	// ----------------------------------------------------------------------------- //
 	var user model.User
 	if err := connections.DB.Where("email = ?", req.Email).First(&user).Error; err != nil {
 		// Do not reveal if email exists or not for security
