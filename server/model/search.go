@@ -14,13 +14,13 @@ type Profile struct {
 	Name       string  `json:"name"`
 	Email      string  `json:"email"`
 	RollNo     string  `json:"rollNo"`
-	Dept       string  `json:"dept"`
+	Dept       string  `json:"dept" gorm:"index"`
 	Course     string  `json:"course"`
 	Gender     string  `json:"gender"`
 	Hall       *string `json:"hall"`
 	RoomNumber *string `json:"roomNo"`
 	HomeTown   *string `json:"homeTown"`
-	Visibility bool    `json:"visibility"`
+	Visibility bool    `json:"visibility" gorm:"index"`
 	Bapu       string  `json:"bapu"`
 	Bachhas    string  `json:"bachhas"`
 }

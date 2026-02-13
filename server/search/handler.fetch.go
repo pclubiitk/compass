@@ -33,7 +33,11 @@ func getAllProfiles(c *gin.Context) {
 	var requestTime = time.Now()
 
 	var profiles []model.Profile
-	if err := connections.DB.Find(&profiles, "visibility = ?", true).Error; err != nil {
+	// Filter by visibility=true AND department is not null/empty to reduce dataset
+	// FIXME(1st Priority): Correct the dept fetching issue.
+	if err := connections.DB.Where("visibility = ? AND dept IS NOT NULL AND dept != ''", true).
+		Order("user_id ASC").
+		Find(&profiles).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch profiles."})
 		return
 	}
@@ -50,16 +54,17 @@ func getChangeLog(c *gin.Context) {
 		return
 	}
 
-	// If the server start time is after the last fetched time form the user, update the db completely
-	if input.LastUpdateTime.Before(serverStartTime) {
-		var profiles []model.Profile
-		if err := connections.DB.Find(&profiles, "visibility = ?", true).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch profiles."})
-			return
-		}
-		c.JSON(http.StatusAccepted, gin.H{"message": "Completely updating local database due to server restart", "profiles": profiles, "requestTime": requestTime, "dropData": true})
-		return
-	}
+	// FIXME(prod): Only meant for dev, so we do not have much requests.
+	// // If the server start time is after the last fetched time form the user, update the db completely
+	// if input.LastUpdateTime.Before(serverStartTime) {
+	// 	var profiles []model.Profile
+	// 	if err := connections.DB.Find(&profiles, "visibility = ?", true).Error; err != nil {
+	// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch profiles."})
+	// 		return
+	// 	}
+	// 	c.JSON(http.StatusAccepted, gin.H{"message": "Completely updating local database due to server restart", "profiles": profiles, "requestTime": requestTime, "dropData": true})
+	// 	return
+	// }
 	// Generate the json form the logs
 	var addUserId []uuid.UUID // Refers to update in the change log
 	var deleteUserId []uuid.UUID

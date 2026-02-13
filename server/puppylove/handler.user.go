@@ -146,9 +146,12 @@ func VerifyAccessPassword(c *gin.Context) {
 		})
 		return
 	}
-	// Else return true
-	c.JSON(http.StatusOK, gin.H{
-		"valid": true, "is_dirty": false,
+
+	// If no PuppyLove profile exists, instruct the frontend to show TnC/register flow
+	c.JSON(http.StatusNotFound, gin.H{
+		"valid":       true,
+		"has_profile": false,
+		"is_dirty":    false,
 	})
 
 }

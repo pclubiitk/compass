@@ -8,7 +8,7 @@ import Image from "next/image";
 import { PROFILE_POINT } from "@/lib/constant";
 import { useGContext } from "./ContextProvider";
 import { PuppyLoveHeartsCard } from "@/components/puppy-love/HeartsCard";
-import { PuppyLovePasswordCard } from "@/components/puppy-love/PasswordCard";
+import { PuppyLoveLoginAndRegisterPasswordCard } from "@/components/puppy-love/LoginAndRegister";
 import { PuppyLoveSelectionsPanel } from "./puppy-love/SelectionsPanel";
 
 // NOTE:
@@ -45,7 +45,7 @@ export const NavBar = (props: NavBarProps) => {
   return (
     <>
       {showPassModal && (
-        <PuppyLovePasswordCard
+        <PuppyLoveLoginAndRegisterPasswordCard
           onSuccess={handlePasswordSuccess}
           onCancel={() => setShowPassModal(false)}
         />

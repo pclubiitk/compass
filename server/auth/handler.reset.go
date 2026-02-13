@@ -3,7 +3,8 @@ package auth
 import (
 	"compass/connections"
 	"compass/model"
-	"compass/model/puppylove"
+	plmodel "compass/model/puppylove"
+	ppy "compass/puppylove"
 	"compass/workers"
 	"encoding/json"
 	"fmt"
@@ -108,7 +109,7 @@ func resetPasswordHandler(c *gin.Context) {
 
 	var user model.User
 	// Find user by ID
-	if err := connections.DB.Where("user_id = ?", req.UserID).First(&user).Error; err != nil {
+	if err := connections.DB.Model(model.User{}).Preload("Profile").Where("user_id = ?", req.UserID).First(&user).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "User not found"})
 		return
 	}
@@ -154,28 +155,28 @@ func resetPasswordHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update password"})
 		return
 	}
-	// TODO: Check if the puppylove mode true or not
-	// Clear Puppy Love profile data if it exists (ALWAYS clear on password reset, not just if dirty)
-	var profile puppylove.PuppyLoveProfile
-	if err := connections.DB.Where("user_id = ?", user.UserID).First(&profile).Error; err == nil {
-		// Profile exists, reset it completely
-		profile.Dirty = false          // Mark as unregistered
-		profile.PubK = ""              // Clear public key
-		profile.PrivK = ""             // Clear private key
-		profile.Data = "{}"            // Clear data
-		profile.Claims = ""            // Clear claims
-		profile.Submit = false         // Reset submit status
-		profile.Matches = []byte("[]") // Clear matches
-		profile.Publish = false        // Unpublish profile
-		profile.About = ""             // Clear about
-		profile.Interests = ""         // Clear interests
+	if ppy.IsPuppyLoveEnabled() {
+		// Clear Puppy Love profile data if it exists (ALWAYS clear on password reset, not just if dirty)
+		// FIXME: earlier here we were creating a new context for delete, we can create a global context which is used everywhere ( context.Background() was used), currently it to the request's context.
+		ctx := c.Request.Context()
 
-		if err := connections.DB.Save(&profile).Error; err != nil {
+		if err := connections.DB.WithContext(ctx).
+			Where("user_id = ? OR roll_no = ?", user.UserID, user.Profile.RollNo).
+			Delete(&plmodel.PuppyLoveProfile{}).Error; err != nil {
 			logrus.Error("Failed to clear Puppy Love profile:", err)
-			// Don't fail the password reset, just log the error
+			c.JSON(http.StatusAccepted, gin.H{"message": "Password updated successfully. Failed to clear Puppy Love profile; please contact support."})
+			return
 		}
-	}
-	// If profile doesn't exist or error finding it, that's fine - continue
 
-	c.JSON(http.StatusOK, gin.H{"message": "Password updated successfully. If you had a Puppy Love profile, it has been cleared. You will need to re-register."})
+		// Remove the public key from Redis so it cannot be reused
+		if err := connections.RedisClient.HDel(connections.RedisCtx, "puppylove:public_keys", user.Profile.RollNo).Err(); err != nil {
+			logrus.Error("Failed to remove Puppy Love public key from redis:", err)
+			// do not fail the password reset for Redis errors
+		}
+
+		// Successfully deleted profile
+		c.JSON(http.StatusOK, gin.H{"message": "Password updated successfully. If you had a Puppy Love profile, it has been cleared. You will need to re-register."})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Password updated successfully."})
 }

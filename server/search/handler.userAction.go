@@ -97,6 +97,15 @@ func deleteProfileData(c *gin.Context) {
 			return err
 		}
 
+		// Soft-delete the profile and user so data is archived but not hard-removed.
+		if err := tx.Where("user_id = ?", existingProfile.UserID).Delete(&model.Profile{}).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Where("user_id = ?", existingProfile.UserID).Delete(&model.User{}).Error; err != nil {
+			return err
+		}
+
 		// now that the Roll No is free, bring back the dummy account (if it exists)
 		// so the scraped data is waiting for them if they ever return in future
 		if err := restoreDummyAccount(tx, userRollNo); err != nil {
