@@ -314,8 +314,6 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
           const res_json = await response.json();
           setProfileVisibility(true);
           setLoggedIn(true);
-          // FIXME: when puppy route do not exist, then the await will cause the error, resulting into catch statement.
-          setPuppyLovePublicKeys(await fetchPublicKeys());
           if (response.status === 202) {
             setPLseason(true);
             setPLPermit(res_json?.permit);

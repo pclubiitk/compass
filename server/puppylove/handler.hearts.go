@@ -17,32 +17,47 @@ import (
 
 // FetchPublicKeys returns all public keys, using Redis cache if available
 func FetchPublicKeys(c *gin.Context) {
+	var responseMap map[string]string
+
 	// Try to get from Redis cache first
 	publicKeysMap, err := connections.RedisClient.HGetAll(connections.RedisCtx, "puppylove:public_keys").Result()
 	if err == nil && len(publicKeysMap) > 0 {
-		c.JSON(http.StatusOK, publicKeysMap)
+		responseMap = publicKeysMap
+	} else {
+		// Fetch from database
+		var publicKeys []UserPublicKey
+		if err := connections.DB.Model(&puppylove.PuppyLoveProfile{}).
+			Select("roll_no as id, pub_k").
+			Where("pub_k != ''").
+			Find(&publicKeys).Error; err != nil {
+			logrus.WithError(err).Error("Failed to fetch public keys")
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch public keys"})
+			return
+		}
+
+		// Build response and cache in Redis
+		responseMap = make(map[string]string)
+		for _, key := range publicKeys {
+			connections.RedisClient.HSet(connections.RedisCtx, "puppylove:public_keys", key.Id, key.PubK)
+			responseMap[key.Id] = key.PubK
+		}
+	}
+
+	// Explicit JSON marshaling for better error handling
+	jsonData, err := json.Marshal(responseMap)
+	if err != nil {
+		logrus.WithError(err).Error("Failed to marshal public keys to JSON")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to serialize public keys"})
 		return
 	}
 
-	// Fetch from database
-	var publicKeys []UserPublicKey
-	if err := connections.DB.Model(&puppylove.PuppyLoveProfile{}).
-		Select("roll_no as id, pub_k").
-		Where("pub_k != ''").
-		Find(&publicKeys).Error; err != nil {
-		logrus.WithError(err).Error("Failed to fetch public keys")
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch public keys"})
-		return
+	c.Header("Content-Type", "application/json")
+	c.Header("Content-Length", fmt.Sprintf("%d", len(jsonData)))
+	c.Writer.WriteHeader(http.StatusOK)
+	_, err = c.Writer.Write(jsonData)
+	if err != nil {
+		logrus.WithError(err).Error("Failed to write public keys response")
 	}
-
-	// Build response and cache in Redis
-	responseMap := make(map[string]string)
-	for _, key := range publicKeys {
-		connections.RedisClient.HSet(connections.RedisCtx, "puppylove:public_keys", key.Id, key.PubK)
-		responseMap[key.Id] = key.PubK
-	}
-
-	c.JSON(http.StatusOK, responseMap)
 }
 
 func FetchReturnHearts(c *gin.Context) {
