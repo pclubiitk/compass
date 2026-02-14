@@ -136,7 +136,6 @@ export default function StatsPage() {
                   <Sparkles className="h-8 w-8" />
                   <div>
                     <h2 className="text-2xl font-bold">PuppyLove 2026</h2>
-                    <p className="text-rose-100">Find your Valentine</p>
                   </div>
                 </div>
                 <div
@@ -256,7 +255,7 @@ export default function StatsPage() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <HeartHandshake className="h-5 w-5 text-rose-500" />
-                    Batch-wise Matches
+                    Batch-wise People Matched
                   </CardTitle>
                 </CardHeader>
                 <CardContent>

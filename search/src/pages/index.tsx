@@ -275,14 +275,14 @@ export default function Home(props: Object) {
     if (isPuppyLove && !PLpermit && matchedIds && matchedIds.length > 0) {
       sendFindAllQuery(matchedIds);
     }
-  }, [matchedIds, isPuppyLove]);
+  }, [matchedIds, isPuppyLove, isDisplayBlocked]);
 
   // Listen for PuppyLove suggest match from context
   useEffect(() => {
     if (suggestedRollNos && suggestedRollNos.length > 0) {
       sendFindAllQuery(suggestedRollNos);
       setIsSuggestLoading(false);
-    } else setStudents([])
+    } else setStudents([]);
   }, [suggestedRollNos]);
 
   return (
