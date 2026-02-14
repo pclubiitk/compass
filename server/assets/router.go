@@ -22,6 +22,16 @@ import (
 // 	}
 // }
 
+// FIXME: 
+// We see a Refresh storm, when the access token expires,
+// Root Cause: Token Refresh Storm
+// User's access token expired (5-minute expiry)
+// Page loads 20+ profile pictures (/pfp/*.webp) simultaneously
+// Each image request hits UserAuthenticator middleware
+// Token is expired → calls tryRefresh() for EVERY request
+// Each tryRefresh() queries the database (line 107)
+// Result: Same query runs 20+ times in parallel for the same user
+
 func Router(r *gin.Engine) {
 
 	// We handle the no image found on frontend

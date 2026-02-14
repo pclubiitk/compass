@@ -228,26 +228,22 @@ func GetStats(c *gin.Context) {
 					FemaleRegisters++
 				}
 				RegisterMap["y"+profile.RollNo[0:2]]++
+			}
+		}
 
-				if string(profile.Matches) == "" {
-					continue
+		// Count matches from MatchTable to avoid double counting
+		var matches []puppylove.MatchTable
+		if err := connections.DB.Model(&puppylove.MatchTable{}).Find(&matches).Error; err != nil {
+			log.Print("Error fetching matches: ", err)
+		} else {
+			NumberOfMatches = len(matches)
+			for _, match := range matches {
+				// Batch-wise match counting (count each match once, attributed to both batches)
+				if len(match.Roll1) >= 2 {
+					MatchMap["y"+match.Roll1[0:2]]++
 				}
-				var matchMap map[string]string
-				err := json.Unmarshal([]byte(profile.Matches), &matchMap)
-				if err != nil {
-					log.Print("Error parsing matches JSON: ", err)
-					continue
-				}
-				matchCount := len(matchMap)
-
-				if matchCount != 0 {
-					NumberOfMatches += matchCount
-					for matchID := range matchMap {
-						if len(matchID) >= 2 {
-							batchYear := "y" + matchID[0:2]
-							MatchMap[batchYear]++
-						}
-					}
+				if len(match.Roll2) >= 2 {
+					MatchMap["y"+match.Roll2[0:2]]++
 				}
 			}
 		}

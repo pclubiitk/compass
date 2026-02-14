@@ -29,12 +29,19 @@ export const NavBar = (props: NavBarProps) => {
     PLpermit,
     showSelections,
     setShowSelections,
+    matchedIds,
+    setIsDisplayBlocked,
   } = useGContext();
   const [showPassModal, setShowPassModal] = useState(false);
 
   const handleToggle = () => {
-    if (isPuppyLove) setIsPuppyLove(false);
-    else setShowPassModal(true);
+    if (isPuppyLove) {
+      setIsDisplayBlocked(false);
+      setIsPuppyLove(false);
+    } else {
+      setShowPassModal(true);
+      if (isPuppyLove && !PLpermit) setIsDisplayBlocked(true);
+    }
   };
 
   const handlePasswordSuccess = () => {
@@ -73,11 +80,14 @@ export const NavBar = (props: NavBarProps) => {
         <CardDescription
           className={`flex flex-row items-center px-4 font-medium transition-colors duration-500 ${isPuppyLove ? "text-rose-500" : "text-stone-400"}`}
         >
-          <div className={`${isPuppyLove && "hidden sm:inline"}`}>
+          <div>
             {isPuppyLove && !PLpermit ? (
               <>
                 <span className="hidden sm:inline">My</span>
-                <span className="sm:inline"> Matches</span>
+                <span className="sm:inline">
+                  {" "}
+                  Matches ({matchedIds?.length})
+                </span>
               </>
             ) : (
               <>
