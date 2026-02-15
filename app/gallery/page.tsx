@@ -1,13 +1,13 @@
 'use client';
-import { useState, useEffect, use } from "react";
+import { useState, useEffect, use, Dispatch, SetStateAction } from "react";
 import { PhotoGallery } from "../components/location/PhotoGallery";
 import { Gallery } from "../components/location/Gallery";
 import { Img } from  "@/app/components/lib/types";
 import { toast } from "sonner";
 
 
-const handleApprove = async (img: Img, load: Boolean, setLoad: (load: Boolean)=> void) => {
-
+const handleApprove = async (img: Img, load: boolean, setLoad: Dispatch<SetStateAction<boolean>>) => {
+  
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_ASSET_URL}/gallery/${img.ImageID}`, { 
         method: 'PUT',
@@ -16,23 +16,25 @@ const handleApprove = async (img: Img, load: Boolean, setLoad: (load: Boolean)=>
           'Content-Type': 'application/json',
         }
       });
-
+      console.log(response)
       if (!response.ok) {
-            toast.error("Some error occurred");
-
+        // attempts to parse server error, fallback to generic
+        const errorData = await response.json().catch(() => null); 
+        throw new Error(errorData?.message || `Error ${response.status}: Failed to approve`);
       }
 
       const result = await response.json();
       console.log('Success:', result);
-      toast.success(result.message)
-      setLoad(!load)
-    } catch (error) {
+      toast.success(result.message);
+
+      setLoad(prev => !prev);
+    } catch (error: any) {
       console.error('Error:', error);
       toast.error('Failed to update item.');
     }
-  };
+};
 
-const handleDelete = async (img: Img, load: Boolean, setLoad: (load: Boolean)=> void) => {
+const handleDelete = async (img: Img, load: boolean, setLoad: (load: boolean)=> void) => {
 
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_ASSET_URL}/gallery/${img.ImageID}`, { 
@@ -60,7 +62,7 @@ const handleDelete = async (img: Img, load: Boolean, setLoad: (load: Boolean)=> 
 export function GalleryPage() {
 
     const [images, setImages] = useState<Img[]>([]);
-    const [load, setLoad] = useState<Boolean>(true);
+    const [load, setLoad] = useState<boolean>(true);
 
     useEffect(() => {
         // Simulate fetching images from an API

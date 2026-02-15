@@ -30,16 +30,17 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { setLazyProp } from "next/dist/server/api-utils";
+import { Dispatch, SetStateAction } from "react";
 // import { Img } from "@/app/components/lib/types";
 
 
 
 interface GallerySectionProps {
   images: Img[];
-  handleApprove: (img: Img, load: Boolean, setLoad: (load: Boolean)=> void) => void;
-  handleDelete: (img: Img, load: Boolean, setLoad: (load: Boolean)=> void) => void;
-  load: Boolean;
-  setLoad: (load:Boolean) => void;
+  handleApprove: (img: Img, load: boolean, setLoad: Dispatch<SetStateAction<boolean>>) => void;
+  handleDelete: (img: Img, load: boolean, setLoad: (load: boolean)=> void) => void;
+  load: boolean;
+  setLoad: Dispatch<SetStateAction<boolean>>;
 }
 
 
@@ -57,7 +58,7 @@ export function GallerySection({ images, handleApprove, handleDelete, load, setL
       type="single"
       collapsible
       defaultValue="shipping"
-      className="max-w-lg"
+      className="w-full max-w-7xl mx-auto"
     >
         <AccordionItem value={images[0].Status.toString()}>
         <AccordionTrigger>
@@ -65,7 +66,7 @@ export function GallerySection({ images, handleApprove, handleDelete, load, setL
                 {images[0].Status.charAt(0).toUpperCase() + images[0].Status.slice(1)} Images <ChevronDown className="inline"/>
             </h2>
             </AccordionTrigger>
-         <AccordionContent className="w-[100VW] grid grid-cols-3">
+         <AccordionContent className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
     {images.map((img, i) => (   
     <Card className="relative max-w-sm pt-0 m-4" key={i}>
                    <Image
@@ -106,15 +107,15 @@ export function GallerySection({ images, handleApprove, handleDelete, load, setL
                 </DrawerHeader>
 
                 <div className="flex relative w-[80vw] h-full items-center justify-around p-4 m-auto">
-                    <div>
-                  <Image
-                  src={img.Status == "approved" ? `${process.env.NEXT_PUBLIC_ASSET_URL}/assets/${img.ImageID}.webp`: `${process.env.NEXT_PUBLIC_ASSET_URL}/tmp/${img.ImageID}.webp`}
-                    alt={`Full screen photo ${i + 1}`}
-                    width={500}
-                    height={500}
-                    className="object-contain rounded"
-                    // unoptimized // uncomment in dev if testing by adding and deleting images with same uuid
-                  />
+                  <div>
+                    <Image
+                    src={img.Status == "approved" ? `${process.env.NEXT_PUBLIC_ASSET_URL}/assets/${img.ImageID}.webp`: `${process.env.NEXT_PUBLIC_ASSET_URL}/tmp/${img.ImageID}.webp`}
+                      alt={`Full screen photo ${i + 1}`}
+                      width={500}
+                      height={500}
+                      className="object-contain rounded"
+                      unoptimized // uncomment in dev if testing by adding and deleting images with same uuid
+                    />
                   </div>
                   <div>
                 <DrawerTitle>ImageID: {img.ImageID}</DrawerTitle>

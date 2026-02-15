@@ -37,5 +37,5 @@ export interface Img {
     ParentAssetID: String;
     ParentAssetType: String;
     Status: String;
-    Submitted: Boolean;
+    Submitted: boolean;
 }
