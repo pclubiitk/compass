@@ -3,9 +3,11 @@ package maps
 import (
 	"compass/assets"
 	"compass/connections"
+	"compass/workers"
+	"encoding/json"
 	"compass/model"
 	"net/http"
-
+	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -228,4 +230,143 @@ func addNotice(c *gin.Context) {
 	}
 	// TODO: publish a mail confirming notice published
 	c.JSON(201, gin.H{"message": "New notice added successfully"})
+}
+
+type MakeAdminRequest struct {
+	Email string `json:"email" binding:"required,email"`
+}
+
+// Promote user to Admin (SuperAdmin only)
+func makeAdminHandler(c *gin.Context) {
+	// Check role from middleware
+	userRole, exists := c.Get("userRole")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	role, ok := userRole.(int)
+	if !ok || role != int(model.SuperAdminRole) {
+		c.JSON(http.StatusForbidden, gin.H{
+			"error": "Only super admins can promote users to admin",
+		})
+		return
+	}
+
+	var req MakeAdminRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format"})
+		return
+	}
+
+	var user model.User
+	err := connections.DB.
+		Where("email = ?", req.Email).
+		Preload("Profile").
+		First(&user).Error
+
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+			return
+		}
+		logrus.WithError(err).Error("Database error fetching user")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
+		return
+	}
+
+	// Already admin check
+	if user.Role == model.AdminRole || user.Role == model.SuperAdminRole {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "User is already an admin or super admin",
+		})
+		return
+	}
+
+	// Update role 
+	if err := connections.DB.Model(&user).
+		Update("role", model.AdminRole).Error; err != nil {
+		logrus.WithError(err).Error("Failed to update user role")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to promote user"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"message": "User promoted to admin successfully",
+		"email":   user.Email,
+		"name":    user.Profile.Name,
+		"role":    model.AdminRole,
+	})
+}
+
+type DemoteAdminRequest struct {
+	Email string `json:"email" binding:"required,email"`
+}
+
+//  Demote admin back to normal user (SuperAdmin only)
+func demoteAdminHandler(c *gin.Context) {
+	userRole, exists := c.Get("userRole")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	role, ok := userRole.(int)
+	if !ok || role != int(model.SuperAdminRole) {
+		c.JSON(http.StatusForbidden, gin.H{
+			"error": "Only super admins can demote admins",
+		})
+		return
+	}
+
+	var req DemoteAdminRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format"})
+		return
+	}
+
+	var user model.User
+	err := connections.DB.Where("email = ?", req.Email).First(&user).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
+		return
+	}
+
+	// Prevent demoting super admin (optional safety)
+	if user.Role == model.SuperAdminRole {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Cannot demote a super admin",
+		})
+		return
+	}
+
+	// Change role back to normal user
+	if err := connections.DB.Model(&user).
+		Update("role", model.UserRole).Error; err != nil {
+		logrus.WithError(err).Error("Failed to demote admin")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to demote admin"})
+		return
+	}
+
+	job := workers.MailJob{
+		Type: "make_admin",
+		To:   user.Email,
+		Data: map[string]interface{}{
+			"name": user.Profile.Name,
+		},
+	}
+	
+	payload, _ := json.Marshal(job)
+	if err := workers.PublishJob(payload, model.MailQueue); err != nil {
+		logrus.WithError(err).Error("Failed to enqueue admin promotion email")
+		// Don't fail the request if email fails to enqueue
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Admin demoted to user successfully",
+		"email":   user.Email,
+		"role":    model.UserRole,
+	})
 }

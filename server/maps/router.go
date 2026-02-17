@@ -20,7 +20,7 @@ func Router(r *gin.Engine) {
 		maps.GET("/reviews/:id/:page", reviewProvider)    // provide the reviews of the location id, most recent 50, if there are more do the pagination
         maps.GET("/location/fuzzy", FuzzySearchLocationsHandler)
         maps.GET("/notice/fuzzy", FuzzySearchNoticesHandler)
-												
+
 		// User-protected routes
 		user := maps.Group("/")
 		user.Use(middleware.UserAuthenticator, middleware.EmailVerified)
@@ -42,7 +42,8 @@ func Router(r *gin.Engine) {
 		admin.POST("/flag/:id", flagAction)         // Allow action like allow or declined, in case of negative action add a mail request in the queue for the mail worker to send a mail of rejection to the user
 		admin.POST("/location/:id", locationAction) // Allow the action of user like allow or declined
 		admin.POST("/notice", addNotice)
+		admin.POST("/make-admin", makeAdminHandler)
+		admin.POST("/remove-admin", demoteAdminHandler)
 		// TODO: add a env reload route for admin
-
 	}
 }

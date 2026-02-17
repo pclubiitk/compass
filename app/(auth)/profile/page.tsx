@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SocialProfileCard } from "@/components/profile/SocialProfileCard";
 import { EditableProfileCard } from "@/components/profile/EditableProfileCard";
 import { ContributionsCard } from "@/components/profile/ContributionsCard";
+import { AdminCard } from "@/components/profile/admincard";
 import {
   useCalendar,
   CalendarProvider,
@@ -145,15 +146,23 @@ export default function ProfilePage() {
   return (
     <div className="flex flex-col lg:flex-row min-h-screen bg-muted/40">
       {/* --- Left Column (Fixed) --- */}
-      <aside className="w-full lg:w-1/3 xl:w-1/3 p-4 sm:p-6 lg:p-8">
-        <div className="lg:sticky lg:top-8">
-          <SocialProfileCard
-            email={profile.email}
-            userID={profile.UserID}
-            onProfileUpdate={fetchProfile}
-          />
-        </div>
-      </aside>
+<aside className="w-full lg:w-1/3 xl:w-1/3 p-4 sm:p-6 lg:p-8">
+<div className="lg:sticky lg:top-8">
+  <SocialProfileCard
+    email={profile.email}
+    userID={profile.UserID}
+    onProfileUpdate={fetchProfile}
+  />
+  <div className="h-3"></div>
+  <AdminCard
+    email={profile.email}
+    isAdmin={userData.role >= 100}
+    isSuperAdmin={userData.role === 101}
+    userRole={userData.role}
+  />
+</div>
+</aside>
+
 
       {/* --- Right Column (Scrollable) --- */}
       <main className="flex-1 lg:h-screen lg:overflow-y-auto p-4 sm:p-6 lg:p-8 lg:pl-0">
