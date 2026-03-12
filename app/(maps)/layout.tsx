@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import AddLocationDrawer from "@/components/AddLocationDrawer";
+import AddLocationReviewDrawer from "@/components/AddReviewDrawer";
 import { BottomNav } from "@/components/BottomNavbar";
 import { useLocations } from "@/app/hooks/useLocations";
 import { usePathname, useRouter } from "next/navigation";
@@ -29,6 +30,7 @@ export default function MapsLayout({ children }: { children: React.ReactNode }) 
   const { locations } = useLocations();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [loginDialogOpen, setLoginDialogOpen] = useState(false);
+  const [reviewDrawerOpen ,setReviewDrawerOpen] = useState(false)
   const pathname = usePathname();
   const router = useRouter();
   const { isLoggedIn } = useGContext();
@@ -40,6 +42,13 @@ export default function MapsLayout({ children }: { children: React.ReactNode }) 
     window.addEventListener("trigger-add-location", handler);
     return () => window.removeEventListener("trigger-add-location", handler);
   }, []);
+
+  // useEffect(() => {
+  //   const handler = () => setReviewDrawerOpen(true);
+  //       window.addEventListener("trigger-add-review", handler);
+  //   return () => window.removeEventListener("trigger-add-review", handler);
+  // }, []);
+
 
   // Memoize the handler to prevent Map re-initialization
   const handleMarkerClick = useMemo(() => () => {
@@ -88,6 +97,22 @@ export default function MapsLayout({ children }: { children: React.ReactNode }) 
           />,
           document.body
         )}
+        {/*Review Drwawer*/ }
+
+        {/* {typeof window !== "undefined" &&
+        createPortal(
+          <AddLocationReviewDrawer
+            open={reviewDrawerOpen}
+            onOpenChange={(open) => {
+              setReviewDrawerOpen(open);
+              if (!open) {
+                // Trigger global events to re-sync markers & layout
+                window.dispatchEvent(new Event("drawer-close"));
+              }
+            }}
+          />,
+          document.body
+        )} */}
 
       <div
         className={`absolute inset-0 z-30 ${isLocationPage

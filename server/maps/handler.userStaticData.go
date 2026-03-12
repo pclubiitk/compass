@@ -238,3 +238,47 @@ func fetchReviewsByLocationID(locationID string, limit, offset int) ([]model.Rev
 
 	return reviews, int(total), nil
 }
+
+func fetchReviewsByUserID(userID string, limit, offset int) ([]model.Review, int, error) {
+	var reviews []model.Review
+	var total int64
+	db := connections.DB
+
+	if err := db.Model(&model.Review{}).Where("user_id = ?", userID).Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	if err := db.Preload("Location").
+		Preload("Images", func(tx *gorm.DB) *gorm.DB {
+			return tx.Where("parent_asset_id IS NOT NULL").Where("parent_asset_type = ?", "reviews")
+		}).
+		Where("user_id = ?", userID).
+		Order("created_at DESC").
+		Limit(limit).
+		Offset(offset).
+		Find(&reviews).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return reviews, int(total), nil
+}
+
+func getMyReviews(c *gin.Context) {
+	userID := c.GetString("userID")
+
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+	offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
+
+	reviews, total, err := fetchReviewsByUserID(userID, limit, offset)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch reviews"})
+		return
+	}
+
+	response := mapReviews(reviews)
+
+	c.JSON(http.StatusOK, gin.H{
+		"reviews": response,
+		"total":   total,
+	})
+}

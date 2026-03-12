@@ -13,7 +13,7 @@ export function middleware(request: NextRequest) {
   const actualSubdomain = proxySubdomain || subdomain;
 
   // Route based on subdomain
-  if (actualSubdomain === "bauth") {
+  if (actualSubdomain === "auth") {
     // Auth subdomain - allow all (auth) paths
     if (!pathname.startsWith("/login") && !pathname.startsWith("/signup") && 
         !pathname.startsWith("/forgot-password") && !pathname.startsWith("/reset-password") &&
@@ -26,7 +26,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  if (actualSubdomain === "bcompass" || actualSubdomain === "bmaps") {
+  if (actualSubdomain === "compass" || actualSubdomain === "maps") {
     // Maps subdomain - allow all (maps) paths
     if (!pathname.startsWith("/location") && !pathname.startsWith("/noticeboard") &&
         !pathname.startsWith("/_next") && !pathname.startsWith("/api") &&
