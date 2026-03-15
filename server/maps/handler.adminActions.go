@@ -4,6 +4,8 @@ import (
 	"compass/assets"
 	"compass/connections"
 	"compass/model"
+	//"compass/workers"
+	//"encoding/json"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -11,7 +13,8 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"gorm.io/gorm"
+	
+"gorm.io/gorm"
 )
 
 func flagAction(c *gin.Context) {
@@ -30,134 +33,161 @@ func flagAction(c *gin.Context) {
 		return
 	}
 
-	if req.Action == "approved" {
+	 if req.Action == "approved" {
 
-		review.Status = "approved"
-		//update ratting of the location
-		var location model.Location
-		if err := connections.DB.Where("id = ?", review.LocationId).First(&location); err != nil {
-			c.JSON(400, gin.H{"error": "error while updating the location review count"})
-		}
-		location.ReviewCount += 1
-		location.AverageRating = ((location.AverageRating * float32(location.ReviewCount-1)) + float32(review.Rating)) / float32(location.ReviewCount)
+	review.Status = "approved"
+	//update ratting of the location
+	var location model.Location
+	if err := connections.DB.Where("id = ?", review.LocationId).First(&location); err != nil {
+		c.JSON(400, gin.H{"error": "error while updating the location review count"})
+	}
+	location.ReviewCount += 1
+	location.AverageRating = ((location.AverageRating * float32(location.ReviewCount-1)) + float32(review.Rating)) / float32(location.ReviewCount)
 
-		if err := connections.DB.Save(&location).Error; err != nil {
-			c.JSON(400, gin.H{"error": "error while updating the location review count"})
-		}
-		c.JSON(200, gin.H{"message": "Review approved"})
+	if err := connections.DB.Save(&location).Error; err != nil {
+		c.JSON(400, gin.H{"error": "error while updating the location review count"})
+	}
+	c.JSON(200, gin.H{"message": "Review approved"})
 
+	return
+	   }
+
+	 if req.Action == "rejected" {
+	 	if req.Message == "" {
+			c.JSON(400, gin.H{"error": "Rejection message required"})
+			return
+	 	}
+
+		review.Status = "rejected"
+	 	if err := connections.DB.Save(&review).Error; err != nil {
+	 		c.JSON(500, gin.H{"error": "Failed to update review status"})
+	 		return
+	 	}
+	 	connections.MQChannel.Publish(
+			"",
+			viper.GetString("rabbitmq.mailqueue"), // queue name
+	 		false,                                 // mandatory
+	 		false,                                 // immediate
+	 		amqp.Publishing{
+	 			ContentType: "application/json",
+	 			Body:        []byte(`{"userId": "` + review.User.UserID.String() + `", "message": "` + req.Message + `"}`),
+	 		},
+	 	)
+	 	c.JSON(200, gin.H{"message": "Review rejected", "details": req.Message})
+	 	return
+	 }
+}
+
+func updateLocation(c *gin.Context) {
+	locationID := c.Param("id")
+
+	type UpdateLocationRequest struct {
+		Name        string `json:"name" binding:"required"`
+		Description string `json:"description"`
+		Tag         string `json:"tag"`
+		Time        string `json:"time"`
+		Contact     string `json:"contact"`
+	}
+
+	var req UpdateLocationRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(400, gin.H{"error": "Invalid request"})
 		return
 	}
 
-	if req.Action == "rejected" {
+	var loc model.Location
+	if err := connections.DB.Where("location_id = ?", locationID).First(&loc).Error; err != nil {
+		c.JSON(404, gin.H{"error": "Location not found"})
+		return
+	}
+
+	// Update editable fields
+	loc.Name = req.Name
+	loc.Description = req.Description
+	loc.Tag = req.Tag
+	loc.Time = req.Time
+	loc.Contact = req.Contact
+
+	if err := connections.DB.Save(&loc).Error; err != nil {
+		c.JSON(500, gin.H{"error": "Failed to update location"})
+		return
+	}
+
+	c.JSON(200, gin.H{"message": "Location updated"})
+}
+
+func locationAction(c *gin.Context) {
+	locationID := c.Param("id")
+
+	var req RequestAddLocation
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(400, gin.H{"error": "Invalid request"})
+		return
+	}
+
+	var loc model.Location
+	if err := connections.DB.Where("location_id = ?", locationID).First(&loc).Error; err != nil {
+		c.JSON(404, gin.H{"error": "Location request not found"})
+		return
+	}
+
+	// Only allow pending requests to be moderated
+	if loc.Status != model.Pending {
+		c.JSON(400, gin.H{"error": "Location request is not pending"})
+		return
+	}
+
+	if req.Status == "approved" {
+		loc.Status = model.Approved
+		if err := connections.DB.Save(&loc).Error; err != nil {
+			c.JSON(500, gin.H{"error": "Failed to approve location"})
+			return
+		}
+
+		// Send mail thanking contributor
+		connections.MQChannel.Publish(
+			"",
+			viper.GetString("rabbitmq.mailqueue"),
+			false,
+			false,
+			amqp.Publishing{
+				ContentType: "application/json",
+				Body:        []byte(`{"userId": "` + loc.ContributedBy.String() + `", "message": "Thanks for contributing a location! It's now live."}`),
+			},
+		)
+
+		c.JSON(200, gin.H{"message": "Location approved"})
+		return
+	}
+
+	if req.Status == "rejected" {
 		if req.Message == "" {
 			c.JSON(400, gin.H{"error": "Rejection message required"})
 			return
 		}
 
-		review.Status = "rejected"
-		if err := connections.DB.Save(&review).Error; err != nil {
-			c.JSON(500, gin.H{"error": "Failed to update review status"})
+		loc.Status = model.Rejected
+		if err := connections.DB.Save(&loc).Error; err != nil {
+			c.JSON(500, gin.H{"error": "Failed to reject location"})
 			return
 		}
+
 		connections.MQChannel.Publish(
 			"",
-			viper.GetString("rabbitmq.mailqueue"), // queue name
-			false,                                 // mandatory
-			false,                                 // immediate
+			viper.GetString("rabbitmq.mailqueue"),
+			false,
+			false,
 			amqp.Publishing{
 				ContentType: "application/json",
-				Body:        []byte(`{"userId": "` + review.User.UserID.String() + `", "message": "` + req.Message + `"}`),
+				Body:        []byte(`{"userId": "` + loc.ContributedBy.String() + `", "message": "` + req.Message + `"}`),
 			},
 		)
-		c.JSON(200, gin.H{"message": "Review rejected", "details": req.Message})
+
+		c.JSON(200, gin.H{"message": "Location rejected", "details": req.Message})
 		return
 	}
-}
 
-func locationAction(c *gin.Context) {
-	// add the request model to the request.model.go file
-
-	// locationID := c.Param("id")
-
-	// var req RequestAddLocation
-	// if err := c.ShouldBindJSON(&req); err != nil {
-	// 	c.JSON(400, gin.H{"error": "Invalid request"})
-	// 	return
-	// }
-
-	// var loc RequestAddLocation
-	// if err := connections.DB.Model(&RequestAddLocation{}).Where("id = ?", locationID).First(&loc).Error; err != nil {
-	// 	c.JSON(404, gin.H{"error": "Location request not found"})
-	// 	return
-	// }
-
-	// // add the location in the database if user approve it, else reject it
-	// if req.Status == "approved" {
-	// 	// Insert into final Location table (assuming model.Location exists)
-	// 	final := model.Location{
-	// 		Name:      loc.Title,
-	// 		Latitude:  loc.Latitude,
-	// 		Longitude: loc.Longitude,
-	// 		// LocationType:  loc.LocationType, // no locationType in Location
-	// 		ContributedBy: loc.Contributor_id,
-	// 		Description:   loc.Description,
-	// 		// Image:         loc.Image, // no field for image in Location
-	// 		Status: "approved", //loc.status giving type error
-	// 	}
-	// 	if err := connections.DB.Create(&final).Error; err != nil {
-	// 		c.JSON(500, gin.H{"error": "Failed to add location"})
-	// 		return
-	// 	}
-
-	// 	loc.Status = "approved" // approving in og req table
-	// 	connections.DB.Save(&loc)
-
-	// 	// Send mail thanking contributor
-	// 	connections.MQChannel.Publish(
-	// 		"",
-	// 		viper.GetString("rabbitmq.mailqueue"),
-	// 		false,
-	// 		false,
-	// 		amqp.Publishing{
-	// 			ContentType: "application/json",
-	// 			Body:        []byte(`{"userId": "` + loc.Contributor_id.String() + `", "message": "Thanks for contributing a location! It's now live."}`),
-	// 		},
-	// 	)
-
-	// 	c.JSON(200, gin.H{"message": "Location approved and added"})
-	// 	return
-	// }
-
-	// if req.Status == "rejected" {
-	// 	if req.Message == "" {
-	// 		c.JSON(400, gin.H{"error": "Rejection message required"})
-	// 		return
-	// 	}
-
-	// 	loc.Status = "rejected"
-	// 	connections.DB.Save(&loc)
-
-	// 	// Send rejection mail
-	// 	connections.MQChannel.Publish(
-	// 		"",
-	// 		viper.GetString("rabbitmq.mailqueue"),
-	// 		false,
-	// 		false,
-	// 		amqp.Publishing{
-	// 			ContentType: "application/json",
-	// 			Body:        []byte(`{"userId": "` + loc.Contributor_id.String() + `", "message": "` + req.Message + `"}`),
-	// 		},
-	// 	)
-
-	// 	c.JSON(200, gin.H{"message": "Location rejected", "details": req.Message})
-	// 	return
-	// }
-	// c.JSON(400, gin.H{"error": "Invalid action"})
-
-	// // in both the cases notify the user with a mail, either thanking for contribution or saying sorry
-
-	// // Handle all the edge cases with suitable return http code, write them in the read me for later documentation
+	c.JSON(400, gin.H{"error": "Invalid action"})
 }
 
 func addNotice(c *gin.Context) {
@@ -192,17 +222,17 @@ func addNotice(c *gin.Context) {
 			return err
 		}
 		// TODO: Can do sanitization of the text
-		// p := bluemonday.UGCPolicy() // User-Generated Content policy
-		// for i := range noticeList {
-		// 	noticeList[i].Description = p.Sanitize(noticeList[i].Description)
-		// }
+		//p := bluemonday.UGCPolicy() // User-Generated Content policy
+		//for i := range noticeList {
+		//noticeList[i].Description = p.Sanitize(noticeList[i].Description)
+		//}
 		//This is for XSS protection
-		// p := bluemonday.UGCPolicy()
-		// for i := range notices {
-		// 	notices[i].Description = p.Sanitize(notices[i].Description)
-		// }
-		//  Image exist in the request
-		// TODO: Security analysis, if somehow i know what is the uploded image id, then i can steal the image for the user.
+		//p := bluemonday.UGCPolicy()
+		//for i := range notices {
+		//notices[i].Description = p.Sanitize(notices[i].Description)
+		//}
+		// Image exist in the request
+		//TODO: Security analysis, if somehow i know what is the uploded image id, then i can steal the image for the user.
 		if input.CoverPic != nil {
 			// Attach existing image to notice polymorphically
 			if err := tx.Model(&model.Image{}).

@@ -26,6 +26,10 @@ func signupHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format"})
 		return
 	}
+	// Trim any accidental whitespace and normalize email case.
+	input.Email = strings.TrimSpace(input.Email)
+	input.Password = strings.TrimSpace(input.Password)
+
 	//Allow only IITK emails
 	if !strings.HasSuffix(strings.ToLower(input.Email), "@iitk.ac.in") {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Please use a valid IIT Kanpur email address"})
@@ -57,8 +61,8 @@ func signupHandler(c *gin.Context) {
 	token := generateVerificationToken()
 	expiry := time.Now().Add(time.Duration(viper.GetInt("expiry.emailVerification")) * time.Hour).Format(time.RFC3339)
 	user := model.User{
-		Email:             strings.ToLower(input.Email),
-		Password:          string(hashPass),
+		Email:    strings.ToLower(input.Email),
+		Password: string(hashPass),
 		// Auto-verify in non-prod environments to avoid needing email delivery.
 		IsVerified:        viper.GetString("env") != "prod",
 		Role:              model.UserRole,
@@ -96,31 +100,34 @@ func signupHandler(c *gin.Context) {
 		return
 	}
 
-	//  Add mail job to queue
-	verifyLink := fmt.Sprintf("%s/signup?token=%s&userID=%s",
-		// Dev Mode, call the anonymous function
-		func() string {
-			if viper.GetString("domain") == "" {
-				return "http://localhost:3001"
-			}
-			return fmt.Sprintf("https://%s.%s", "bauth", viper.GetString("domain"))
-		}(),
-		token,
-		user.UserID)
+	//  Add mail job to queue only in production with SMTP configured.
+	// In development we auto-verify users and there is no mail relay.
+	if viper.GetString("env") == "prod" && viper.GetString("smtp.user") != "" && viper.GetString("smtp.pass") != "" {
+		verifyLink := fmt.Sprintf("%s/signup?token=%s&userID=%s",
+			// Dev Mode, call the anonymous function
+			func() string {
+				if viper.GetString("domain") == "" {
+					return "http://localhost:3001"
+				}
+				return fmt.Sprintf("https://%s.%s", "bauth", viper.GetString("domain"))
+			}(),
+			token,
+			user.UserID)
 
-	job := workers.MailJob{
-		Type: "user_verification",
-		To:   input.Email,
-		Data: map[string]interface{}{
-			// To match the format in the UI, kB1-2Cd etc.
-			"token": fmt.Sprintf("%s-%s", token[:3], token[3:]),
-			"link":  verifyLink,
-		},
-	}
-	payload, _ := json.Marshal(job)
-	if err := workers.PublishJob(payload, model.MailQueue); err != nil {
-		// Log but continue
-		logrus.Error("Failed to enqueue mail job:", err)
+		job := workers.MailJob{
+			Type: "user_verification",
+			To:   input.Email,
+			Data: map[string]interface{}{
+				// To match the format in the UI, kB1-2Cd etc.
+				"token": fmt.Sprintf("%s-%s", token[:3], token[3:]),
+				"link":  verifyLink,
+			},
+		}
+		payload, _ := json.Marshal(job)
+		if err := workers.PublishJob(payload, model.MailQueue); err != nil {
+			// Log but continue
+			logrus.Error("Failed to enqueue mail job:", err)
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{

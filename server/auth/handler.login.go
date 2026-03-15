@@ -61,9 +61,13 @@ func loginHandler(c *gin.Context) {
 	}
 	// ----------------------------------------------------------------------------- //
 
+	// Trim any accidental whitespace (e.g. copy/paste) and normalize email case.
+	req.Email = strings.TrimSpace(req.Email)
+	req.Password = strings.TrimSpace(req.Password)
+
 	//  Fetch user from DB
 	result := connections.DB.Model(&model.User{}).Select("email", "user_id", "password", "role", "is_verified").
-		Where("email = ?", strings.ToLower(req.Email)).First(&dbUser)
+		Where("LOWER(email) = ?", strings.ToLower(req.Email)).First(&dbUser)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"}) // For protection, users should not know who is not on platform

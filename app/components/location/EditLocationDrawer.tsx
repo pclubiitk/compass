@@ -110,10 +110,12 @@ export function EditLocationDrawer({
     }
   };
 
+  const Trigger = <>{children}</>;
+
   if (isDesktop) {
     return (
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogTrigger asChild>{children}</DialogTrigger>
+        <DialogTrigger asChild>{Trigger}</DialogTrigger>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Location</DialogTitle>
@@ -213,7 +215,7 @@ export function EditLocationDrawer({
 
   return (
     <Drawer open={isOpen} onOpenChange={setIsOpen}>
-      <DrawerTrigger asChild>{children}</DrawerTrigger>
+      <DrawerTrigger asChild>{Trigger}</DrawerTrigger>
       <DrawerContent>
         <DrawerHeader className="text-left">
           <DrawerTitle>Edit Location</DrawerTitle>

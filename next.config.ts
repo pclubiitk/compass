@@ -11,6 +11,12 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "shantsagar" },
     ],
   },
+
+  // Default to local auth backend in development when env var not set
+  env: {
+    NEXT_PUBLIC_AUTH_URL:
+      process.env.NEXT_PUBLIC_AUTH_URL || "http://localhost:8080",
+  },
 };
 
 export default nextConfig;

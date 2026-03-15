@@ -9,6 +9,13 @@ import (
 )
 
 func SendMail(content MailContent) error {
+	// If SMTP credentials are not configured, skip sending emails.
+	// This is useful for local/dev environments where we don't have a working mail relay.
+	if viper.GetString("smtp.user") == "" || viper.GetString("smtp.pass") == "" {
+		logrus.Infof("SMTP credentials are not configured; skipping email to %s", content.To)
+		return nil
+	}
+
 	// Create a new email message
 	m := mail.NewMessage()
 	m.SetHeader("From", viper.GetString("smtp.user"))

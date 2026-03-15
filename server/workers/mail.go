@@ -7,6 +7,7 @@ import (
 	"compass/connections"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -41,12 +42,25 @@ func MailingWorker() error {
 		content, err := FormatMail(job)
 		if err != nil {
 			logrus.Errorf("Failed to format mail: %v", err)
+			// Unknown mail types are often a developer error or stale jobs.
+			// Acknowledge them so they don't keep retrying forever.
+			if strings.Contains(err.Error(), "unknown mail type") {
+				delivery.Ack(false)
+				continue
+			}
 			delivery.Nack(false, true) // Retry formatting errors
 			continue
 		}
 		// Send the email
 		if err := SendMail(content); err != nil {
 			logrus.Errorf("Failed to send email to %s: %v", content.To, err)
+
+			// If this is a credentials/auth issue, don't keep retrying.
+			if strings.Contains(err.Error(), "Username and Password not accepted") || strings.Contains(err.Error(), "535") {
+				delivery.Ack(false)
+				continue
+			}
+
 			delivery.Nack(false, true) // Retry send errors
 			continue
 		}
