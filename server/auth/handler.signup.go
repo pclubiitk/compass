@@ -59,7 +59,8 @@ func signupHandler(c *gin.Context) {
 	user := model.User{
 		Email:             strings.ToLower(input.Email),
 		Password:          string(hashPass),
-		IsVerified:        false,
+		// Auto-verify in non-prod environments to avoid needing email delivery.
+		IsVerified:        viper.GetString("env") != "prod",
 		Role:              model.UserRole,
 		VerificationToken: fmt.Sprintf("%s<>%s", token, expiry),
 		Profile:           model.Profile{Email: strings.ToLower(input.Email), Visibility: true},

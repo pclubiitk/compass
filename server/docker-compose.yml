@@ -36,15 +36,14 @@ services:
       timeout: 5s
       retries: 5
     volumes:
-      - ./db_data:/var/lib/postgresql/data
-    # NOTE: ./db_data_on_host is the directory on my host (relative to the docker-compose.yml file), 
-    # and /var/lib/postgresql/data is the default PostgreSQL data directory within the container.
+      - postgres_data:/var/lib/postgresql/data
+    # NOTE: Using a named volume avoids macOS file sharing/permission issues.
   server:
     build:
       context: .
       dockerfile: container/Dockerfile
     extra_hosts:
-       - "host.docker.internal:host-gateway"
+      - "host.docker.internal:host-gateway"
     # it will restart the container if it crashers (due to rabbit mq or any other issue)
     restart: on-failure
     ports:
@@ -62,3 +61,6 @@ services:
       RABBITMQ_HOST: rabbitmq
       # force Go to use go.mod/go.sum for dependency management
       GO111MODULE: on
+
+volumes:
+  postgres_data:
