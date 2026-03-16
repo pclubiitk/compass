@@ -10,6 +10,7 @@ import (
 type Role int
 
 const (
+	SuperAdminRole Role = 101 // "superadmin"
 	AdminRole Role = 100 // "admin"
 	Bot       Role = 99  // "bot"
 	UserRole  Role = 50  // "user"

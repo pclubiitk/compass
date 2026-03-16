@@ -184,31 +184,18 @@ export function SocialProfileCard({
             <Button
               variant="outline"
               size="icon"
-              className="h-12 w-12 shadow-md hover:shadow-lg transition-all opacity-60 cursor-not-allowed"
+              className="h-12 w-12 shadow-md hover:shadow-lg transition-all hover:scale-105"
               onClick={() => router.push("/")}
-              disabled
             >
               <Map className="h-5 w-5" />
             </Button>
-            <Badge
-              variant="secondary"
-              className="absolute -top-2 -right-2 text-[10px] px-1.5 py-0.5 shadow-md bg-yellow-500/90 dark:bg-yellow-600/90 text-white border-0"
-            >
-              Dev
-            </Badge>
           </div>
 
           {/* ModeToggle with "Under Development" badge */}
           <div className="relative">
-            <div className="opacity-60 pointer-events-none">
+            <div className="h-12 w-12 shadow-md hover:shadow-lg transition-all hover:scale-105">
               <ModeToggle />
             </div>
-            <Badge
-              variant="secondary"
-              className="absolute -top-2 -right-2 text-[10px] px-1.5 py-0.5 shadow-md bg-yellow-500/90 dark:bg-yellow-600/90 text-white border-0"
-            >
-              Dev
-            </Badge>
           </div>
 
           <Button
