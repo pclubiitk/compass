@@ -290,6 +290,9 @@ func makeAdminHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to promote user"})
 		return
 	}
+
+	//  Do we really need to mail the user regarding promotion??  
+	// Todo : publish a mail confirming promotion
 	c.JSON(http.StatusOK, gin.H{
 		"message": "User promoted to admin successfully",
 		"email":   user.Email,
