@@ -351,19 +351,7 @@ func demoteAdminHandler(c *gin.Context) {
 		return
 	}
 
-	job := workers.MailJob{
-		Type: "make_admin",
-		To:   user.Email,
-		Data: map[string]interface{}{
-			"name": user.Profile.Name,
-		},
-	}
-	
-	payload, _ := json.Marshal(job)
-	if err := workers.PublishJob(payload, model.MailQueue); err != nil {
-		logrus.WithError(err).Error("Failed to enqueue admin promotion email")
-		// Don't fail the request if email fails to enqueue
-	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Admin demoted to user successfully",
 		"email":   user.Email,
