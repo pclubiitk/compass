@@ -14,18 +14,20 @@
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
 
 import type { Dispatch, SetStateAction } from "react";
-import type { IEvent } from "@/calendar/interfaces";
+import type { IEntity, IEvent } from "@/calendar/interfaces";
 import type {
   TBadgeVariant,
   TCalendarView,
   TVisibleHours,
   TWorkingHours,
 } from "@/calendar/types";
+import { ENTITIES } from "@/calendar/entities";
 
 interface ICalendarContext {
   selectedDate: Date;
   setSelectedDate: (date: Date | undefined) => void;
   // Entity filtering (replaces user filtering)
+  entities: IEntity[];
   selectedEntity: string | "all";
   setSelectedEntity: (entity: string | "all") => void;
   badgeVariant: TBadgeVariant;
@@ -71,6 +73,7 @@ export function CalendarProvider({
   fetchEvents,
 }: CalendarProviderProps) {
   const [badgeVariant, setBadgeVariant] = useState<TBadgeVariant>("colored");
+  // const [entities, setEntities] = useState<IEntity[]>([]);
   const [visibleHours, setVisibleHours] = useState<TVisibleHours>(VISIBLE_HOURS);
   const [workingHours, setWorkingHours] = useState<TWorkingHours>(WORKING_HOURS);
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -122,6 +125,7 @@ export function CalendarProvider({
         setWorkingHours,
         view,
         setView,
+        entities: ENTITIES,
         events: localEvents,
         setLocalEvents,
         isLoading,

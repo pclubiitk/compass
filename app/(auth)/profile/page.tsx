@@ -54,7 +54,7 @@ export default function ProfilePage() {
   const fetchCalendarEvents = useCallback(async () => {
     setCalendarLoading(true);
     try {
-      const events = await getEvents();
+      const events = await getEvents(1, false);
       setCalendarEvents(events);
       return events;
     } catch (err) {

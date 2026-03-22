@@ -38,7 +38,7 @@ export function DraggableEvent({ event, children }: DraggableEventProps) {
   drag(ref);
 
   return (
-    <div ref={ref} className={cn(isDragging && "opacity-40")}>
+    <div ref={ref} className={cn("h-full w-full",isDragging && "opacity-40")}>
       {children}
     </div>
   );

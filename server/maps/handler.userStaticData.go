@@ -3,12 +3,16 @@ package maps
 import (
 	"compass/connections"
 	"compass/model"
+	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
-	"errors"
+
 	"github.com/google/uuid"
+
 	// "log"
 	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -16,71 +20,109 @@ import (
 )
 
 func noticeProvider(c *gin.Context) {
-	// Extract page number, if issue default to 1
-	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
-	if err != nil {
-		page = 1
-	}
-	offset := (page - 1) * viper.GetInt("noticeboard.limit")
 
-	var noticeList []model.Notice
-	if connections.DB.
+	// Parse pagination flag
+	paginationStr := c.DefaultQuery("pagination", "true")
+	pagination, err := strconv.ParseBool(paginationStr)
+	if err != nil {
+		pagination = true
+	}
+
+	// Base query
+	query := connections.DB.
 		Model(&model.Notice{}).
 		Preload("User", connections.UserSelect).
-		Order("created_at DESC").
-		Limit(viper.GetInt("noticeboard.limit")).
-		Offset(offset). // set page
-		Find(&noticeList).
-		Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch notices"})
+		Order("created_at DESC")
+
+	var noticeList []model.Notice
+
+	// Pagination logic
+	if pagination {
+		page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
+		if err != nil || page < 1 {
+			page = 1
+		}
+
+		limit := viper.GetInt("noticeboard.limit")
+		offset := (page - 1) * limit
+
+		if err := query.
+			Limit(limit).
+			Offset(offset).
+			Find(&noticeList).
+			Error; err != nil {
+
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Failed to fetch notices",
+			})
+			return
+		}
+
+		// Count total notices 
+		var count int64
+		if err := connections.DB.Model(&model.Notice{}).Count(&count).Error; err != nil {
+			logrus.Errorf("Failed to count notices: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Failed to count notices",
+			})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"noticeboard_list": noticeList,
+			"total_notices":    count,
+			"current_page":     page,
+		})
 		return
 	}
-	// Count total pages
-	var count int64 = -1
-	if err := connections.DB.Model(&model.Notice{}).Count(&count).Error; err != nil {
-		logrus.Errorf("Failed to count notices: %v", err)
+
+	// No pagination 
+	if err := query.Find(&noticeList).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to fetch notices",
+		})
 		return
 	}
-	// TODO: handling if count is -1, then don't show the count field, there is some error
-	c.JSON(200, gin.H{
+
+	fmt.Printf("Fetched all notices without pagination: %d\n", len(noticeList))
+
+	c.JSON(http.StatusOK, gin.H{
 		"noticeboard_list": noticeList,
-		"total_notices":    count,
-		"current_page":     page,
 	})
 }
 
 // noticeDetailProvider fetches a single notice by its ID using GORM.
 func noticeDetailProvider(c *gin.Context) {
 
-    // Get and validate the ID from the URL
-    noticeIDStr := c.Param("id")
-    noticeID, err := uuid.Parse(noticeIDStr)
-    if err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid notice ID format"})
-        return
-    }
+	// Get and validate the ID from the URL
+	noticeIDStr := c.Param("id")
+	noticeID, err := uuid.Parse(noticeIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid notice ID format"})
+		return
+	}
 
-    // Query the database for the notice, preloading the User
-    var notice model.Notice
-    result := connections.DB.
-        Model(&model.Notice{}).
-        Preload("User", connections.UserSelect). // Preload user data, just like in noticeProvider
-        Where("notice_id = ?", noticeID).
-        First(&notice) // Use First() to get a single record
+	// Query the database for the notice, preloading the User
+	var notice model.Notice
+	result := connections.DB.
+		Model(&model.Notice{}).
+		Preload("User", connections.UserSelect). // Preload user data, just like in noticeProvider
+		Where("notice_id = ?", noticeID).
+		First(&notice) // Use First() to get a single record
 
-    // Handle any errors from the database query
-    if result.Error != nil {
-        if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-            c.JSON(http.StatusNotFound, gin.H{"error": "Notice not found"})
-            return
-        }
+	// Handle any errors from the database query
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Notice not found"})
+			return
+		}
 
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch notice"})
-        return
-    }
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch notice"})
+		return
+	}
 
-    // Return the complete notice object
-    c.JSON(http.StatusOK, notice)
+	// Return the complete notice object
+	c.JSON(http.StatusOK, notice)
 }
 
 func incrementalLocationProvider(c *gin.Context) {
@@ -160,7 +202,6 @@ func incrementalLocationProvider(c *gin.Context) {
 		"lastFetchTime": maxTime.Format(time.RFC3339),
 	})
 }
-
 
 func locationDetailProvider(c *gin.Context) {
 	id := c.Param("id")

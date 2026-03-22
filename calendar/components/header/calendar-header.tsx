@@ -3,7 +3,7 @@ import { Columns, Grid3x3, List, Plus, Grid2x2, CalendarRange } from "lucide-rea
 import { useCalendar } from "@/calendar/contexts/calendar-context";
 import { Button } from "@/components/ui/button";
 
-
+import { EntitySelect } from "../entity-select";
 import { TodayButton } from "@/calendar/components/header/today-button";
 import { DateNavigator } from "@/calendar/components/header/date-navigator";
 
@@ -44,7 +44,7 @@ export function CalendarHeader({ view, events }: CalendarHeaderProps) {
             >
               <List strokeWidth={1.8} />
             </Button>
-{/* 
+            {/* 
             <Button
               aria-label="View by week"
               size="icon"
@@ -53,7 +53,8 @@ export function CalendarHeader({ view, events }: CalendarHeaderProps) {
               onClick={() => setView("week")}
             >
               <Columns strokeWidth={1.8} />
-            </Button> */}
+            </Button> 
+            */}
 
             <Button
               aria-label="View by month"
@@ -64,9 +65,8 @@ export function CalendarHeader({ view, events }: CalendarHeaderProps) {
             >
               <Grid2x2 strokeWidth={1.8} />
             </Button>
-
-           
           </div>
+          <EntitySelect />
         </div>
       </div>
     </div>
