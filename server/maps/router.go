@@ -13,7 +13,7 @@ func Router(r *gin.Engine) {
 		maps.Use(func(c *gin.Context) { middleware.UnderDev(c, "maps") })
 		// Public routes, will not require login, static data providers
 		// use https://gin-gonic.com/en/docs/examples/param-in-path/ and structure the paths to support specific id, and pagination
-		maps.GET("/notice", noticeProvider)         // each page will provide 10 notices (all the details about the notices)
+		maps.GET("/notice", noticeProvider)         // provides notice in two ways either all at once or page wise with help of url query parameters
 		maps.GET("/notice/:id", noticeDetailProvider)
 		maps.GET("/location/:id", locationDetailProvider) // provide exact details about the location using the id
 		maps.GET("/locations/incremental", incrementalLocationProvider) // incremental location updates

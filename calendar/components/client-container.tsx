@@ -33,7 +33,7 @@ export function ClientContainer({ view }: IProps) {
         const yearEnd = new Date(selectedDate.getFullYear(), 11, 31, 23, 59, 59, 999);
         const isInSelectedYear = eventStartDate <= yearEnd && eventEndDate >= yearStart;
         // const isUserMatch = selectedUserId === "all" || event.user.id === selectedUserId;
-         const isEntityMatch = selectedEntity === "all" || event.entity === selectedEntity;
+        const isEntityMatch = selectedEntity === "all" || event.entity === selectedEntity;
         return isInSelectedYear && isEntityMatch;
       }
 
@@ -42,7 +42,7 @@ export function ClientContainer({ view }: IProps) {
         const monthEnd = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0, 23, 59, 59, 999);
         const isInSelectedMonth = eventStartDate <= monthEnd && eventEndDate >= monthStart;
         // const isUserMatch = selectedUserId === "all" || event.user.id === selectedUserId;
-         const isEntityMatch = selectedEntity === "all" || event.entity === selectedEntity;
+        const isEntityMatch = selectedEntity === "all" || event.entity === selectedEntity;
         return isInSelectedMonth && isEntityMatch;
       }
 
@@ -59,7 +59,7 @@ export function ClientContainer({ view }: IProps) {
 
         const isInSelectedWeek = eventStartDate <= weekEnd && eventEndDate >= weekStart;
         // const isEntityMatch = selectedEntity === "all" || event.entity === selectedEntity;
-         const isEntityMatch = selectedEntity === "all" || event.entity === selectedEntity;
+        const isEntityMatch = selectedEntity === "all" || event.entity === selectedEntity;
         return isInSelectedWeek && isEntityMatch;
       }
 
@@ -92,8 +92,8 @@ export function ClientContainer({ view }: IProps) {
     return filteredEvents.map(event => ({ ...event, endDate: event.startDate }));
   }, [filteredEvents]);
 
- return (
-  <div className="mx-auto w-full max-w-5xl md:max-w-3xl lg:max-w-2xl scale-[0.9] md:scale-[0.85] lg:scale-[0.8] origin-top overflow-hidden rounded-xl border shadow-sm transition-transform">
+  return (
+    <div className="mx-auto w-full max-w-5xl md:max-w-3xl lg:max-w-2xl scale-[0.9] md:scale-[0.85] lg:scale-[0.8] origin-top overflow-hidden rounded-xl border shadow-sm transition-transform">
 
       <CalendarHeader view={view} events={filteredEvents} />
 

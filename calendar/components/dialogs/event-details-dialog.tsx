@@ -22,9 +22,9 @@ export function EventDetailsDialog({ event, children }: IProps) {
   const startDate = parseISO(event.startDate);
   const endDate = parseISO(event.endDate);
   //const startDate = parseISO(cleanStart);
- // const endDate = parseISO(cleanEnd);
+  // const endDate = parseISO(cleanEnd);
   const { entities } = useCalendar();
-  
+
   const eventEntity = entities.find(e => e.id === event.entity);
   const displayColor = eventEntity ? eventEntity.color : "blue";
 
@@ -44,10 +44,6 @@ export function EventDetailsDialog({ event, children }: IProps) {
           </DialogHeader>
 
           <div className="space-y-4">
-            <div className="flex items-start gap-2">
-             
-      
-            </div>
 
             <div className="flex items-start gap-2">
               <Calendar className="mt-1 size-4 shrink-0" />

@@ -85,7 +85,7 @@ function noticeToEvent(notice: NoticeFromAPI, index: number): IEvent | null {
  */
 export async function getEvents(page: number = 1, pagination: boolean = true): Promise<IEvent[]> {
   const mapServer = process.env.NEXT_PUBLIC_MAP_SERVER || process.env.NEXT_PUBLIC_MAPS_URL;
-  
+
   if (!mapServer) {
     console.error("Map server URL not configured");
     return [];
@@ -93,8 +93,8 @@ export async function getEvents(page: number = 1, pagination: boolean = true): P
 
   try {
     const res = await fetch(`${mapServer}/api/maps/notice?page=${page}&pagination=${pagination}`);
-   // console.log(`Fetching events from: ${mapServer}/api/maps/notice?page=${page}&pagination=${pagination}`);
-    
+    // console.log(`Fetching events from: ${mapServer}/api/maps/notice?page=${page}&pagination=${pagination}`);
+
     if (!res.ok) {
       throw new Error(`Failed to fetch notices: ${res.status}`);
     }
@@ -121,7 +121,7 @@ export async function getEvents(page: number = 1, pagination: boolean = true): P
  */
 export async function getAllEvents(maxPages: number = 5): Promise<IEvent[]> {
   const allEvents: IEvent[] = [];
-  
+
   for (let page = 1; page <= maxPages; page++) {
     const events = await getEvents(page);
     if (events.length === 0) break; // No more events

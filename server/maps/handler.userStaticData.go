@@ -20,48 +20,55 @@ import (
 )
 
 func noticeProvider(c *gin.Context) {
-	// Extract page number, if issue default to 1
 
-	//pagination := c.Query("pagination")
+	// Parse pagination flag
 	paginationStr := c.DefaultQuery("pagination", "true")
-
 	pagination, err := strconv.ParseBool(paginationStr)
 	if err != nil {
 		pagination = true
 	}
 
-	fmt.Println(pagination, "type:", fmt.Sprintf("%T", pagination))
+	// Base query
+	query := connections.DB.
+		Model(&model.Notice{}).
+		Preload("User", connections.UserSelect).
+		Order("created_at DESC")
 
-	fmt.Println("Reached noticeProvider")
+	var noticeList []model.Notice
 
-	if pagination != false {
+	// Pagination logic
+	if pagination {
 		page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
-		if err != nil {
+		if err != nil || page < 1 {
 			page = 1
 		}
 
-		offset := (page - 1) * viper.GetInt("noticeboard.limit")
+		limit := viper.GetInt("noticeboard.limit")
+		offset := (page - 1) * limit
 
-		var noticeList []model.Notice
-		if connections.DB.
-			Model(&model.Notice{}).
-			Preload("User", connections.UserSelect).
-			Order("created_at DESC").
-			Limit(viper.GetInt("noticeboard.limit")).
-			Offset(offset). // set page
+		if err := query.
+			Limit(limit).
+			Offset(offset).
 			Find(&noticeList).
-			Error != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch notices"})
+			Error; err != nil {
+
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Failed to fetch notices",
+			})
 			return
 		}
-		// Count total pages
-		var count int64 = -1
+
+		// Count total notices 
+		var count int64
 		if err := connections.DB.Model(&model.Notice{}).Count(&count).Error; err != nil {
 			logrus.Errorf("Failed to count notices: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Failed to count notices",
+			})
 			return
 		}
-		// TODO: handling if count is -1, then don't show the count field, there is some error
-		c.JSON(200, gin.H{
+
+		c.JSON(http.StatusOK, gin.H{
 			"noticeboard_list": noticeList,
 			"total_notices":    count,
 			"current_page":     page,
@@ -69,51 +76,19 @@ func noticeProvider(c *gin.Context) {
 		return
 	}
 
-	if pagination == false {
-		var noticeList []model.Notice
-		if connections.DB.
-			Model(&model.Notice{}).
-			Preload("User", connections.UserSelect).
-			Order("created_at DESC").
-			Find(&noticeList).
-			Error != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch notices"})
-			return
-		}
-
-		fmt.Println("Fetched all notices without pagination")
-		fmt.Printf("Total notices fetched: %d\n", len(noticeList))
-		c.JSON(200, gin.H{
-			"noticeboard_list": noticeList,
+	// No pagination 
+	if err := query.Find(&noticeList).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to fetch notices",
 		})
 		return
 	}
-	/*offset := (page - 1) * viper.GetInt("noticeboard.limit")
 
-	var noticeList []model.Notice
-	if connections.DB.
-		Model(&model.Notice{}).
-		Preload("User", connections.UserSelect).
-		Order("created_at DESC").
-		Limit(viper.GetInt("noticeboard.limit")).
-		Offset(offset). // set page
-		Find(&noticeList).
-		Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch notices"})
-		return
-	}
-	// Count total pages
-	var count int64 = -1
-	if err := connections.DB.Model(&model.Notice{}).Count(&count).Error; err != nil {
-		logrus.Errorf("Failed to count notices: %v", err)
-		return
-	}
-	// TODO: handling if count is -1, then don't show the count field, there is some error
-	c.JSON(200, gin.H{
+	fmt.Printf("Fetched all notices without pagination: %d\n", len(noticeList))
+
+	c.JSON(http.StatusOK, gin.H{
 		"noticeboard_list": noticeList,
-		"total_notices":    count,
-		"current_page":     page,
-	})*/
+	})
 }
 
 // noticeDetailProvider fetches a single notice by its ID using GORM.

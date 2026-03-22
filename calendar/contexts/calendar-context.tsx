@@ -73,7 +73,7 @@ export function CalendarProvider({
   fetchEvents,
 }: CalendarProviderProps) {
   const [badgeVariant, setBadgeVariant] = useState<TBadgeVariant>("colored");
- // const [entities, setEntities] = useState<IEntity[]>([]);
+  // const [entities, setEntities] = useState<IEntity[]>([]);
   const [visibleHours, setVisibleHours] = useState<TVisibleHours>(VISIBLE_HOURS);
   const [workingHours, setWorkingHours] = useState<TWorkingHours>(WORKING_HOURS);
   const [selectedDate, setSelectedDate] = useState(new Date());
