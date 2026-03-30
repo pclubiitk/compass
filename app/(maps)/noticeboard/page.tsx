@@ -18,6 +18,7 @@ interface Notice {
   eventTime: string;
 }
 
+/// TO DO : use component for the notice card
 const NoticeCard = ({
   notice,
   onShare,
@@ -305,7 +306,7 @@ const newNotices = [
   const { isAdmin } = useGContext();
 
   return (
-    <div className="min-h-screen bg-gray-50 px-4 py-8">
+    <div className="min-h-screen bg-gray-50 px-4 py-8 overflow-y-scroll max-h-[100vh]">
       <div className="max-w-5xl mx-auto">
         <h1 className="text-4xl font-bold text-gray-900 mb-8">
           Campus Notices
