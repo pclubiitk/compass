@@ -42,7 +42,7 @@ import {
 } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 
-import ReviewCard from "@/app/components/user/ReviewCard";
+import ReviewCard from "@/app/components/user/Location_ReviewCard";
 import { LocationSkeleton } from "@/app/components/location/LocationSkeleton";
 import { PhotoGallery } from "@/app/components/location/PhotoGallery";
 import { ReviewDrawer } from "@/app/components/location/ReviewDrawer";
@@ -359,6 +359,8 @@ export default function LocationPage() {
                   reviews.map((review) => (
                     <ReviewCard
                       key={review.id}
+
+                      /// TODO : fix username is null
                       author={review.User?.name || "Anonymous"}
                       rating={review.rating}
                       review_body={review.description}

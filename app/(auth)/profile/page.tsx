@@ -9,6 +9,8 @@ import { SocialProfileCard } from "@/components/profile/SocialProfileCard";
 import { EditableProfileCard } from "@/components/profile/EditableProfileCard";
 import { ContributionsCard } from "@/components/profile/ContributionsCard";
 import { AdminCard } from "@/components/profile/admincard";
+import type { Review } from "@/components/profile/ContributionsCard";
+import type { LocationCardProps } from "@/components/profile/LocationCard";
 import {
   useCalendar,
   CalendarProvider,
@@ -38,9 +40,9 @@ export type Profile = {
 export type UserData = {
   role: number;
   profile: Profile;
-  ContributedLocations: [];
-  ContributedReview: [];
-  ContributedNotice: [];
+  ContributedLocations: LocationCardProps['location'];
+  ContributedReview: Review[];
+  ContributedNotice: any[];
 };
 
 export default function ProfilePage() {
@@ -96,6 +98,20 @@ export default function ProfilePage() {
         // console.log("Normalized profilePic:", normalized.profile.profilePic);
 
         setUserData(normalized.profile);
+        // Fetch user's reviews from maps service and attach
+        try {
+          const reviewsRes = await fetch(
+            `${process.env.NEXT_PUBLIC_MAPS_URL}/api/maps/my/reviews`,
+            { credentials: "include" },
+          );
+          if (reviewsRes.ok) {
+            const rdata = await reviewsRes.json();
+            // rdata.reviews expected to be an array of review objects
+            setUserData((prev) => ({ ...(prev as any), ContributedReview: rdata.reviews }));
+          }
+        } catch (err) {
+          console.warn("Failed to fetch contributed reviews:", err);
+        }
         // If profile incomplete redirect to signup step 3
         if (
           normalized.profile.profile.name.length === 0 ||

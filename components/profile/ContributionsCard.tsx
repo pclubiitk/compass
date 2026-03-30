@@ -6,13 +6,23 @@ import {
   LocationCard,
   LocationCardProps,
 } from "@/components/profile/LocationCard";
+import ReviewCard from "@/app/components/user/Contribution_ReviewCard";
 import ComingSoon from "../ui/ComingSoon";
+import { useGContext } from "@/components/ContextProvider";
 
-// TODO: Define the type of the locations interface to resolve the error
+// Review shape used by ReviewCard (match property names exactly)
+type Review = {
+  author: string;
+  rating: number;
+  review_body: string;
+  time: string;
+  imgs: { ImageID: string }[];
+};
+
 interface ContributionsCardProps {
   locations: [];
-  reviews: [];
-  notices: [];
+  reviews: Review[];
+  notices: any[];
 }
 
 export function ContributionsCard({
@@ -20,6 +30,8 @@ export function ContributionsCard({
   reviews = [],
   notices = [],
 }: ContributionsCardProps) {
+
+  const { isAdmin } = useGContext();
   return (
     <Card>
       <CardHeader>
@@ -31,7 +43,7 @@ export function ContributionsCard({
       <CardContent>
         {locations.length + reviews.length + notices.length > 0 ? (
           <Tabs defaultValue="locations">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full auto-cols-fr grid-flow-col">
               {locations.length ? (
                 <TabsTrigger value="locations">Locations</TabsTrigger>
               ) : (
@@ -42,11 +54,13 @@ export function ContributionsCard({
               ) : (
                 <></>
               )}
-              {notices.length ? (
+
+              {isAdmin && notices.length ? (
                 <TabsTrigger value="notices">Notices</TabsTrigger>
-              ) : (
-                <></>
-              )}
+              ): (
+                <></> )}
+               
+
             </TabsList>
             {locations.length ? (
               <TabsContent value="locations" className="mt-4">
@@ -60,26 +74,43 @@ export function ContributionsCard({
               <></>
             )}
             {reviews.length ? (
-              <TabsContent value="reviews" className="mt-4">
-                {/* <div className="space-y-4">
-                  {reviews.map((rev) => (
-                    <ReviewCard  />
-                  ))}
-                </div> */}
+              <TabsContent value="reviews" className="mt-4 space-y-4">
+                {reviews.length > 0 ? (
+                  reviews.map((rev: any) => (
+                    <>
+                    <ReviewCard
+    key={rev.ReviewId}
+    rating={rev.rating}
+    review_body={rev.description}
+    time={rev.CreatedAt}
+    imgs={rev.images} 
+    author={rev.User?.name || "Unknown Location"}
+  
+                    /></>
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground">No reviews yet.</p>
+                )}
               </TabsContent>
             ) : (
               <></>
             )}
-            {notices.length ? (
+
+
+            {isAdmin && (
               <TabsContent value="notices" className="mt-4">
-                {/* <div className="space-y-4">
-                  {notices.map((loc) => (
-                    <LocationCard key={loc.LocationId} location={loc} />
-                  ))}
-                </div> */}
+                {notices.length > 0 ? (
+                  <div className="space-y-4">
+                    {notices.map((loc) => (
+                      <LocationCard key={loc.LocationId} location={loc} />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    No notices yet.
+                  </p>
+                )}
               </TabsContent>
-            ) : (
-              <></>
             )}
           </Tabs>
         ) : (
