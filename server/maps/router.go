@@ -25,6 +25,7 @@ func Router(r *gin.Engine) {
 		user := maps.Group("/")
 		user.Use(middleware.UserAuthenticator, middleware.EmailVerified)
 		user.POST("/review", addReview)                 // add a review in the rabbit mq queue for processing
+		user.GET("/my/reviews", getMyReviews)           // fetch the authenticated user's contributed reviews
 		user.POST("/location", requestLocationAddition) // add a location request in the table
 
 		// Next we will add user navigation, and location sharing feature
