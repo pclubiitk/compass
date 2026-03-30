@@ -295,9 +295,9 @@ const newNotices = [
     ).toLocaleString()}\nLocation: ${notice.location}`;
     try {
       await navigator.clipboard.writeText(text);
-      alert("Notice copied to clipboard!");
+         toast.success("Notice copied to clipboard!");
     } catch (err) {
-      alert("Failed to copy notice. Please try manually.");
+      toast.error("Failed to copy notice. Please try manually.");
       console.error(err);
     }
   };
