@@ -44,6 +44,8 @@ func Router(r *gin.Engine) {
 		admin.POST("/notice", addNotice)
 		admin.POST("/make-admin", makeAdminHandler)
 		admin.POST("/remove-admin", demoteAdminHandler)
+		admin.DELETE("/deleteNotice/:id", deleteNotice)
+		admin.PUT("/editNotice/:id", editNotice)
 		// TODO: add a env reload route for admin
 	}
 }

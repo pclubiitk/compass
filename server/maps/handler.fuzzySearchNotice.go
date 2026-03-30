@@ -28,11 +28,20 @@ func FuzzySearchNoticesHandler(c *gin.Context) {
 
 	err := db.Raw(`
 		SELECT *, 
-		       greatest(similarity(title, ?), similarity(description, ?), similarity(entity, ?)) AS score
-		FROM notices
-		WHERE greatest(similarity(title, ?), similarity(description, ?), similarity(entity, ?)) > 0.4
-		ORDER BY score DESC
-		LIMIT ?
+		       greatest(
+	           similarity(title, ?),
+	           similarity(description, ?),
+	           similarity(entity, ?)
+	       ) AS score
+	FROM notices
+	WHERE deleted_at IS NULL
+	  AND greatest(
+	      similarity(title, ?),
+	      similarity(description, ?),
+	      similarity(entity, ?)
+	  ) > 0.1
+	ORDER BY score DESC
+	LIMIT ?
 	`, query, query, query, query, query, query, limit).Scan(&notices).Error
 
 	if err != nil {

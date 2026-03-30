@@ -376,3 +376,85 @@ func demoteAdminHandler(c *gin.Context) {
 		"role":    model.UserRole,
 	})
 }
+
+func deleteNotice(c *gin.Context) {
+
+	// P\parse and validate UUID
+	noticeIDStr := c.Param("id")
+	noticeID, err := uuid.Parse(noticeIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid notice ID format"})
+		return
+	}
+
+	// find the notice
+	var notice model.Notice
+	if err := connections.DB.Where("notice_id = ?", noticeID).First(&notice).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Notice not found"})
+			return
+		}
+		logrus.WithError(err).Error("Failed to fetch notice")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch notice"})
+		return
+	}
+
+	// soft delete (sets deleted_at timestamp)
+	if err := connections.DB.Delete(&notice).Error; err != nil {
+		logrus.WithError(err).Error("Failed to delete notice")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete notice"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":   "Notice deleted successfully",
+		"notice_id": noticeID,
+	})
+}
+
+func editNotice(c *gin.Context) {
+
+	noticeIDStr := c.Param("id")
+	noticeID, err := uuid.Parse(noticeIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid notice ID format"})
+		return
+	}
+
+	var input model.Notice
+	if err := c.ShouldBindJSON(&input); err != nil {
+		logrus.WithError(err).Warn("JSON binding failed")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format"})
+		return
+	}
+
+	var notice model.Notice
+	if err := connections.DB.Where("notice_id = ?", noticeID).First(&notice).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Notice not found"})
+			return
+		}
+		logrus.WithError(err).Error("Failed to fetch notice")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch notice"})
+		return
+	}
+
+	notice.Title = input.Title
+	notice.Description = input.Description
+	notice.Entity = input.Entity
+	notice.EventTime = input.EventTime
+	notice.EventEndTime = input.EventEndTime
+	notice.Body = input.Body
+	notice.Location = input.Location
+
+	if err := connections.DB.Save(&notice).Error; err != nil {
+		logrus.WithError(err).Error("Failed to update notice")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update notice"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":   "Notice updated successfully",
+		"notice_id": noticeID,
+	})
+}
