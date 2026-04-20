@@ -323,3 +323,7 @@ func getMyReviews(c *gin.Context) {
 		"total":   total,
 	})
 }
+
+func mapReviews(reviews []model.Review) []model.Review {
+	return reviews
+}
