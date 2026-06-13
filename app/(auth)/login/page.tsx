@@ -1,5 +1,5 @@
 "use client";
-import { FormEvent, useEffect, useState, useRef, Suspense } from "react";
+import { FormEvent, useEffect, useState, useRef, Suspense, useCallback } from "react";
 import ReCAPTCHA from "react-google-recaptcha";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,14 +30,23 @@ function LoginPageHolder() {
   const searchParams = useSearchParams();
   const callbackUrl =
     searchParams.get("callbackUrl") ||
+    searchParams.get("next") ||
     process.env.NEXT_PUBLIC_PROFILE_URL ||
     "/";
 
+  const handleRedirect = useCallback((url: string) => {
+    if (url.startsWith("http://") || url.startsWith("https://")) {
+      window.location.replace(url);
+    } else {
+      router.replace(url);
+    }
+  }, [router]);
+
   useEffect(() => {
-    if (isLoggedIn) router.replace(callbackUrl);
+    if (isLoggedIn) handleRedirect(callbackUrl);
     // The dependency array ensures effect only runs once on mount,
     // unless the router or callbackUrl changes.
-  }, [callbackUrl, router, isLoggedIn]);
+  }, [callbackUrl, handleRedirect, isLoggedIn]);
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -72,7 +81,7 @@ function LoginPageHolder() {
         toast.success(data.message);
         setLoggedIn(true); // global context
         // From where ever you redirect use router.push(`/login?callbackUrl=${encodeURIComponent(router.asPath)}`);
-        router.replace(callbackUrl);
+        handleRedirect(callbackUrl);
       } else {
         toast.error(data.error || "Login failed");
       }
