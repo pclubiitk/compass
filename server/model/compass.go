@@ -26,6 +26,7 @@ type Location struct {
 	Latitude      float32        `json:"latitude" binding:"required"`
 	Longitude     float32        `json:"longitude" binding:"required"`
 	LocationType  string         `json:"locationType"`
+	Layer         int            `json:"layer"`
 	Status        Status         `json:"status" gorm:"type:varchar(20);check:status IN ('pending','approved','rejected')"`          // once the location is approved by the admin it will be publicly available
 	ContributedBy uuid.UUID      `json:"contributedBy"`                                                                             // This is the foreign key
 	User          *User          `gorm:"foreignKey:ContributedBy;references:UserID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"` // many location to single user binding
@@ -40,13 +41,13 @@ type Location struct {
 }
 
 type Notice struct { // change this to ritika's PR, can remove the contributedBy field
-	CreatedAt     time.Time		 `json:"created_at"`
-	UpdatedAt     time.Time		 `json:"-"`
+	CreatedAt     time.Time      `json:"created_at"`
+	UpdatedAt     time.Time      `json:"-"`
 	DeletedAt     gorm.DeletedAt `gorm:"index" json:"-"`
-	Entity        string         `json:"entity"`    // Department / Club / Cell
-	EventTime     time.Time      `json:"eventTime"` // When the event/notice is relevant
+	Entity        string         `json:"entity"`       // Department / Club / Cell
+	EventTime     time.Time      `json:"eventTime"`    // When the event/notice is relevant
 	EventEndTime  time.Time      `json:"eventEndTime"` // When the event/notice is relevant
-	Location      string         `json:"location"`  // Venue or online link
+	Location      string         `json:"location"`     // Venue or online link
 	NoticeId      uuid.UUID      `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	Title         string         `json:"title" binding:"required"`
 	Description   string         `gorm:"type:text" json:"description"`
