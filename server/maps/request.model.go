@@ -3,14 +3,13 @@ package maps
 import (
 	"compass/model"
 	"time"
-	// "time"
 
 	"github.com/google/uuid"
 )
 
 type AddLocationRequest struct {
 	// TODO: Need to handle the case where i again request for the same location
-	Name         string       `json:"name"`
+	Name         string       `json:"name" binding:"required"`
 	Latitude     float32      `json:"latitude" binding:"required"`
 	Longitude    float32      `json:"longitude" binding:"required"`
 	LocationType string       `json:"locationType"`
