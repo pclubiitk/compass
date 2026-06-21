@@ -66,3 +66,13 @@ type FlagActionRequest struct {
 	Action  string `json:"action" binding:"required,oneof=approved rejected"`
 	Message string `json:"message"`
 }
+
+type EditLocationRequest struct {
+	Name         string `json:"name" binding:"required"`
+	Description  string `json:"description" binding:"max=250"`
+	Tag          string `json:"tag"`
+	Time         string `json:"time"`
+	Contact      string `json:"contact"`
+	LocationType string `json:"locationType"`
+	Layer        int    `json:"layer"`
+}
