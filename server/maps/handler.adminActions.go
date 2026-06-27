@@ -458,3 +458,49 @@ func editNotice(c *gin.Context) {
 		"notice_id": noticeID,
 	})
 }
+
+func editLocation(c *gin.Context) {
+	locationIDStr := c.Param("id")
+	locationID, err := uuid.Parse(locationIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid location ID format"})
+		return
+	}
+
+	var input EditLocationRequest
+	if err := c.ShouldBindJSON(&input); err != nil {
+		logrus.WithError(err).Warn("JSON binding failed")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format"})
+		return
+	}
+
+	var loc model.Location
+	if err := connections.DB.Where("location_id = ?", locationID).First(&loc).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Location not found"})
+			return
+		}
+		logrus.WithError(err).Error("Failed to fetch location")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch location"})
+		return
+	}
+
+	loc.Name = input.Name
+	loc.Description = input.Description
+	loc.Tag = input.Tag
+	loc.Time = input.Time
+	loc.Contact = input.Contact
+	loc.LocationType = input.LocationType
+	loc.Layer = int(input.Layer) 
+
+	if err := connections.DB.Save(&loc).Error; err != nil {
+		logrus.WithError(err).Error("Failed to update location")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update location"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":     "Location updated successfully",
+		"location_id": locationID,
+	})
+}
