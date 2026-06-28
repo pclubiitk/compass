@@ -1,6 +1,6 @@
 "use client";
 
-import  { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Search } from "lucide-react";
 import ShareDialog from "../../../components/ui/ShareDialog";
 import Link from "next/link";
@@ -18,7 +18,6 @@ interface Notice {
   location: string;
   eventTime: string;
 }
-
 
 export default function NoticeBoardPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -43,17 +42,15 @@ export default function NoticeBoardPage() {
       if (json?.noticeboard_list?.length > 0) {
         setNotices((prev) => {
           // TODO: add correct interface for noticeboard_list
-   const incoming = json.noticeboard_list.map((n:any)=>({
-  ...n,
-  id:n.NoticeId || n.id
-}));
+          const incoming = json.noticeboard_list.map((n: any) => ({
+            ...n,
+            id: n.NoticeId || n.id,
+          }));
 
-const newNotices = [
-  ...prev,
-  ...incoming.filter(
-    (n:any)=>!prev.some(p=>p.id===n.id)
-  )
-];
+          const newNotices = [
+            ...prev,
+            ...incoming.filter((n: any) => !prev.some((p) => p.id === n.id)),
+          ];
           setHasMore(newNotices.length < json.total_notices);
           return newNotices;
         });
@@ -69,7 +66,7 @@ const newNotices = [
 
   useEffect(() => {
     fetchNotices();
-  }, [page]);
+  }, [page, fetchNotices]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -85,7 +82,7 @@ const newNotices = [
     return () => {
       if (current) observer.unobserve(current);
     };
-  }, [hasMore, loading]);
+  }, [hasMore, loading, isSearching]);
 
   //cache and fuzzy search effect
   // Cache and fuzzy search effect
@@ -95,14 +92,12 @@ const newNotices = [
 
       // If search is empty, reset to paginated view
       if (!query) {
-    if(isSearching){
-
-    setIsSearching(false);
-    setNotices([]);
-    setPage(1);
-    setHasMore(true);
-
-  }
+        if (isSearching) {
+          setIsSearching(false);
+          setNotices([]);
+          setPage(1);
+          setHasMore(true);
+        }
         return;
       }
 
@@ -177,7 +172,7 @@ const newNotices = [
     ).toLocaleString()}\nLocation: ${notice.location}`;
     try {
       await navigator.clipboard.writeText(text);
-         toast.success("Notice copied to clipboard!");
+      toast.success("Notice copied to clipboard!");
     } catch (err) {
       toast.error("Failed to copy notice. Please try manually.");
       console.error(err);

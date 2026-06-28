@@ -98,7 +98,7 @@ export function LocationCard({ location }: LocationCardProps) {
             {/* Rating and Review Count */}
             <div className="flex items-center gap-1 text-sm">
               <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-              <span className="font-bold">{location.avgRating.toFixed(1)}</span>
+              <span className="font-bold">{location.avgRating?.toFixed(1)}</span>
               {location.reviewCount ? (
                 <span className="text-muted-foreground">
                   ({location.reviewCount} reviews)
