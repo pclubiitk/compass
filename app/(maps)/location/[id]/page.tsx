@@ -46,6 +46,7 @@ import ReviewCard from "@/app/components/user/Location_ReviewCard";
 import { LocationSkeleton } from "@/app/components/location/LocationSkeleton";
 import { PhotoGallery } from "@/app/components/location/PhotoGallery";
 import { ReviewDrawer } from "@/app/components/location/ReviewDrawer";
+import { AuthGuard } from "@/components/AuthGuard";
 
 import { toast } from "sonner";
 
@@ -340,6 +341,7 @@ export default function LocationPage() {
           </div>
 
           {/* Sidebar (Reviews) */}
+          <AuthGuard callbackUrl={`/location/${id as string}`}>
           <div className="lg:col-span-2 mt-6 lg:mt-0">
             <div className="rounded-xl shadow-sm border bg-white dark:bg-zinc-900 dark:border-zinc-800 p-4 md:p-6 sticky top-4">
               <div className="flex justify-between items-center mb-6">
@@ -382,6 +384,7 @@ export default function LocationPage() {
               </div>
             </div>
           </div>
+          </AuthGuard>
         </div>
       </motion.div>
     </div>
