@@ -8,6 +8,7 @@ import { useGContext } from "@/components/ContextProvider";
 import { toast } from "sonner";
 
 import { NoticeCard } from "@/components/noticeboard/NoticeComponent";
+import { AuthGuard } from "@/components/AuthGuard";
 
 interface Notice {
   id: string;
@@ -187,87 +188,89 @@ const newNotices = [
   const { isAdmin } = useGContext();
 
   return (
-    <div className="min-h-screen bg-gray-50 px-4 py-8 overflow-y-scroll max-h-[100vh]">
-      <div className="max-w-5xl mx-auto">
-        <h1 className="text-4xl font-bold text-gray-900 mb-8">
-          Campus Notices
-        </h1>
+    <AuthGuard callbackUrl="/noticeboard">
+      <div className="min-h-screen bg-gray-50 px-4 py-8 overflow-y-scroll max-h-[100vh]">
+        <div className="max-w-5xl mx-auto">
+          <h1 className="text-4xl font-bold text-gray-900 mb-8">
+            Campus Notices
+          </h1>
 
-        <div className="relative mb-8">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-5 w-5 text-gray-400" />
-          </div>
-          {isAdmin ? (
-            <button
-              type="button"
-              onClick={() => {
-                window.location.href = "/admin/publishNotice";
-              }}
-              className="absolute inset-y-0 right-2 my-auto
-             h-8 px-3
-             flex items-center gap-1 cursor-pointer
-             rounded-xl bg-blue-500 text-white
-             hover:bg-blue-600 shadow
-             transition active:scale-95"
-            >
-              <span className="text-lg font-semibold">+</span>
-              <span className="text-sm font-medium whitespace-nowrap">
-                Publish a Notice
-              </span>
-            </button>
-          ) : null}
-
-          <input
-            type="text"
-            placeholder="Search notices by title, content, or department..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="block w-full pl-10 pr-44 py-3 rounded-xl
-               border border-gray-300 focus:ring-2 focus:ring-blue-400
-               shadow-sm text-gray-800 placeholder-gray-500 transition-all"
-          />
-        </div>
-
-        <div className="space-y-6">
-          {notices.length > 0 ? (
-            notices.map((notice) => (
-              <Link
-                href={`/noticeboard/${notice.id}`}
-                key={notice.id}
-                className="block no-underline"
-              >
-                <NoticeCard
-                  notice={notice}
-                  onShare={() => handleShare(notice)}
-                  onCopy={handleCopy}
-                />
-              </Link>
-            ))
-          ) : !loading ? (
-            <p className="text-center text-gray-500 py-12">
-              No notices available at the moment.
-            </p>
-          ) : null}
-
-          {notices.length > 0 && (
-            <div ref={loaderRef} className="text-center py-6 text-gray-500">
-              {loading
-                ? "Loading more notices..."
-                : hasMore
-                  ? "Scroll down to load more"
-                  : "You've reached the end."}
+          <div className="relative mb-8">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="h-5 w-5 text-gray-400" />
             </div>
+            {isAdmin ? (
+              <button
+                type="button"
+                onClick={() => {
+                  window.location.href = "/admin/publishNotice";
+                }}
+                className="absolute inset-y-0 right-2 my-auto
+              h-8 px-3
+              flex items-center gap-1 cursor-pointer
+              rounded-xl bg-blue-500 text-white
+              hover:bg-blue-600 shadow
+              transition active:scale-95"
+              >
+                <span className="text-lg font-semibold">+</span>
+                <span className="text-sm font-medium whitespace-nowrap">
+                  Publish a Notice
+                </span>
+              </button>
+            ) : null}
+
+            <input
+              type="text"
+              placeholder="Search notices by title, content, or department..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="block w-full pl-10 pr-44 py-3 rounded-xl
+                border border-gray-300 focus:ring-2 focus:ring-blue-400
+                shadow-sm text-gray-800 placeholder-gray-500 transition-all"
+            />
+          </div>
+
+          <div className="space-y-6">
+            {notices.length > 0 ? (
+              notices.map((notice) => (
+                <Link
+                  href={`/noticeboard/${notice.id}`}
+                  key={notice.id}
+                  className="block no-underline"
+                >
+                  <NoticeCard
+                    notice={notice}
+                    onShare={() => handleShare(notice)}
+                    onCopy={handleCopy}
+                  />
+                </Link>
+              ))
+            ) : !loading ? (
+              <p className="text-center text-gray-500 py-12">
+                No notices available at the moment.
+              </p>
+            ) : null}
+
+            {notices.length > 0 && (
+              <div ref={loaderRef} className="text-center py-6 text-gray-500">
+                {loading
+                  ? "Loading more notices..."
+                  : hasMore
+                    ? "Scroll down to load more"
+                    : "You've reached the end."}
+              </div>
+            )}
+          </div>
+
+          {shareNotice && (
+            <ShareDialog
+              url={`${shareNotice.id}`}
+              title={shareNotice.title}
+              onClose={() => setShareNotice(null)}
+            />
           )}
         </div>
-
-        {shareNotice && (
-          <ShareDialog
-            url={`${shareNotice.id}`}
-            title={shareNotice.title}
-            onClose={() => setShareNotice(null)}
-          />
-        )}
       </div>
-    </div>
+    </AuthGuard>
   );
 }
