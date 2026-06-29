@@ -35,9 +35,10 @@ type User struct {
 	Profile Profile `gorm:"foreignKey:UserID;references:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"profile"`
 
 	// Compass Fields
-	ContributedLocations []Location `gorm:"foreignKey:ContributedBy;references:UserID"`
-	ContributedReview    []Review   `gorm:"foreignKey:ContributedBy;references:UserID"`
-	ContributedNotice    []Notice   `gorm:"foreignKey:ContributedBy;references:UserID"`
-	BioPics              []Image    `gorm:"polymorphic:ParentAsset;" json:"biopics"`
+	ContributedLocations []Location   `gorm:"foreignKey:ContributedBy;references:UserID"`
+	ContributedReview    []Review     `gorm:"foreignKey:ContributedBy;references:UserID"`
+	ContributedNotice    []Notice     `gorm:"foreignKey:ContributedBy;references:UserID"`
+	PersonalEvents       []UserEvent  `gorm:"foreignKey:ContributedBy;references:UserID"`
+	BioPics              []Image      `gorm:"polymorphic:ParentAsset;" json:"biopics"`
 	// in the syntax * makes it a pointer and when it is null, it return null in json instead of a default values
 }

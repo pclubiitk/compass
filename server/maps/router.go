@@ -27,6 +27,11 @@ func Router(r *gin.Engine) {
 		user.POST("/review", addReview)                 // add a review in the rabbit mq queue for processing
 		user.GET("/my/reviews", getMyReviews)           // fetch the authenticated user's contributed reviews
 		user.POST("/location", requestLocationAddition) // add a location request in the table
+		// Personal calendar events
+		user.GET("/user-events", getUserEvents)              // fetch all personal events for the authenticated user
+		user.POST("/user-event", createUserEvent)            // create a new personal event
+		user.PUT("/user-event/:id", updateUserEvent)         // update a personal event (owner only)
+		user.DELETE("/user-event/:id", deleteUserEvent)      // delete a personal event (owner only)
 
 		// Next we will add user navigation, and location sharing feature
 		// ...
