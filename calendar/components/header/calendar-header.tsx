@@ -2,6 +2,7 @@
 import { Columns, Grid3x3, List, Plus, Grid2x2, CalendarRange } from "lucide-react";
 import { useCalendar } from "@/calendar/contexts/calendar-context";
 import { Button } from "@/components/ui/button";
+import { AddEventDialog } from "@/calendar/components/dialogs/add-event-dialog";
 
 import { EntitySelect } from "../entity-select";
 import { TodayButton } from "@/calendar/components/header/today-button";
@@ -23,7 +24,7 @@ interface CalendarHeaderProps {
 }
 
 export function CalendarHeader({ view, events }: CalendarHeaderProps) {
-  const { setView } = useCalendar();
+  const { setView, selectedDate } = useCalendar();
 
   return (
     <div className="flex flex-col gap-4 border-b p-4 lg:flex-row lg:items-center lg:justify-between">
@@ -67,6 +68,12 @@ export function CalendarHeader({ view, events }: CalendarHeaderProps) {
             </Button>
           </div>
           <EntitySelect />
+          <AddEventDialog startDate={selectedDate}>
+            <Button size="sm" className="ml-auto gap-1.5">
+              <Plus className="size-4" strokeWidth={2} />
+              Add Event
+            </Button>
+          </AddEventDialog>
         </div>
       </div>
     </div>

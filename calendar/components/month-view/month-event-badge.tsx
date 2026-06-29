@@ -12,7 +12,7 @@ import type { IEvent } from "@/calendar/interfaces";
 import type { VariantProps } from "class-variance-authority";
 
 const eventBadgeVariants = cva(
-  "mx-1 flex size-auto h-6.5 select-none items-center justify-between gap-1.5 truncate whitespace-nowrap rounded-md border px-2 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+  "mx-1 flex h-6.5 select-none items-center justify-between gap-1.5 truncate whitespace-nowrap rounded-md border px-2 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
   {
     variants: {
       color: {
@@ -37,8 +37,8 @@ const eventBadgeVariants = cva(
       multiDayPosition: {
         first: "relative z-10 mr-0 w-[calc(100%_-_3px)] rounded-r-none border-r-0 [&>span]:mr-2.5",
         middle: "relative z-10 mx-0 w-[calc(100%_+_1px)] rounded-none border-x-0",
-        last: "ml-0 rounded-l-none border-l-0",
-        none: "",
+        last: "ml-0 rounded-l-none border-l-0 w-[calc(100%_-_3px)]",
+        none: "w-[calc(100%_-_8px)]",
       },
     },
     defaultVariants: {
@@ -69,7 +69,16 @@ export function MonthEventBadge({ event, cellDate, eventCurrentDay, eventTotalDa
   if (propPosition) {
     position = propPosition;
   } else if (eventCurrentDay && eventTotalDays) {
-    position = "none";
+    // day view
+    if (eventTotalDays === 1) {
+      position = "none";
+    } else if (eventCurrentDay === 1) {
+      position = "first";
+    } else if (eventCurrentDay === eventTotalDays) {
+      position = "last";
+    } else {
+      position = "middle";
+    }
   } else if (isSameDay(itemStart, itemEnd)) {
     position = "none";
   } else if (isSameDay(cellDate, itemStart)) {
@@ -80,7 +89,27 @@ export function MonthEventBadge({ event, cellDate, eventCurrentDay, eventTotalDa
     position = "middle";
   }
 
-  const renderBadgeText = ["first", "none"].includes(position);
+  // we always show the title in day view
+  // in month/week view, we only show the title on the first day (and single days)
+  const renderTitle = !!eventCurrentDay || ["first", "none"].includes(position);
+
+  // context aware time label for multi day events
+  const timeLabel = (() => {
+    if (eventCurrentDay) {
+      // day view logic
+      if (position === "none") return format(new Date(event.startDate), "h:mm a");
+      if (position === "first") return `from ${format(new Date(event.startDate), "h:mm a")}`;
+      if (position === "middle") return "All day";
+      if (position === "last") return `till ${format(new Date(event.endDate), "h:mm a")}`;
+    } else {
+      // month/week view logic
+      if (position === "none") return format(new Date(event.startDate), "h:mm a");
+      if (position === "first") return null; // no time on first block, let title take full width
+      if (position === "middle") return null; // blank connecting block
+      if (position === "last") return format(new Date(event.startDate), "h:mm a"); // show time right-justified on last block
+    }
+    return null;
+  })();
 
   const color = (badgeVariant === "dot" ? `${event.color}-dot` : event.color) as VariantProps<typeof eventBadgeVariants>["color"];
 
@@ -97,14 +126,14 @@ export function MonthEventBadge({ event, cellDate, eventCurrentDay, eventTotalDa
     <DraggableEvent event={event}>
       <EventDetailsDialog event={event}>
         <div role="button" tabIndex={0} className={eventBadgeClasses} onKeyDown={handleKeyDown}>
-          <div className="flex items-center gap-1.5 truncate">
-            {!["middle", "last"].includes(position) && ["mixed", "dot"].includes(badgeVariant) && (
+          <div className="flex flex-1 items-center gap-1.5 truncate">
+            {renderTitle && ["mixed", "dot"].includes(badgeVariant) && (
               <svg width="8" height="8" viewBox="0 0 8 8" className="event-dot shrink-0">
                 <circle cx="4" cy="4" r="4" />
               </svg>
             )}
 
-            {renderBadgeText && (
+            {renderTitle && (
               <p className="flex-1 truncate font-semibold">
                 {eventCurrentDay && (
                   <span className="text-xs">
@@ -116,7 +145,8 @@ export function MonthEventBadge({ event, cellDate, eventCurrentDay, eventTotalDa
             )}
           </div>
 
-          {renderBadgeText && <span>{format(new Date(event.startDate), "h:mm a")}</span>}
+          {/* time label is placed here so justify-between pushes it to the right */}
+          {timeLabel && <span className="shrink-0">{timeLabel}</span>}
         </div>
       </EventDetailsDialog>
     </DraggableEvent>

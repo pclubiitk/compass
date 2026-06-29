@@ -142,3 +142,132 @@ export async function getAllEvents(maxPages: number = 5): Promise<IEvent[]> {
 export async function getUsers() {
   return [];
 }
+
+// ─────────────────────────────────────────────
+// Personal User Event API
+// ─────────────────────────────────────────────
+
+/**
+ * Raw user event structure from the backend API
+ */
+interface UserEventFromAPI {
+  eventId: string;
+  title: string;
+  description: string;
+  eventTime: string;    // ISO string
+  eventEndTime: string; // ISO string
+  color: string;
+  contributedBy: string;
+}
+
+/**
+ * Transform a UserEvent from the API into a calendar IEvent
+ */
+function userEventToIEvent(event: UserEventFromAPI, index: number): IEvent {
+  return {
+    id: `user-${event.eventId}`,
+    userEventId: event.eventId,
+    title: event.title,
+    description: event.description || "",
+    startDate: event.eventTime,
+    endDate: event.eventEndTime,
+    color: (event.color as IEvent["color"]) || "blue",
+    entity: "personal",      // Always tagged as Personal
+    isUserEvent: true,
+  };
+}
+
+/**
+ * Fetch the authenticated user's personal calendar events
+ */
+export async function getUserEvents(): Promise<IEvent[]> {
+  const mapServer = process.env.NEXT_PUBLIC_MAP_SERVER || process.env.NEXT_PUBLIC_MAPS_URL;
+  if (!mapServer) return [];
+
+  try {
+    const res = await fetch(`${mapServer}/api/maps/user-events`, {
+      credentials: "include",
+    });
+    if (!res.ok) {
+      if (res.status === 401) return []; // Not logged in — silently return empty
+      throw new Error(`Failed to fetch user events: ${res.status}`);
+    }
+    const data: { events: UserEventFromAPI[] } = await res.json();
+    return (data.events || []).map((e, i) => userEventToIEvent(e, i));
+  } catch (err) {
+    console.warn("Failed to fetch personal events:", err);
+    return [];
+  }
+}
+
+export interface CreateUserEventPayload {
+  title: string;
+  description: string;
+  eventTime: string;    // ISO string
+  eventEndTime: string; // ISO string
+  color: string;
+}
+
+/**
+ * Create a new personal calendar event
+ */
+export async function createUserEvent(payload: CreateUserEventPayload): Promise<IEvent> {
+  const mapServer = process.env.NEXT_PUBLIC_MAP_SERVER || process.env.NEXT_PUBLIC_MAPS_URL;
+  if (!mapServer) throw new Error("Map server not configured");
+
+  const res = await fetch(`${mapServer}/api/maps/user-event`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || "Failed to create event");
+  }
+
+  const data: { event: UserEventFromAPI } = await res.json();
+  return userEventToIEvent(data.event, 0);
+}
+
+/**
+ * Update a personal calendar event (ownership enforced server-side)
+ */
+export async function updateUserEvent(eventId: string, payload: CreateUserEventPayload): Promise<IEvent> {
+  const mapServer = process.env.NEXT_PUBLIC_MAP_SERVER || process.env.NEXT_PUBLIC_MAPS_URL;
+  if (!mapServer) throw new Error("Map server not configured");
+
+  const res = await fetch(`${mapServer}/api/maps/user-event/${eventId}`, {
+    method: "PUT",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || "Failed to update event");
+  }
+
+  const data: { event: UserEventFromAPI } = await res.json();
+  return userEventToIEvent(data.event, 0);
+}
+
+/**
+ * Delete a personal calendar event (ownership enforced server-side)
+ */
+export async function deleteUserEvent(eventId: string): Promise<void> {
+  const mapServer = process.env.NEXT_PUBLIC_MAP_SERVER || process.env.NEXT_PUBLIC_MAPS_URL;
+  if (!mapServer) throw new Error("Map server not configured");
+
+  const res = await fetch(`${mapServer}/api/maps/user-event/${eventId}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || "Failed to delete event");
+  }
+}
