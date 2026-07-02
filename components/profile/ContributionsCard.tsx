@@ -11,7 +11,7 @@ import ComingSoon from "../ui/ComingSoon";
 import { useGContext } from "@/components/ContextProvider";
 
 // Review shape used by ReviewCard (match property names exactly)
-type Review = {
+export type Review = {
   author: string;
   rating: number;
   review_body: string;
@@ -20,7 +20,7 @@ type Review = {
 };
 
 interface ContributionsCardProps {
-  locations: [];
+  locations: any[];
   reviews: Review[];
   notices: any[];
 }
@@ -57,9 +57,9 @@ export function ContributionsCard({
 
               {isAdmin && notices.length ? (
                 <TabsTrigger value="notices">Notices</TabsTrigger>
-              ): (
-                <></> )}
-               
+              ) : (
+                <></>)}
+
 
             </TabsList>
             {locations.length ? (
@@ -78,15 +78,15 @@ export function ContributionsCard({
                 {reviews.length > 0 ? (
                   reviews.map((rev: any) => (
                     <>
-                    <ReviewCard
-    key={rev.ReviewId}
-    rating={rev.rating}
-    review_body={rev.description}
-    time={rev.CreatedAt}
-    imgs={rev.images} 
-    author={rev.User?.name || "Unknown Location"}
-  
-                    /></>
+                      <ReviewCard
+                        key={rev.ReviewId}
+                        rating={rev.rating}
+                        review_body={rev.description}
+                        time={rev.CreatedAt}
+                        imgs={rev.images}
+                        author={rev.User?.name || "Unknown Location"}
+
+                      /></>
                   ))
                 ) : (
                   <p className="text-sm text-muted-foreground">No reviews yet.</p>

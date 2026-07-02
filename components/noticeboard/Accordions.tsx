@@ -5,8 +5,16 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { ShareButton } from "./ShareButton";
 
-export function Accordions() {
+interface AccordionsProps {
+  notices?: any[];
+}
+
+export function Accordions({ notices = [] }: AccordionsProps) {
   const [hashId, setHashId] = useState<string | null>(null);
+  
+  const handleDeleteNotice = (id: string) => {
+    console.log("Delete", id);
+  };
 
   useEffect(() => {
     // Client-side only: Get initial hash
