@@ -271,3 +271,55 @@ export async function deleteUserEvent(eventId: string): Promise<void> {
     throw new Error(err.error || "Failed to delete event");
   }
 }
+
+
+// WebCal API
+
+export interface CalendarTokenResponse {
+  /** The raw UUID token (keep this private) */
+  token: string;
+  /** webcal:// paste this into Google Calendar / Apple Calendar */
+  webcal_url: string;
+  /** https:// for alternative for apps that don't support webcal:// */
+  https_url: string;
+}
+
+/**
+ * Fetch the authenticated user's calendar sync token and subscription URLs, returns null if the user is not authenticated.
+ */
+export async function getCalendarToken(): Promise<CalendarTokenResponse | null> {
+  const mapServer = process.env.NEXT_PUBLIC_MAP_SERVER || process.env.NEXT_PUBLIC_MAPS_URL;
+  if (!mapServer) return null;
+
+  const res = await fetch(`${mapServer}/api/maps/calendar/token`, {
+    credentials: "include",
+  });
+
+  if (!res.ok) {
+    if (res.status === 401) return null; // not logged in
+    throw new Error(`Failed to fetch calendar token: ${res.status}`);
+  }
+
+  return res.json() as Promise<CalendarTokenResponse>;
+}
+
+/**
+ * Regenerate the user's calendar token, the old subscription URL will stop working immediately, returns the new token and subscription URLs.
+ */
+export async function regenerateCalendarToken(): Promise<CalendarTokenResponse> {
+  const mapServer = process.env.NEXT_PUBLIC_MAP_SERVER || process.env.NEXT_PUBLIC_MAPS_URL;
+  if (!mapServer) throw new Error("Map server not configured");
+
+  const res = await fetch(`${mapServer}/api/maps/calendar/token/regenerate`, {
+    method: "POST",
+    credentials: "include",
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || "Failed to regenerate calendar token");
+  }
+
+  return res.json() as Promise<CalendarTokenResponse>;
+}
+

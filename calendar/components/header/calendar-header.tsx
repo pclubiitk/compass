@@ -1,8 +1,9 @@
 
-import { Columns, Grid3x3, List, Plus, Grid2x2, CalendarRange } from "lucide-react";
+import { List, Plus, Grid2x2, CalendarRange } from "lucide-react";
 import { useCalendar } from "@/calendar/contexts/calendar-context";
 import { Button } from "@/components/ui/button";
 import { AddEventDialog } from "@/calendar/components/dialogs/add-event-dialog";
+import { CalendarSyncDialog } from "@/calendar/components/dialogs/calendar-sync-dialog";
 
 import { EntitySelect } from "../entity-select";
 import { TodayButton } from "@/calendar/components/header/today-button";
@@ -34,7 +35,7 @@ export function CalendarHeader({ view, events }: CalendarHeaderProps) {
       </div>
 
       <div className="flex flex-col items-center gap-1.5 sm:flex-row sm:justify-between">
-        <div className="flex w-full items-center gap-1.5">
+        <div className="flex w-full flex-wrap items-center gap-1.5">
           <div className="inline-flex">
             <Button
               aria-label="View by day"
@@ -68,12 +69,20 @@ export function CalendarHeader({ view, events }: CalendarHeaderProps) {
             </Button>
           </div>
           <EntitySelect />
-          <AddEventDialog startDate={selectedDate}>
-            <Button size="sm" className="ml-auto gap-1.5">
-              <Plus className="size-4" strokeWidth={2} />
-              Add Event
-            </Button>
-          </AddEventDialog>
+          <div className="flex items-center gap-1.5 ml-auto">
+            <AddEventDialog startDate={selectedDate}>
+              <Button size="sm" className="gap-1.5">
+                <Plus className="size-4" strokeWidth={2} />
+                Add Event
+              </Button>
+            </AddEventDialog>
+            <CalendarSyncDialog>
+              <Button size="sm" variant="outline" className="gap-1.5" aria-label="Sync calendar with external apps">
+                <CalendarRange className="size-4" strokeWidth={1.8} />
+                Sync
+              </Button>
+            </CalendarSyncDialog>
+          </div>
         </div>
       </div>
     </div>
