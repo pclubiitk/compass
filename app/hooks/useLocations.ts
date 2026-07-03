@@ -3,7 +3,7 @@
 import useSWR from "swr";
 import { useEffect, useMemo } from "react";
 
-type Location = {
+export type Location = {
   locationId?: string;
   id?: string;
   name: string;
@@ -11,6 +11,7 @@ type Location = {
   longitude: number;
   locationType?: string;
   location_type?: string;
+  layer?: number;
 };
 
 // Hook to fetch and cache locations using SWR + localStorage fallback.Automatically merges incremental updates and handles deletions.
