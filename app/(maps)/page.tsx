@@ -1,20 +1,9 @@
 "use client";
-import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
 import { useLocations } from "@/app/hooks/useLocations";
-import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogAction,
-  AlertDialogCancel,
-} from "@/components/ui/alert-dialog";
 import type maplibregl from "maplibre-gl";
 
 function getSearchMarkers(): maplibregl.Marker[] {
@@ -41,9 +30,7 @@ function clearSearchMarkers() {
 export default function Home() {
   const [results, setResults] = useState<any[]>([]); // storing results for dropdown
   const { isValidating } = useLocations();
-  const router = useRouter();
   const [query, setQuery] = useState("");
-  const [loginDialogOpen, setLoginDialogOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
@@ -170,30 +157,6 @@ export default function Home() {
 
   return (
     <>
-      {/* TODO: can extract the login dialog pop up, as it will be required at multiple place. */}
-      {/* Login Required Dialog */}
-      <AlertDialog open={loginDialogOpen} onOpenChange={setLoginDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Login Required</AlertDialogTitle>
-            <AlertDialogDescription>
-              You need to log in to add a new location.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                setLoginDialogOpen(false);
-                router.push("/login?next=/");
-              }}
-            >
-              Log In
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
       {/* Search Bar Overlay */}
       <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 w-[90%] max-w-md flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-md">
         <Input
