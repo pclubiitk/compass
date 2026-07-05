@@ -125,7 +125,7 @@ export default function AddLocationDrawer({
           imagePayload.append("file", coverPic);
 
           // Asset server is on port 8082
-          const assetUrl = process.env.NEXT_PUBLIC_ASSET;
+          const assetUrl = process.env.NEXT_PUBLIC_ASSET_URL;
           const imgRes = await fetch(`${assetUrl}/assets`, {
             method: "POST",
             credentials: "include",

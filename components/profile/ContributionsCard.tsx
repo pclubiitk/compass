@@ -11,7 +11,7 @@ import ComingSoon from "../ui/ComingSoon";
 import { useGContext } from "@/components/ContextProvider";
 
 // Review shape used by ReviewCard (match property names exactly)
-type Review = {
+export type Review = {
   author: string;
   rating: number;
   review_body: string;
@@ -20,7 +20,7 @@ type Review = {
 };
 
 interface ContributionsCardProps {
-  locations: [];
+  locations: LocationCardProps["location"][];
   reviews: Review[];
   notices: any[];
 }

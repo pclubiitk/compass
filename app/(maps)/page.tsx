@@ -15,6 +15,28 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
+import type maplibregl from "maplibre-gl";
+
+function getSearchMarkers(): maplibregl.Marker[] {
+  if (typeof window === "undefined") return [];
+  if (!window.searchMarkerRef) {
+    window.searchMarkerRef = { current: [] };
+  } else if (!Array.isArray(window.searchMarkerRef.current)) {
+    window.searchMarkerRef.current = [];
+  }
+  return window.searchMarkerRef.current;
+}
+
+function clearSearchMarkers() {
+  getSearchMarkers().forEach((marker) => {
+    try {
+      marker.remove();
+    } catch {
+      // ignore
+    }
+  });
+  window.searchMarkerRef!.current = [];
+}
 
 export default function Home() {
   const [results, setResults] = useState<any[]>([]); // storing results for dropdown
@@ -25,17 +47,7 @@ export default function Home() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
-  }, []);
-
-  // Ensure markerRef is initialized as a ref object with current property
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      if (!window.markerRef) {
-        window.markerRef = { current: [] };
-      } else if (!window.markerRef.current) {
-        window.markerRef.current = [];
-      }
-    }
+    getSearchMarkers();
   }, []);
 
   // Fuzzy search function with caching
@@ -81,21 +93,9 @@ export default function Home() {
     if (!window || !query.trim()) return;
 
     const mapRef = window.mapRef;
+    if (!mapRef?.current) return;
 
-    // Clearing previous markers if needed
-    if (
-      window.markerRef?.current &&
-      Array.isArray(window.markerRef.current) &&
-      window.markerRef.current.length
-    ) {
-      window.markerRef.current.forEach((m: any) => {
-        try {
-          m.remove();
-        } catch {}
-      });
-      // Resetting to empty array
-      window.markerRef.current = [];
-    }
+    clearSearchMarkers();
 
     const coordMatch = query.match(
       /^\s*(-?\d+(\.\d+)?),\s*(-?\d+(\.\d+)?)\s*$/
@@ -111,7 +111,7 @@ export default function Home() {
         .setLngLat([lng, lat])
         .addTo(mapRef.current);
 
-      window.markerRef.current.push(marker);
+      getSearchMarkers().push(marker);
 
       setTimeout(() => {
         mapRef.current.flyTo({ center: [lng, lat], zoom: 14 });
@@ -145,28 +145,14 @@ export default function Home() {
     const mapRef = window.mapRef;
     if (!mapRef || !mapRef.current) return;
 
-    if (
-      window.markerRef?.current &&
-      Array.isArray(window.markerRef.current) &&
-      window.markerRef.current.length
-    ) {
-      window.markerRef.current.forEach((m: any) => {
-        try {
-          m.remove();
-        } catch {
-          // ignore
-        }
-      });
-      window.markerRef.current = [];
-    }
+    clearSearchMarkers();
 
     const maplibregl = (await import("maplibre-gl")).default;
     const marker = new maplibregl.Marker({ color: "#f00" })
       .setLngLat([loc.longitude, loc.latitude])
       .addTo(mapRef.current);
 
-    // push into array (consistent)
-    window.markerRef.current.push(marker);
+    getSearchMarkers().push(marker);
 
     mapRef.current.flyTo({ center: [loc.longitude, loc.latitude], zoom: 14 });
   };

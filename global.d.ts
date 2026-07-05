@@ -13,8 +13,8 @@ export {};
 declare global {
   interface Window {
     mapRef: React.RefObject<maplibregl.Map>;
-    markerRef: React.RefObject<maplibregl.Marker[]>;
-    
+    userMarkerRef: React.RefObject<maplibregl.Marker | null>;
+    searchMarkerRef: React.RefObject<maplibregl.Marker[]>;
   }
   // TODO: Add more and update the type
    interface WindowEventMap {

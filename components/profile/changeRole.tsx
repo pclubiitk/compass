@@ -78,7 +78,7 @@ export default function ChangeRoleDialog({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
-      let data = {};
+      let data: { error?: string } = {};
 
       try {
         const text = await res.text();
