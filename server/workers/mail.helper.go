@@ -15,12 +15,41 @@ var (
 	mailSender mail.SendCloser
 )
 
+func maskEmail(email string) string {
+	if email == "" {
+		return "<empty>"
+	}
+
+	parts := strings.SplitN(email, "@", 2)
+	if len(parts) != 2 {
+		return "***"
+	}
+
+	local := parts[0]
+	if len(local) <= 2 {
+		return "***@" + parts[1]
+	}
+
+	return local[:2] + "***@" + parts[1]
+}
+
 func InitMailDialer() {
+	host := viper.GetString("smtp.host")
+	port := viper.GetInt("smtp.port")
+	user := viper.GetString("smtp.user")
+	pass := viper.GetString("smtp.pass")
+
+	if host == "" || port == 0 || user == "" || pass == "" {
+		logrus.Warnf("SMTP config check: host=%q port=%d user=%s pass_set=%t", host, port, maskEmail(user), pass != "")
+	} else {
+		logrus.Infof("SMTP config check: host=%q port=%d user=%s pass_set=%t", host, port, maskEmail(user), true)
+	}
+
 	mailDialer = mail.NewDialer(
-		viper.GetString("smtp.host"),
-		viper.GetInt("smtp.port"),
-		viper.GetString("smtp.user"),
-		viper.GetString("smtp.pass"),
+		host,
+		port,
+		user,
+		pass,
 	)
 	// Keep connection alive for reuse
 	mailDialer.Timeout = 30 * time.Second

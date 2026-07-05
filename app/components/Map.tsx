@@ -171,7 +171,10 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
         .addTo(map);
 
       userMarkerRef.current = userMarker;
-      (window as any).markerRef = userMarkerRef;
+      (window as any).userMarkerRef = userMarkerRef;
+      if (!(window as any).searchMarkerRef) {
+        (window as any).searchMarkerRef = { current: [] };
+      }
 
       // Click to open Add Drawer
       userMarker.getElement().addEventListener("click", (e) => {

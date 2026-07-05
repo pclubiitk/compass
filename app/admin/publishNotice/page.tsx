@@ -10,7 +10,9 @@ export default function NewNoticePage() {
 
   return (
     <>
-      <PublishForm />
+      <Suspense fallback={null}>
+        <PublishForm />
+      </Suspense>
     </>
   );
 }

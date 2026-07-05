@@ -59,12 +59,12 @@ export function BottomNav() {
 
       //  Already on map — open instantly
       const mapRef = window.mapRef.current;
-      const markerRef = window.markerRef.current;
+      const userMarker = window.userMarkerRef?.current;
 
       // TODO: Verify the logic
       if (mapRef) {
-        const pos = markerRef.length
-          ? markerRef[0].getLngLat()
+        const pos = userMarker
+          ? userMarker.getLngLat()
           : mapRef.getCenter();
         localStorage.setItem("selected_lat", pos.lat.toString());
         localStorage.setItem("selected_lon", pos.lng.toString());

@@ -40,7 +40,7 @@ export type Profile = {
 export type UserData = {
   role: number;
   profile: Profile;
-  ContributedLocations: LocationCardProps['location'];
+  ContributedLocations: LocationCardProps["location"][];
   ContributedReview: Review[];
   ContributedNotice: any[];
 };
@@ -72,7 +72,7 @@ export default function ProfilePage() {
     fetchCalendarEvents();
   }, [fetchCalendarEvents]);
 
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     // We don't reset loading to true on refetch to avoid skeleton flashes
     try {
       const res = await fetch(
@@ -124,7 +124,7 @@ export default function ProfilePage() {
       } else {
         toast.error("Invalid Session. Redirecting to login.");
         // After login again direct to profile
-        router.push("/login?callbackUrl%2Fprofile");
+        router.push("/login?callbackUrl=/profile");
       }
     } catch (err) {
       console.log(err);
@@ -132,11 +132,11 @@ export default function ProfilePage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [router]);
 
   useEffect(() => {
     fetchProfile();
-  }, []);
+  }, [fetchProfile]);
 
   // Loading Skeleton
   if (isLoading) {
