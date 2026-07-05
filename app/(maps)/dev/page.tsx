@@ -172,7 +172,6 @@ export default function AdminMap() {
         <p className="text-muted-foreground">
           Zoom {zoom.toFixed(1)} · showing layers 1–{maxVisibleLayer}
         </p>
-        <p className="text-muted-foreground">{geojson.features.length} locations</p>
       </div>
     </div>
   );
