@@ -6,8 +6,8 @@ import (
 	"compass/model"
 	"errors"
 	"net/http"
-	// "net/url"
-	// "strings"
+	"net/url"
+	"strings"
 
 	"encoding/json"
 	"fmt"
@@ -24,63 +24,63 @@ import (
 
 var caser = cases.Title(language.English)
 
-// func verifyProfile(c *gin.Context, profileData model.Profile) bool {
-// 	// OA's verification route, do not take name input, but returns name upon verification
-// 	// We request with the email and the user data provided, OA verifies and returns true and false,
-// 	// If the verification is successful, we receive the name of the user.
-// 	paramkey := fmt.Sprintf("%s:%s:%s:%s", profileData.RollNo, profileData.Course, profileData.Dept, profileData.Email)
-// 	paramkey = url.QueryEscape(paramkey) // To ensure the paramkey for "(MSc 2yr)" and such cases is correctly parsed
-// 	req, err := http.NewRequest("GET", fmt.Sprintf("%s?paramkey=%s", viper.GetString("oa.url"), paramkey), nil)
-// 	if err != nil {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create request"})
-// 		return false
-// 	}
-// 	req.Header.Set("x-api-key", viper.GetString("oa.key"))
-// 	client := &http.Client{}
-// 	resp, err := client.Do(req)
-// 	if err != nil {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to call OA API"})
-// 		return false
-// 	}
-// 	defer resp.Body.Close()
+func verifyProfile(c *gin.Context, profileData model.Profile) bool {
+	// OA's verification route, do not take name input, but returns name upon verification
+	// We request with the email and the user data provided, OA verifies and returns true and false,
+	// If the verification is successful, we receive the name of the user.
+	paramkey := fmt.Sprintf("%s:%s:%s:%s", profileData.RollNo, profileData.Course, profileData.Dept, profileData.Email)
+	paramkey = url.QueryEscape(paramkey) // To ensure the paramkey for "(MSc 2yr)" and such cases is correctly parsed
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s?paramkey=%s", viper.GetString("oa.url"), paramkey), nil)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create request"})
+		return false
+	}
+	req.Header.Set("x-api-key", viper.GetString("oa.key"))
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to call OA API"})
+		return false
+	}
+	defer resp.Body.Close()
 
-// 	if resp.StatusCode == 401 {
-// 		// Log the critical error
-// 		// Send mail to maintainers
-// 		logrus.Errorf("OA Token expired or missing, Urgent action required, request new or check viper env")
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Programming club's oa token expired, we are working to resolve it as soon as possible"})
-// 		return false
-// 	} else if resp.StatusCode != 200 {
-// 		logrus.Error("OA API ERROR, with status code: ", resp.StatusCode)
-// 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Details"})
-// 		return false
-// 	}
-// 	// Parse the response
-// 	var apiResp CCResponse
-// 	if err := json.NewDecoder(resp.Body).Decode(&apiResp); err != nil {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse OA API response"})
-// 		return false
-// 	}
+	if resp.StatusCode == 401 {
+		// Log the critical error
+		// Send mail to maintainers
+		logrus.Errorf("OA Token expired or missing, Urgent action required, request new or check viper env")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Programming club's oa token expired, we are working to resolve it as soon as possible"})
+		return false
+	} else if resp.StatusCode != 200 {
+		logrus.Error("OA API ERROR, with status code: ", resp.StatusCode)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Details"})
+		return false
+	}
+	// Parse the response
+	var apiResp CCResponse
+	if err := json.NewDecoder(resp.Body).Decode(&apiResp); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse OA API response"})
+		return false
+	}
 
-// 	// Checking Status of verification
-// 	if apiResp.Status != nil {
-// 		// Normalize names by removing extra whitespaces and comparing case-insensitively
-// 		normalizedInputName := strings.ToLower(strings.Join(strings.Fields(profileData.Name), " "))
-// 		normalizedApiRespName := strings.ToLower(strings.Join(strings.Fields(*apiResp.Name), " "))
-// 		if *apiResp.Status != "true" || normalizedInputName != normalizedApiRespName {
-// 			c.JSON(http.StatusBadRequest, gin.H{
-// 				"error": "Please verify your data. It should be exactly same as: 1. on your ID card, or 2. displayed in IITK APP or 3. Initial Branch, if Branch is changed.",
-// 			})
-// 			return false
-// 		}
-// 	} else {
-// 		c.JSON(http.StatusBadRequest, gin.H{
-// 			"error": "Student data not verified",
-// 		})
-// 		return false
-// 	}
-// 	return true
-// }
+	// Checking Status of verification
+	if apiResp.Status != nil {
+		// Normalize names by removing extra whitespaces and comparing case-insensitively
+		normalizedInputName := strings.ToLower(strings.Join(strings.Fields(profileData.Name), " "))
+		normalizedApiRespName := strings.ToLower(strings.Join(strings.Fields(*apiResp.Name), " "))
+		if *apiResp.Status != "true" || normalizedInputName != normalizedApiRespName {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "Please verify your data. It should be exactly same as: 1. on your ID card, or 2. displayed in IITK APP or 3. Initial Branch, if Branch is changed.",
+			})
+			return false
+		}
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Student data not verified",
+		})
+		return false
+	}
+	return true
+}
 
 // Returns: (baccha, bapu, error)
 func removeDummyAccount(tx *gorm.DB, rollNo string) (string, string, error) {
@@ -182,9 +182,9 @@ func updateProfile(c *gin.Context) {
 		user.Profile.Dept != profileData.Dept ||
 		user.Profile.Course != profileData.Course {
 		// Verify from oa
-		// if !verifyProfile(c, profileData) {
-		// 	return
-		// }
+		if !verifyProfile(c, profileData) {
+			return
+		}
 
 	}
 	var newPfpPath string
