@@ -1,179 +1,247 @@
 "use client";
-
-import { useMemo, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Map, Source, Layer } from "@vis.gl/react-maplibre";
-import type { MapLayerMouseEvent } from "@vis.gl/react-maplibre";
-import type { CircleLayerSpecification, SymbolLayerSpecification } from "maplibre-gl";
-import type { FeatureCollection } from "geojson";
-import { useLocations, type Location } from "@/app/hooks/useLocations";
-import "maplibre-gl/dist/maplibre-gl.css";
+import { useState, useEffect } from "react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Search } from "lucide-react";
+import { useLocations } from "@/app/hooks/useLocations";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
 
-const IITK_CENTER = {
-  longitude: 80.23273232675717,
-  latitude: 26.50939610022435,
-  zoom: 14,
-};
-
-const LAYER_COLORS: Record<number, string> = {
-  1: "#029987",
-  2: "#123456",
-  3: "#530299",
-  4: "#0be3ff",
-  5: "#52ff63",
-};
-
-function maxLayerForZoom(zoom: number): number {
-  if (zoom > 17) return 5;
-  if (zoom > 16.5) return 4;
-  if (zoom > 16) return 3;
-  if (zoom > 15) return 2;
-  return 1;
-}
-
-function buildCircleLayer(maxVisibleLayer: number): CircleLayerSpecification {
-  return {
-    id: "locations",
-    type: "circle",
-    source: "locations",
-    filter: ["<=", ["get", "layer"], maxVisibleLayer],
-    paint: {
-      "circle-radius": [
-        "interpolate",
-        ["linear"],
-        ["zoom"],
-        12,
-        5,
-        14,
-        8,
-        17,
-        12,
-      ],
-      "circle-color": [
-        "match",
-        ["get", "layer"],
-        1,
-        LAYER_COLORS[1],
-        2,
-        LAYER_COLORS[2],
-        3,
-        LAYER_COLORS[3],
-        4,
-        LAYER_COLORS[4],
-        5,
-        LAYER_COLORS[5],
-        "#6b806c",
-      ],
-      "circle-stroke-width": 2,
-      "circle-stroke-color": "#ffffff",
-    },
-  };
-}
-
-function buildTextLayer(maxVisibleLayer: number): SymbolLayerSpecification {
-  return {
-    id: "location-labels",
-    type: "symbol",
-    source: "locations",
-    filter: ["<=", ["get", "layer"], maxVisibleLayer],
-    layout: {
-      "text-field": ["get", "name"],
-      "text-font": ["Open Sans Regular", "Arial Unicode MS Regular"],
-      "text-size": 13,
-      
-      "text-variable-anchor": ["top", "bottom", "left", "right"],
-      "text-radial-offset": 0, 
-      
-      "text-allow-overlap": false, 
-      "text-ignore-placement": false,
-    },
-    paint: {
-      "text-color": "#333333",
-      "text-halo-color": "#ffffff",
-      "text-halo-width": 1.5,
-    },
-  };
-}
-
-export default function AdminMap() {
-  const { locations } = useLocations();
+export default function Home() {
+  const [results, setResults] = useState<any[]>([]); // storing results for dropdown
+  const { isValidating } = useLocations();
   const router = useRouter();
-  const [zoom, setZoom] = useState(IITK_CENTER.zoom);
-  const [cursor, setCursor] = useState<string>("grab");
+  const [query, setQuery] = useState("");
+  const [loginDialogOpen, setLoginDialogOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-  const maxVisibleLayer = maxLayerForZoom(zoom);
+  // Ensure markerRef is initialized as a ref object with current property
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      if (!window.markerRef) {
+        window.markerRef = { current: [] };
+      } else if (!window.markerRef.current) {
+        window.markerRef.current = [];
+      }
+    }
+  }, []);
 
-  const geojson = useMemo((): FeatureCollection => {
-    return {
-      type: "FeatureCollection",
-      features: (locations as Location[])
-        .filter((loc) => loc.latitude != null && loc.longitude != null)
-        .map((loc) => ({
-          type: "Feature" as const,
-          geometry: {
-            type: "Point" as const,
-            coordinates: [loc.longitude, loc.latitude],
-          },
-          properties: {
-            locationId: loc.locationId || loc.id || "",
-            name: loc.name,
-            layer: loc.layer ?? 1,
-            locationType: loc.locationType || loc.location_type || "",
-          },
-        })),
-    };
-  }, [locations]);
+  // Fuzzy search function with caching
+  // TODO: Update the logic to do the fuzzy search on the local location store not on the api
+  const fuzzySearch = async (searchQuery: string) => {
+    if (!searchQuery.trim()) return [];
 
-  const circleLayer = useMemo(
-    () => buildCircleLayer(maxVisibleLayer),
-    [maxVisibleLayer],
-  );
+    const CACHE_KEY = "search_cache";
+    const rawCache = localStorage.getItem(CACHE_KEY);
+    const cache = rawCache ? JSON.parse(rawCache) : {};
 
-  const textLayer = useMemo(
-    () => buildTextLayer(maxVisibleLayer),
-    [maxVisibleLayer],
-  );
+    // Checking local cache first
+    if (cache[searchQuery]) {
+      return cache[searchQuery];
+    }
 
-  const handleClick = useCallback(
-    (e: MapLayerMouseEvent) => {
-      const feature = e.features?.[0];
-      const locationId = feature?.properties?.locationId;
-      if (!locationId) return;
+    // Calling backend if query not found in cache
+    const res = await fetch(
+      `${
+        process.env.NEXT_PUBLIC_MAPS_URL
+      }/api/maps/location/fuzzy?query=${encodeURIComponent(searchQuery)}`
+    );
+    const data = await res.json();
+    const results = data.results || [];
 
-      router.push(`/location/${locationId}`);
-    },
-    [router],
-  );
+    // Saving new results in cache
+    cache[searchQuery] = results;
+    localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
 
-  const handleMouseEnter = useCallback(() => setCursor("pointer"), []);
-  const handleMouseLeave = useCallback(() => setCursor("grab"), []);
+    // Auto-clearing cache if it exceeds 5 MB
+    const size = new Blob([JSON.stringify(cache)]).size;
+    const MAX = 5 * 1024 * 1024;
+    if (size > MAX) {
+      // console.warn("Cache exceeded 5MB. Clearing cache.");
+      localStorage.removeItem(CACHE_KEY);
+    }
+
+    return results;
+  };
+
+  // Search handler
+  const handleSearch = async () => {
+    if (!window || !query.trim()) return;
+
+    const mapRef = window.mapRef;
+
+    // Clearing previous markers if needed
+    if (
+      window.markerRef?.current &&
+      Array.isArray(window.markerRef.current) &&
+      window.markerRef.current.length
+    ) {
+      window.markerRef.current.forEach((m: any) => {
+        try {
+          m.remove();
+        } catch {}
+      });
+      // Resetting to empty array
+      window.markerRef.current = [];
+    }
+
+    const coordMatch = query.match(
+      /^\s*(-?\d+(\.\d+)?),\s*(-?\d+(\.\d+)?)\s*$/
+    );
+
+    if (coordMatch) {
+      const lat = parseFloat(coordMatch[1]);
+      const lng = parseFloat(coordMatch[3]);
+
+      const maplibregl = (await import("maplibre-gl")).default;
+
+      const marker = new maplibregl.Marker({ color: "#f00" })
+        .setLngLat([lng, lat])
+        .addTo(mapRef.current);
+
+      window.markerRef.current.push(marker);
+
+      setTimeout(() => {
+        mapRef.current.flyTo({ center: [lng, lat], zoom: 14 });
+      }, 50);
+
+      setResults([]);
+    } else {
+      const resultsFromBackend = await fuzzySearch(query);
+      setResults(resultsFromBackend); // showing in dropdown
+    }
+  };
+
+  useEffect(() => {
+    if (!query.trim()) {
+      setResults([]);
+      return;
+    }
+
+    const timeout = setTimeout(() => {
+      handleSearch();
+    }, 300);
+
+    return () => clearTimeout(timeout);
+  }, [query]);
+
+  // Handling selecting a location from dropdown
+  const handleSelect = async (loc: any) => {
+    setQuery(loc.name); // update input
+    setResults([]); // hide dropdown
+
+    const mapRef = window.mapRef;
+    if (!mapRef || !mapRef.current) return;
+
+    if (
+      window.markerRef?.current &&
+      Array.isArray(window.markerRef.current) &&
+      window.markerRef.current.length
+    ) {
+      window.markerRef.current.forEach((m: any) => {
+        try {
+          m.remove();
+        } catch {
+          // ignore
+        }
+      });
+      window.markerRef.current = [];
+    }
+
+    const maplibregl = (await import("maplibre-gl")).default;
+    const marker = new maplibregl.Marker({ color: "#f00" })
+      .setLngLat([loc.longitude, loc.latitude])
+      .addTo(mapRef.current);
+
+    // push into array (consistent)
+    window.markerRef.current.push(marker);
+
+    mapRef.current.flyTo({ center: [loc.longitude, loc.latitude], zoom: 14 });
+  };
+
+  // TODO: Fall back of nominator api, but first need to verify if it accounts for the user or the server (the api limits?)
+  // const res = await fetch(
+  //       `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
+  //         query
+  //       )}&format=json`
+  //     );
+  //     const data = await res.json();
+  //     if (!data[0]) return alert("Location not found");
+  //     lat = parseFloat(data[0].lat);
+  //     lng = parseFloat(data[0].lon);
 
   return (
-    <div className="relative h-screen w-screen">
-      <Map
-        initialViewState={IITK_CENTER}
-        style={{ width: "100%", height: "100%" }}
-        mapStyle="https://basemaps.cartocdn.com/gl/positron-gl-style/style.json"
-        cursor={cursor}
-        interactiveLayerIds={["locations"]}
-        onMove={(evt) => setZoom(evt.viewState.zoom)}
-        onClick={handleClick}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-      >
-        <Source id="locations" type="geojson" data={geojson}>
-          <Layer {...circleLayer} />
-          <Layer {...textLayer} />
-        </Source>
-      </Map>
+    <>
+      {/* TODO: can extract the login dialog pop up, as it will be required at multiple place. */}
+      {/* Login Required Dialog */}
+      <AlertDialog open={loginDialogOpen} onOpenChange={setLoginDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Login Required</AlertDialogTitle>
+            <AlertDialogDescription>
+              You need to log in to add a new location.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setLoginDialogOpen(false);
+                router.push("/login?next=/");
+              }}
+            >
+              Log In
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
-      // Uncomment for testing layer-wise rendering
-      {/* <div className="absolute top-4 left-4 z-10 rounded-lg border bg-white/90 px-3 py-2 text-sm shadow-md backdrop-blur">
-        <p className="font-medium">Layer visibility</p>
-        <p className="text-muted-foreground">
-          Zoom {zoom.toFixed(1)} · showing layers 1–{maxVisibleLayer}
-        </p>
-      </div> */}
-    </div>
+      {/* Search Bar Overlay */}
+      <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 w-[90%] max-w-md flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-md">
+        <Input
+          placeholder="Search by name or coordinates"
+          className="flex-1 border-none text-black placeholder:text-gray-500 focus-visible:ring-0 focus-visible:ring-offset-0"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+        />
+        <Button size="icon" variant="ghost" onClick={handleSearch}>
+          <Search className="h-5 w-5 text-gray-500" />
+        </Button>
+      </div>
+
+      {/* Sync indicator */}
+      {mounted && isValidating && (
+        <div className="absolute bottom-4 right-4 text-xs text-gray-600 bg-white/80 px-3 py-1 rounded-md shadow">
+          Syncing latest data…
+        </div>
+      )}
+      {/* Dropdown with search results */}
+      {results.length > 0 && (
+        <div className="bg-white max-h-60 overflow-auto rounded shadow-lg border">
+          {results.map((loc) => (
+            <div
+              key={loc.locationId}
+              className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+              onClick={() => handleSelect(loc)}
+            >
+              {loc.name}
+            </div>
+          ))}
+        </div>
+      )}
+    </>
   );
 }
