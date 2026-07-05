@@ -69,3 +69,20 @@ type Review struct {
 	User          *User          `gorm:"foreignKey:ContributedBy;references:UserID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 	Images        []Image        `gorm:"polymorphic:ParentAsset;" json:"images"` // base name, parentAsset, it will attach the ID itself
 }
+
+// UserEvent represents a personal calendar event created by a user.
+// Completely separate from admin-published Notices.
+// Users can only see, edit, and delete their own events.
+type UserEvent struct {
+	CreatedAt     time.Time      `json:"created_at"`
+	UpdatedAt     time.Time      `json:"-"`
+	DeletedAt     gorm.DeletedAt `gorm:"index" json:"-"`
+	EventId       uuid.UUID      `gorm:"type:uuid;default:gen_random_uuid();primaryKey" json:"eventId"`
+	Title         string         `json:"title" binding:"required"`
+	Description   string         `gorm:"type:text" json:"description"`
+	EventTime     time.Time      `json:"eventTime"`
+	EventEndTime  time.Time      `json:"eventEndTime"`
+	Color         string         `json:"color"`
+	ContributedBy uuid.UUID      `json:"contributedBy"`
+	User          *User          `gorm:"foreignKey:ContributedBy;references:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"-"`
+}

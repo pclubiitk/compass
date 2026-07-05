@@ -115,7 +115,7 @@ export default function MapsLayout({ children }: { children: React.ReactNode }) 
             <AlertDialogAction
               onClick={() => {
                 setLoginDialogOpen(false);
-                router.push("/login?next=/");
+                router.push(`/login?callbackUrl=${encodeURIComponent("/")}`);
               }}
             >
               Log In

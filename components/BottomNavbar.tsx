@@ -22,6 +22,7 @@ export function BottomNav() {
   const pathname = usePathname();
   const { isLoggedIn, isGlobalLoading } = useGContext();
   const [loginDialogOpen, setLoginDialogOpen] = useState(false);
+  const [loginTarget, setLoginTarget] = useState("/");
 
   const navItems = [
     { icon: Search, label: "Search", path: "/" },
@@ -41,8 +42,9 @@ export function BottomNav() {
     if (label === "Add Location") {
       if (isGlobalLoading) return;
 
-      //  Require login
+      // Require login
       if (!isLoggedIn) {
+        setLoginTarget("/");
         setLoginDialogOpen(true);
         return;
       }
@@ -53,11 +55,10 @@ export function BottomNav() {
           duration: 2000,
         });
         router.push("/");
-        
         return;
       }
 
-      //  Already on map — open instantly
+      // Already on map — open instantly
       const mapRef = window.mapRef.current;
       const userMarker = window.userMarkerRef?.current;
 
@@ -76,6 +77,16 @@ export function BottomNav() {
       return;
     }
 
+    // Noticeboard requires login
+    if (label === "Noticeboard") {
+      if (isGlobalLoading) return;
+      if (!isLoggedIn) {
+        setLoginTarget("/noticeboard");
+        setLoginDialogOpen(true);
+        return;
+      }
+    }
+
     // Normal navigation for others
     if (path) {
       router.push(path);
@@ -85,13 +96,13 @@ export function BottomNav() {
 
   return (
     <>
-      {/*  Login Required Dialog */}
+      {/* Login Required Dialog */}
       <AlertDialog open={loginDialogOpen} onOpenChange={setLoginDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Login Required</AlertDialogTitle>
             <AlertDialogDescription>
-              You need to log in to add a new location.
+              You need to log in to continue.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -99,7 +110,7 @@ export function BottomNav() {
             <AlertDialogAction
               onClick={() => {
                 setLoginDialogOpen(false);
-                router.push("/login?next=/");
+                router.push(`/login?callbackUrl=${encodeURIComponent(loginTarget)}`);
               }}
             >
               Log In
@@ -108,7 +119,7 @@ export function BottomNav() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/*  Bottom Navigation Bar */}
+      {/* Bottom Navigation Bar */}
       <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md bg-white px-2 py-2 rounded-full shadow-md flex items-center justify-between gap-0.5 border">
         {navItems.map(({ icon: Icon, label, path }) => (
           <Button
