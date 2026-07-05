@@ -93,8 +93,6 @@ export default function LocationPage() {
   const [loading, setLoading] = useState(true);
 
   const { isAdmin } = useGContext();
-  console.log(isAdmin);
-  console.log("location:",location);
   const fetchLocation = async () => {
     if (!id) return;
     try {
