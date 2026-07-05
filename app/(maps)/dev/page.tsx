@@ -167,12 +167,13 @@ export default function AdminMap() {
         </Source>
       </Map>
 
-      <div className="absolute top-4 left-4 z-10 rounded-lg border bg-white/90 px-3 py-2 text-sm shadow-md backdrop-blur">
+      // Uncomment for testing layer-wise rendering
+      {/* <div className="absolute top-4 left-4 z-10 rounded-lg border bg-white/90 px-3 py-2 text-sm shadow-md backdrop-blur">
         <p className="font-medium">Layer visibility</p>
         <p className="text-muted-foreground">
           Zoom {zoom.toFixed(1)} · showing layers 1–{maxVisibleLayer}
         </p>
-      </div>
+      </div> */}
     </div>
   );
 }
