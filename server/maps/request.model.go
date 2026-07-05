@@ -66,3 +66,11 @@ type FlagActionRequest struct {
 	Action  string `json:"action" binding:"required,oneof=approved rejected"`
 	Message string `json:"message"`
 }
+
+type AddUserEventRequest struct {
+	Title        string    `json:"title" binding:"required"`
+	Description  string    `json:"description"`
+	EventTime    time.Time `json:"eventTime" binding:"required"`
+	EventEndTime time.Time `json:"eventEndTime" binding:"required"`
+	Color        string    `json:"color"`
+}

@@ -44,6 +44,10 @@ export interface IEvent {
   entity?: string;
   // Original notice ID for linking back to noticeboard
   noticeId?: string;
+  // Whether this event was created by the current user (personal event)
+  isUserEvent?: boolean;
+  // The DB UUID of the personal event (needed for edit/delete API calls)
+  userEventId?: string;
 }
 
 export interface ICalendarCell {

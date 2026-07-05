@@ -40,7 +40,7 @@ export type Profile = {
 export type UserData = {
   role: number;
   profile: Profile;
-  ContributedLocations: LocationCardProps["location"][];
+  ContributedLocations: LocationCardProps['location'][];
   ContributedReview: Review[];
   ContributedNotice: any[];
 };

@@ -9,7 +9,7 @@
 // for the MapLibre map and marker instances, as well as a custom event type
 // ("search-location") used across the app for map interactions.
 
-export {};
+export { };
 declare global {
   interface Window {
     mapRef: React.RefObject<maplibregl.Map>;
@@ -17,7 +17,7 @@ declare global {
     searchMarkerRef: React.RefObject<maplibregl.Marker[]>;
   }
   // TODO: Add more and update the type
-   interface WindowEventMap {
+  interface WindowEventMap {
     "search-location": CustomEvent<{ lng: number; lat: number }>;
   }
 }

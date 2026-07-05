@@ -131,6 +131,14 @@ export const ENTITIES: IEntity[] = [
     type: "other",
     color: "gray",
   },
+  // Personal events created by users
+  {
+    id: "personal",
+    name: "Personal",
+    shortName: "Personal",
+    type: "other",
+    color: "blue",
+  },
 ];
 
 /**
