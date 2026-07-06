@@ -37,7 +37,6 @@ export function ContributionsCard({
       <CardHeader>
         <CardTitle>
           My Contributions
-          <ComingSoon />
         </CardTitle>
       </CardHeader>
       <CardContent>
