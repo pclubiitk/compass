@@ -2,24 +2,26 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export function middleware(request: NextRequest) {
-  const hasAuthToken = request.cookies.has("auth_token");
-  
-  if (!hasAuthToken) {
+  const hasSession =
+    request.cookies.has("auth_token") ||
+    request.cookies.has("refresh_token");
+
+  if (!hasSession) {
     const host = request.headers.get("host") || "";
     let loginUrlBase = "http://localhost:3001/login";
-    
+
     if (host.includes("pclub.in")) {
       loginUrlBase = "https://auth.pclub.in/login";
     } else if (host.includes("domain.in")) {
       loginUrlBase = "https://auth.domain.in/login";
     }
-    
+
     const callbackUrl = request.url;
     return NextResponse.redirect(
       new URL(`${loginUrlBase}?callbackUrl=${encodeURIComponent(callbackUrl)}`, request.url)
     );
   }
-  
+
   return NextResponse.next();
 }
 

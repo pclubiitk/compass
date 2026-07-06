@@ -19,7 +19,7 @@ import {
 function LoginPageHolder() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const { isLoggedIn, setLoggedIn } = useGContext();
+  const { isLoggedIn, setLoggedIn, isGlobalLoading } = useGContext();
 
   // ReCaptcha Set up
   const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY!;
@@ -43,10 +43,9 @@ function LoginPageHolder() {
   }, [router]);
 
   useEffect(() => {
-    if (isLoggedIn) handleRedirect(callbackUrl);
-    // The dependency array ensures effect only runs once on mount,
-    // unless the router or callbackUrl changes.
-  }, [callbackUrl, handleRedirect, isLoggedIn]);
+    if (isGlobalLoading || isLoggedIn !== true) return;
+    handleRedirect(callbackUrl);
+  }, [callbackUrl, handleRedirect, isLoggedIn, isGlobalLoading]);
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();

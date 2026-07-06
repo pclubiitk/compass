@@ -12,7 +12,9 @@ export function middleware(request: NextRequest) {
   const proxySubdomain = request.headers.get("X-Subdomain");
   const actualSubdomain = proxySubdomain || subdomain;
 
-  const hasAuthToken = request.cookies.has("auth_token");
+  const hasSession =
+    request.cookies.has("auth_token") ||
+    request.cookies.has("refresh_token");
 
   // Define public paths that do not require authentication
   const PUBLIC_AUTH_PATHS = [
@@ -27,8 +29,8 @@ export function middleware(request: NextRequest) {
     pathname.startsWith(path)
   );
 
-  // If auth_token is not present and they are trying to access a protected page, redirect to login
-  if (!hasAuthToken && !isPublicAuthPath) {
+  // If no session cookie and they are trying to access a protected page, redirect to login
+  if (!hasSession && !isPublicAuthPath) {
     const authDomain = process.env.NEXT_PUBLIC_AUTH_DOMAIN || "";
     const loginBase = authDomain ? `${authDomain}/login` : "/login";
     const callbackUrl = request.url;
