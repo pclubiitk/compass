@@ -199,7 +199,7 @@ export default function ProfilePage() {
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="w-5 h-5" />
                 Campus Events
-                <ComingSoon />
+
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
