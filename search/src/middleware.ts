@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { LOGIN_POINT } from "@/lib/constant";
 
 export function middleware(request: NextRequest) {
   const host = request.headers.get("host") || "";
@@ -15,17 +16,12 @@ export function middleware(request: NextRequest) {
     request.cookies.has("refresh_token");
 
   if (!hasSession) {
-    let loginUrlBase = "http://localhost:3001/login";
-
-    if (host.includes("pclub.in")) {
-      loginUrlBase = "https://auth.pclub.in/login";
-    } else if (host.includes("domain.in")) {
-      loginUrlBase = "https://auth.domain.in/login";
-    }
-
     const callbackUrl = request.url;
     return NextResponse.redirect(
-      new URL(`${loginUrlBase}?callbackUrl=${encodeURIComponent(callbackUrl)}`, request.url)
+      new URL(
+        `${LOGIN_POINT}?callbackUrl=${encodeURIComponent(callbackUrl)}`,
+        request.url,
+      ),
     );
   }
 
