@@ -93,11 +93,14 @@ export default function AddLocationDrawer({
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setCoverPic(file);
-      const url = URL.createObjectURL(file);
-      setPreviewUrl(url);
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("File must be less than 10 MB.");
+      return;
     }
+    setCoverPic(file);
+    const url = URL.createObjectURL(file);
+    setPreviewUrl(url);
   };
 
   const removeImage = () => {
@@ -124,15 +127,14 @@ export default function AddLocationDrawer({
           const imagePayload = new FormData();
           imagePayload.append("file", coverPic);
 
-          // Asset server is on port 8082
-          // const assetUrl = process.env.NEXT_PUBLIC_ASSET;
-          const assetUrl = process.env.NEXT_PUBLIC_ASSET_URL;
-          // console.log("assetUrl =", assetUrl);
-          const imgRes = await fetch(`${assetUrl}/assets`, {
-            method: "POST",
-            credentials: "include",
-            body: imagePayload,
-          });
+          const imgRes = await fetch(
+            `${process.env.NEXT_PUBLIC_ASSET_URL}/assets`,
+            {
+              method: "POST",
+              credentials: "include",
+              body: imagePayload,
+            },
+          );
 
           if (!imgRes.ok) {
             const errorText = await imgRes.text();
@@ -293,6 +295,7 @@ export default function AddLocationDrawer({
         {/* Cover Image Upload - Clean & Minimal */}
         <div className="space-y-2">
           <Label>Cover Image</Label>
+          <p className="text-xs text-muted-foreground">10 MB</p>
           {!previewUrl ? (
             <div
               onClick={() =>
@@ -306,9 +309,6 @@ export default function AddLocationDrawer({
               <div className="text-center space-y-1">
                 <p className="text-sm font-medium text-foreground">
                   Click to upload image
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Max 5MB 
                 </p>
               </div>
             </div>
