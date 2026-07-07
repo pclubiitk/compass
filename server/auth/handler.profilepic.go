@@ -22,7 +22,7 @@ func UploadProfileImage(c *gin.Context) {
 
 	// Parsing form (10MB limit) TODO: look for file limit or settings
 	if err := c.Request.ParseMultipartForm(10 << 20); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to parse form"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "New Failed to parse form"})
 		return
 	}
 

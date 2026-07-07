@@ -85,13 +85,15 @@ export function SocialProfileCard({
     }
   };
 
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 2097152) {
-      toast("File is too big!");
-      return;
-    }
+    if (file.size > MAX_FILE_SIZE) {
+    toast("File size must be less than 10 MB.");
+    return;
+  }
     setSelectedImage(file);
     handleUpload(file);
   };
