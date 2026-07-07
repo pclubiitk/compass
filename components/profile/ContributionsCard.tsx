@@ -20,7 +20,7 @@ export type Review = {
 };
 
 interface ContributionsCardProps {
-  locations: LocationCardProps['location'][]; //to avoid typescript errors, we are using the type of location instead of any type
+  locations: LocationCardProps['location'][];
   reviews: Review[];
   notices: any[];
 }
