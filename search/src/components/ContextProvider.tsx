@@ -49,7 +49,7 @@ const GlobalContext = createContext<GlobalContextType>({
 
 export function GlobalContextProvider({ children }: { children: ReactNode }) {
   const [isLoggedIn, setLoggedIn] = useState<boolean>(false);
-  const [isGlobalLoading, setGlobalLoading] = useState<boolean>(false);
+  const [isGlobalLoading, setGlobalLoading] = useState<boolean>(true);
   const [isPLseason, setPLseason] = useState<boolean>(false);
   const [globalError, setGlobalError] = useState<boolean>(false);
   const [profileVisibility, setProfileVisibility] = useState<boolean>(false);
@@ -61,7 +61,7 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
         // TODO: Update the backend route to return the current applications configs,
         // like season booleans like for Puppy Love.
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_AUTH_URL}/api/auth/me`,
+          `${process.env.NEXT_PUBLIC_AUTH_URL?.trim()}/api/auth/me`,
           {
             method: "GET",
             credentials: "include",

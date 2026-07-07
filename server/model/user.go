@@ -35,9 +35,14 @@ type User struct {
 	Profile Profile `gorm:"foreignKey:UserID;references:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"profile"`
 
 	// Compass Fields
-	ContributedLocations []Location `gorm:"foreignKey:ContributedBy;references:UserID"`
-	ContributedReview    []Review   `gorm:"foreignKey:ContributedBy;references:UserID"`
-	ContributedNotice    []Notice   `gorm:"foreignKey:ContributedBy;references:UserID"`
-	BioPics              []Image    `gorm:"polymorphic:ParentAsset;" json:"biopics"`
+	ContributedLocations []Location   `gorm:"foreignKey:ContributedBy;references:UserID"`
+	ContributedReview    []Review     `gorm:"foreignKey:ContributedBy;references:UserID"`
+	ContributedNotice    []Notice     `gorm:"foreignKey:ContributedBy;references:UserID"`
+	PersonalEvents       []UserEvent  `gorm:"foreignKey:ContributedBy;references:UserID"`
+	BioPics              []Image      `gorm:"polymorphic:ParentAsset;" json:"biopics"`
+	// CalendarToken is a stable secret token embedded in the user's webcal subscription URL.
+	// External calendar clients (Google, Apple, Outlook) poll this URL without cookies.
+	// The token acts as the credential — rotating it revokes old subscription URLs.
+	CalendarToken string `gorm:"type:uuid;default:gen_random_uuid()" json:"-"`
 	// in the syntax * makes it a pointer and when it is null, it return null in json instead of a default values
 }

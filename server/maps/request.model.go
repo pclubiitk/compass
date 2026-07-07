@@ -3,14 +3,13 @@ package maps
 import (
 	"compass/model"
 	"time"
-	// "time"
 
 	"github.com/google/uuid"
 )
 
 type AddLocationRequest struct {
 	// TODO: Need to handle the case where i again request for the same location
-	Name         string       `json:"name"`
+	Name         string       `json:"name" binding:"required"`
 	Latitude     float32      `json:"latitude" binding:"required"`
 	Longitude    float32      `json:"longitude" binding:"required"`
 	LocationType string       `json:"locationType"`
@@ -65,4 +64,22 @@ func (r AddReviewRequest) ToReview(userID uuid.UUID) model.Review {
 type FlagActionRequest struct {
 	Action  string `json:"action" binding:"required,oneof=approved rejected"`
 	Message string `json:"message"`
+}
+
+type AddUserEventRequest struct {
+	Title         string    `json:"title" binding:"required"`
+	Description   string    `json:"description"`
+	EventTime     time.Time `json:"eventTime" binding:"required"`
+	EventEndTime  time.Time `json:"eventEndTime" binding:"required"`
+	Color         string    `json:"color"`
+}
+
+type EditLocationRequest struct {
+	Name         string `json:"name" binding:"required"`
+	Description  string `json:"description" binding:"max=250"`
+	Tag          string `json:"tag"`
+	Time         string `json:"time"`
+	Contact      string `json:"contact"`
+	LocationType string `json:"locationType"`
+	Layer        int    `json:"layer"`
 }
