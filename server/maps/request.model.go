@@ -67,9 +67,19 @@ type FlagActionRequest struct {
 }
 
 type AddUserEventRequest struct {
-	Title        string    `json:"title" binding:"required"`
-	Description  string    `json:"description"`
-	EventTime    time.Time `json:"eventTime" binding:"required"`
-	EventEndTime time.Time `json:"eventEndTime" binding:"required"`
-	Color        string    `json:"color"`
+	Title         string    `json:"title" binding:"required"`
+	Description   string    `json:"description"`
+	EventTime     time.Time `json:"eventTime" binding:"required"`
+	EventEndTime  time.Time `json:"eventEndTime" binding:"required"`
+	Color         string    `json:"color"`
+}
+
+type EditLocationRequest struct {
+	Name         string `json:"name" binding:"required"`
+	Description  string `json:"description" binding:"max=250"`
+	Tag          string `json:"tag"`
+	Time         string `json:"time"`
+	Contact      string `json:"contact"`
+	LocationType string `json:"locationType"`
+	Layer        int    `json:"layer"`
 }

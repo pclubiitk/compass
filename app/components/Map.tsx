@@ -29,6 +29,7 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
+import { file } from "zod";
 
 type MapProps = {
   onMarkerClick: () => void;
@@ -42,7 +43,12 @@ const colorMap: Record<string, string> = {
   hostel: "#22c55e",
   admin: "#f97316",
   recreation: "#14b8a6",
-  default: "#6b7280",
+  default: "#6b806c",
+  1: "#029987",
+  2: "#123456",
+  3: "#530299",
+  4: "#0be3ff",
+  5: "#52ff63"
 };
 
 const iconMap: Record<string, any> = {
@@ -73,6 +79,9 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
   const [locationDenied, setLocationDenied] = useState(false);
   const [geoState, setGeoState] = useState<PermissionState | null>(null);
   const { setGlobalLoading } = useGContext();
+  const zoom = mapRef.current?.getZoom()
+  console.log(zoom)
+  const [filteredLocations, setFilteredLocations] = useState(locations.filter((loc) => loc.layer<=1));
 
   // Track geolocation permission state (if browser supports it)
   useEffect(() => {
@@ -264,14 +273,15 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
       return;
     }
 
-    locations.forEach((loc, index) => {
+    filteredLocations.forEach((loc, index) => {
       if (!loc.latitude || !loc.longitude) return;
 
       const rawType = (loc.locationType || loc.location_type || "")
         .toLowerCase()
         .trim();
       const Icon = iconMap[rawType] || iconMap.default;
-      const color = colorMap[rawType] || colorMap.default;
+      const color = colorMap[loc.layer] || colorMap.default;
+      // console.log(loc)
 
       const el = document.createElement("div");
       el.style.cursor = "pointer";
@@ -288,7 +298,7 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
           border: 2px solid white;
           animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
           opacity: 0;
-          animation-delay: ${index * 0.03}s;
+          // animation-delay: ${index * 0.03}s;
         `;
       // TODO: this animation time is slow, causing one be one entry.
 
@@ -330,7 +340,7 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
     });
 
     console.log(`Rendered ${locations.length} markers`);
-  }, [locations, mapLoaded, router]);
+  }, [filteredLocations, locations, mapLoaded, router]);
 
   useEffect(() => {
     if (mapLoaded) renderMarkers();
@@ -362,6 +372,25 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
     const handleZoom = () => {
       const zoom = map.getZoom();
       const scale = Math.min(Math.max((zoom - 12) / 6 + 0.9, 0.9), 1.4);
+      console.log(zoom);
+      if (zoom > 17){
+        console.log("layer 12345");
+        setFilteredLocations(locations.filter((loc) => loc.layer <= 5))
+      } else if (zoom > 16.5){
+        console.log("layer 1 + 2 + 3")
+        setFilteredLocations(locations.filter((loc) => loc.layer <= 4))
+      } else if (zoom > 16){
+        console.log("layer 1234")
+        setFilteredLocations(locations.filter((loc) => loc.layer <= 3))
+      } else if (zoom > 15){
+        console.log("layer 1 + layer2")
+        setFilteredLocations(locations.filter((loc) => loc.layer <= 2))
+      } else {
+        console.log("Layer 1");
+        setFilteredLocations(locations.filter((loc) => loc.layer <= 1))
+        console.log(locations.filter((loc) => loc.layer >= 1).length)
+      }
+      console.log(filteredLocations.length)
       locationMarkers.current.forEach((m) => {
         const el = m.getElement();
         const inner = el.firstElementChild as HTMLElement;
@@ -369,13 +398,13 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
           inner.style.width = `${28 * scale}px`;
           inner.style.height = `${28 * scale}px`;
         }
-      });
+      }, []);
     };
     map.on("zoom", handleZoom);
     return () => {
       map.off("zoom", handleZoom);
     };
-  }, [mapLoaded]);
+  }, [mapLoaded, locations]);
 
   // Retry function for the dialog
   const retryLocateUser = () => {

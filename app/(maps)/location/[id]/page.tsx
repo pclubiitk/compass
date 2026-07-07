@@ -12,6 +12,7 @@ import {
   MapPin,
   Clock,
   Phone,
+  Pencil
 } from "lucide-react";
 import { motion } from "framer-motion";
 import Image from "next/image";
@@ -46,9 +47,10 @@ import ReviewCard from "@/app/components/user/Location_ReviewCard";
 import { LocationSkeleton } from "@/app/components/location/LocationSkeleton";
 import { PhotoGallery } from "@/app/components/location/PhotoGallery";
 import { ReviewDrawer } from "@/app/components/location/ReviewDrawer";
-import { AuthGuard } from "@/components/AuthGuard";
+import { EditLocationModal } from "@/app/components/location/EditLocationModal";
 
 import { toast } from "sonner";
+import { useGContext } from "@/components/ContextProvider";
 
 // Types
 interface LocationData {
@@ -90,6 +92,9 @@ export default function LocationPage() {
   const [reviews, setReviews] = useState<ReviewData[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const { isAdmin } = useGContext();
+  console.log(isAdmin);
+  console.log("location:",location);
   const fetchLocation = async () => {
     if (!id) return;
     try {
@@ -231,6 +236,20 @@ export default function LocationPage() {
                   <Button variant="ghost" size="icon" className="rounded-full">
                     <Heart className="w-5 h-5" />
                   </Button>
+                  {isAdmin ? (
+                    <EditLocationModal
+                      location={location}
+                      onLocationUpdated={fetchLocation}
+                    >
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="rounded-full"
+                      >
+                        <Pencil className="w-5 h-5" />
+                      </Button>
+                    </EditLocationModal>
+                  ) : null}
                 </div>
               </div>
 

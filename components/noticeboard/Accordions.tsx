@@ -5,11 +5,16 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { ShareButton } from "./ShareButton";
 
-interface AccordionsProps {
-  notices?: any[];
-}
+const notices = [
+  { id: "antaragni" },
+  { id: "sherlock" },
+  { id: "doraemon" },
+  { id: "unicorn" },
+  { id: "dragon" },
+  { id: "pheonix" },
+];
 
-export function Accordions({ notices = [] }: AccordionsProps) {
+export function Accordions() {
   const [hashId, setHashId] = useState<string | null>(null);
   
   const handleDeleteNotice = (id: string) => {
