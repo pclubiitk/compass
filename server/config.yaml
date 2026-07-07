@@ -4,14 +4,14 @@
 env: prod # prod/dev
 
 database:
-  host: "localhost"
+  host: "localhost"   # Changed from localhost
   name: "compass"
   # FIXME(prod): Create new user id
   user: "this_is_mjk"
   port: 5432
 
 rabbitmq:
-  host: "localhost"
+  host: "localhost"    # Changed from localhost
   # FIXME(prod): Create new user id and pwd
   user: "this_is_mjk"
   password: "guest"
