@@ -113,7 +113,7 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
     document.head.appendChild(styleSheet);
 
     const savedCenter = JSON.parse(
-      localStorage.getItem("map_center") || "null"
+      localStorage.getItem("map_center") || "null",
     );
     const savedZoom = Number(localStorage.getItem("map_zoom")) || 14;
 
@@ -159,7 +159,7 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
               <circle cx="12" cy="8" r="3.5" fill="white" />
             </svg>
           </div>
-        </div>
+        </div>,
       );
 
       const userMarker = new maplibregl.Marker({
@@ -192,7 +192,7 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
         localStorage.setItem("selected_lon", lng.toString());
         map.flyTo({ center: [lng, lat], zoom: 14 });
         window.dispatchEvent(
-          new CustomEvent("marker-selected", { detail: { lat, lng } })
+          new CustomEvent("marker-selected", { detail: { lat, lng } }),
         );
       });
 
@@ -210,7 +210,7 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
       map.on("moveend", () => {
         localStorage.setItem(
           "map_center",
-          JSON.stringify(map.getCenter().toArray())
+          JSON.stringify(map.getCenter().toArray()),
         );
         localStorage.setItem("map_zoom", map.getZoom().toString());
       });
@@ -237,10 +237,10 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
 
         const startCenter = (savedCenter || FALLBACK_CENTER) as [
           number,
-          number
+          number,
         ];
         setupMap(startCenter);
-      }
+      },
     );
 
     return () => {
@@ -318,7 +318,7 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
             { transform: "scale(1.3)" },
             { transform: "scale(1)" },
           ],
-          { duration: 300, easing: "ease-out" }
+          { duration: 300, easing: "ease-out" },
         );
 
         setTimeout(() => {
@@ -392,7 +392,7 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
         if (err.code === err.PERMISSION_DENIED) {
           setLocationDenied(true);
         }
-      }
+      },
     );
   };
 
@@ -411,7 +411,7 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
         if (err.code === err.PERMISSION_DENIED) {
           setLocationDenied(true);
         }
-      }
+      },
     );
   };
 

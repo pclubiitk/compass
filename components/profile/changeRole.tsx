@@ -66,7 +66,7 @@ export default function ChangeRoleDialog({
     }, 500);
 
     return () => clearTimeout(id);
-  }, [email]);
+  }, [email, BACKEND_URL]);
 
   const makeAdmin = async () => {
     if (!email) return toast.error("Enter an email");
@@ -124,7 +124,7 @@ export default function ChangeRoleDialog({
         {!isSuperAdmin ? (
           <div className="bg-red-50 border border-red-200 rounded-md p-3">
             <p className="text-sm text-red-800 font-medium">
-              You don't have permission to promote users to admin.
+              You don&apos;t have permission to promote users to admin.
             </p>
             <p className="text-xs text-red-700 mt-1">
               Only super admins can perform this action.
