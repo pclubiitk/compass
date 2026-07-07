@@ -20,6 +20,9 @@ func Router(r *gin.Engine) {
 		maps.GET("/reviews/:id/:page", reviewProvider)    // provide the reviews of the location id, most recent 50, if there are more do the pagination
         maps.GET("/location/fuzzy", FuzzySearchLocationsHandler)
         maps.GET("/notice/fuzzy", FuzzySearchNoticesHandler)
+		// WebCal / ICS feed — public, token-authenticated (no session cookie required).
+		// External calendar apps (Google, Apple, Outlook) poll this URL directly.
+		maps.GET("/calendar/:token", calendarFeedHandler)
 
 		// User-protected routes
 		user := maps.Group("/")
@@ -27,6 +30,14 @@ func Router(r *gin.Engine) {
 		user.POST("/review", addReview)                 // add a review in the rabbit mq queue for processing
 		user.GET("/my/reviews", getMyReviews)           // fetch the authenticated user's contributed reviews
 		user.POST("/location", requestLocationAddition) // add a location request in the table
+		// Personal calendar events
+		user.GET("/user-events", getUserEvents)              // fetch all personal events for the authenticated user
+		user.POST("/user-event", createUserEvent)            // create a new personal event
+		user.PUT("/user-event/:id", updateUserEvent)         // update a personal event (owner only)
+		user.DELETE("/user-event/:id", deleteUserEvent)      // delete a personal event (owner only)
+		// Calendar sync token management (authenticated)
+		user.GET("/calendar/token", getCalendarToken)                      // get current token + webcal URL
+		user.POST("/calendar/token/regenerate", regenerateCalendarToken)   // rotate token (invalidates old URL)
 
 		// Next we will add user navigation, and location sharing feature
 		// ...
@@ -47,6 +58,7 @@ func Router(r *gin.Engine) {
 		admin.POST("/remove-admin", demoteAdminHandler)
 		admin.DELETE("/deleteNotice/:id", deleteNotice)
 		admin.PUT("/editNotice/:id", editNotice)
+		admin.PUT("/editLocation/:id", editLocation)
 		// TODO: add a env reload route for admin
 	}
 }

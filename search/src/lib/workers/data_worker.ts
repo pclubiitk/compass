@@ -32,16 +32,16 @@ self.onmessage = async (event: MessageEvent) => {
     case "query":
       self.postMessage({
         status: "query_results",
-        results: check_query(payload, students),
+        results: await check_query(payload, students),
       });
       break;
     case "get_team": {
       const rollNos: string[] = payload.map(String); 
       const teamResults: Student[] = [];
-      rollNos.map((rollNo) => {
-        const found = check_query({ batch: [], hall: [], course: [], dept: [], name: rollNo, gender: "", address: "" }, students);
+      for (const rollNo of rollNos) {
+        const found = await check_query({ batch: [], hall: [], course: [], dept: [], name: rollNo, gender: "", address: "" }, students);
         teamResults.push(...found);
-      });
+      }
       self.postMessage({
         status: "team_results",
         results: teamResults,
@@ -84,12 +84,10 @@ async function initializeData(): Promise<void> {
   }
   if (noLastTimeStamp || Date.now() - time > 1000 * 60 * 60 * 24 * 30) {
     try {
-      // console.log("Fetching data from API...");
       const res = await fetch_student_data();
       if (res === null) {
         throw new Error("Failed to fetch student data from DB");
       }
-      // console.log("Updating local DB with API data...");
       new_students = res.profiles as Student[];
       await update_IDB(res);
     } catch (error) {
@@ -97,20 +95,14 @@ async function initializeData(): Promise<void> {
       cantGetData = true;
     }
     if (new_students !== undefined) {
-      // console.log("New data was fetched, so re-preparing worker...");
       students = new_students;
-    } else {
-      // console.log("Failed to fetch new data, so worker was not re-prepared.");
     }
   } else {
     try {
-      // console.log("Fetching changelog from API...");
       const res = await fetch_changelog(time);
       if (res === null) {
-        // Error occurred, console is in the child function
         return;
       }
-      // Update the db completely if server restarts
       if (res.dropData) {
         update_IDB(res);
       }

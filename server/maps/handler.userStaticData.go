@@ -138,7 +138,7 @@ func incrementalLocationProvider(c *gin.Context) {
 		if err := connections.DB.
 			Model(&model.Location{}).
 			Where("status = ?", model.Approved).
-			Select("location_id", "name", "latitude", "longitude", "updated_at", "location_type").
+			Select("location_id", "name", "latitude", "longitude", "updated_at", "location_type", "layer").
 			Find(&locs).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch locations"})
 			return

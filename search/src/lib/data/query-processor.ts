@@ -1,5 +1,4 @@
 import { Student, Query } from "@/lib/types/data";
-import Fuse from "fuse.js";
 
 type StudentKey = "gender" | "name" | "hall" | "course" | "dept" | "homeTown";
 
@@ -11,6 +10,7 @@ function rollToYear(roll: string): string {
   } else if (roll.slice(0, 2) < "30") {
     return "Y" + roll.slice(0, 2);
   } else return "Other";
+  
 }
 
 function check_bacchas(
@@ -31,33 +31,17 @@ function check_bacchas(
 
 function check_query(query: Query, students: Student[]): Student[] {
   // Goes through the array of students and selects only those that match the query given.
-  // Filtering first on the basis of name (Fuzzy Search)
 
   let filtered_student = students; // Currently unfiltered
 
-  // Applying fuzzy search on the basis of name
   if (query.name) {
-    const fuse = new Fuse(students, {
-      keys: ["name"],
-      threshold: 0.2, // Can change to fine tune later
-    });
-    filtered_student = fuse.search(query.name).map((res) => res.item);
-    // Above only checked fuzziness on name, but user might have entered the roll no.
-    // which wont be in fuzzy of name, so adding the roll no. and username
-
     const lowercased_name = query.name.toLowerCase();
-    filtered_student = filtered_student.concat(
-      students.filter(
-        (s) =>
-          s.rollNo.toLowerCase().includes(lowercased_name) || // Roll number
-          s.email.toLowerCase().startsWith(lowercased_name) // Username
-      )
+    filtered_student = students.filter(
+      (s) =>
+        s.name.toLowerCase().includes(lowercased_name) ||
+        s.rollNo.toLowerCase().includes(lowercased_name) ||
+        s.email.toLowerCase().startsWith(lowercased_name),
     );
-    // Above snippet checks if the students include roll no.
-    // or starts with username, if so add it to the filtered array
-
-    // Removing duplicates by creating a set and then back to array
-    filtered_student = Array.from(new Set(filtered_student));
   }
   filtered_student = filtered_student.filter((student: Student) => {
     let key: keyof Query;

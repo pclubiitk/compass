@@ -70,6 +70,6 @@ services:
       # force Go to use go.mod/go.sum for dependency management
       GO111MODULE: on
     volumes:
-      - ./assets/pfp:/assets/pfp
-      - ./assets/public:/assets/public
-      - ./assets/tmp:/assets/tmp
+      - ./pfp:/assets/pfp
+      - ./public:/assets/public
+      - ./tmp:/assets/tmp
