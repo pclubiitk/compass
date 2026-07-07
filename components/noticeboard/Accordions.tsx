@@ -5,6 +5,15 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { ShareButton } from "./ShareButton";
 
+const notices = [
+  { id: "antaragni" },
+  { id: "sherlock" },
+  { id: "doraemon" },
+  { id: "unicorn" },
+  { id: "dragon" },
+  { id: "pheonix" },
+];
+
 export function Accordions() {
   const [hashId, setHashId] = useState<string | null>(null);
 
@@ -43,7 +52,6 @@ export function Accordions() {
               cardTitle="Antaragni 2025 - Arijit Singh Live!"
               cardDescription="IIT Kanpur proudly presents Antaragni, its annual cultural fest, from 15th-18th October 2025"
               noticePreview="Superstar Arijit Singh performing live!"
-              onDelete={handleDeleteNotice}
               discription={
                 <div className="space-y-2">
                   <p>
@@ -92,7 +100,6 @@ export function Accordions() {
               cardTitle="Cycle Security Alert"
               cardDescription="Increased bicycle thefts reported across campus"
               noticePreview="Renowned detective investigating - security measures enforced"
-              onDelete={handleDeleteNotice}
               discription={
                 <div className="space-y-3">
                   <h4 className="font-semibold text-lg">
@@ -151,7 +158,6 @@ export function Accordions() {
               cardTitle="Special Campus Visitor"
               cardDescription="Famous robotic cat from the future arrives on campus"
               noticePreview="Doraemon offering gadget demonstrations this week"
-              onDelete={handleDeleteNotice}
               discription={
                 <div className="space-y-3">
                   <h4 className="font-semibold text-lg">
@@ -225,7 +231,6 @@ export function Accordions() {
               cardTitle="Magical Pasture Discovery"
               cardDescription="Rare unicorn spotted in campus gardens"
               noticePreview="Enchanted creature requires special handling"
-              onDelete={handleDeleteNotice}
               discription={
                 <div className="space-y-3">
                   <h4 className="font-semibold text-lg">
@@ -282,7 +287,6 @@ export function Accordions() {
               cardTitle="Dragon Nest Alert"
               cardDescription="Juvenile dragon observed near chemistry building"
               noticePreview="Fire safety protocols activated"
-              onDelete={handleDeleteNotice}
               discription={
                 <div className="space-y-3">
                   <h4 className="font-semibold text-lg">
@@ -338,7 +342,6 @@ export function Accordions() {
               cardTitle="OAT Closure Announcement"
               cardDescription="Open Air Theater temporarily closed for magical creature study"
               noticePreview="Rare phoenix sighting at OAT - Institute intervention required"
-              onDelete={handleDeleteNotice}
               discription={
                 <div className="space-y-3">
                   <h4 className="font-semibold text-lg">

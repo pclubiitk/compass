@@ -25,6 +25,10 @@ export default function ChangeRoleDialog({
   onOpenChange: (open: boolean) => void;
   isSuperAdmin?: boolean;
 }) {
+  type AdminPromotionResponse = {
+    error?: string;
+  };
+
   const BACKEND_URL = process.env.NEXT_PUBLIC_AUTH_URL;
   const BACKEND_URL_M = process.env.NEXT_PUBLIC_MAPS_URL;
 
@@ -78,7 +82,7 @@ export default function ChangeRoleDialog({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
-      let data = {};
+      let data: AdminPromotionResponse = {};
 
       try {
         const text = await res.text();
