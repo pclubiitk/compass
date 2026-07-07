@@ -48,6 +48,7 @@ import { LocationSkeleton } from "@/app/components/location/LocationSkeleton";
 import { PhotoGallery } from "@/app/components/location/PhotoGallery";
 import { ReviewDrawer } from "@/app/components/location/ReviewDrawer";
 import { EditLocationModal } from "@/app/components/location/EditLocationModal";
+import { AuthGuard } from "@/components/AuthGuard";
 
 import { toast } from "sonner";
 import { useGContext } from "@/components/ContextProvider";
@@ -55,6 +56,7 @@ import { useGContext } from "@/components/ContextProvider";
 // Types
 interface LocationData {
   id: string;
+  locationId?: string;
   name: string;
   description: string;
   avg_rating: number;
@@ -238,7 +240,10 @@ export default function LocationPage() {
                   </Button>
                   {isAdmin ? (
                     <EditLocationModal
-                      location={location}
+                      location={{
+                        ...location,
+                        locationId: location.locationId || location.id,
+                      }}
                       onLocationUpdated={fetchLocation}
                     >
                       <Button
