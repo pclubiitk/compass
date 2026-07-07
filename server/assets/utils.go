@@ -41,7 +41,7 @@ func ProcessImageBytes(imgBytes []byte) ([]byte, error) {
 	}
 	// Image format converter
 
-	newImage := bimg.NewImage(imgBytes)
+	newImage := bimg.NewImage(imgBytes)  
 	imgType := newImage.Type()
 
 	if imgType == "heic" || imgType == "heif" || imgType == "HEIC" || imgType == "HEIF" {
