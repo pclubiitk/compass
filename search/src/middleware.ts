@@ -5,8 +5,6 @@ import { LOGIN_POINT } from "@/lib/constant";
 export function middleware(request: NextRequest) {
   const host = request.headers.get("host") || "";
 
-  // Local dev: search (:3000) and auth (:3001) are separate ports — cookies
-  // don't line up for middleware. Let the page load; client checks the API.
   if (host.startsWith("localhost")) {
     return NextResponse.next();
   }
