@@ -28,9 +28,10 @@ function LoginPageHolder() {
 
   // To redirect to the initiator page setup, extract the url of previous page
   const searchParams = useSearchParams();
+  const callbackFromQuery =
+    searchParams.get("callbackUrl") || searchParams.get("next");
   const callbackUrl =
-    searchParams.get("callbackUrl") ||
-    searchParams.get("next") ||
+    callbackFromQuery ||
     process.env.NEXT_PUBLIC_PROFILE_URL ||
     "/";
 
@@ -43,9 +44,9 @@ function LoginPageHolder() {
   }, [router]);
 
   useEffect(() => {
-    if (isGlobalLoading || isLoggedIn !== true) return;
+    if (isGlobalLoading || isLoggedIn !== true || !callbackFromQuery) return;
     handleRedirect(callbackUrl);
-  }, [callbackUrl, handleRedirect, isLoggedIn, isGlobalLoading]);
+  }, [callbackUrl, callbackFromQuery, handleRedirect, isLoggedIn, isGlobalLoading]);
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();

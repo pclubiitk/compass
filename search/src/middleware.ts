@@ -2,12 +2,19 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export function middleware(request: NextRequest) {
+  const host = request.headers.get("host") || "";
+
+  // Local dev: search (:3000) and auth (:3001) are separate ports — cookies
+  // don't line up for middleware. Let the page load; client checks the API.
+  if (host.startsWith("localhost")) {
+    return NextResponse.next();
+  }
+
   const hasSession =
     request.cookies.has("auth_token") ||
     request.cookies.has("refresh_token");
 
   if (!hasSession) {
-    const host = request.headers.get("host") || "";
     let loginUrlBase = "http://localhost:3001/login";
 
     if (host.includes("pclub.in")) {
