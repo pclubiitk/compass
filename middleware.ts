@@ -32,10 +32,10 @@ export function middleware(request: NextRequest) {
   // If no session cookie and they are trying to access a protected page, redirect to login
   if (!hasSession && !isPublicAuthPath) {
     const authDomain = process.env.NEXT_PUBLIC_AUTH_DOMAIN || "";
-    const loginBase = authDomain ? `${authDomain}/login` : "/login";
+    //const loginBase = authDomain ? `${authDomain}/login` : "/login";
     const callbackUrl = request.url;
     return NextResponse.redirect(
-      new URL(`${loginBase}?callbackUrl=${encodeURIComponent(callbackUrl)}`, request.url)
+      `${authDomain}/login?callbackUrl=${encodeURIComponent(callbackUrl)}`
     );
   }
 
@@ -48,7 +48,12 @@ export function middleware(request: NextRequest) {
         !pathname.startsWith("/_next") && !pathname.startsWith("/api") &&
         !pathname.startsWith("/public")) {
       // Redirect to login if accessing non-auth routes on auth subdomain
-      return NextResponse.redirect(new URL("/login", request.url));
+      const authDomain = process.env.NEXT_PUBLIC_AUTH_DOMAIN || "";
+      const callbackUrl = request.url;
+      //return NextResponse.redirect(new URL("/login", request.url));
+      return NextResponse.redirect(
+      `${authDomain}/login?callbackUrl=${encodeURIComponent(callbackUrl)}`
+    );
     }
     return NextResponse.next();
   }
@@ -76,6 +81,6 @@ export const config = {
      * - favicon.ico (favicon file)
      * - public folder
      */
-    "/((?!api|_next/static|_next/image|favicon.ico|public).*)",
+    "/((?!api|_next/static|_next/image|manifest.json|favicon.ico|public).*)",
   ],
 };
