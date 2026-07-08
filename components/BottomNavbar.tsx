@@ -12,10 +12,10 @@ export function BottomNav() {
   const { isLoggedIn, isGlobalLoading } = useGContext();
 
   const navItems = [
-    { icon: Search, label: "Search", path: "/" },
-    { icon: Megaphone, label: "Noticeboard", path: "/noticeboard" },
+    { icon: Search, label: "Search", path: "/maps" },
+    { icon: Megaphone, label: "Noticeboard", path: "/maps/noticeboard" },
     { icon: Plus, label: "Add Location", path: "" },
-    { icon: User, label: "Profile", path: "/profile" },
+    { icon: User, label: "Profile", path: "/" },
   ];
 
   const handleClick = async (
@@ -33,11 +33,11 @@ export function BottomNav() {
         return;
       }
 
-      if (pathname !== "/") {
+      if (pathname !== "/maps") {
         toast.error(" Please select a location on the map first.", {
           duration: 2000,
         });
-        router.push("/");
+        router.push("/maps");
         return;
       }
 
