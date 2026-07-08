@@ -8,7 +8,21 @@ const nextConfig: NextConfig = {
     // dangerouslyAllowLocalIP: true,
     domains: ["th.bing.com", "www.iitk.ac.in", "localhost", "shantsagar"],
   },
-  
+  async rewrites(){
+
+    return [
+      {
+        source: "/students/:path*",
+        destination: "http://localhost:3000/students/:path*",
+      }
+
+
+    ]
+  }
+
+
+
 };
+
 
 export default nextConfig;

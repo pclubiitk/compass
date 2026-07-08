@@ -188,7 +188,7 @@ export function SocialProfileCard({
               variant="outline"
               size="icon"
               className="h-12 w-12 shadow-md hover:shadow-lg transition-all hover:scale-105"
-              onClick={() => router.push("/")}
+              onClick={() => router.push("/maps")}
             >
               <Map className="h-5 w-5" />
             </Button>
