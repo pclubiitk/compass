@@ -7,7 +7,7 @@ import {
   LocationCardProps,
 } from "@/components/profile/LocationCard";
 import ReviewCard from "@/app/components/user/Contribution_ReviewCard";
-import ComingSoon from "../ui/ComingSoon";
+
 import { useGContext } from "@/components/ContextProvider";
 
 // Review shape used by ReviewCard (match property names exactly)
