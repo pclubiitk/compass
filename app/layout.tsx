@@ -4,7 +4,15 @@ import { GlobalContextProvider } from "@/components/ContextProvider";
 import { GlobalLoader } from "@/components/GlobalLoader";
 import { ThemeProvider } from "@/components/theme-provider";
 import SWRProvider from "./SWRProvider";
+import type { Metadata } from "next";
+import InstallPWA from "@/components/profile/InstallPWA";
 
+
+export const metadata: Metadata = {
+  title: "Student Search and Compass",
+  description: "A web application for IITK students to manage their academic and personal life.",
+  manifest: "/manifest.json",
+};  
 export default function RootLayout({
   children,
 }: {
@@ -24,10 +32,12 @@ export default function RootLayout({
               <main>
                 <GlobalLoader />
                 {children}
+                <InstallPWA />
               </main>
             </GlobalContextProvider>
           </ThemeProvider>
           <Toaster />
+          
         </SWRProvider>
       </body>
     </html>

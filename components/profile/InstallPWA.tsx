@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
 
 // Define the type for BeforeInstallPromptEvent
 interface BeforeInstallPromptEvent extends Event {
@@ -57,11 +58,13 @@ export default function InstallPWA() {
   if (!installPrompt) return null;
 
   return (
-    <button 
+    <Button 
+      variant="outline"
       onClick={installApp}
-      className="fixed bottom-4 right-4 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg shadow-lg transition-colors"
+      className="fixed bottom-4 right-4 text:white shadow-md hover:shadow-lg transition-all hover:scale-105 hover:bg-red-50 dark:hover:bg-red-950/20"
+      //className="h-12 w-12 shadow-md hover:shadow-lg transition-all hover:scale-105"
     >
       Install App
-    </button>
+    </Button>
   );
 }
