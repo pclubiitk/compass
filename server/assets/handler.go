@@ -9,12 +9,13 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
+
+const maxImageSize = 10 << 20 // 10 MB
 
 func uploadAsset(c *gin.Context) {
 	var req ImageUploadRequest
@@ -34,6 +35,10 @@ func uploadAsset(c *gin.Context) {
 		Submitted: false,
 	}
 	file := req.File
+	if file.Size > maxImageSize {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Image must be less than 10 MB"})
+		return
+	}
 	cwd, _ := os.Getwd()
 	// Compress and convert the image to webp
 	if img, err := CncImage(file); err != nil {

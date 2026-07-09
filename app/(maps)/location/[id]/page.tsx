@@ -12,6 +12,7 @@ import {
   MapPin,
   Clock,
   Phone,
+  Pencil
 } from "lucide-react";
 import { motion } from "framer-motion";
 import Image from "next/image";
@@ -46,12 +47,16 @@ import ReviewCard from "@/app/components/user/Location_ReviewCard";
 import { LocationSkeleton } from "@/app/components/location/LocationSkeleton";
 import { PhotoGallery } from "@/app/components/location/PhotoGallery";
 import { ReviewDrawer } from "@/app/components/location/ReviewDrawer";
+import { EditLocationModal } from "@/app/components/location/EditLocationModal";
+import { AuthGuard } from "@/components/AuthGuard";
 
 import { toast } from "sonner";
+import { useGContext } from "@/components/ContextProvider";
 
 // Types
 interface LocationData {
   id: string;
+  locationId?: string;
   name: string;
   description: string;
   avg_rating: number;
@@ -89,6 +94,9 @@ export default function LocationPage() {
   const [reviews, setReviews] = useState<ReviewData[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const { isAdmin } = useGContext();
+  console.log(isAdmin);
+  console.log("location:",location);
   const fetchLocation = async () => {
     if (!id) return;
     try {
@@ -230,6 +238,23 @@ export default function LocationPage() {
                   <Button variant="ghost" size="icon" className="rounded-full">
                     <Heart className="w-5 h-5" />
                   </Button>
+                  {isAdmin ? (
+                    <EditLocationModal
+                      location={{
+                        ...location,
+                        locationId: location.locationId || location.id,
+                      }}
+                      onLocationUpdated={fetchLocation}
+                    >
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="rounded-full"
+                      >
+                        <Pencil className="w-5 h-5" />
+                      </Button>
+                    </EditLocationModal>
+                  ) : null}
                 </div>
               </div>
 
@@ -340,6 +365,7 @@ export default function LocationPage() {
           </div>
 
           {/* Sidebar (Reviews) */}
+          <AuthGuard callbackUrl={`/location/${id as string}`}>
           <div className="lg:col-span-2 mt-6 lg:mt-0">
             <div className="rounded-xl shadow-sm border bg-white dark:bg-zinc-900 dark:border-zinc-800 p-4 md:p-6 sticky top-4">
               <div className="flex justify-between items-center mb-6">
@@ -382,6 +408,7 @@ export default function LocationPage() {
               </div>
             </div>
           </div>
+          </AuthGuard>
         </div>
       </motion.div>
     </div>

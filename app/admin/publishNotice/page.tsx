@@ -9,8 +9,8 @@ export const metadata: Metadata = {
 export default function NewNoticePage() {
 
   return (
-    <>
+    <Suspense fallback={<div>Loading...</div>}>
       <PublishForm />
-    </>
+    </Suspense>
   );
 }

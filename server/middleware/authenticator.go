@@ -4,11 +4,13 @@ import (
 	"compass/connections"
 	"compass/model"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"gorm.io/gorm"
 )
@@ -23,6 +25,17 @@ var authConfig = AuthConfig{
 	// The Secure attribute is a crucial cookie configuration setting that instructs a web browser to send a cookie only over an encrypted HTTPS connection
 	CookieHTTPOnly: true, // Prevent XSS
 	SameSiteMode:   http.SameSiteLaxMode,
+}
+
+func init() {
+	secret := authConfig.JWTSecretKey
+	if secret == "" {
+		logrus.Errorf("CRITICAL: JWT secret is empty! Authentication will fail.")
+	} else if strings.Contains(secret, "xxx") || len(secret) < 8 {
+		logrus.Warnf("JWT secret looks like a placeholder. Tokens may not verify correctly.")
+	} else {
+		logrus.Infof("JWT secret loaded: length=%d chars", len(secret))
+	}
 }
 
 // TODO: Extract the basic token extraction and verification out and keep just the user part

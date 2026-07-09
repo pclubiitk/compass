@@ -64,15 +64,14 @@ export function ReviewDrawer({
           const imagePayload = new FormData();
           imagePayload.append("file", image);
 
-          // Asset server is on port 8082, Maps is on 8081
-          const assetUrl =
-            process.env.NEXT_PUBLIC_MAPS_URL?.replace(":8081", ":8082") ||
-            "http://localhost:8082";
-          const imgRes = await fetch(`${assetUrl}/assets`, {
-            method: "POST",
-            credentials: "include",
-            body: imagePayload,
-          });
+          const imgRes = await fetch(
+            `${process.env.NEXT_PUBLIC_ASSET_URL}/assets`,
+            {
+              method: "POST",
+              credentials: "include",
+              body: imagePayload,
+            },
+          );
 
           if (!imgRes.ok) {
             const errorText = await imgRes.text();
@@ -161,6 +160,7 @@ export function ReviewDrawer({
         <label className="text-sm font-medium block">
           Add Photo (Optional)
         </label>
+        <p className="text-xs text-muted-foreground">10 MB</p>
         <div className="flex items-center gap-4">
           <Button
             type="button"
@@ -176,7 +176,16 @@ export function ReviewDrawer({
             type="file"
             accept="image/*"
             className="hidden"
-            onChange={(e) => setImage(e.target.files?.[0] || null)}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+              if (file.size > 10 * 1024 * 1024) {
+                toast.error("File must be less than 10 MB.");
+                e.target.value = "";
+                return;
+              }
+              setImage(file);
+            }}
           />
         </div>
       </div>
