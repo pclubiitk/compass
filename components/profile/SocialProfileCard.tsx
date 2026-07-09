@@ -85,16 +85,22 @@ export function SocialProfileCard({
     }
   };
 
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 2097152) {
-      toast("File is too big!");
-      return;
-    }
+    if (file.size > MAX_FILE_SIZE) {
+    toast("File size must be less than 10 MB.");
+    return;
+  }
     setSelectedImage(file);
     handleUpload(file);
   };
+
+  const searchUiUrl = (
+    process.env.NEXT_PUBLIC_SEARCH_UI_URL || "https://search.pclub.in"
+  ).trim();
 
   const logOut = async () => {
     try {
@@ -169,12 +175,9 @@ export function SocialProfileCard({
             variant="outline"
             size="icon"
             className="h-12 w-12 shadow-md hover:shadow-lg transition-all hover:scale-105"
-            onClick={() =>
-              router.push(
-                process.env.NEXT_PUBLIC_SEARCH_UI_URL ||
-                  "https://search.pclub.in",
-              )
-            }
+            onClick={() => {
+              window.location.href = searchUiUrl;
+            }}
           >
             <Search className="h-5 w-5" />
           </Button>
@@ -202,12 +205,9 @@ export function SocialProfileCard({
             variant="outline"
             size="icon"
             className="h-12 w-12"
-            onClick={() =>
-              router.push(
-                (process.env.NEXT_PUBLIC_SEARCH_UI_URL ||
-                  "https://search.pclub.in") + "/info",
-              )
-            }
+            onClick={() => {
+              window.location.href = `${searchUiUrl}/info`;
+            }}
           >
             <Info />
           </Button>

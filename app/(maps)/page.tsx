@@ -1,41 +1,43 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
 import { useLocations } from "@/app/hooks/useLocations";
-import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogAction,
-  AlertDialogCancel,
-} from "@/components/ui/alert-dialog";
+import type maplibregl from "maplibre-gl";
+
+function getSearchMarkers(): maplibregl.Marker[] {
+  if (typeof window === "undefined") return [];
+  if (!window.searchMarkerRef) {
+    window.searchMarkerRef = { current: [] };
+  } else if (!Array.isArray(window.searchMarkerRef.current)) {
+    window.searchMarkerRef.current = [];
+  }
+  return window.searchMarkerRef.current;
+}
+
+function clearSearchMarkers() {
+  getSearchMarkers().forEach((marker) => {
+    try {
+      marker.remove();
+    } catch {
+      // ignore
+    }
+  });
+  window.searchMarkerRef!.current = [];
+}
 
 export default function Home() {
   const [results, setResults] = useState<any[]>([]); // storing results for dropdown
   const { isValidating } = useLocations();
-  const router = useRouter();
   const [query, setQuery] = useState("");
-  const [loginDialogOpen, setLoginDialogOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const skipNextSearch = useRef(false);
+  const lastSearchMarker = useRef<any>(null);
+
   useEffect(() => {
     setMounted(true);
-  }, []);
-
-  // Ensure markerRef is initialized as a ref object with current property
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      if (!window.markerRef) {
-        window.markerRef = { current: [] };
-      } else if (!window.markerRef.current) {
-        window.markerRef.current = [];
-      }
-    }
   }, []);
 
   // Fuzzy search function with caching
@@ -56,7 +58,7 @@ export default function Home() {
     const res = await fetch(
       `${
         process.env.NEXT_PUBLIC_MAPS_URL
-      }/api/maps/location/fuzzy?query=${encodeURIComponent(searchQuery)}`
+      }/api/maps/location/fuzzy?query=${encodeURIComponent(searchQuery)}`,
     );
     const data = await res.json();
     const results = data.results || [];
@@ -79,26 +81,19 @@ export default function Home() {
   // Search handler
   const handleSearch = async () => {
     if (!window || !query.trim()) return;
-
     const mapRef = window.mapRef;
+    if (!mapRef?.current) return;
 
-    // Clearing previous markers if needed
-    if (
-      window.markerRef?.current &&
-      Array.isArray(window.markerRef.current) &&
-      window.markerRef.current.length
-    ) {
-      window.markerRef.current.forEach((m: any) => {
-        try {
-          m.remove();
-        } catch {}
-      });
-      // Resetting to empty array
-      window.markerRef.current = [];
+    // clear previous search markers
+    if (lastSearchMarker.current) {
+      try {
+        lastSearchMarker.current.remove();
+      } catch {}
+      lastSearchMarker.current = null;
     }
 
     const coordMatch = query.match(
-      /^\s*(-?\d+(\.\d+)?),\s*(-?\d+(\.\d+)?)\s*$/
+      /^\s*(-?\d+(\.\d+)?),\s*(-?\d+(\.\d+)?)\s*$/,
     );
 
     if (coordMatch) {
@@ -107,14 +102,18 @@ export default function Home() {
 
       const maplibregl = (await import("maplibre-gl")).default;
 
-      const marker = new maplibregl.Marker({ color: "#f00" })
+      lastSearchMarker.current = new maplibregl.Marker({ color: "#f00" })
         .setLngLat([lng, lat])
         .addTo(mapRef.current);
 
-      window.markerRef.current.push(marker);
-
       setTimeout(() => {
-        mapRef.current.flyTo({ center: [lng, lat], zoom: 14 });
+        mapRef.current.flyTo({
+          center: [lng, lat],
+          zoom: 16,
+          speed: 1.2,
+          curve: 1.5,
+          essential: true,
+        });
       }, 50);
 
       setResults([]);
@@ -130,6 +129,11 @@ export default function Home() {
       return;
     }
 
+    if (skipNextSearch.current) {
+      skipNextSearch.current = false;
+      return;
+    }
+
     const timeout = setTimeout(() => {
       handleSearch();
     }, 300);
@@ -139,36 +143,33 @@ export default function Home() {
 
   // Handling selecting a location from dropdown
   const handleSelect = async (loc: any) => {
+    skipNextSearch.current = true;
     setQuery(loc.name); // update input
     setResults([]); // hide dropdown
 
     const mapRef = window.mapRef;
     if (!mapRef || !mapRef.current) return;
 
-    if (
-      window.markerRef?.current &&
-      Array.isArray(window.markerRef.current) &&
-      window.markerRef.current.length
-    ) {
-      window.markerRef.current.forEach((m: any) => {
-        try {
-          m.remove();
-        } catch {
-          // ignore
-        }
-      });
-      window.markerRef.current = [];
+    // Remove previous search pin
+    if (lastSearchMarker.current) {
+      try {
+        lastSearchMarker.current.remove();
+      } catch {}
+      lastSearchMarker.current = null;
     }
 
     const maplibregl = (await import("maplibre-gl")).default;
-    const marker = new maplibregl.Marker({ color: "#f00" })
+    lastSearchMarker.current = new maplibregl.Marker({ color: "#f00" })
       .setLngLat([loc.longitude, loc.latitude])
       .addTo(mapRef.current);
 
-    // push into array (consistent)
-    window.markerRef.current.push(marker);
-
-    mapRef.current.flyTo({ center: [loc.longitude, loc.latitude], zoom: 14 });
+    mapRef.current.flyTo({
+      center: [loc.longitude, loc.latitude],
+      zoom: 16,
+      speed: 1.2,
+      curve: 1.5,
+      essential: true,
+    });
   };
 
   // TODO: Fall back of nominator api, but first need to verify if it accounts for the user or the server (the api limits?)
@@ -184,62 +185,54 @@ export default function Home() {
 
   return (
     <>
-      {/* TODO: can extract the login dialog pop up, as it will be required at multiple place. */}
-      {/* Login Required Dialog */}
-      <AlertDialog open={loginDialogOpen} onOpenChange={setLoginDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Login Required</AlertDialogTitle>
-            <AlertDialogDescription>
-              You need to log in to add a new location.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                setLoginDialogOpen(false);
-                router.push("/login?next=/");
-              }}
-            >
-              Log In
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
       {/* Search Bar Overlay */}
-      <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 w-[90%] max-w-md flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-md">
-        <Input
-          placeholder="Search by name or coordinates"
-          className="flex-1 border-none text-black placeholder:text-gray-500 focus-visible:ring-0 focus-visible:ring-offset-0"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-        />
-        <Button size="icon" variant="ghost" onClick={handleSearch}>
-          <Search className="h-5 w-5 text-gray-500" />
-        </Button>
+      <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 w-[90%] max-w-md flex flex-col gap-1">
+        <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-md">
+          <Input
+            placeholder="Search by name or coordinates"
+            className="flex-1 border-none text-black placeholder:text-gray-500 focus-visible:ring-0 focus-visible:ring-offset-0"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+          />
+          <Button size="icon" variant="ghost" onClick={handleSearch}>
+            <Search className="h-5 w-5 text-gray-500" />
+          </Button>
+        </div>
+        {/* Dropdown with search results */}
+        {results.length > 0 && (
+          <div className="bg-white max-h-72 overflow-y-auto rounded-xl shadow-lg border border-gray-100 mt-1">
+            {results.map((loc) => (
+              <div
+                key={loc.locationId || loc.id}
+                className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b last:border-b-0 border-gray-100 transition-colors"
+                onClick={() => handleSelect(loc)}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-gray-800 text-sm">
+                    {loc.name}
+                  </span>
+                  {(loc.category || loc.locationType || loc.location_type) && (
+                    <span className="text-[10px] bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full font-medium ml-2 uppercase tracking-wide">
+                      {loc.category || loc.locationType || loc.location_type}
+                    </span>
+                  )}
+                </div>
+                {loc.description && (
+                  <p className="text-xs text-gray-500 line-clamp-1 mt-1">
+                    {loc.description}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Sync indicator */}
       {mounted && isValidating && (
         <div className="absolute bottom-4 right-4 text-xs text-gray-600 bg-white/80 px-3 py-1 rounded-md shadow">
           Syncing latest data…
-        </div>
-      )}
-      {/* Dropdown with search results */}
-      {results.length > 0 && (
-        <div className="bg-white max-h-60 overflow-auto rounded shadow-lg border">
-          {results.map((loc) => (
-            <div
-              key={loc.locationId}
-              className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-              onClick={() => handleSelect(loc)}
-            >
-              {loc.name}
-            </div>
-          ))}
         </div>
       )}
     </>
