@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Pen, LogOut, Crown, Users } from "lucide-react";
+import { Pen, LogOut, Crown, Users, Images } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useGContext } from "@/components/ContextProvider";
@@ -79,6 +79,17 @@ export function AdminCard({
           onOpenChange={setAdminsListOpen}
           isSuperAdmin={isSuperAdmin}
         />
+
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-12 w-12 shadow-md hover:shadow-lg transition-all hover:scale-105"
+          onClick={() => router.push("/gallery")}
+          title="View Gallery"
+        >
+          <Images className="h-5 w-5" />
+        </Button>
+
 
         <Button
           variant="outline"
