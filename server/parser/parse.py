@@ -80,11 +80,7 @@ for feature in features:
             lon,                      # longitude
             "location_type",            # location_type
             'approved',               # status
-<<<<<<< Updated upstream
-            "d5aaadb8-f57b-4e3c-9185-96424202c3fb", # contributed_by
-=======
             "cf0743fa-33c8-4764-9b8a-b503322cd5e6", # contributed_by
->>>>>>> Stashed changes
             0.0,                      # average_rating
             0                         # review_count
         ))
