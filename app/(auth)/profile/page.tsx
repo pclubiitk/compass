@@ -188,7 +188,7 @@ export default function ProfilePage() {
             onUpdate={fetchProfile}
           />
           <ContributionsCard
-            locations={[userData.ContributedLocations]}
+            locations={userData.ContributedLocations ?? []}
             reviews={userData.ContributedReview}
             notices={userData.ContributedNotice}
           />
