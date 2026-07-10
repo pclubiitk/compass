@@ -38,10 +38,6 @@ export default function Home() {
 
   useEffect(() => {
     setMounted(true);
-<<<<<<< HEAD
-    getSearchMarkers();
-=======
->>>>>>> pr-99-fuzzy-search
   }, []);
 
   // Fuzzy search function with caching
@@ -88,9 +84,6 @@ export default function Home() {
     const mapRef = window.mapRef;
     if (!mapRef?.current) return;
 
-<<<<<<< HEAD
-    clearSearchMarkers();
-=======
     // clear previous search markers
     if (lastSearchMarker.current) {
       try {
@@ -98,7 +91,6 @@ export default function Home() {
       } catch {}
       lastSearchMarker.current = null;
     }
->>>>>>> pr-99-fuzzy-search
 
     const coordMatch = query.match(
       /^\s*(-?\d+(\.\d+)?),\s*(-?\d+(\.\d+)?)\s*$/,
@@ -114,11 +106,6 @@ export default function Home() {
         .setLngLat([lng, lat])
         .addTo(mapRef.current);
 
-<<<<<<< HEAD
-      getSearchMarkers().push(marker);
-
-=======
->>>>>>> pr-99-fuzzy-search
       setTimeout(() => {
         mapRef.current.flyTo({
           center: [lng, lat],
@@ -163,9 +150,6 @@ export default function Home() {
     const mapRef = window.mapRef;
     if (!mapRef || !mapRef.current) return;
 
-<<<<<<< HEAD
-    clearSearchMarkers();
-=======
     // Remove previous search pin
     if (lastSearchMarker.current) {
       try {
@@ -173,18 +157,12 @@ export default function Home() {
       } catch {}
       lastSearchMarker.current = null;
     }
->>>>>>> pr-99-fuzzy-search
 
     const maplibregl = (await import("maplibre-gl")).default;
     lastSearchMarker.current = new maplibregl.Marker({ color: "#f00" })
       .setLngLat([loc.longitude, loc.latitude])
       .addTo(mapRef.current);
 
-<<<<<<< HEAD
-    getSearchMarkers().push(marker);
-
-    mapRef.current.flyTo({ center: [loc.longitude, loc.latitude], zoom: 14 });
-=======
     mapRef.current.flyTo({
       center: [loc.longitude, loc.latitude],
       zoom: 16,
@@ -192,7 +170,6 @@ export default function Home() {
       curve: 1.5,
       essential: true,
     });
->>>>>>> pr-99-fuzzy-search
   };
 
   // TODO: Fall back of nominator api, but first need to verify if it accounts for the user or the server (the api limits?)
