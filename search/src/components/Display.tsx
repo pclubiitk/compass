@@ -16,7 +16,8 @@ interface DisplayProps {
 }
 
 function Display(props: DisplayProps) {
-  const { isLoggedIn, profileVisibility, isPLseason } = useGContext();
+  const { isLoggedIn, profileVisibility, isPLseason, isGlobalLoading } =
+    useGContext();
   // Current position (number of cards)
   const [pos, setPos] = useState(50);
   // Make students' card objects at the start form the data
@@ -66,6 +67,9 @@ function Display(props: DisplayProps) {
       window.removeEventListener("scroll", throttledLoadMore);
     };
   }, [pos, students.length]);
+
+  // Wait for auth check before redirecting to login
+  if (isGlobalLoading) return null;
 
   // If logged out, redirect to login
   if (!isLoggedIn) return <RedirectIn5Sec />;

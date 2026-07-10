@@ -22,6 +22,7 @@ import type {
   TWorkingHours,
 } from "@/calendar/types";
 import { ENTITIES } from "@/calendar/entities";
+import { getUserEvents } from "@/calendar/requests";
 
 interface ICalendarContext {
   selectedDate: Date;
@@ -38,6 +39,9 @@ interface ICalendarContext {
   setVisibleHours: Dispatch<SetStateAction<TVisibleHours>>;
   events: IEvent[];
   setLocalEvents: Dispatch<SetStateAction<IEvent[]>>;
+  addLocalEvent: (event: IEvent) => void;
+  removeLocalEvent: (eventId: string) => void;
+  updateLocalEvent: (event: IEvent) => void;
   view: TCalendarView;
   setView: Dispatch<SetStateAction<TCalendarView>>;
   // Loading state for async event fetching
@@ -82,33 +86,77 @@ export function CalendarProvider({
   const [isLoading, setIsLoading] = useState(false);
 
   // Local events state - allows for optimistic updates
-  // TODO: Look into the local fetching and caching logic
   const [localEvents, setLocalEvents] = useState<IEvent[]>(events);
 
-  // Sync local events when prop changes
+  // When the notices prop changes (e.g. parent fetched fresh notices),
+  // replace only the notice portion and keep personal events intact.
   useEffect(() => {
-    setLocalEvents(events);
+    setLocalEvents(prev => {
+      const personalEvents = prev.filter(e => e.isUserEvent);
+      return [...events, ...personalEvents];
+    });
   }, [events]);
+
+  // On mount, fetch personal user events and merge them in.
+  useEffect(() => {
+    getUserEvents()
+      .then(userEvts => {
+        if (userEvts.length > 0) {
+          setLocalEvents(prev => {
+            // Remove any stale personal events then add fresh ones
+            const noticeEvents = prev.filter(e => !e.isUserEvent);
+            return [...noticeEvents, ...userEvts];
+          });
+        }
+      })
+      .catch(() => { /* user not logged in — ignore */ });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // intentionally run once on mount only
 
   const handleSelectDate = (date: Date | undefined) => {
     if (!date) return;
     setSelectedDate(date);
   };
 
-  // Refresh events from server
+  // Refresh events from server (notices + personal events merged)
   const refreshEvents = useCallback(async () => {
-    if (!fetchEvents) return;
-
     setIsLoading(true);
     try {
-      const freshEvents = await fetchEvents();
-      setLocalEvents(freshEvents);
+      // Fetch fresh notices (passed-in fetchEvents function)
+      const freshNotices = fetchEvents ? await fetchEvents() : [];
+
+      // Fetch personal user events — silently ignored if user not logged in
+      let freshUserEvents: IEvent[] = [];
+      try {
+        freshUserEvents = await getUserEvents();
+      } catch {
+        // Not logged in or network error — skip personal events gracefully
+      }
+
+      setLocalEvents([...freshNotices, ...freshUserEvents]);
     } catch (error) {
       console.error("Failed to refresh events:", error);
     } finally {
       setIsLoading(false);
     }
   }, [fetchEvents]);
+
+  // Optimistic helpers for immediate UI feedback
+  const addLocalEvent = useCallback((event: IEvent) => {
+    setLocalEvents(prev => [...prev, event]);
+  }, []);
+
+  const removeLocalEvent = useCallback((eventId: string) => {
+    setLocalEvents(prev => prev.filter(e => e.userEventId !== eventId && String(e.id) !== eventId));
+  }, []);
+
+  const updateLocalEvent = useCallback((updated: IEvent) => {
+    setLocalEvents(prev =>
+      prev.map(e =>
+        e.userEventId === updated.userEventId && updated.userEventId ? updated : e
+      )
+    );
+  }, []);
 
   return (
     <CalendarContext.Provider
@@ -128,6 +176,9 @@ export function CalendarProvider({
         entities: ENTITIES,
         events: localEvents,
         setLocalEvents,
+        addLocalEvent,
+        removeLocalEvent,
+        updateLocalEvent,
         isLoading,
         refreshEvents,
       }}

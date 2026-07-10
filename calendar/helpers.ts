@@ -120,17 +120,38 @@ export function getEventsCount(
   date: Date,
   view: TCalendarView
 ): number {
+  // For day view: count events that START on this day OR span across it
+  if (view === "day") {
+    return events.filter(event => {
+      const start = startOfDay(toDate(event.startDate));
+      const end = startOfDay(toDate(event.endDate));
+      const day = startOfDay(date);
+      return day >= start && day <= end;
+    }).length;
+  }
+
+  // For week view: count events that overlap with this week
+  if (view === "week") {
+    return events.filter(event => {
+      const eventStart = toDate(event.startDate);
+      const eventEnd = toDate(event.endDate);
+      const weekStart = startOfWeek(date);
+      const weekEnd = endOfWeek(date);
+      return eventStart <= weekEnd && eventEnd >= weekStart;
+    }).length;
+  }
+
+  // For month/agenda/year views: compare by startDate granularity is sufficient
   const compareFns = {
     agenda: isSameMonth,
     year: isSameYear,
-    day: isSameDay,
-    week: isSameWeek,
     month: isSameMonth,
-  };
+  } as const;
 
-  return events.filter(event =>
-    compareFns[view](toDate(event.startDate), date)
-  ).length;
+  const fn = compareFns[view as keyof typeof compareFns];
+  if (fn) return events.filter(event => fn(toDate(event.startDate), date)).length;
+
+  return 0;
 }
 
 /* ============================================================
@@ -404,6 +425,14 @@ export function getMonthCellEvents(
     .sort((a, b) => {
       if (a.isMultiDay && !b.isMultiDay) return -1;
       if (!a.isMultiDay && b.isMultiDay) return 1;
-      return a.position - b.position;
+      
+      // Push overflow events (position: -1) to the bottom of the list
+      const posA = a.position === -1 ? 999 : a.position;
+      const posB = b.position === -1 ? 999 : b.position;
+      
+      if (posA !== posB) return posA - posB;
+      
+      // If both are overflow (or somehow have same position), preserve time sequence
+      return toDate(a.startDate).getTime() - toDate(b.startDate).getTime();
     });
 }

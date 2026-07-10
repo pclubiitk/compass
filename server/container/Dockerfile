@@ -15,10 +15,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   ca-certificates \
   && rm -rf /var/lib/apt/lists/*
 
-#Building latest libheif (v1.18.2)
-#Installs HEIF and video codec development libraries: libde265-dev, libx265-dev.
-#clones and builds libheif v1.18.2 from source. This is essential for HEIF binding
-RUN git clone --depth 1 --branch v1.18.2 https://github.com/strukturag/libheif.git /tmp/libheif \
+# Build libheif C library — version must match github.com/strukturag/libheif in go.mod
+RUN git clone --depth 1 --branch v1.23.0 https://github.com/strukturag/libheif.git /tmp/libheif \
   && cd /tmp/libheif \
   && mkdir build && cd build \
   && cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local \
@@ -57,9 +55,9 @@ RUN ldconfig
 COPY --from=builder /app/server /server
 COPY ./config.yaml /config.yaml
 COPY ./secret.yml /secret.yml
-COPY ./assets/pfp /assets/pfp
-COPY ./assets/public /assets/public
-COPY ./assets/tmp /assets/tmp
+COPY ./pfp /assets/pfp
+COPY ./public /assets/public
+COPY ./tmp /assets/tmp
 
 EXPOSE 8080 8081 8082 8083
 
