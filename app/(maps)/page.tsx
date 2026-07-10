@@ -8,6 +8,7 @@ import type { CircleLayerSpecification, SymbolLayerSpecification } from "maplibr
 import type { FeatureCollection } from "geojson";
 import { useLocations, type Location } from "@/app/hooks/useLocations";
 import "maplibre-gl/dist/maplibre-gl.css";
+import { useTheme } from "next-themes";
 
 const IITK_CENTER = {
   longitude: 80.23273232675717,
@@ -15,13 +16,15 @@ const IITK_CENTER = {
   zoom: 14,
 };
 
-const LAYER_COLORS: Record<number, string> = {
-  1: "#029987",
-  2: "#123456",
-  3: "#530299",
-  4: "#0be3ff",
-  5: "#52ff63",
-};
+// Use for testing
+// const LAYER_COLORS: Record<number, string> = {
+//   1: "#029987",
+//   2: "#123456",
+//   3: "#530299",
+//   4: "#0be3ff",
+//   5: "#52ff63",
+// };
+
 
 function maxLayerForZoom(zoom: number): number {
   if (zoom > 17) return 5;
@@ -31,7 +34,7 @@ function maxLayerForZoom(zoom: number): number {
   return 1;
 }
 
-function buildCircleLayer(maxVisibleLayer: number): CircleLayerSpecification {
+function buildCircleLayer(maxVisibleLayer: number, theme: string | undefined): CircleLayerSpecification {
   return {
     id: "locations",
     type: "circle",
@@ -51,12 +54,12 @@ function buildCircleLayer(maxVisibleLayer: number): CircleLayerSpecification {
       ],
       "circle-color": "#029987",
       "circle-stroke-width": 2,
-      "circle-stroke-color": "#ffffff",
+      "circle-stroke-color": theme === "dark" ? "#000000" : "#ffffff",
     },
   };
 }
 
-function buildTextLayer(maxVisibleLayer: number): SymbolLayerSpecification {
+function buildTextLayer(maxVisibleLayer: number, theme: string | undefined): SymbolLayerSpecification {
   return {
     id: "location-labels",
     type: "symbol",
@@ -74,8 +77,8 @@ function buildTextLayer(maxVisibleLayer: number): SymbolLayerSpecification {
       "text-ignore-placement": false,
     },
     paint: {
-      "text-color": "#333333",
-      "text-halo-color": "#ffffff",
+      "text-color": theme === "dark" ? "#cccccc" : "#333333",
+      "text-halo-color": theme === "dark" ? "#000000" : "#ffffff",
       "text-halo-width": 1.5,
     },
   };
@@ -88,6 +91,13 @@ export default function AdminMap() {
   const [cursor, setCursor] = useState<string>("grab");
 
   const maxVisibleLayer = maxLayerForZoom(zoom);
+
+  const { theme, systemTheme } = useTheme();
+  const currentTheme = theme === "system" ? systemTheme : theme;
+  const mapStyle =
+    currentTheme === "dark"
+      ? "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
+      : "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
 
   const geojson = useMemo((): FeatureCollection => {
     return {
@@ -111,12 +121,12 @@ export default function AdminMap() {
   }, [locations]);
 
   const circleLayer = useMemo(
-    () => buildCircleLayer(maxVisibleLayer),
+    () => buildCircleLayer(maxVisibleLayer, currentTheme),
     [maxVisibleLayer],
   );
 
   const textLayer = useMemo(
-    () => buildTextLayer(maxVisibleLayer),
+    () => buildTextLayer(maxVisibleLayer, currentTheme),
     [maxVisibleLayer],
   );
 
@@ -139,7 +149,7 @@ export default function AdminMap() {
       <Map
         initialViewState={IITK_CENTER}
         style={{ width: "100%", height: "100%" }}
-        mapStyle="https://basemaps.cartocdn.com/gl/positron-gl-style/style.json"
+        mapStyle={mapStyle}
         cursor={cursor}
         interactiveLayerIds={["locations"]}
         onMove={(evt) => setZoom(evt.viewState.zoom)}
