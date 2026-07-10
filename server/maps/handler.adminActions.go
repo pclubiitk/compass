@@ -77,7 +77,8 @@ func flagAction(c *gin.Context) {
 		return
 	}
 }
-func locationAction(c *gin.Context) {
+
+func LocationAction(c *gin.Context) {
 	// add the request model to the request.model.go file
 
 	locationID := c.Param("id")

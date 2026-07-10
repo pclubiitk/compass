@@ -13,9 +13,9 @@ func Router(r *gin.Engine) {
 		maps.Use(func(c *gin.Context) { middleware.UnderDev(c, "maps") })
 		// Public routes, will not require login, static data providers
 		// use https://gin-gonic.com/en/docs/examples/param-in-path/ and structure the paths to support specific id, and pagination
-		maps.GET("/notice", noticeProvider)         // provides notice in two ways either all at once or page wise with help of url query parameters
+		maps.GET("/notice", noticeProvider) // provides notice in two ways either all at once or page wise with help of url query parameters
 		maps.GET("/notice/:id", noticeDetailProvider)
-		maps.GET("/location/:id", locationDetailProvider) // provide exact details about the location using the id
+		maps.GET("/location/:id", locationDetailProvider)               // provide exact details about the location using the id
 		maps.GET("/locations/incremental", incrementalLocationProvider) // incremental location updates
 		maps.GET("/reviews/:id/:page", reviewProvider)    // provide the reviews of the location id, most recent 50, if there are more do the pagination
         maps.GET("/location/fuzzy", FuzzySearchLocationsHandler)
@@ -51,9 +51,10 @@ func Router(r *gin.Engine) {
 		admin.GET("/newLocation", locationRequestProvider)
 		admin.GET("/indicators", indicatorProvider)
 		// Actions
-		admin.POST("/flag/:id", flagAction)         // Allow action like allow or declined, in case of negative action add a mail request in the queue for the mail worker to send a mail of rejection to the user
-		admin.POST("/location/:id", locationAction) // Allow the action of user like allow or declined
+		admin.POST("/flag/:id", flagAction) // Allow action like allow or declined, in case of negative action add a mail request in the queue for the mail worker to send a mail of rejection to the user		admin.POST("/location/:id", locationAction) // Allow the action of user like allow or declined
+		
 		admin.POST("/notice", addNotice)
+		admin.POST("/location/:id", LocationAction) // Allow the action of user like allow or declined
 		admin.POST("/make-admin", makeAdminHandler)
 		admin.POST("/remove-admin", demoteAdminHandler)
 		admin.DELETE("/deleteNotice/:id", deleteNotice)
