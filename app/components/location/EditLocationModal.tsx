@@ -38,9 +38,7 @@ export interface EditableLocation {
   locationId: string;
   name: string;
   description: string;
-  Tag?: string;
   tag?: string;
-  Time?: string;
   time?: string;
   Contact?: string;
   contact?: string;
@@ -94,8 +92,8 @@ export function EditLocationModal({
     setFormData({
       name: location.name || "",
       description: location.description || "",
-      tag: location.Tag || location.tag || "",
-      time: location.Time || location.time || "",
+      tag: location.tag || location.tag || "",
+      time: location.time || location.time || "",
       contact: location.contact || location.Contact || "",
       locationType: isKnownType ? type : type ? "other" : "",
       customType: isKnownType ? "" : type,
@@ -196,7 +194,7 @@ export function EditLocationModal({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="edit-tag">Tag</Label>
+          <Label htmlFor="edit-tag">tag</Label>
           <Input
             id="edit-tag"
             name="tag"
