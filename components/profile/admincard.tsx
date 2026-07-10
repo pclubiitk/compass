@@ -2,13 +2,14 @@
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Pen, LogOut, Crown, Users } from "lucide-react";
+import { Pen, LogOut, Crown, Users, MapPinned } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useGContext } from "@/components/ContextProvider";
 import { useState } from "react";
 import ChangeRoleDialog from "@/components/profile/changeRole";
 import { AdminsListDialog } from "@/components/profile/AdminsListDialog";
+import { ShieldCheck } from "lucide-react";
 
 export function AdminCard({
   email,
@@ -34,7 +35,7 @@ export function AdminCard({
   }
 
 
-
+  
   if (!isAdmin) return null;
 
   return (
@@ -88,6 +89,16 @@ export function AdminCard({
           title="Publish Notice"
         >
           <Pen className="h-5 w-5" />
+        </Button>
+
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-12 w-12 shadow-md hover:shadow-lg transition-all hover:scale-105"
+          onClick={() => router.push("/reviewlocationreq")}
+          title="Review Location Requests"
+        >
+          <MapPinned className="h-5 w-5" />
         </Button>
       </div>
     </Card>
