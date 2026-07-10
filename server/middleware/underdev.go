@@ -7,7 +7,7 @@ import (
 )
 
 // Later update this to the config or some better way
-var MapsUnderDev = false
+var MapsUnderDev = true
 
 func UnderDev(c *gin.Context, location string) {
 	switch location {
