@@ -53,7 +53,6 @@ import { AuthGuard } from "@/components/AuthGuard";
 import { toast } from "sonner";
 import { useGContext } from "@/components/ContextProvider";
 
-import { AuthGuard } from "@/components/AuthGuard";
 
 // Types
 interface LocationData {
