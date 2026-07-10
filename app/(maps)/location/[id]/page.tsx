@@ -53,21 +53,23 @@ import { AuthGuard } from "@/components/AuthGuard";
 import { toast } from "sonner";
 import { useGContext } from "@/components/ContextProvider";
 
+import { AuthGuard } from "@/components/AuthGuard";
+
 // Types
 interface LocationData {
-  id: string;
-  locationId?: string;
+  locationId: string;
   name: string;
   description: string;
   avg_rating: number;
   ReviewCount: number;
-  Tag: string;
-  Time: string;
+  tag: string;
+  time: string;
   Contact: string; // Name of contact person?
   contact: string; // Phone/Email?
   coverpic: string;
   biopics: string[];
   location_type?: string;
+  layer?: number;
 }
 
 interface ReviewData {
@@ -310,14 +312,14 @@ export default function LocationPage() {
 
                   <div className="flex items-center gap-2">
                     <Badge variant="secondary" className="px-3 py-1">
-                      {location.Tag}
+                      {location.tag}
                     </Badge>
                     <Badge
                       variant="outline"
                       className="px-3 py-1 flex items-center gap-1"
                     >
                       <Clock className="w-3 h-3" />
-                      {location.Time}
+                      {location.time}
                     </Badge>
                   </div>
                 </div>

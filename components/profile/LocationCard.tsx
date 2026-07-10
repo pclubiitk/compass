@@ -24,7 +24,7 @@ type Location = {
   locationId: string;
   name: string;
   description: string;
-  locationType: string;
+  location_type: string;
   status: Status;
   avgRating: number;
   reviewCount: number;
@@ -83,7 +83,7 @@ export function LocationCard({ location }: LocationCardProps) {
               </CardTitle>
               <div className="flex-col justify-end gap-1 lg:flex-row">
                 <Badge variant="secondary">{location.status}</Badge>
-                <Badge variant="outline">{location.locationType}</Badge>
+                <Badge variant="outline">{location.location_type}</Badge>
               </div>
             </div>
           </CardHeader>
