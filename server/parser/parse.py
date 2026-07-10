@@ -23,8 +23,8 @@ def average_coords(coords): # Averages out the coordinates for Polygons, Lines e
 conn = psycopg2.connect( # edit these to match the Locations table
     dbname="compass",
     user="this_is_mjk",
-    password="",
-    host="",
+    password="postgres",
+    host="localhost",
     port=5432
 )
 cursor = conn.cursor()
@@ -80,7 +80,7 @@ for feature in features:
             lon,                      # longitude
             "location_type",            # location_type
             'approved',               # status
-            "31b0bc36-6fc3-4040-9590-fb5d579e77df", # contributed_by
+            "cf0743fa-33c8-4764-9b8a-b503322cd5e6", # contributed_by
             0.0,                      # average_rating
             0                         # review_count
         ))

@@ -1,5 +1,5 @@
 "use client";
-import { FormEvent, useEffect, useState, useRef, Suspense } from "react";
+import { FormEvent, useEffect, useState, useRef, Suspense, useCallback } from "react";
 import ReCAPTCHA from "react-google-recaptcha";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +19,7 @@ import {
 function LoginPageHolder() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const { isLoggedIn, setLoggedIn } = useGContext();
+  const { isLoggedIn, setLoggedIn, isGlobalLoading } = useGContext();
 
   // ReCaptcha Set up
   const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY!;
@@ -28,16 +28,25 @@ function LoginPageHolder() {
 
   // To redirect to the initiator page setup, extract the url of previous page
   const searchParams = useSearchParams();
+  const callbackFromQuery =
+    searchParams.get("callbackUrl") || searchParams.get("next");
   const callbackUrl =
-    searchParams.get("callbackUrl") ||
+    callbackFromQuery ||
     process.env.NEXT_PUBLIC_PROFILE_URL ||
     "/";
 
+  const handleRedirect = useCallback((url: string) => {
+    if (url.startsWith("http://") || url.startsWith("https://")) {
+      window.location.replace(url);
+    } else {
+      router.replace(url);
+    }
+  }, [router]);
+
   useEffect(() => {
-    if (isLoggedIn) router.replace(callbackUrl);
-    // The dependency array ensures effect only runs once on mount,
-    // unless the router or callbackUrl changes.
-  }, [callbackUrl, router, isLoggedIn]);
+    if (isGlobalLoading || isLoggedIn !== true || !callbackFromQuery) return;
+    handleRedirect(callbackUrl);
+  }, [callbackUrl, callbackFromQuery, handleRedirect, isLoggedIn, isGlobalLoading]);
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -72,7 +81,7 @@ function LoginPageHolder() {
         toast.success(data.message);
         setLoggedIn(true); // global context
         // From where ever you redirect use router.push(`/login?callbackUrl=${encodeURIComponent(router.asPath)}`);
-        router.replace(callbackUrl);
+        handleRedirect(callbackUrl);
       } else {
         toast.error(data.error || "Login failed");
       }

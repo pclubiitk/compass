@@ -102,7 +102,14 @@ export default function NoticeboardForm() {
     const selectedFiles = e.target.files;
     if (!selectedFiles) return;
 
-    const filesArray = Array.from(selectedFiles); // convert filelist to array
+    const filesArray = Array.from(selectedFiles).filter((file) => {
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error(`${file.name} must be less than 10 MB.`);
+        return false;
+      }
+      return true;
+    });
+    if (filesArray.length === 0) return;
 
     const newImages: UploadedImage[] = filesArray.map((file) => ({
       previewUrl: URL.createObjectURL(file),
@@ -401,6 +408,7 @@ export default function NoticeboardForm() {
               <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Images
               </Label>
+              <p className="text-xs text-muted-foreground">10 MB</p>
               {/* Hidden file input that now accepts multiple files */}
               <Input
                 type="file"
