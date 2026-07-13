@@ -41,34 +41,38 @@ func ModeratorWorker() error {
 		flagged, err := moderateJob(job)
 		if err != nil {
 			logrus.Errorf("Moderation error for\nID: %s\nType: %s\nError: %v", job.AssetID, job.Type, err)
-			// TODO: Drop the messages if they are tried multiple times
-			task.Nack(false, false) // don't requeue, improve on this logic later
-			// task.Nack(false, true)
-			continue
-		}
-
-		// Fetch image and owner
-		image, user, err := getImageAndUser(job.AssetID)
-		if err != nil {
-			logrus.Errorf("Failed to get image or user for\nID: %s\nError: %v", job.AssetID, err)
 			task.Nack(false, false)
 			continue
 		}
 
-		if flagged {
-			if err := handleFlaggedImage(image, user); err != nil {
-				logrus.Errorf("Failed to handle flagged image for\nID: %s\nError: %v", job.AssetID, err)
+		var handleErr error
+		switch job.Type {
+		case model.ModerationTypeReviewText:
+			handleErr = handleReviewModeration(job.AssetID, flagged)
+		case model.ModerationTypeImage:
+			image, user, err := getImageAndUser(job.AssetID)
+			if err != nil {
+				logrus.Errorf("Failed to get image or user for\nID: %s\nError: %v", job.AssetID, err)
 				task.Nack(false, false)
 				continue
 			}
-		} else {
-			if err := handleApprovedImage(job.AssetID, user); err != nil {
-				logrus.Errorf("Failed to handle approved image for\nID: %s\nError: %v", job.AssetID, err)
-				task.Nack(false, false)
-				continue
+			if flagged {
+				handleErr = handleFlaggedImage(image, user)
+			} else {
+				handleErr = handleApprovedImage(job.AssetID, user)
 			}
+		default:
+			logrus.Infof("Unknown moderation job type: %s", job.Type)
+			task.Nack(false, false)
+			continue
 		}
-		// Remove the task form queue, confirm that it is processed
+
+		if handleErr != nil {
+			logrus.Errorf("Failed to handle moderation for\nID: %s\nType: %s\nError: %v", job.AssetID, job.Type, handleErr)
+			task.Nack(false, false)
+			continue
+		}
+
 		task.Ack(false)
 	}
 

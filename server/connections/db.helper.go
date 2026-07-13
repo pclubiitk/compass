@@ -41,5 +41,11 @@ func RecentFiveReviews(db *gorm.DB) *gorm.DB {
 func ImageSelect(db *gorm.DB) *gorm.DB {
 	return db.
 		Where("parent_asset_id IS NOT NULL").
-		Select("image_id", "status", "owner_id")
+		Select(
+			"image_id",
+			"owner_id",
+			"status",
+			"parent_asset_id",
+			"parent_asset_type",
+		)
 }
