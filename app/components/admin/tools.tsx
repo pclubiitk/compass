@@ -1,6 +1,6 @@
 "use client";
 
-import { EnvelopeIcon} from "@heroicons/react/24/outline";
+import { EnvelopeIcon, FlagIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
@@ -13,7 +13,11 @@ const links = [
   //   href: "/admin/logs",
   //   icon: Bars3Icon,
   // },
-  // { name: "Flagged", href: "/admin/flagged", icon: FlagIcon },
+  {
+    name: "Flagged Content",
+    href: "/flaggedimages",
+    icon: FlagIcon,
+  },
   {
     name: "Publish Notice",
     href: "/admin/publishNotice",

@@ -14,21 +14,14 @@ func systemLogsProvider(c *gin.Context) {
 }
 
 func flaggedReviewsProvider(c *gin.Context) {
-
 	var reviews []model.Review
 
 	if err := connections.DB.
-		WithContext(c.Request.Context()).
-		Select("id, content, status").
-		Table("reviews").
-		Where("status = ?", "rejected_by_bot").
+		Preload("User", connections.UserSelect).
+		Where("status = ?", model.RejectedByBot).
+		Order("created_at DESC").
 		Find(&reviews).Error; err != nil {
 		c.JSON(500, gin.H{"error": "Database error", "details": err.Error()})
-		return
-	}
-
-	if len(reviews) == 0 {
-		c.JSON(404, gin.H{"message": "No flagged reviews found"})
 		return
 	}
 

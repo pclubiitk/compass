@@ -36,8 +36,33 @@ export default function Home() {
   const skipNextSearch = useRef(false);
   const lastSearchMarker = useRef<any>(null);
 
+  
   useEffect(() => {
     setMounted(true);
+    // Check for marker data in sessionStorage and auto-place it
+    if (typeof window !== "undefined") {
+      const markerData = sessionStorage.getItem("mapMarker");
+      if (markerData) {
+        try {
+          const { lat, lng } = JSON.parse(markerData);
+          setQuery(`${lat}, ${lng}`);
+          sessionStorage.removeItem("mapMarker");
+        } catch (e) {
+          console.error("Failed to parse marker data:", e);
+        }
+      }
+    }
+  }, []);
+
+  // Ensure markerRef is initialized as a ref object with current property
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      if (!window.markerRef) {
+        window.markerRef = { current: [] };
+      } else if (!window.markerRef.current) {
+        window.markerRef.current = [];
+      }
+    }
   }, []);
 
   // Fuzzy search function with caching
