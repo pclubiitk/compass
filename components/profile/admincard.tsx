@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Pen, LogOut, Crown, Users, MapPinned } from "lucide-react";
+import { Pen, Crown, Users, MapPinned, Flag } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useGContext } from "@/components/ContextProvider";
@@ -99,6 +99,16 @@ export function AdminCard({
           title="Review Location Requests"
         >
           <MapPinned className="h-5 w-5" />
+        </Button>
+
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-12 w-12 shadow-md hover:shadow-lg transition-all hover:scale-105"
+          onClick={() => router.push("/flaggedimages")}
+          title="Flagged Content"
+        >
+          <Flag className="h-5 w-5" />
         </Button>
       </div>
     </Card>

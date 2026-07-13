@@ -1,0 +1,109 @@
+package workers
+
+import (
+	"compass/connections"
+	"compass/model"
+
+	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
+)
+
+func getReviewAndUser(reviewID uuid.UUID) (model.Review, model.User, error) {
+	var review model.Review
+	if err := connections.DB.Where("review_id = ?", reviewID).First(&review).Error; err != nil {
+		return review, model.User{}, err
+	}
+
+	var user model.User
+	if err := connections.DB.Where("user_id = ?", review.ContributedBy).First(&user).Error; err != nil {
+		return review, user, err
+	}
+
+	return review, user, nil
+}
+
+func handleReviewModeration(reviewID uuid.UUID, flagged bool) error {
+	review, user, err := getReviewAndUser(reviewID)
+	if err != nil {
+		return err
+	}
+
+	if flagged {
+		return rejectReviewByBot(review, user)
+	}
+
+	return approveReviewAndNotify(&review, user)
+}
+
+func rejectReviewByBot(review model.Review, user model.User) error {
+	if err := connections.DB.Model(&model.Review{}).
+		Where("review_id = ?", review.ReviewId).
+		Update("status", model.RejectedByBot).Error; err != nil {
+		return err
+	}
+
+	mailJob := MailJob{
+		Type: "violation_warning",
+		To:   user.Email,
+		Data: map[string]interface{}{
+			"username": user.Email,
+			"reason":   "Your review text violated our content policy and was flagged for admin review.",
+		},
+	}
+	if err := sendEmail(mailJob); err != nil {
+		logrus.Errorf("Failed to queue violation email for %s: %v", user.Email, err)
+	}
+
+	return nil
+}
+
+func approveReviewAndNotify(review *model.Review, user model.User) error {
+	if err := ApproveReviewRecord(review.ReviewId); err != nil {
+		return err
+	}
+
+	mailJob := MailJob{
+		Type: "thanks_contribution",
+		To:   user.Email,
+		Data: map[string]interface{}{
+			"username":      user.Email,
+			"content_title": "Your review",
+		},
+	}
+	if err := sendEmail(mailJob); err != nil {
+		logrus.Errorf("Failed to queue thank-you email for %s: %v", user.Email, err)
+	}
+
+	return nil
+}
+
+// ApproveReviewRecord marks a review approved and updates the parent location rating.
+func ApproveReviewRecord(reviewID uuid.UUID) error {
+	return connections.DB.Transaction(func(tx *gorm.DB) error {
+		var review model.Review
+		if err := tx.Where("review_id = ?", reviewID).First(&review).Error; err != nil {
+			return err
+		}
+
+		if review.Status == model.Approved {
+			return nil
+		}
+
+		if err := tx.Model(&model.Review{}).
+			Where("review_id = ?", reviewID).
+			Update("status", model.Approved).Error; err != nil {
+			return err
+		}
+
+		var location model.Location
+		if err := tx.Where("location_id = ?", review.LocationId).First(&location).Error; err != nil {
+			return err
+		}
+
+		location.ReviewCount += 1
+		location.AverageRating = ((location.AverageRating * float32(location.ReviewCount-1)) + float32(review.Rating)) / float32(location.ReviewCount)
+
+		return tx.Save(&location).Error
+	})
+}

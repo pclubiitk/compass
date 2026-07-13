@@ -64,7 +64,7 @@ func ModerateImage(imageID uuid.UUID) (bool, error) {
 
 func ModerateText(reviewID uuid.UUID) (bool, error) {
 	var review model.Review
-	if err := connections.DB.Find(&model.Review{}).Where("review_id = ?", reviewID).First(&review).Error; err != nil {
+	if err := connections.DB.Where("review_id = ?", reviewID).First(&review).Error; err != nil {
 		logrus.Error("Error fetching review for moderation")
 		return false, err
 	}
