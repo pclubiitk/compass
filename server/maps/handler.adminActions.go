@@ -28,27 +28,17 @@ func flagAction(c *gin.Context) {
 	}
 
 	var review model.Review
-	if err := connections.DB.Where("id = ?", reviewID).First(&review).Error; err != nil {
+	if err := connections.DB.Where("review_id = ?", reviewID).First(&review).Error; err != nil {
 		c.JSON(404, gin.H{"error": "Review not found"})
 		return
 	}
 
 	if req.Action == "approved" {
-
-		review.Status = "approved"
-		//update ratting of the location
-		var location model.Location
-		if err := connections.DB.Where("id = ?", review.LocationId).First(&location); err != nil {
-			c.JSON(400, gin.H{"error": "error while updating the location review count"})
-		}
-		location.ReviewCount += 1
-		location.AverageRating = ((location.AverageRating * float32(location.ReviewCount-1)) + float32(review.Rating)) / float32(location.ReviewCount)
-
-		if err := connections.DB.Save(&location).Error; err != nil {
-			c.JSON(400, gin.H{"error": "error while updating the location review count"})
+		if err := workers.ApproveReviewRecord(review.ReviewId); err != nil {
+			c.JSON(500, gin.H{"error": "Failed to approve review"})
+			return
 		}
 		c.JSON(200, gin.H{"message": "Review approved"})
-
 		return
 	}
 
@@ -63,14 +53,22 @@ func flagAction(c *gin.Context) {
 			c.JSON(500, gin.H{"error": "Failed to update review status"})
 			return
 		}
+
+		var user model.User
+		if err := connections.DB.Where("user_id = ?", review.ContributedBy).First(&user).Error; err != nil {
+			logrus.Errorf("Failed to find user for review rejection email: %v", err)
+			c.JSON(200, gin.H{"message": "Review rejected", "details": req.Message})
+			return
+		}
+
 		connections.MQChannel.Publish(
 			"",
-			viper.GetString("rabbitmq.mailqueue"), // queue name
-			false,                                 // mandatory
-			false,                                 // immediate
+			viper.GetString("rabbitmq.mailqueue"),
+			false,
+			false,
 			amqp.Publishing{
 				ContentType: "application/json",
-				Body:        []byte(`{"userId": "` + review.User.UserID.String() + `", "message": "` + req.Message + `"}`),
+				Body:        []byte(`{"userId": "` + user.UserID.String() + `", "message": "` + req.Message + `"}`),
 			},
 		)
 		c.JSON(200, gin.H{"message": "Review rejected", "details": req.Message})
