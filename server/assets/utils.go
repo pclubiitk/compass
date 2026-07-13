@@ -65,7 +65,7 @@ func ProcessImageBytes(imgBytes []byte) ([]byte, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to create HEIF decoding options: %w", err)
 		}
-		heifImg, err := handle.DecodeImage(heif.ColorspaceRGB, heif.ChromaInterleavedRGBA, decodingOpts)
+		heifImg, err := handle.DecodeImage(heif.Colorspace(heif.ColorspaceRGB), heif.Chroma(heif.ChromaInterleavedRGBA), decodingOpts)
 		if err != nil {
 			return nil, fmt.Errorf("failed to decode HEIC image: %w", err)
 		}
