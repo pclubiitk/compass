@@ -189,8 +189,10 @@ export default function ProfilePage() {
           />
           <ContributionsCard
             locations={userData.ContributedLocations ?? []}
-            reviews={userData.ContributedReview ?? []}
-            notices={userData.ContributedNotice ?? []}
+            // reviews={userData.ContributedReview ?? []}
+            // notices={userData.ContributedNotice ?? []}
+            reviews={userData.ContributedReview}
+            notices={userData.ContributedNotice}
           />
 
           {/* Calendar Section */}
