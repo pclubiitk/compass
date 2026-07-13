@@ -40,6 +40,7 @@ func Router(r *gin.Engine) {
 	{
 		protected.Static("/pfp", "./assets/pfp")
 		protected.POST("/assets", uploadAsset)
+		protected.GET("/protected-assets/:imageId", protectedAssetProvider)
 
 	}
 
