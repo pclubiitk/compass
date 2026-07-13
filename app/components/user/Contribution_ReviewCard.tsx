@@ -12,7 +12,9 @@ export type ReviewProps = {
   rating: number;
   review_body?: string;
   time: string;
-  imgs?: { ImageID: string }[];
+  imgs?: { ImageID: string ;
+           Status: string;
+          }[];
   // backend may return Location or location
   Location?: any;
   location?: any;
@@ -82,7 +84,19 @@ export default function ReviewCard(props: ReviewProps) {
   const locName = locFinal?.name || locFinal?.Name || null;
   const cover = locFinal?.coverpic || locFinal?.CoverPic || null;
 
-  const imageUrl = (imgId: string) => `${process.env.NEXT_PUBLIC_ASSET_URL}/assets/${imgId}.webp`;
+  // const imageUrl = (imgId: string) => `${process.env.NEXT_PUBLIC_ASSET_URL}/assets/${imgId}.webp`;
+  //
+  const reviewImageUrl = (img: any) => {
+      if (img.Status === "pending") {
+          return `${process.env.NEXT_PUBLIC_ASSET_URL}/protected-assets/${img.ImageID}`;
+      }
+
+      return `${process.env.NEXT_PUBLIC_ASSET_URL}/assets/${img.ImageID}.webp`;
+  };
+
+  const coverImageUrl = (id: string) =>
+      `${process.env.NEXT_PUBLIC_ASSET_URL}/assets/${id}.webp`;
+  //
 
   return (
     <Card className="mx-3 my-3 p-0 bg-white dark:bg-black text-black dark:text-white">
@@ -90,7 +104,7 @@ export default function ReviewCard(props: ReviewProps) {
         {/* Left: optional cover */}
         <div className="w-24 h-24 flex-shrink-0 rounded overflow-hidden bg-muted flex items-center justify-center">
           {cover ? (
-            <img src={imageUrl(cover)} alt={locName || "location"} className="w-full h-full object-cover" />
+            <img src={coverImageUrl(cover)} alt={locName || "location"} className="w-full h-full object-cover" />
           ) : (
             <ImageIcon className="h-8 w-8 text-muted-foreground" />
           )}
@@ -122,8 +136,8 @@ export default function ReviewCard(props: ReviewProps) {
             {imgs.length > 0 && (
               <div className="grid grid-cols-2 gap-2 mt-2">
                 {imgs.map((img : { ImageID: string }) => (
-                  <div className="relative w-full h-32 rounded-md overflow-hidden" key={img.ImageID}>
-                    <img src={imageUrl(img.ImageID)} alt="attachment" className="w-full h-full object-cover" />
+                    <div className="relative w-32 h-32 rounded-md overflow-hidden justify-self-start" key={img.ImageID}>
+                    <img src={reviewImageUrl(img)} alt="attachment" className="w-full h-full object-cover" />
                   </div>
                 ))}
               </div>
