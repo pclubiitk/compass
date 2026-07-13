@@ -65,7 +65,10 @@ export function ContributionsCard({
               <TabsContent value="locations" className="mt-4">
                 <div className="space-y-4">
                   {locations.map((loc: LocationCardProps["location"]) => (
-                    <LocationCard key={loc.locationId} location={loc} />
+                    <LocationCard
+                      key={loc.locationId || (loc as any).LocationId}
+                      location={loc}
+                    />
                   ))}
                 </div>
               </TabsContent>
@@ -74,22 +77,18 @@ export function ContributionsCard({
             )}
             {reviews.length ? (
               <TabsContent value="reviews" className="mt-4 space-y-4">
-                {reviews.length > 0 ? (
-                  reviews.map((rev: any) => (
-                    <>
-                      <ReviewCard
-                        key={rev.ReviewId}
-                        rating={rev.rating}
-                        review_body={rev.description}
-                        time={rev.CreatedAt}
-                        imgs={rev.images}
-                        author={rev.User?.name || "Unknown Location"}
-
-                      /></>
-                  ))
-                ) : (
-                  <p className="text-sm text-muted-foreground">No reviews yet.</p>
-                )}
+                {reviews.map((rev: any) => (
+                    <ReviewCard
+                      key={rev.reviewId ?? rev.ReviewId}
+                      rating={rev.rating}
+                      review_body={rev.description}
+                      time={rev.CreatedAt ?? rev.createdAt}
+                      imgs={rev.images}
+                      locationId={rev.locationId ?? rev.LocationId}
+                      location={rev.Location ?? rev.location}
+                      author={rev.User?.name || "Unknown Location"}
+                    />
+                  ))}
               </TabsContent>
             ) : (
               <></>

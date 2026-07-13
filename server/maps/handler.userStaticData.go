@@ -285,7 +285,7 @@ func fetchReviewsByUserID(userID string, limit, offset int) ([]model.Review, int
 	var total int64
 	db := connections.DB
 
-	if err := db.Model(&model.Review{}).Where("user_id = ?", userID).Count(&total).Error; err != nil {
+	if err := db.Model(&model.Review{}).Where("contributed_by = ?", userID).Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
@@ -293,7 +293,7 @@ func fetchReviewsByUserID(userID string, limit, offset int) ([]model.Review, int
 		Preload("Images", func(tx *gorm.DB) *gorm.DB {
 			return tx.Where("parent_asset_id IS NOT NULL").Where("parent_asset_type = ?", "reviews")
 		}).
-		Where("user_id = ?", userID).
+		Where("contributed_by = ?", userID).
 		Order("created_at DESC").
 		Limit(limit).
 		Offset(offset).

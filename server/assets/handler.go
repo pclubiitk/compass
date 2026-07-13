@@ -258,7 +258,7 @@ func protectedAssetProvider(c *gin.Context) {
 
 	switch image.Status {
 
-	case model.Pending:
+	case model.Pending, model.Rejected, model.RejectedByBot:
 		path = filepath.Join(
 			cwd,
 			"assets",
@@ -275,8 +275,8 @@ func protectedAssetProvider(c *gin.Context) {
 		)
 
 	default:
-		c.JSON(http.StatusInternalServerError,
-			gin.H{"error":"Unknown image status"})
+		c.JSON(http.StatusNotFound,
+			gin.H{"error": "Image not available"})
 		return
 	}
 	logrus.Infof("Serving file: %s", path)
