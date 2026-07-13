@@ -5,12 +5,13 @@ import { useParams, useSearchParams, useRouter } from "next/navigation";
 import {
   X,
   Share2,
-  Heart,
+
   Star,
   StarHalf,
   CircleUserRound,
   MapPin,
   Clock,
+  Copy,
   Phone,
   Pencil
 } from "lucide-react";
@@ -97,7 +98,7 @@ export default function LocationPage() {
 
   const { isAdmin } = useGContext();
   console.log(isAdmin);
-  console.log("location:",location);
+  console.log("location:", location);
   const fetchLocation = async () => {
     if (!id) return;
     try {
@@ -152,6 +153,22 @@ export default function LocationPage() {
   const rating = location.avg_rating || 0;
   const fullStars = Math.floor(rating);
   const hasHalfStar = rating % 1 >= 0.5;
+
+
+  //For copying the location link to clipboard
+  const handleCopy = async () => {
+    try {
+      const url =
+        typeof window !== "undefined"
+          ? window.location.href
+          : "";
+
+      await navigator.clipboard.writeText(url);
+      toast.success("Link Copied!");
+    } catch (err) {
+      toast.error("Failed to copy:" + err);
+    }
+  };
 
   return (
     <div className="min-h-screen w-full flex justify-center bg-gray-50 dark:bg-zinc-950 transition-colors duration-300 pb-24">
@@ -229,6 +246,14 @@ export default function LocationPage() {
                           >
                             <LinkedinIcon size={48} round />
                           </LinkedinShareButton>
+
+                          <button onClick={handleCopy}>
+                            <div className="w-12 h-12 rounded-full bg-gray-200 dark:bg-zinc-800 flex items-center justify-center">
+                              <Copy className="w-6 h-6 text-gray-600 dark:text-gray-300" />
+                            </div>
+
+                          </button>
+
                         </div>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
@@ -236,9 +261,7 @@ export default function LocationPage() {
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
-                  <Button variant="ghost" size="icon" className="rounded-full">
-                    <Heart className="w-5 h-5" />
-                  </Button>
+
                   {isAdmin ? (
                     <EditLocationModal
                       location={{
@@ -367,48 +390,48 @@ export default function LocationPage() {
 
           {/* Sidebar (Reviews) */}
           <AuthGuard callbackUrl={`/location/${id as string}`}>
-          <div className="lg:col-span-2 mt-6 lg:mt-0">
-            <div className="rounded-xl shadow-sm border bg-white dark:bg-zinc-900 dark:border-zinc-800 p-4 md:p-6 sticky top-4">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                  Reviews
-                </h2>
-                <ReviewDrawer
-                  locationId={id as string}
-                  onReviewAdded={fetchReviews}
-                >
-                  <Button>Add Review</Button>
-                </ReviewDrawer>
-              </div>
+            <div className="lg:col-span-2 mt-6 lg:mt-0">
+              <div className="rounded-xl shadow-sm border bg-white dark:bg-zinc-900 dark:border-zinc-800 p-4 md:p-6 sticky top-4">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                    Reviews
+                  </h2>
+                  <ReviewDrawer
+                    locationId={id as string}
+                    onReviewAdded={fetchReviews}
+                  >
+                    <Button>Add Review</Button>
+                  </ReviewDrawer>
+                </div>
 
-              <div className="space-y-4 lg:max-h-[calc(100vh-200px)] lg:overflow-y-auto pr-2 custom-scrollbar">
-                {reviews.length > 0 ? (
-                  reviews.map((review) => (
-                    <ReviewCard
-                      key={review.id}
+                <div className="space-y-4 lg:max-h-[calc(100vh-200px)] lg:overflow-y-auto pr-2 custom-scrollbar">
+                  {reviews.length > 0 ? (
+                    reviews.map((review) => (
+                      <ReviewCard
+                        key={review.id}
 
-                      /// TODO : fix username is null
-                      author={review.User?.name || "Anonymous"}
-                      rating={review.rating}
-                      review_body={review.description}
-                      time={review.CreatedAt}
-                      imgs={review.Images || []}
-                    />
-                  ))
-                ) : (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <div className="bg-gray-100 dark:bg-zinc-800 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Star className="w-8 h-8 text-gray-400" />
+                        /// TODO : fix username is null
+                        author={review.User?.name || "Anonymous"}
+                        rating={review.rating}
+                        review_body={review.description}
+                        time={review.CreatedAt}
+                        imgs={review.Images || []}
+                      />
+                    ))
+                  ) : (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <div className="bg-gray-100 dark:bg-zinc-800 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Star className="w-8 h-8 text-gray-400" />
+                      </div>
+                      <p className="font-medium">No reviews yet</p>
+                      <p className="text-sm mt-1">
+                        Be the first to share your experience!
+                      </p>
                     </div>
-                    <p className="font-medium">No reviews yet</p>
-                    <p className="text-sm mt-1">
-                      Be the first to share your experience!
-                    </p>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </div>
-          </div>
           </AuthGuard>
         </div>
       </motion.div>
