@@ -203,3 +203,82 @@ func removeImage(c *gin.Context) {
 	})
 
 }
+
+func protectedAssetProvider(c *gin.Context) {
+	var image model.Image
+	imageIDParam := c.Param("imageId")
+	imageID, err := uuid.Parse(imageIDParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest,gin.H{"error":"Invalid image ID"})
+		return
+	}
+
+	if err := connections.DB.
+		Model(&model.Image{}).
+		Where("image_id = ?", imageID).
+		First(&image).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Image not found"})
+			return
+		} else {
+			logrus.Errorf("Failed to fetch image: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch image"})
+		}
+		logrus.Infof("Image from DB: %+v", image)
+		return
+	}
+
+	userID := c.MustGet("userID").(uuid.UUID)
+	logrus.Infof("Requested image: %s", imageID)
+	role := c.GetInt("userRole")
+
+	allowed := false
+
+	if image.Status == model.Approved {
+		allowed = true
+	}
+
+	if image.OwnerID == userID {
+		allowed = true
+	}
+
+	if role >= int(model.AdminRole) {
+		allowed = true
+	}
+
+	if !allowed {
+		c.JSON(http.StatusForbidden,
+			gin.H{"error":"Forbidden"})
+		return
+	}
+
+	cwd, _ := os.Getwd()
+
+	var path string
+
+	switch image.Status {
+
+	case model.Pending:
+		path = filepath.Join(
+			cwd,
+			"assets",
+			"tmp",
+			image.ImageID.String()+".webp",
+		)
+
+	case model.Approved:
+		path = filepath.Join(
+			cwd,
+			"assets",
+			"public",
+			image.ImageID.String()+".webp",
+		)
+
+	default:
+		c.JSON(http.StatusInternalServerError,
+			gin.H{"error":"Unknown image status"})
+		return
+	}
+	logrus.Infof("Serving file: %s", path)
+	c.File(path)
+}

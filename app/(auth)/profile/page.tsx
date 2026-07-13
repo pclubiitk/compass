@@ -83,7 +83,7 @@ export default function ProfilePage() {
       );
       if (res.ok) {
         const data = await res.json();
-
+        
         const normalized = {
           ...data,
           profile: {
