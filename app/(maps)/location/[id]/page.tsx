@@ -94,9 +94,9 @@ export default function LocationPage() {
 
   const [location, setLocation] = useState<LocationData | null>(null);
   const [reviews, setReviews] = useState<ReviewData[]>([]);
-  const [loading, setLoading] = useState(true);
+  // const [loading, setLoading] = useState(true);
 
-  const { isAdmin } = useGContext();
+  const { isAdmin, setGlobalLoading, isGlobalLoading } = useGContext();
   console.log(isAdmin);
   console.log("location:", location);
   const fetchLocation = async () => {
@@ -139,15 +139,17 @@ export default function LocationPage() {
 
   useEffect(() => {
     const loadData = async () => {
-      setLoading(true);
+      // setLoading(true);
+      setGlobalLoading(true);
       await Promise.all([fetchLocation(), fetchReviews()]);
-      setLoading(false);
+      // setLoading(false);
+      setGlobalLoading(false);
     };
     loadData();
   }, [id, page]);
 
-  if (loading || !location) {
-    return <LocationSkeleton />;
+  if (isGlobalLoading || !location) {
+    return;
   }
 
   const rating = location.avg_rating || 0;
