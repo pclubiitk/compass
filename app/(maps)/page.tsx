@@ -119,6 +119,8 @@ export default function AdminMap() {
   const [mounted, setMounted] = useState(false);
   const skipNextSearch = useRef(false);
   const lastSearchMarker = useRef<any>(null);
+  const mapRef = useRef<any>(null);
+  const userMarkerRef = useRef<any>(null);
 
   const maxVisibleLayer = maxLayerForZoom(zoom);
 
@@ -160,16 +162,48 @@ export default function AdminMap() {
     [maxVisibleLayer],
   );
 
-  const handleClick = useCallback(
-    (e: MapLayerMouseEvent) => {
-      const feature = e.features?.[0];
-      const locationId = feature?.properties?.locationId;
-      if (!locationId) return;
+  const handleClick = useCallback(async (e: MapLayerMouseEvent) => {
+    // Check if click was on a location marker
+    if (e.features && e.features.length > 0) {
+      const locationId = e.features[0]?.properties?.locationId;
+      if (locationId) {
+        router.push(`/location/${locationId}`);
+        return;
+      }
+    }
 
-      router.push(`/location/${locationId}`);
-    },
-    [router],
-  );
+    // If not on a location marker, place user marker for add location
+    const { lng, lat } = e.lngLat;
+    const map = mapRef.current?.getMap();
+
+    if (!map) return;
+
+    // Remove existing user marker
+    if (userMarkerRef.current) {
+      try {
+        userMarkerRef.current.remove();
+      } catch {}
+      userMarkerRef.current = null;
+    }
+
+    // Create new user marker (red)
+    const maplibregl = (await import("maplibre-gl")).default;
+    userMarkerRef.current = new maplibregl.Marker({ color: "#f00" })
+      .setLngLat([lng, lat])
+      .addTo(map);
+
+    // Store coordinates for add location
+    localStorage.setItem("selected_lat", lat.toString());
+    localStorage.setItem("selected_lon", lng.toString());
+
+    // Fly to the clicked location
+    map.flyTo({ center: [lng, lat], zoom: 14 });
+
+    // Dispatch event for other components
+    window.dispatchEvent(
+      new CustomEvent("marker-selected", { detail: { lat, lng } }),
+    );
+  }, [router]);
 
   const handleMouseEnter = useCallback(() => setCursor("pointer"), []);
   const handleMouseLeave = useCallback(() => setCursor("grab"), []);
@@ -189,8 +223,10 @@ export default function AdminMap() {
   // Search handler
   const handleSearch = async () => {
     if (!window || !query.trim()) return;
-    const mapRef = window.mapRef;
     if (!mapRef?.current) return;
+
+    // Get the raw maplibre-gl instance
+    const map = mapRef.current.getMap();
 
     // clear previous search markers
     if (lastSearchMarker.current) {
@@ -212,10 +248,10 @@ export default function AdminMap() {
 
       lastSearchMarker.current = new maplibregl.Marker({ color: "#f00" })
         .setLngLat([lng, lat])
-        .addTo(mapRef.current);
+        .addTo(map);
 
       setTimeout(() => {
-        mapRef.current.flyTo({
+        map.flyTo({
           center: [lng, lat],
           zoom: 16,
           speed: 1.2,
@@ -237,8 +273,10 @@ export default function AdminMap() {
     setQuery(loc.name); // update input
     setResults([]); // hide dropdown
 
-    const mapRef = window.mapRef;
     if (!mapRef || !mapRef.current) return;
+
+    // Get the raw maplibre-gl instance
+    const map = mapRef.current.getMap();
 
     // Remove previous search pin
     if (lastSearchMarker.current) {
@@ -251,9 +289,9 @@ export default function AdminMap() {
     const maplibregl = (await import("maplibre-gl")).default;
     lastSearchMarker.current = new maplibregl.Marker({ color: "#f00" })
       .setLngLat([loc.longitude, loc.latitude])
-      .addTo(mapRef.current);
+      .addTo(map);
 
-    mapRef.current.flyTo({
+    map.flyTo({
       center: [loc.longitude, loc.latitude],
       zoom: 16,
       speed: 1.2,
@@ -264,6 +302,10 @@ export default function AdminMap() {
 
   useEffect(() => {
     setMounted(true);
+    // Store mapRef in window for compatibility with existing marker code
+    if (typeof window !== "undefined") {
+      window.mapRef = mapRef;
+    }
     // Check for marker data in sessionStorage and auto-place it
     if (typeof window !== "undefined") {
       const markerData = sessionStorage.getItem("mapMarker");
@@ -277,7 +319,7 @@ export default function AdminMap() {
         }
       }
     }
-  }, []);
+  }, [mapRef]);
 
   useEffect(() => {
     if (!query.trim()) {
@@ -351,6 +393,7 @@ export default function AdminMap() {
       )}
 
       <Map
+        ref={mapRef}
         initialViewState={IITK_CENTER}
         style={{ width: "100%", height: "100%" }}
         mapStyle={mapStyle}

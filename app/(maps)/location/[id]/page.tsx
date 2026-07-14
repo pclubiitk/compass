@@ -268,7 +268,7 @@ export default function LocationPage() {
                     <EditLocationModal
                       location={{
                         ...location,
-                        locationId: location.locationId || location.id,
+                        locationId: location.locationId ,
                       }}
                       onLocationUpdated={fetchLocation}
                     >
