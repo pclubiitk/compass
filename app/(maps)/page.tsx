@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Map, Source, Layer } from "@vis.gl/react-maplibre";
 import type { MapLayerMouseEvent } from "@vis.gl/react-maplibre";
@@ -9,6 +9,31 @@ import type { FeatureCollection } from "geojson";
 import { useLocations, type Location } from "@/app/hooks/useLocations";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useTheme } from "next-themes";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Search } from "lucide-react";
+import type maplibregl from "maplibre-gl";
+
+function getSearchMarkers(): maplibregl.Marker[] {
+  if (typeof window === "undefined") return [];
+  if (!window.searchMarkerRef) {
+    window.searchMarkerRef = { current: [] };
+  } else if (!Array.isArray(window.searchMarkerRef.current)) {
+    window.searchMarkerRef.current = [];
+  }
+  return window.searchMarkerRef.current;
+}
+
+function clearSearchMarkers() {
+  getSearchMarkers().forEach((marker) => {
+    try {
+      marker.remove();
+    } catch {
+      // ignore
+    }
+  });
+  window.searchMarkerRef!.current = [];
+}
 
 const IITK_CENTER = {
   longitude: 80.23273232675717,
@@ -85,10 +110,15 @@ function buildTextLayer(maxVisibleLayer: number, theme: string | undefined): Sym
 }
 
 export default function AdminMap() {
-  const { locations } = useLocations();
+  const { locations, isValidating } = useLocations();
   const router = useRouter();
   const [zoom, setZoom] = useState(IITK_CENTER.zoom);
   const [cursor, setCursor] = useState<string>("grab");
+  const [results, setResults] = useState<any[]>([]);
+  const [query, setQuery] = useState("");
+  const [mounted, setMounted] = useState(false);
+  const skipNextSearch = useRef(false);
+  const lastSearchMarker = useRef<any>(null);
 
   const maxVisibleLayer = maxLayerForZoom(zoom);
 
@@ -144,8 +174,182 @@ export default function AdminMap() {
   const handleMouseEnter = useCallback(() => setCursor("pointer"), []);
   const handleMouseLeave = useCallback(() => setCursor("grab"), []);
 
+  const fuzzySearch = async (searchQuery: string) => {
+    // Calling backend if query not found in cache
+    const res = await fetch(
+      `${
+        process.env.NEXT_PUBLIC_MAPS_URL
+      }/api/maps/location/fuzzy?query=${encodeURIComponent(searchQuery)}`,
+    );
+    const data = await res.json();
+    const results = data.results || [];
+    return results;
+  };
+
+  // Search handler
+  const handleSearch = async () => {
+    if (!window || !query.trim()) return;
+    const mapRef = window.mapRef;
+    if (!mapRef?.current) return;
+
+    // clear previous search markers
+    if (lastSearchMarker.current) {
+      try {
+        lastSearchMarker.current.remove();
+      } catch {}
+      lastSearchMarker.current = null;
+    }
+
+    const coordMatch = query.match(
+      /^\s*(-?\d+(\.\d+)?),\s*(-?\d+(\.\d+)?)\s*$/,
+    );
+
+    if (coordMatch) {
+      const lat = parseFloat(coordMatch[1]);
+      const lng = parseFloat(coordMatch[3]);
+
+      const maplibregl = (await import("maplibre-gl")).default;
+
+      lastSearchMarker.current = new maplibregl.Marker({ color: "#f00" })
+        .setLngLat([lng, lat])
+        .addTo(mapRef.current);
+
+      setTimeout(() => {
+        mapRef.current.flyTo({
+          center: [lng, lat],
+          zoom: 16,
+          speed: 1.2,
+          curve: 1.5,
+          essential: true,
+        });
+      }, 50);
+
+      setResults([]);
+    } else {
+      const resultsFromBackend = await fuzzySearch(query);
+      setResults(resultsFromBackend); // showing in dropdown
+    }
+  };
+
+  // Handling selecting a location from dropdown
+  const handleSelect = async (loc: any) => {
+    skipNextSearch.current = true;
+    setQuery(loc.name); // update input
+    setResults([]); // hide dropdown
+
+    const mapRef = window.mapRef;
+    if (!mapRef || !mapRef.current) return;
+
+    // Remove previous search pin
+    if (lastSearchMarker.current) {
+      try {
+        lastSearchMarker.current.remove();
+      } catch {}
+      lastSearchMarker.current = null;
+    }
+
+    const maplibregl = (await import("maplibre-gl")).default;
+    lastSearchMarker.current = new maplibregl.Marker({ color: "#f00" })
+      .setLngLat([loc.longitude, loc.latitude])
+      .addTo(mapRef.current);
+
+    mapRef.current.flyTo({
+      center: [loc.longitude, loc.latitude],
+      zoom: 16,
+      speed: 1.2,
+      curve: 1.5,
+      essential: true,
+    });
+  };
+
+  useEffect(() => {
+    setMounted(true);
+    // Check for marker data in sessionStorage and auto-place it
+    if (typeof window !== "undefined") {
+      const markerData = sessionStorage.getItem("mapMarker");
+      if (markerData) {
+        try {
+          const { lat, lng } = JSON.parse(markerData);
+          setQuery(`${lat}, ${lng}`);
+          sessionStorage.removeItem("mapMarker");
+        } catch (e) {
+          console.error("Failed to parse marker data:", e);
+        }
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!query.trim()) {
+      setResults([]);
+      return;
+    }
+
+    if (skipNextSearch.current) {
+      skipNextSearch.current = false;
+      return;
+    }
+
+    const timeout = setTimeout(() => {
+      handleSearch();
+    }, 300);
+
+    return () => clearTimeout(timeout);
+  }, [query]);
+
   return (
     <div className="relative h-screen w-screen">
+      {/* Search Bar Overlay */}
+      <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 w-[90%] max-w-md flex flex-col gap-1">
+        <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-md">
+          <Input
+            placeholder="Search by name or coordinates"
+            className="flex-1 border-none text-black placeholder:text-gray-500 focus-visible:ring-0 focus-visible:ring-offset-0"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+          />
+          <Button size="icon" variant="ghost" onClick={handleSearch}>
+            <Search className="h-5 w-5 text-gray-500" />
+          </Button>
+        </div>
+        {/* Dropdown with search results */}
+        {results.length > 0 && (
+          <div className="bg-white max-h-72 overflow-y-auto rounded-xl shadow-lg border border-gray-100 mt-1">
+            {results.map((loc) => (
+              <div
+                key={loc.locationId || loc.id}
+                className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b last:border-b-0 border-gray-100 transition-colors"
+                onClick={() => handleSelect(loc)}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-gray-800 text-sm">
+                    {loc.name}
+                  </span>
+                  {(loc.category || loc.locationType || loc.location_type) && (
+                    <span className="text-[10px] bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full font-medium ml-2 uppercase tracking-wide">
+                      {loc.category || loc.locationType || loc.location_type}
+                    </span>
+                  )}
+                </div>
+                {loc.description && (
+                  <p className="text-xs text-gray-500 line-clamp-1 mt-1">
+                    {loc.description}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Sync indicator */}
+      {mounted && isValidating && (
+        <div className="absolute bottom-4 right-4 text-xs text-gray-600 bg-white/80 px-3 py-1 rounded-md shadow">
+          Syncing latest data…
+        </div>
+      )}
+
       <Map
         initialViewState={IITK_CENTER}
         style={{ width: "100%", height: "100%" }}
