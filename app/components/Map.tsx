@@ -80,7 +80,6 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
   const [geoState, setGeoState] = useState<PermissionState | null>(null);
   const { setGlobalLoading } = useGContext();
   const zoom = mapRef.current?.getZoom()
-  console.log(zoom)
   const [filteredLocations, setFilteredLocations] = useState(locations.filter((loc) => loc.layer<=1));
 
   // Track geolocation permission state (if browser supports it)
@@ -281,7 +280,6 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
         .trim();
       const Icon = iconMap[rawType] || iconMap.default;
       const color = colorMap[loc.layer] || colorMap.default;
-      // console.log(loc)
 
       const el = document.createElement("div");
       el.style.cursor = "pointer";
