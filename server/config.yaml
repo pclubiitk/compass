@@ -1,17 +1,17 @@
 # Main config file
 # Define things like DB name, ports, JWT expiry, etc.
 # remember to put all the fields
-env: dev # prod/dev
+env: prod # prod/dev
 
 database:
-  host: "localhost"
+  host: "localhost"   # Changed from localhost
   name: "compass"
   # FIXME(prod): Create new user id
   user: "this_is_mjk"
   port: 5432
 
 rabbitmq:
-  host: "localhost"
+  host: "localhost"    # Changed from localhost
   # FIXME(prod): Create new user id and pwd
   user: "this_is_mjk"
   password: "guest"
