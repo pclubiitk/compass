@@ -185,6 +185,12 @@ func updateProfile(c *gin.Context) {
 		// if !verifyProfile(c, profileData) {
 		// 	return
 		// }
+		if viper.GetString("env") != "dev" {			
+			if !verifyProfile(c, profileData) {
+				return
+			}
+		}
+		
 
 	}
 	var newPfpPath string

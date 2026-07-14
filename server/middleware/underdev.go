@@ -2,12 +2,13 @@ package middleware
 
 import (
 	"net/http"
-
 	"github.com/gin-gonic/gin"
+	"github.com/spf13/viper"
 )
 
 // Later update this to the config or some better way
-var MapsUnderDev = false
+// var MapsUnderDev = false
+var MapsUnderDev = viper.GetString("env") != "dev"
 
 func UnderDev(c *gin.Context, location string) {
 	switch location {
