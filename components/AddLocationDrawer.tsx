@@ -55,6 +55,7 @@ export default function AddLocationDrawer({
     latitude: "",
     longitude: "",
   });
+  const [lastCoords, setLastCoords] = useState<{ lat: string; lng: string } | null>(null);
   const [coverPic, setCoverPic] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -83,6 +84,26 @@ export default function AddLocationDrawer({
     window.addEventListener("trigger-add-location", handler);
     return () => window.removeEventListener("trigger-add-location", handler);
   }, [onOpenChange]);
+
+  // Update coordinates when drawer opens
+  useEffect(() => {
+    if (open) {
+      const lat = localStorage.getItem("selected_lat");
+      const lon = localStorage.getItem("selected_lon");
+      if (lat && lon) {
+        setLastCoords({ lat, lng: lon });
+      }
+    } else {
+      setLastCoords(null);
+    }
+  }, [open]);
+
+  // Sync coordinates from localStorage to form when they change
+  useEffect(() => {
+    if (open && lastCoords) {
+      setFormData((prev) => ({ ...prev, latitude: lastCoords.lat, longitude: lastCoords.lng }));
+    }
+  }, [lastCoords, open]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -154,8 +175,8 @@ export default function AddLocationDrawer({
       // 2. Submit Location
       const payload = {
         name: formData.name.trim(),
-        latitude: parseFloat(formData.latitude),
-        longitude: parseFloat(formData.longitude),
+        latitude: parseFloat(formData.latitude || localStorage.getItem("selected_lat") || "0"),
+        longitude: parseFloat(formData.longitude || localStorage.getItem("selected_lon") || "0"),
         locationType: type.trim(),
         description: formData.description.trim(),
         coverpic: coverPicId,
@@ -353,7 +374,7 @@ export default function AddLocationDrawer({
                 Latitude
               </span>
               <div className="font-mono text-sm text-foreground">
-                {formData.latitude || "—"}
+                {formData.latitude || localStorage.getItem("selected_lat") || "—"}
               </div>
             </div>
             <div className="bg-muted/40 border rounded-md px-3 py-2">
@@ -361,7 +382,7 @@ export default function AddLocationDrawer({
                 Longitude
               </span>
               <div className="font-mono text-sm text-foreground">
-                {formData.longitude || "—"}
+                {formData.longitude || localStorage.getItem("selected_lon") || "—"}
               </div>
             </div>
           </div>

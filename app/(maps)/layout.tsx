@@ -22,6 +22,7 @@ export default function MapsLayout({ children }: { children: React.ReactNode }) 
   const router = useRouter();
   const { isLoggedIn } = useGContext();
   const isLocationPage = pathname?.startsWith("/location");
+  const isMainPage = pathname === "/" || pathname === "/maps";
 
   // Trigger drawer open globally when "Add Location" pressed
   useEffect(() => {
@@ -59,7 +60,8 @@ export default function MapsLayout({ children }: { children: React.ReactNode }) 
   return (
     <FeatureGuard feature="maps">
       <div className="relative h-screen w-screen overflow-hidden bg-gray-50">
-      {memoMap}
+      {/* Only render old Map component when NOT on main page */}
+      {!isMainPage && memoMap}
 
       {/* Render Drawer outside Map React tree for isolation */}
       {typeof window !== "undefined" &&
@@ -92,6 +94,6 @@ export default function MapsLayout({ children }: { children: React.ReactNode }) 
       <BottomNav />
     </div>
     </FeatureGuard>
-    
+
   );
 }
