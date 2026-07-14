@@ -22,6 +22,7 @@ export default function MapsLayout({ children }: { children: React.ReactNode }) 
   const router = useRouter();
   const { isLoggedIn } = useGContext();
   const isLocationPage = pathname?.startsWith("/location");
+  const isNoticeboardPage = pathname?.startsWith("/noticeboard");
   const isMainPage = pathname === "/" || pathname === "/maps";
 
   // Trigger drawer open globally when "Add Location" pressed
@@ -60,8 +61,8 @@ export default function MapsLayout({ children }: { children: React.ReactNode }) 
   return (
     <FeatureGuard feature="maps">
       <div className="relative h-screen w-screen overflow-hidden bg-gray-50">
-      {/* Only render old Map component when NOT on main page */}
-      {!isMainPage && memoMap}
+      {/* Only render old Map component when NOT on main page or noticeboard */}
+      {!isMainPage && !isNoticeboardPage && memoMap}
 
       {/* Render Drawer outside Map React tree for isolation */}
       {typeof window !== "undefined" &&
@@ -81,12 +82,12 @@ export default function MapsLayout({ children }: { children: React.ReactNode }) 
         )}
 
       <div
-        className={`absolute inset-0 z-30 ${isLocationPage
+        className={`absolute inset-0 z-30 ${isLocationPage || isNoticeboardPage
           ? "overflow-y-auto pointer-events-auto bg-gray-50/50 dark:bg-zinc-950/50"
           : "pointer-events-none"
           }`}
       >
-        <div className={isLocationPage ? "min-h-full" : "pointer-events-auto"}>
+        <div className={isLocationPage || isNoticeboardPage ? "min-h-full" : "pointer-events-auto"}>
           {children}
         </div>
       </div>
