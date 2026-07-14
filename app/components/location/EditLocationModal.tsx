@@ -81,7 +81,6 @@ export function EditLocationModal({
     customType: "",
     layer: "",
   });
-  console.log(location.locationId);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -122,7 +121,6 @@ export function EditLocationModal({
     setIsSubmitting(true);
 
     try {
-      console.log(location.locationId);
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_MAPS_URL}/api/maps/editLocation/${location.locationId}`,
         {
