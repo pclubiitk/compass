@@ -54,6 +54,8 @@ import { AuthGuard } from "@/components/AuthGuard";
 import { toast } from "sonner";
 import { useGContext } from "@/components/ContextProvider";
 
+import Link from "next/link";
+
 
 // Types
 interface LocationData {
@@ -70,6 +72,8 @@ interface LocationData {
   biopics: string[];
   location_type?: string;
   layer?: number;
+  latitude?: number;
+  longitude?: number;
 }
 
 interface ReviewData {
@@ -185,19 +189,19 @@ export default function LocationPage() {
           <div className="lg:col-span-3 space-y-6">
             <div className="rounded-xl shadow-sm border bg-white dark:bg-zinc-900 dark:border-zinc-800 overflow-hidden">
               {/* Header */}
-              <div className="flex items-center justify-between px-6 py-4 border-b dark:border-zinc-800">
+              <div className="flex flex-col gap-3 px-6 py-4 border-b sm:flex-row sm:items-center sm:justify-between">
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
                   {location.name}
                 </h1>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="rounded-full"
-                    onClick={() => router.back()}
-                  >
-                    <X className="w-5 h-5" />
-                  </Button>
+                <div className="flex flex-wrap items-center justify-end gap-2 sm:mt-0">
+                <Link
+                  href={`https://www.google.com/maps/dir/?api=1&destination=${location.latitude},${location.longitude}&travelmode=walking`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none bg-secondary text-secondary-foreground hover:bg-secondary/80 h-9 px-3 cursor-pointer"
+                >
+                  Navigate
+                </Link>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button
@@ -281,6 +285,14 @@ export default function LocationPage() {
                       </Button>
                     </EditLocationModal>
                   ) : null}
+                  <Button
+                      variant="ghost"
+                      size="icon"
+                      className="rounded-full"
+                      onClick={() => router.back()}
+                    >
+                      <X className="w-5 h-5" />
+                    </Button>
                 </div>
               </div>
 
