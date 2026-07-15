@@ -217,7 +217,7 @@ console.log(
                       </Badge>
                     </div>
 
-                    <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
+                    <p className="text-sm text-muted-foreground line-clamp-2 mb-4 whitespace-pre-wrap break-words">
                       {location.description || "No description"}
                     </p>
 
