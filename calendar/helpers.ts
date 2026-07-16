@@ -115,30 +115,51 @@ export function navigateDate(
   return ops[view](date, 1);
 }
 
-export function getEventsCount(
+export function getEventsBreakdown(
   events: IEvent[],
   date: Date,
   view: TCalendarView
-): number {
+): { classCount: number; eventCount: number } {
+  const breakdown = { classCount: 0, eventCount: 0 };
+
+  const countEvents = (filteredEvents: IEvent[]) => {
+    for (const event of filteredEvents) {
+      const isClass =
+        event.title.startsWith("Lec-") ||
+        event.title.startsWith("Tut-") ||
+        event.title.startsWith("Prc-");
+      if (isClass) {
+        breakdown.classCount++;
+      } else {
+        breakdown.eventCount++;
+      }
+    }
+    return breakdown;
+  };
+
   // For day view: count events that START on this day OR span across it
   if (view === "day") {
-    return events.filter(event => {
-      const start = startOfDay(toDate(event.startDate));
-      const end = startOfDay(toDate(event.endDate));
-      const day = startOfDay(date);
-      return day >= start && day <= end;
-    }).length;
+    return countEvents(
+      events.filter(event => {
+        const start = startOfDay(toDate(event.startDate));
+        const end = startOfDay(toDate(event.endDate));
+        const day = startOfDay(date);
+        return day >= start && day <= end;
+      })
+    );
   }
 
   // For week view: count events that overlap with this week
   if (view === "week") {
-    return events.filter(event => {
-      const eventStart = toDate(event.startDate);
-      const eventEnd = toDate(event.endDate);
-      const weekStart = startOfWeek(date);
-      const weekEnd = endOfWeek(date);
-      return eventStart <= weekEnd && eventEnd >= weekStart;
-    }).length;
+    return countEvents(
+      events.filter(event => {
+        const eventStart = toDate(event.startDate);
+        const eventEnd = toDate(event.endDate);
+        const weekStart = startOfWeek(date);
+        const weekEnd = endOfWeek(date);
+        return eventStart <= weekEnd && eventEnd >= weekStart;
+      })
+    );
   }
 
   // For month/agenda/year views: compare by startDate granularity is sufficient
@@ -149,9 +170,11 @@ export function getEventsCount(
   } as const;
 
   const fn = compareFns[view as keyof typeof compareFns];
-  if (fn) return events.filter(event => fn(toDate(event.startDate), date)).length;
+  if (fn) {
+    return countEvents(events.filter(event => fn(toDate(event.startDate), date)));
+  }
 
-  return 0;
+  return breakdown;
 }
 
 /* ============================================================
@@ -350,11 +373,13 @@ export function calculateMonthEventPositions(
 
       return bDuration - aDuration || aStart.getTime() - bStart.getTime();
     }),
-    ...singleDayEvents.sort(
-      (a, b) =>
-        toDate(a.startDate).getTime() -
-        toDate(b.startDate).getTime()
-    ),
+    ...singleDayEvents.sort((a, b) => {
+      const isClassA = a.title.startsWith("Lec-") || a.title.startsWith("Tut-") || a.title.startsWith("Prc-");
+      const isClassB = b.title.startsWith("Lec-") || b.title.startsWith("Tut-") || b.title.startsWith("Prc-");
+      if (!isClassA && isClassB) return -1;
+      if (isClassA && !isClassB) return 1;
+      return toDate(a.startDate).getTime() - toDate(b.startDate).getTime();
+    }),
   ];
 
   sortedEvents.forEach(event => {
@@ -425,6 +450,13 @@ export function getMonthCellEvents(
     .sort((a, b) => {
       if (a.isMultiDay && !b.isMultiDay) return -1;
       if (!a.isMultiDay && b.isMultiDay) return 1;
+
+      // Class events (Lec-, Tut-, Prc-) should be sorted below non-class events
+      const isClassA = a.title.startsWith("Lec-") || a.title.startsWith("Tut-") || a.title.startsWith("Prc-");
+      const isClassB = b.title.startsWith("Lec-") || b.title.startsWith("Tut-") || b.title.startsWith("Prc-");
+
+      if (!isClassA && isClassB) return -1;
+      if (isClassA && !isClassB) return 1;
       
       // Push overflow events (position: -1) to the bottom of the list
       const posA = a.position === -1 ? 999 : a.position;

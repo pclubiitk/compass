@@ -75,15 +75,18 @@ type Review struct {
 // Completely separate from admin-published Notices.
 // Users can only see, edit, and delete their own events.
 type UserEvent struct {
-	CreatedAt     time.Time      `json:"created_at"`
-	UpdatedAt     time.Time      `json:"-"`
-	DeletedAt     gorm.DeletedAt `gorm:"index" json:"-"`
-	EventId       uuid.UUID      `gorm:"type:uuid;default:gen_random_uuid();primaryKey" json:"eventId"`
-	Title         string         `json:"title" binding:"required"`
-	Description   string         `gorm:"type:text" json:"description"`
-	EventTime     time.Time      `json:"eventTime"`
-	EventEndTime  time.Time      `json:"eventEndTime"`
-	Color         string         `json:"color"`
-	ContributedBy uuid.UUID      `json:"contributedBy"`
-	User          *User          `gorm:"foreignKey:ContributedBy;references:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"-"`
+	CreatedAt            time.Time      `json:"created_at"`
+	UpdatedAt            time.Time      `json:"-"`
+	DeletedAt            gorm.DeletedAt `gorm:"index" json:"-"`
+	EventId              uuid.UUID      `gorm:"type:uuid;default:gen_random_uuid();primaryKey" json:"eventId"`
+	Title                string         `json:"title" binding:"required"`
+	Description          string         `gorm:"type:text" json:"description"`
+	EventTime            time.Time      `json:"eventTime"`
+	EventEndTime         time.Time      `json:"eventEndTime"`
+	Color                string         `json:"color"`
+	RecurrenceType       string         `json:"recurrenceType"`                    // "" (one-off) or "weekly"
+	RecurrenceEnd        *time.Time     `json:"recurrenceEnd"`                     // nil = repeats forever; set to bound recurrence
+	RecurrenceExceptions string         `gorm:"type:text" json:"recurrenceExceptions"` // comma-separated YYYY-MM-DD dates to skip (holidays, breaks)
+	ContributedBy        uuid.UUID      `gorm:"index" json:"contributedBy"`
+	User                 *User          `gorm:"foreignKey:ContributedBy;references:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"-"`
 }

@@ -33,6 +33,8 @@ func Router(r *gin.Engine) {
 		// Personal calendar events
 		user.GET("/user-events", getUserEvents)              // fetch all personal events for the authenticated user
 		user.POST("/user-event", createUserEvent)            // create a new personal event
+		user.POST("/user-events/batch", batchCreateUserEvents) // bulk-create personal events (timetable import)
+		user.DELETE("/user-events/classes", deleteAllClassEvents) // delete all class events (timetable clear)
 		user.PUT("/user-event/:id", updateUserEvent)         // update a personal event (owner only)
 		user.DELETE("/user-event/:id", deleteUserEvent)      // delete a personal event (owner only)
 		// Calendar sync token management (authenticated)

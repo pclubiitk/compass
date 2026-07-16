@@ -39,10 +39,14 @@ export function AddEventDialog({ children, startDate, startTime }: IProps) {
       title: "",
       description: "",
       color: "blue",
+      repeatWeekly: false,
+      recurrenceEndDate: null,
       startDate: typeof startDate !== "undefined" ? startDate : undefined,
       startTime: typeof startTime !== "undefined" ? startTime : undefined,
     },
   });
+
+  const watchRepeatWeekly = form.watch("repeatWeekly");
 
   const onSubmit = async (values: TUserEventFormData) => {
     const startDateTime = new Date(values.startDate);
@@ -58,6 +62,8 @@ export function AddEventDialog({ children, startDate, startTime }: IProps) {
         eventTime: startDateTime.toISOString(),
         eventEndTime: endDateTime.toISOString(),
         color: values.color,
+        recurrenceType: values.repeatWeekly ? "weekly" : "",
+        recurrenceEnd: values.recurrenceEndDate ? values.recurrenceEndDate.toISOString() : null,
       });
 
       // Optimistically add to calendar immediately
@@ -76,6 +82,8 @@ export function AddEventDialog({ children, startDate, startTime }: IProps) {
         title: "",
         description: "",
         color: "blue",
+        repeatWeekly: false,
+        recurrenceEndDate: null,
         startDate,
         startTime,
       });
@@ -213,6 +221,51 @@ export function AddEventDialog({ children, startDate, startTime }: IProps) {
                 </FormItem>
               )}
             />
+
+            {/* Recurrence toggle */}
+            <FormField
+              control={form.control}
+              name="repeatWeekly"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="flex items-center gap-2">
+                    <FormControl>
+                      <input
+                        type="checkbox"
+                        id="repeatWeekly"
+                        checked={field.value}
+                        onChange={field.onChange}
+                        className="h-4 w-4 rounded border-border accent-primary"
+                      />
+                    </FormControl>
+                    <FormLabel htmlFor="repeatWeekly" className="!mt-0 cursor-pointer">
+                      Repeat weekly
+                    </FormLabel>
+                  </div>
+                </FormItem>
+              )}
+            />
+
+            {watchRepeatWeekly && (
+              <FormField
+                control={form.control}
+                name="recurrenceEndDate"
+                render={({ field, fieldState }) => (
+                  <FormItem>
+                    <FormLabel>Repeat until (optional — leave empty for forever)</FormLabel>
+                    <FormControl>
+                      <SingleDayPicker
+                        value={field.value ?? undefined}
+                        onSelect={date => field.onChange(date as Date)}
+                        placeholder="No end date (forever)"
+                        data-invalid={fieldState.invalid}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             <FormField
               control={form.control}
