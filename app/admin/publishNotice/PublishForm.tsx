@@ -199,10 +199,12 @@ export default function NoticeboardForm() {
   };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
+    const readyImages = images.filter((img) => img.id !== null);
     try {
       const payload = {
         ...formData,
+        coverPic: readyImages[0]?.id ?? null,
+        bioPics: readyImages.slice(1).map((img) => img.id),
         eventEndTime: formData.eventEndTime
           ? new Date(formData.eventEndTime).toISOString()
           : null,
@@ -238,22 +240,22 @@ export default function NoticeboardForm() {
   };
 
   function isoToDatetimeLocal(iso: string) {
-  const date = new Date(iso);
+    const date = new Date(iso);
 
-  const pad = (n: number) => String(n).padStart(2, "0");
+    const pad = (n: number) => String(n).padStart(2, "0");
 
-  return (
-    date.getFullYear() +
-    "-" +
-    pad(date.getMonth() + 1) +
-    "-" +
-    pad(date.getDate()) +
-    "T" +
-    pad(date.getHours()) +
-    ":" +
-    pad(date.getMinutes())
-  );
-}
+    return (
+      date.getFullYear() +
+      "-" +
+      pad(date.getMonth() + 1) +
+      "-" +
+      pad(date.getDate()) +
+      "T" +
+      pad(date.getHours()) +
+      ":" +
+      pad(date.getMinutes())
+    );
+  }
 
 
   // Clean up all object URLs when the component unmounts

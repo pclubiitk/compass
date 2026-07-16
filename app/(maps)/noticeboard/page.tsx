@@ -10,16 +10,7 @@ import { toast } from "sonner";
 import { NoticeCard } from "@/components/noticeboard/NoticeComponent";
 import { AuthGuard } from "@/components/AuthGuard";
 
-interface Notice {
-  id: string;
-  title: string;
-  description: string;
-  body: string;
-  entity: string;
-  location: string;
-  eventTime: string;
-}
-
+import { Notice } from "@/lib/types";
 export default function NoticeBoardPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [shareNotice, setShareNotice] = useState<Notice | null>(null);

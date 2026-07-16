@@ -32,6 +32,8 @@ func noticeProvider(c *gin.Context) {
 	query := connections.DB.
 		Model(&model.Notice{}).
 		Preload("User", connections.UserSelect).
+		Preload("CoverPic", connections.ImageSelect).
+		Preload("BioPics", connections.ImageSelect).
 		Order("created_at DESC")
 
 	var noticeList []model.Notice
@@ -58,7 +60,7 @@ func noticeProvider(c *gin.Context) {
 			return
 		}
 
-		// Count total notices 
+		// Count total notices
 		var count int64
 		if err := connections.DB.Model(&model.Notice{}).Count(&count).Error; err != nil {
 			logrus.Errorf("Failed to count notices: %v", err)
@@ -76,7 +78,7 @@ func noticeProvider(c *gin.Context) {
 		return
 	}
 
-	// No pagination 
+	// No pagination
 	if err := query.Find(&noticeList).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to fetch notices",
@@ -94,7 +96,7 @@ func noticeProvider(c *gin.Context) {
 // noticeDetailProvider fetches a single notice by its ID using GORM.
 func noticeDetailProvider(c *gin.Context) {
 
-	// Get and validate the ID from the URL
+	// Get and validate the ID from the URL\
 	noticeIDStr := c.Param("id")
 	noticeID, err := uuid.Parse(noticeIDStr)
 	if err != nil {
@@ -107,6 +109,8 @@ func noticeDetailProvider(c *gin.Context) {
 	result := connections.DB.
 		Model(&model.Notice{}).
 		Preload("User", connections.UserSelect). // Preload user data, just like in noticeProvider
+		Preload("CoverPic", connections.ImageSelect).
+		Preload("BioPics", connections.ImageSelect).
 		Where("notice_id = ?", noticeID).
 		First(&notice) // Use First() to get a single record
 
