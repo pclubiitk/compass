@@ -1,19 +1,12 @@
 import { useRouter } from "next/navigation";
 
-import {  Share2, Copy, Edit, Trash } from "lucide-react";
+import { Share2, Copy, Edit, Trash } from "lucide-react";
 
 
 import { useGContext } from "@/components/ContextProvider";
 import { toast } from "sonner";
-interface Notice {
-  id: string;
-  title: string;
-  description: string;
-  body: string;
-  entity: string;
-  location: string;
-  eventTime: string;
-}
+import { Notice } from "@/lib/types";
+
 
 const NoticeCard = ({
   notice,
@@ -72,6 +65,14 @@ const NoticeCard = ({
       <h2 className="text-xl font-bold text-gray-800 group-hover:text-blue-600 transition-colors">
         {notice.title}
       </h2>
+      {notice.coverPic ? (
+        <img
+          src={`${process.env.NEXT_PUBLIC_ASSET_URL}/assets/${notice.coverPic.ImageID}.webp`}
+          alt="Cover"
+          className="w-full h-48 object-cover rounded-lg mt-3"
+          
+        />
+      ) : <p className="text-gray-500">No cover image available</p>}
       <p className="text-gray-600 mt-2">{notice.description}</p>
       <div className="text-sm text-gray-500 mt-4">
         <span>

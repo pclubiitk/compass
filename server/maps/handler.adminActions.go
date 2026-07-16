@@ -216,6 +216,25 @@ func addNotice(c *gin.Context) {
 				return err
 			}
 		}
+
+		if input.BioPics != nil && len(*input.BioPics) > 0 {
+			if err := tx.Model(&model.Image{}).
+				Where("image_id IN ?", *input.BioPics).
+				Updates(map[string]interface{}{
+					"ParentAssetID":   notice.NoticeId,
+					"ParentAssetType": "notices",
+					"Submitted":       true,
+					"Status":          "approved",
+				}).Error; err != nil {
+				return err
+			}
+			for _, imgID := range *input.BioPics {
+				if err := assets.MoveImageFromTmpToPublic(imgID); err != nil {
+					return err
+				}
+			}
+		}
+		
 		return nil
 	}); err != nil {
 		logrus.Error("Failed to create notice:", err)
@@ -483,7 +502,7 @@ func editLocation(c *gin.Context) {
 	loc.Time = input.Time
 	loc.Contact = input.Contact
 	loc.LocationType = input.LocationType
-	loc.Layer = int(input.Layer) 
+	loc.Layer = int(input.Layer)
 
 	if err := connections.DB.Save(&loc).Error; err != nil {
 		logrus.WithError(err).Error("Failed to update location")
