@@ -22,6 +22,35 @@ export const userEventSchema = z.object({
     ["blue", "green", "red", "yellow", "purple", "orange", "gray"],
     { error: "Color is required" }
   ),
+  // Recurrence fields
+  repeatWeekly: z.boolean().default(false),
+  recurrenceEndDate: z.date().optional().nullable(),
+}).superRefine((data, ctx) => {
+  const startDateTime = new Date(data.startDate);
+  startDateTime.setHours(data.startTime.hour, data.startTime.minute, 0, 0);
+
+  const endDateTime = new Date(data.endDate);
+  endDateTime.setHours(data.endTime.hour, data.endTime.minute, 0, 0);
+
+  if (startDateTime >= endDateTime) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "End time must be after start time",
+      path: ["endTime"],
+    });
+  }
+
+  if (data.repeatWeekly && data.recurrenceEndDate) {
+    const recurrenceEnd = new Date(data.recurrenceEndDate);
+    recurrenceEnd.setHours(23, 59, 59, 999);
+    if (recurrenceEnd < startDateTime) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Recurrence end date must be after start date",
+        path: ["recurrenceEndDate"],
+      });
+    }
+  }
 });
 
 export type TUserEventFormData = z.infer<typeof userEventSchema>;

@@ -22,7 +22,7 @@ export function DraggableEvent({ event, children }: DraggableEventProps) {
 
   const [{ isDragging }, drag, preview] = useDrag(() => ({
     type: ItemTypes.EVENT,
-    canDrag: () => !!event.isUserEvent, // Only allow dragging personal user events
+    canDrag: () => !!event.isUserEvent && !(event.title.startsWith("Lec-") || event.title.startsWith("Tut-") || event.title.startsWith("Prc-")) && event.recurrenceType !== "weekly", // Only allow dragging single personal user events
     item: () => {
       const width = ref.current?.offsetWidth || 0;
       const height = ref.current?.offsetHeight || 0;

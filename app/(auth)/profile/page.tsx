@@ -53,8 +53,8 @@ export default function ProfilePage() {
   const [calendarLoading, setCalendarLoading] = useState(true);
 
   // Fetch calendar events using the new requests module
-  const fetchCalendarEvents = useCallback(async () => {
-    setCalendarLoading(true);
+  const fetchCalendarEvents = useCallback(async (isInitial = false) => {
+    if (isInitial) setCalendarLoading(true);
     try {
       const events = await getEvents(1, false);
       setCalendarEvents(events);
@@ -63,13 +63,13 @@ export default function ProfilePage() {
       console.error("Failed to fetch calendar events:", err);
       return [];
     } finally {
-      setCalendarLoading(false);
+      if (isInitial) setCalendarLoading(false);
     }
   }, []);
 
   // Load calendar events on mount
   useEffect(() => {
-    fetchCalendarEvents();
+    fetchCalendarEvents(true);
   }, [fetchCalendarEvents]);
 
   const fetchProfile = useCallback(async () => {
@@ -83,7 +83,7 @@ export default function ProfilePage() {
       );
       if (res.ok) {
         const data = await res.json();
-        
+
         const normalized = {
           ...data,
           profile: {
@@ -162,22 +162,22 @@ export default function ProfilePage() {
   return (
     <div className="flex flex-col lg:flex-row min-h-screen bg-muted/40">
       {/* --- Left Column (Fixed) --- */}
-<aside className="w-full lg:w-1/3 xl:w-1/3 p-4 sm:p-6 lg:p-8">
-<div className="lg:sticky lg:top-8">
-  <SocialProfileCard
-    email={profile.email}
-    userID={profile.UserID}
-    onProfileUpdate={fetchProfile}
-  />
-  <div className="h-3"></div>
-  <AdminCard
-    email={profile.email}
-    isAdmin={userData.role >= 100}
-    isSuperAdmin={userData.role === 101}
-    userRole={userData.role}
-  />
-</div>
-</aside>
+      <aside className="w-full lg:w-1/3 xl:w-1/3 p-4 sm:p-6 lg:p-8">
+        <div className="lg:sticky lg:top-8">
+          <SocialProfileCard
+            email={profile.email}
+            userID={profile.UserID}
+            onProfileUpdate={fetchProfile}
+          />
+          <div className="h-3"></div>
+          <AdminCard
+            email={profile.email}
+            isAdmin={userData.role >= 100}
+            isSuperAdmin={userData.role === 101}
+            userRole={userData.role}
+          />
+        </div>
+      </aside>
 
 
       {/* --- Right Column (Scrollable) --- */}
@@ -204,7 +204,7 @@ export default function ProfilePage() {
 
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-0">
+            <CardContent className="p-2 sm:p-4 lg:p-6 pt-0">
               {calendarLoading ? (
                 <div className="h-96 flex items-center justify-center">
                   <Skeleton className="h-80 w-full mx-4" />

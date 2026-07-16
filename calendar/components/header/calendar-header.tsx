@@ -4,6 +4,7 @@ import { useCalendar } from "@/calendar/contexts/calendar-context";
 import { Button } from "@/components/ui/button";
 import { AddEventDialog } from "@/calendar/components/dialogs/add-event-dialog";
 import { CalendarSyncDialog } from "@/calendar/components/dialogs/calendar-sync-dialog";
+import { ManageHolidaysDialog } from "@/calendar/components/dialogs/manage-holidays-dialog";
 
 import { EntitySelect } from "../entity-select";
 import { TodayButton } from "@/calendar/components/header/today-button";
@@ -70,6 +71,7 @@ export function CalendarHeader({ view, events }: CalendarHeaderProps) {
           </div>
           <EntitySelect />
           <div className="flex items-center gap-1.5 ml-auto">
+            <ManageHolidaysDialog />
             <AddEventDialog startDate={selectedDate}>
               <Button size="sm" className="gap-1.5">
                 <Plus className="size-4" strokeWidth={2} />
