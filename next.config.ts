@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import withPWA from "next-pwa";
+const SEARCH_URL = process.env.NEXT_PUBLIC_SEARCH_DOMAIN 
 
 const nextConfig: NextConfig = {
   /* config options here */
@@ -14,10 +15,8 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/students/:path*",
-        destination: "http://localhost:3000/students/:path*",
+        destination: `${SEARCH_URL}/students/:path*`,
       }
-
-
     ]
   }
 
