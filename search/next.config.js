@@ -39,7 +39,7 @@
 
 const nextConfig = {
   reactStrictMode: true,
-  basePath: "/students",
+  basePath: process.env.NEXT_PUBLIC_BASE_PATH,
   //   async redirects() {
   //   	return [{ //redirect all other pages to the index page i.e. url.com/bla -> url.com
   //   		source: "/:params([^]{1,})", //this matches *any* non-zero length string - has to be non-zero otherwise will infinitely redirect
