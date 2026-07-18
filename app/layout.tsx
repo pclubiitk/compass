@@ -6,7 +6,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import SWRProvider from "./SWRProvider";
 import type { Metadata } from "next";
 import InstallPWA from "@/components/profile/InstallPWA";
-
+import InstallPWASafari from "@/components/profile/SafariPWAPopup";
 
 export const metadata: Metadata = {
   title: "Student Search and Compass",
@@ -33,6 +33,7 @@ export default function RootLayout({
                 <GlobalLoader />
                 {children}
                 <InstallPWA />
+                <InstallPWASafari />
               </main>
             </GlobalContextProvider>
           </ThemeProvider>
