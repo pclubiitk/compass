@@ -158,6 +158,9 @@ interface UserEventFromAPI {
   eventEndTime: string; // ISO string
   color: string;
   contributedBy: string;
+  recurrenceType?: string;
+  recurrenceEnd?: string | null;
+  recurrenceExceptions?: string;
 }
 
 /**
@@ -174,6 +177,9 @@ function userEventToIEvent(event: UserEventFromAPI, index: number): IEvent {
     color: (event.color as IEvent["color"]) || "blue",
     entity: "personal",      // Always tagged as Personal
     isUserEvent: true,
+    recurrenceType: event.recurrenceType || "",
+    recurrenceEnd: event.recurrenceEnd || null,
+    recurrenceExceptions: event.recurrenceExceptions || "",
   };
 }
 
@@ -187,6 +193,10 @@ export async function getUserEvents(): Promise<IEvent[]> {
   try {
     const res = await fetch(`${mapServer}/api/maps/user-events`, {
       credentials: "include",
+      cache: "no-store",
+      headers: {
+        "Cache-Control": "no-cache",
+      },
     });
     if (!res.ok) {
       if (res.status === 401) return []; // Not logged in — silently return empty
@@ -206,6 +216,9 @@ export interface CreateUserEventPayload {
   eventTime: string;    // ISO string
   eventEndTime: string; // ISO string
   color: string;
+  recurrenceType?: string;
+  recurrenceEnd?: string | null;
+  recurrenceExceptions?: string[];
 }
 
 /**
@@ -323,3 +336,22 @@ export async function regenerateCalendarToken(): Promise<CalendarTokenResponse> 
   return res.json() as Promise<CalendarTokenResponse>;
 }
 
+/**
+ * Delete all imported class events for the authenticated user.
+ */
+export async function deleteAllClassEvents(): Promise<{ message: string }> {
+  const mapServer = process.env.NEXT_PUBLIC_MAP_SERVER || process.env.NEXT_PUBLIC_MAPS_URL;
+  if (!mapServer) throw new Error("Map server not configured");
+
+  const res = await fetch(`${mapServer}/api/maps/user-events/classes`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || "Failed to clear timetable");
+  }
+
+  return res.json();
+}

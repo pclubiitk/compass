@@ -36,6 +36,10 @@ function LoginPageHolder() {
     "/";
 
   const handleRedirect = useCallback((url: string) => {
+    if (url === "close") {
+      window.close();
+      return;
+    }
     if (url.startsWith("http://") || url.startsWith("https://")) {
       window.location.replace(url);
     } else {

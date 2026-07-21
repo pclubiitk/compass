@@ -126,6 +126,36 @@ func calendarFeedHandler(c *gin.Context) {
 		fmt.Fprintf(w, "DTEND:%s\r\n", dtend)
 		fmt.Fprintf(w, "SUMMARY:%s\r\n", foldICSLine(escapeICSText(evt.Title)))
 		fmt.Fprintf(w, "DESCRIPTION:%s\r\n", foldICSLine(escapeICSText(evt.Description)))
+
+		// Emit RRULE for recurring events
+		if evt.RecurrenceType == "weekly" {
+			if evt.RecurrenceEnd != nil && !evt.RecurrenceEnd.IsZero() {
+				until := evt.RecurrenceEnd.UTC().Format("20060102T150405Z")
+				fmt.Fprintf(w, "RRULE:FREQ=WEEKLY;UNTIL=%s\r\n", until)
+			} else {
+				// No end date — repeats forever
+				fmt.Fprintf(w, "RRULE:FREQ=WEEKLY\r\n")
+			}
+
+			// Emit EXDATE for recurrence exceptions (holidays, breaks)
+			if evt.RecurrenceExceptions != "" {
+				for _, dateStr := range strings.Split(evt.RecurrenceExceptions, ",") {
+					dateStr = strings.TrimSpace(dateStr)
+					if dateStr == "" {
+						continue
+					}
+					// Parse YYYY-MM-DD and combine with original event time for EXDATE
+					exDate, err := time.Parse("2006-01-02", dateStr)
+					if err != nil {
+						continue
+					}
+					exDate = time.Date(exDate.Year(), exDate.Month(), exDate.Day(),
+						evt.EventTime.Hour(), evt.EventTime.Minute(), evt.EventTime.Second(), 0, evt.EventTime.Location())
+					fmt.Fprintf(w, "EXDATE:%s\r\n", exDate.UTC().Format("20060102T150405Z"))
+				}
+			}
+		}
+
 		fmt.Fprintf(w, "CATEGORIES:Personal\r\n")
 		fmt.Fprintf(w, "END:VEVENT\r\n")
 	}

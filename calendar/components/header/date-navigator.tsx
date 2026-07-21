@@ -7,7 +7,7 @@ import { useCalendar } from "@/calendar/contexts/calendar-context";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
-import { getEventsCount, navigateDate, rangeText } from "@/calendar/helpers";
+import { getEventsBreakdown, navigateDate, rangeText } from "@/calendar/helpers";
 
 import type { IEvent } from "@/calendar/interfaces";
 import type { TCalendarView } from "@/calendar/types";
@@ -23,7 +23,7 @@ export function DateNavigator({ view, events }: IProps) {
   const month = formatDate(selectedDate, "MMMM");
   const year = selectedDate.getFullYear();
 
-  const eventCount = useMemo(() => getEventsCount(events, selectedDate, view), [events, selectedDate, view]);
+  const breakdown = useMemo(() => getEventsBreakdown(events, selectedDate, view), [events, selectedDate, view]);
 
   const handlePrevious = () => setSelectedDate(navigateDate(selectedDate, view, "previous"));
   const handleNext = () => setSelectedDate(navigateDate(selectedDate, view, "next"));
@@ -34,8 +34,11 @@ export function DateNavigator({ view, events }: IProps) {
         <span className="text-lg font-semibold">
           {month} {year}
         </span>
-        <Badge variant="outline" className="px-1.5">
-          {eventCount} events
+        <Badge variant="outline" className="px-1.5 flex gap-1 items-center">
+          {breakdown.eventCount > 0 && <span>{breakdown.eventCount} events</span>}
+          {breakdown.eventCount > 0 && breakdown.classCount > 0 && <span>•</span>}
+          {breakdown.classCount > 0 && <span>{breakdown.classCount} classes</span>}
+          {breakdown.eventCount === 0 && breakdown.classCount === 0 && <span>0 events</span>}
         </Badge>
       </div>
 

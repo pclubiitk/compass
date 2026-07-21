@@ -48,6 +48,10 @@ export interface IEvent {
   isUserEvent?: boolean;
   // The DB UUID of the personal event (needed for edit/delete API calls)
   userEventId?: string;
+  // Recurrence support
+  recurrenceType?: string;       // "" | "weekly"
+  recurrenceEnd?: string | null;  // ISO string, null = repeats forever
+  recurrenceExceptions?: string;  // comma-separated YYYY-MM-DD dates to skip
 }
 
 export interface ICalendarCell {

@@ -67,11 +67,19 @@ type FlagActionRequest struct {
 }
 
 type AddUserEventRequest struct {
-	Title         string    `json:"title" binding:"required"`
-	Description   string    `json:"description"`
-	EventTime     time.Time `json:"eventTime" binding:"required"`
-	EventEndTime  time.Time `json:"eventEndTime" binding:"required"`
-	Color         string    `json:"color"`
+	Title                string     `json:"title" binding:"required"`
+	Description          string     `json:"description"`
+	EventTime            time.Time  `json:"eventTime" binding:"required"`
+	EventEndTime         time.Time  `json:"eventEndTime" binding:"required"`
+	Color                string     `json:"color"`
+	RecurrenceType       string     `json:"recurrenceType,omitempty"`       // "" or "weekly"
+	RecurrenceEnd        *time.Time `json:"recurrenceEnd,omitempty"`        // nil = forever
+	RecurrenceExceptions []string   `json:"recurrenceExceptions,omitempty"` // YYYY-MM-DD dates to skip
+}
+
+// BatchAddUserEventsRequest supports bulk-creating personal events (e.g. timetable import).
+type BatchAddUserEventsRequest struct {
+	Events []AddUserEventRequest `json:"events" binding:"required,min=1,max=100"`
 }
 
 type EditLocationRequest struct {

@@ -93,7 +93,7 @@ export function ClientContainer({ view }: IProps) {
   }, [filteredEvents]);
 
   return (
-    <div className="mx-auto w-full max-w-5xl md:max-w-3xl lg:max-w-2xl scale-[0.9] md:scale-[0.85] lg:scale-[0.8] origin-top overflow-hidden rounded-xl border shadow-sm transition-transform">
+    <div className="mx-auto w-full max-w-full overflow-hidden rounded-xl border shadow-sm transition-transform bg-background">
 
       <CalendarHeader view={view} events={filteredEvents} />
 
