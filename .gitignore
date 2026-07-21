@@ -62,3 +62,15 @@ next-env.d.ts
 /server/db_data/
 /server/db_backup
 /server/logs
+
+server/pfp/*
+!server/pfp/.gitkeep
+
+server/public/*
+!server/public/.gitkeep
+
+server/tmp/*
+!server/tmp/.gitkeep
+
+# build
+server/server

@@ -25,3 +25,34 @@ export interface Notice {
   deletedAt?: string;
   ContributedBy?: string;
 }
+
+// Types
+export interface LocationData {
+  id: string;
+  locationId?: string;
+  name: string;
+  description: string;
+  avg_rating: number;
+  ReviewCount: number;
+  Tag: string;
+  Time: string;
+  Contact: string; // Name of contact person?
+  contact: string; // Phone/Email?
+  coverpic: string;
+  biopics: string[];
+  location_type?: string;
+}
+
+export interface ReviewData {
+  id: string;
+  rating: number;
+  description: string;
+  CreatedAt: string;
+  Images?: {
+    ImageID: string;
+  }[];
+  User: {
+    name: string;
+    profile_pic?: string;
+  };
+}
