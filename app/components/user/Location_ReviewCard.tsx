@@ -44,7 +44,7 @@ export default function ReviewCard({
         </div>
         <Separator />
 
-        <p className="my-3 text-sm leading-relaxed">{review_body}</p>
+        <p className="my-3 text-sm leading-relaxed whitespace-pre-wrap break-words">{review_body}</p>
       </div>
     </Card>
   );
