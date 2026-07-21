@@ -69,7 +69,7 @@ export default function UserNoticeDetailPage() {
             alt="Cover"
             className="w-full h-64 object-cover rounded-lg mb-6"
             onClick={() =>
-              setLightboxUrl(`${process.env.NEXT_PUBLIC_ASSET_URL}/assets/${notice.coverPic.ImageID}.webp`)
+              setLightboxUrl(`${process.env.NEXT_PUBLIC_ASSET_URL}/assets/${notice.coverPic?.ImageID}.webp`)
             }
           />
         ) : (
@@ -89,7 +89,7 @@ export default function UserNoticeDetailPage() {
         <div className="text-sm text-gray-500 mb-6">
           <span><strong>Location:</strong> {notice.location}</span>
           <span className="ml-4">
-            <strong>Time:</strong> {new Date(notice.createdAt).toLocaleString()}
+            <strong>Time:</strong> {new Date(notice.eventTime).toLocaleString()} {notice.eventEndTime ? "To " + (new Date(notice.eventEndTime).toLocaleString()) : null}
           </span>
         </div>
 

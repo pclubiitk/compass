@@ -53,37 +53,7 @@ import { AuthGuard } from "@/components/AuthGuard";
 
 import { toast } from "sonner";
 import { useGContext } from "@/components/ContextProvider";
-
-// Types
-interface LocationData {
-  id: string;
-  locationId?: string;
-  name: string;
-  description: string;
-  avg_rating: number;
-  ReviewCount: number;
-  Tag: string;
-  Time: string;
-  Contact: string; // Name of contact person?
-  contact: string; // Phone/Email?
-  coverpic: string;
-  biopics: string[];
-  location_type?: string;
-}
-
-interface ReviewData {
-  id: string;
-  rating: number;
-  description: string;
-  CreatedAt: string;
-  Images?: {
-    ImageID: string;
-  }[];
-  User: {
-    name: string;
-    profile_pic?: string;
-  };
-}
+import { LocationData, ReviewData } from "@/lib/types";
 
 export default function LocationPage() {
   const { id } = useParams();
@@ -345,12 +315,8 @@ export default function LocationPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-2 border-t dark:border-zinc-800">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <MapPin className="w-4 h-4" />
-                    <span>Campus Location</span>
-                  </div>
-
+                <div className="flex items-center justify-between pt-2">
+                  {location.contact?
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
@@ -363,13 +329,12 @@ export default function LocationPage() {
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-64">
-                      <h4 className="font-semibold mb-1">{location.Contact}</h4>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Phone className="w-3 h-3" />
                         {location.contact}
                       </div>
                     </PopoverContent>
-                  </Popover>
+                  </Popover> : null }
                 </div>
               </div>
 

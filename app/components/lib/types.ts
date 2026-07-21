@@ -29,14 +29,14 @@ interface Actions {
 //   entity: string;
 // }
 
-// export interface Img {
-//     CreatedAt: Date;
-//     UpdatedAt: Date;
-//     DeletedAt: Date;
-//     ImageID: string;
-//     OwnerID: string;
-//     ParentAssetID: string;
-//     ParentAssetType: string;
-//     Status: string;
-//     Submitted: boolean;
-// }
+export interface Img {
+    CreatedAt: Date;
+    UpdatedAt: Date;
+    DeletedAt: Date;
+    ImageID: string;
+    OwnerID: string;
+    ParentAssetID: string;
+    ParentAssetType: string;
+    Status: string;
+    Submitted: boolean;
+}
