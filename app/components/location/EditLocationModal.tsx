@@ -129,7 +129,7 @@ export function EditLocationModal({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             name: formData.name.trim(),
-            description: formData.description.trim(),
+            description: formData.description.replace(/\r\n/g, "\n"),
             tag: formData.tag.trim(),
             time: formData.time.trim(),
             contact: formData.contact.trim(),

@@ -54,6 +54,8 @@ import { AuthGuard } from "@/components/AuthGuard";
 import { toast } from "sonner";
 import { useGContext } from "@/components/ContextProvider";
 
+import Link from "next/link";
+
 
 // Types
 interface LocationData {
@@ -70,6 +72,8 @@ interface LocationData {
   biopics: string[];
   location_type?: string;
   layer?: number;
+  latitude?: number;
+  longitude?: number;
 }
 
 interface ReviewData {
@@ -185,25 +189,25 @@ export default function LocationPage() {
           <div className="lg:col-span-3 space-y-6">
             <div className="rounded-xl shadow-sm border bg-white dark:bg-zinc-900 dark:border-zinc-800 overflow-hidden">
               {/* Header */}
-              <div className="flex items-center justify-between px-6 py-4 border-b dark:border-zinc-800">
+              <div className="flex flex-col gap-3 px-6 py-4 border-b sm:flex-row sm:items-center sm:justify-between">
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
                   {location.name}
                 </h1>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="rounded-full"
-                    onClick={() => router.back()}
+                <div className="flex flex-wrap items-center justify-end gap-2 sm:mt-0">
+                <Link
+                  href={`https://www.google.com/maps/dir/?api=1&destination=${location.latitude},${location.longitude}&travelmode=walking`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none bg-secondary text-secondary-foreground hover:bg-secondary/80 h-9 px-3 cursor-pointer"
                   >
-                    <X className="w-5 h-5" />
-                  </Button>
+                  Navigate
+                </Link>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="rounded-full"
+                        className="rounded-full bg-secondary"
                       >
                         <Share2 className="w-5 h-5" />
                       </Button>
@@ -275,12 +279,20 @@ export default function LocationPage() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="rounded-full"
+                        className="rounded-full bg-secondary"
                       >
-                        <Pencil className="w-5 h-5" />
+                        <Pencil className="w-5 h-5 bg-secondary" />
                       </Button>
                     </EditLocationModal>
                   ) : null}
+                  <Button
+                      variant="ghost"
+                      size="icon"
+                      className="rounded-full bg-secondary"
+                      onClick={() => router.back()}
+                    >
+                      <X className="w-5 h-5" />
+                    </Button>
                 </div>
               </div>
 
@@ -330,30 +342,29 @@ export default function LocationPage() {
                       })}
                     </div>
                     <span className="text-sm text-gray-500 dark:text-gray-400">
-                      ({location.ReviewCount} reviews)
+                      ({location.ReviewCount ?? 0} reviews)
                     </span>
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <Badge variant="secondary" className="px-3 py-1">
+                    {location.tag?
+                      <Badge variant="secondary" className="px-3 py-1">
                       {location.tag}
-                    </Badge>
+                    </Badge>: null
+                    }
+                    {location.time ?
                     <Badge
                       variant="outline"
                       className="px-3 py-1 flex items-center gap-1"
                     >
                       <Clock className="w-3 h-3" />
                       {location.time}
-                    </Badge>
+                    </Badge>: null }
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between pt-2 border-t dark:border-zinc-800">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <MapPin className="w-4 h-4" />
-                    <span>Campus Location</span>
-                  </div>
-
+                  {location.Contact || location.contact?
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
@@ -372,21 +383,21 @@ export default function LocationPage() {
                         {location.contact}
                       </div>
                     </PopoverContent>
-                  </Popover>
+                  </Popover>: null }
                 </div>
               </div>
 
               {/* Description */}
               <div className="px-6 py-4 border-t dark:border-zinc-800 bg-gray-50/50 dark:bg-zinc-900/50">
-                <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+                <p className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap break-words">
                   {location.description}
                 </p>
               </div>
 
               {/* Photos */}
-              <div className="border-t dark:border-zinc-800">
+              {/* <div className="border-t dark:border-zinc-800">
                 <PhotoGallery images={location.biopics} />
-              </div>
+              </div> */}
             </div>
           </div>
 
@@ -396,7 +407,7 @@ export default function LocationPage() {
               <div className="rounded-xl shadow-sm border bg-white dark:bg-zinc-900 dark:border-zinc-800 p-4 md:p-6 sticky top-4">
                 <div className="flex justify-between items-center mb-6">
                   <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                    Reviews
+                    {location.ReviewCount} Reviews
                   </h2>
                   <ReviewDrawer
                     locationId={id as string}
