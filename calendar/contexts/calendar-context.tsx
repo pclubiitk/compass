@@ -11,7 +11,8 @@
  *
  */
 
-import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
+import { addWeeks, startOfDay, format } from "date-fns";
 
 import type { Dispatch, SetStateAction } from "react";
 import type { IEntity, IEvent } from "@/calendar/interfaces";
@@ -23,6 +24,65 @@ import type {
 } from "@/calendar/types";
 import { ENTITIES } from "@/calendar/entities";
 import { getUserEvents } from "@/calendar/requests";
+
+/**
+ * Expand recurring weekly events into individual virtual instances for rendering.
+ * - Non-recurring events pass through unchanged.
+ * - Weekly events are cloned for each week from their base date until recurrenceEnd
+ *   (or up to 1 year ahead if repeating forever).
+ * - Exception dates (holidays, breaks) are skipped.
+ */
+function expandRecurringEvents(events: IEvent[]): IEvent[] {
+  const expanded: IEvent[] = [];
+  const maxHorizon = addWeeks(new Date(), 52); // 1-year expansion window
+
+  for (const event of events) {
+    if (event.recurrenceType !== "weekly") {
+      expanded.push(event);
+      continue;
+    }
+
+    const baseStart = new Date(event.startDate);
+    const baseEnd = new Date(event.endDate);
+    const duration = baseEnd.getTime() - baseStart.getTime();
+
+    // Determine the end boundary for expansion
+    const recEnd = event.recurrenceEnd
+      ? new Date(event.recurrenceEnd)
+      : maxHorizon;
+    if (event.recurrenceEnd) {
+      recEnd.setHours(23, 59, 59, 999);
+    }
+
+    // Build a set of exception dates for fast lookup
+    const exceptionSet = new Set<string>();
+    if (event.recurrenceExceptions) {
+      for (const d of event.recurrenceExceptions.split(",")) {
+        const trimmed = d.trim();
+        if (trimmed) exceptionSet.add(trimmed);
+      }
+    }
+
+    let cursor = new Date(baseStart);
+    let idx = 0;
+    while (cursor <= recEnd) {
+      const dateKey = format(startOfDay(cursor), "yyyy-MM-dd");
+
+      if (!exceptionSet.has(dateKey)) {
+        expanded.push({
+          ...event,
+          id: `${event.id}-r${idx}`,
+          startDate: cursor.toISOString(),
+          endDate: new Date(cursor.getTime() + duration).toISOString(),
+        });
+      }
+
+      cursor = addWeeks(cursor, 1);
+      idx++;
+    }
+  }
+  return expanded;
+}
 
 interface ICalendarContext {
   selectedDate: Date;
@@ -38,6 +98,7 @@ interface ICalendarContext {
   visibleHours: TVisibleHours;
   setVisibleHours: Dispatch<SetStateAction<TVisibleHours>>;
   events: IEvent[];
+  rawEvents: IEvent[];
   setLocalEvents: Dispatch<SetStateAction<IEvent[]>>;
   addLocalEvent: (event: IEvent) => void;
   removeLocalEvent: (eventId: string) => void;
@@ -82,11 +143,14 @@ export function CalendarProvider({
   const [workingHours, setWorkingHours] = useState<TWorkingHours>(WORKING_HOURS);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedEntity, setSelectedEntity] = useState<string | "all">("all");
-  const [view, setView] = useState<TCalendarView>("month");
+  const [view, setView] = useState<TCalendarView>("day");
   const [isLoading, setIsLoading] = useState(false);
 
   // Local events state - allows for optimistic updates
   const [localEvents, setLocalEvents] = useState<IEvent[]>(events);
+
+  // Expand recurring events for display
+  const expandedEvents = useMemo(() => expandRecurringEvents(localEvents), [localEvents]);
 
   // When the notices prop changes (e.g. parent fetched fresh notices),
   // replace only the notice portion and keep personal events intact.
@@ -174,7 +238,8 @@ export function CalendarProvider({
         view,
         setView,
         entities: ENTITIES,
-        events: localEvents,
+        events: expandedEvents,
+        rawEvents: localEvents,
         setLocalEvents,
         addLocalEvent,
         removeLocalEvent,

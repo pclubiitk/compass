@@ -6,7 +6,7 @@ import { Calendar, Clock, Text, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { useCalendar } from "@/calendar/contexts/calendar-context";
-import { deleteUserEvent } from "@/calendar/requests";
+import { deleteUserEvent, updateUserEvent } from "@/calendar/requests";
 import { Button } from "@/components/ui/button";
 import { EditEventDialog } from "@/calendar/components/dialogs/edit-event-dialog";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -25,21 +25,92 @@ export function EventDetailsDialog({ event, children }: IProps) {
   const startDate = parseISO(event.startDate);
   const endDate = parseISO(event.endDate);
 
-  const { entities, removeLocalEvent, refreshEvents } = useCalendar();
+  const [showRecurrencePrompt, setShowRecurrencePrompt] = useState(false);
+  const { entities, removeLocalEvent, refreshEvents, rawEvents } = useCalendar();
 
   const eventEntity = entities.find(e => e.id === event.entity);
 
-  const handleDelete = async () => {
+  const isClassEvent = event.title.startsWith("Lec-") || event.title.startsWith("Tut-") || event.title.startsWith("Prc-");
+  const isRecurring = event.recurrenceType === "weekly";
+
+  const handleDeleteClick = () => {
+    if (isRecurring) {
+      setShowRecurrencePrompt(true);
+    } else {
+      handleDeleteSeries();
+    }
+  };
+
+  const handleDeleteSeries = async () => {
     if (!event.userEventId) return;
     setIsDeleting(true);
     try {
       await deleteUserEvent(event.userEventId);
+      
+      const baseEvent = rawEvents.find(e => e.userEventId === event.userEventId) || event;
+      
+      // Only delete detached standalone occurrences when deleting the recurring parent series
+      if (baseEvent.recurrenceType === "weekly") {
+        const standaloneEvents = rawEvents.filter(
+          e => e.title === baseEvent.title && e.recurrenceType === "" && e.userEventId !== event.userEventId
+        );
+        
+        for (const standalone of standaloneEvents) {
+          if (!standalone.userEventId) continue;
+          try {
+            await deleteUserEvent(standalone.userEventId);
+          } catch (e) {
+            console.error("Failed to delete standalone event", e);
+          }
+        }
+      }
+
       removeLocalEvent(event.userEventId);
       await refreshEvents(); // Guarantee sync with backend to fix lingering deleted events
       toast.success("Event deleted");
+      setShowRecurrencePrompt(false);
       setIsOpen(false);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to delete event");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleDeleteSingle = async () => {
+    if (!event.userEventId) return;
+    setIsDeleting(true);
+    try {
+      const baseEvent = rawEvents.find(e => e.userEventId === event.userEventId);
+      if (!baseEvent) throw new Error("Base event not found");
+
+      const dateStr = format(parseISO(event.startDate), "yyyy-MM-dd");
+      const existing = new Set<string>();
+      if (baseEvent.recurrenceExceptions) {
+        baseEvent.recurrenceExceptions.split(",").forEach(d => {
+          if (d.trim()) existing.add(d.trim());
+        });
+      }
+      existing.add(dateStr);
+      const newExceptionsStr = Array.from(existing).sort().join(",");
+
+      await updateUserEvent(baseEvent.userEventId!, {
+        title: baseEvent.title,
+        description: baseEvent.description || "",
+        eventTime: baseEvent.startDate,
+        eventEndTime: baseEvent.endDate,
+        color: baseEvent.color || "blue",
+        recurrenceType: baseEvent.recurrenceType,
+        recurrenceEnd: baseEvent.recurrenceEnd,
+        recurrenceExceptions: newExceptionsStr ? newExceptionsStr.split(",") : [],
+      });
+
+      await refreshEvents();
+      toast.success("Occurrence deleted");
+      setShowRecurrencePrompt(false);
+      setIsOpen(false);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to delete occurrence");
     } finally {
       setIsDeleting(false);
     }
@@ -103,7 +174,7 @@ export function EventDetailsDialog({ event, children }: IProps) {
                   variant="destructive"
                   size="sm"
                   disabled={isDeleting}
-                  onClick={handleDelete}
+                  onClick={handleDeleteClick}
                 >
                   <Trash2 className="size-4 mr-1" />
                   {isDeleting ? "Deleting..." : "Delete"}
@@ -116,6 +187,28 @@ export function EventDetailsDialog({ event, children }: IProps) {
                 </EditEventDialog>
               </div>
             )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showRecurrencePrompt} onOpenChange={setShowRecurrencePrompt}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Recurring Event</DialogTitle>
+          </DialogHeader>
+          <div className="py-4 text-sm">
+            You are deleting a recurring class event. Do you want to delete only this specific occurrence, or all occurrences in the series?
+          </div>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => setShowRecurrencePrompt(false)} disabled={isDeleting}>
+              Cancel
+            </Button>
+            <Button variant="secondary" onClick={handleDeleteSingle} disabled={isDeleting}>
+              This Occurrence Only
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteSeries} disabled={isDeleting}>
+              All Occurrences
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

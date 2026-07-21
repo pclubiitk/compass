@@ -36,23 +36,24 @@ function SingleCalendar({
       selected={selected}
       onSelect={onSelect}
       showOutsideDays={showOutsideDays}
+      fixedWeeks
       month={currentMonth}
       onMonthChange={setCurrentMonth}
       className={cn("p-3", className)}
       classNames={{
         // FIXED Issues: v9 class names
         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
-        month: "space-y-4",
-        month_caption: "flex justify-center pt-1 relative items-center",
+        month: "space-y-4 relative",
+        month_caption: "flex justify-center pt-1 items-center",
         caption_label: "text-sm font-medium",
-        nav: "space-x-1 flex items-center",
+        nav: "absolute inset-x-0 flex justify-between items-center top-1 z-10 px-1",
         button_previous: cn(
           buttonVariants({ variant: "outline" }),
-          "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 absolute left-1"
+          "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100"
         ),
         button_next: cn(
           buttonVariants({ variant: "outline" }),
-          "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 absolute right-1"
+          "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100"
         ),
         month_grid: "w-full border-collapse space-y-1",
         weekdays: "flex",

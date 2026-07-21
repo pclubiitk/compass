@@ -5,6 +5,8 @@ import (
 	"compass/model"
 	"errors"
 	"net/http"
+	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -55,13 +57,21 @@ func createUserEvent(c *gin.Context) {
 		color = "blue"
 	}
 
+	recType := input.RecurrenceType
+	if recType != "weekly" {
+		recType = ""
+	}
+
 	event := model.UserEvent{
-		Title:         input.Title,
-		Description:   input.Description,
-		EventTime:     input.EventTime,
-		EventEndTime:  input.EventEndTime,
-		Color:         color,
-		ContributedBy: userID.(uuid.UUID),
+		Title:                input.Title,
+		Description:          input.Description,
+		EventTime:            input.EventTime,
+		EventEndTime:         input.EventEndTime,
+		Color:                color,
+		RecurrenceType:       recType,
+		RecurrenceEnd:        input.RecurrenceEnd,
+		RecurrenceExceptions: strings.Join(input.RecurrenceExceptions, ","),
+		ContributedBy:        userID.(uuid.UUID),
 	}
 
 	if err := connections.DB.Create(&event).Error; err != nil {
@@ -122,6 +132,15 @@ func updateUserEvent(c *gin.Context) {
 		event.Color = input.Color
 	}
 
+	// Update recurrence fields
+	recType := input.RecurrenceType
+	if recType != "weekly" {
+		recType = ""
+	}
+	event.RecurrenceType = recType
+	event.RecurrenceEnd = input.RecurrenceEnd
+	event.RecurrenceExceptions = strings.Join(input.RecurrenceExceptions, ",")
+
 	if err := connections.DB.Save(&event).Error; err != nil {
 		logrus.WithError(err).Error("Failed to update user event")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update event"})
@@ -172,4 +191,109 @@ func deleteUserEvent(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Event deleted successfully", "event_id": eventID})
+}
+
+// batchCreateUserEvents bulk-creates personal calendar events in a single request.
+// Designed for timetable imports — accepts up to 100 events.
+// Duplicates (same title + eventTime for the same user) are silently skipped.
+// POST /api/maps/user-events/batch
+func batchCreateUserEvents(c *gin.Context) {
+	userID, exist := c.Get("userID")
+	if !exist {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+	uid := userID.(uuid.UUID)
+
+	var input BatchAddUserEventsRequest
+	if err := c.ShouldBindJSON(&input); err != nil {
+		logrus.WithError(err).Warn("JSON binding failed for batch user events")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format"})
+		return
+	}
+
+	// Delete existing imported class events for the user so we start fresh
+	if err := connections.DB.
+		Where("contributed_by = ? AND (title ILIKE '%Lec-%' OR title ILIKE '%Tut-%' OR title ILIKE '%Prc-%')", uid).
+		Delete(&model.UserEvent{}).Error; err != nil {
+		logrus.WithError(err).Error("Failed to delete existing class events")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to clear old timetable"})
+		return
+	}
+
+	existingSet := make(map[string]bool)
+
+	var toCreate []model.UserEvent
+	skipped := 0
+	for _, e := range input.Events {
+		key := e.Title + "|" + e.EventTime.UTC().Format(time.RFC3339)
+		if existingSet[key] {
+			skipped++
+			continue
+		}
+
+		color := e.Color
+		if color == "" {
+			color = "green"
+		}
+		recType := e.RecurrenceType
+		if recType != "weekly" {
+			recType = ""
+		}
+
+		toCreate = append(toCreate, model.UserEvent{
+			Title:                e.Title,
+			Description:          e.Description,
+			EventTime:            e.EventTime,
+			EventEndTime:         e.EventEndTime,
+			Color:                color,
+			RecurrenceType:       recType,
+			RecurrenceEnd:        e.RecurrenceEnd,
+			RecurrenceExceptions: strings.Join(e.RecurrenceExceptions, ","),
+			ContributedBy:        uid,
+		})
+
+		// Also mark as seen to prevent intra-batch duplicates
+		existingSet[key] = true
+	}
+
+	if len(toCreate) > 0 {
+		if err := connections.DB.CreateInBatches(toCreate, 50).Error; err != nil {
+			logrus.WithError(err).Error("Failed to batch-create user events")
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create events"})
+			return
+		}
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"message": "Events imported successfully",
+		"created": len(toCreate),
+		"skipped": skipped,
+		"events":  toCreate,
+	})
+}
+
+// deleteAllClassEvents clears all imported class events from the timetable.
+// DELETE /api/maps/user-events/classes
+func deleteAllClassEvents(c *gin.Context) {
+	userID, exist := c.Get("userID")
+	if !exist {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+	uid := userID.(uuid.UUID)
+
+	res := connections.DB.
+		Where("contributed_by = ? AND (title ILIKE '%Lec-%' OR title ILIKE '%Tut-%' OR title ILIKE '%Prc-%')", uid).
+		Delete(&model.UserEvent{})
+	
+	if err := res.Error; err != nil {
+		logrus.WithError(err).Error("Failed to delete existing class events")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to clear old timetable"})
+		return
+	}
+
+	logrus.Infof("Deleted %d class events for user %s", res.RowsAffected, uid)
+
+	c.JSON(http.StatusOK, gin.H{"message": "Timetable cleared successfully"})
 }
