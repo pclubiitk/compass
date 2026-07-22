@@ -101,12 +101,17 @@ func buildWebcalURL(token string) string {
 
 func buildHTTPSURL(token string) string {
 	env := viper.GetString("env")
-	if env == "dev" {
-		// In dev there is no nginx proxy, so point directly at the maps server port
-		mapsPort := viper.GetString("ports.maps")
-		return fmt.Sprintf("http://localhost:%s/api/maps/calendar/%s.ics", mapsPort, token)
+	if env != "dev" {
+		switch env {
+		case "prod":
+			frontendURL := viper.GetString("frontend_url")
+			return fmt.Sprintf("%s/api/maps/calendar/%s.ics", frontendURL, token)
+		case "test":
+			return fmt.Sprintf("http://bsearch.pclub.in/api/maps/calendar/%s.ics", token)
+		}
 	}
-	// In prod nginx proxies <domain>/api/ → maps server, so use the public-facing URL
-	frontendURL := viper.GetString("frontend_url")
-	return fmt.Sprintf("%s/api/maps/calendar/%s.ics", frontendURL, token)
+	// In dev there is no nginx proxy
+	mapsPort := viper.GetString("ports.maps")
+	return fmt.Sprintf("http://localhost:%s/api/maps/calendar/%s.ics", mapsPort, token)
+
 }

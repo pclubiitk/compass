@@ -59,7 +59,7 @@ const handleDelete = async (img: Img, load: boolean, setLoad: (load: boolean)=> 
   };
 
 
-export function GalleryPage() {
+function GalleryPage() {
 
     const [images, setImages] = useState<Img[]>([]);
     const [load, setLoad] = useState<boolean>(true);

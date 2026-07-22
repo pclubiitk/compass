@@ -42,7 +42,7 @@ export type Profile = {
 export type UserData = {
   role: number;
   profile: Profile;
-  ContributedLocations: LocationCardProps['location'][];
+  ContributedLocations: LocationCardProps["location"][];
   ContributedReview: Review[];
   ContributedNotice: any[];
 };
@@ -155,7 +155,10 @@ export default function ProfilePage() {
           if (reviewsRes.ok) {
             const rdata = await reviewsRes.json();
             // rdata.reviews expected to be an array of review objects
-            setUserData((prev) => ({ ...(prev as any), ContributedReview: rdata.reviews }));
+            setUserData((prev) => ({
+              ...(prev as any),
+              ContributedReview: rdata.reviews,
+            }));
           }
         } catch (err) {
           console.warn("Failed to fetch contributed reviews:", err);
@@ -227,7 +230,6 @@ export default function ProfilePage() {
         </div>
       </aside>
 
-
       {/* --- Right Column (Scrollable) --- */}
       <main className="flex-1 lg:h-screen lg:overflow-y-auto p-4 sm:p-6 lg:p-8 lg:pl-0">
         <div className="space-y-8">
@@ -243,21 +245,12 @@ export default function ProfilePage() {
             profile={userData.profile}
             onUpdate={fetchProfile}
           />
-          <ContributionsCard
-            locations={userData.ContributedLocations ?? []}
-            // reviews={userData.ContributedReview ?? []}
-            // notices={userData.ContributedNotice ?? []}
-            reviews={userData.ContributedReview}
-            notices={userData.ContributedNotice}
-          />
-
           {/* Calendar Section */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="w-5 h-5" />
-                Campus Events
-
+                My Events
               </CardTitle>
             </CardHeader>
             <CardContent className="p-2 sm:p-4 lg:p-6 pt-0">
@@ -277,6 +270,11 @@ export default function ProfilePage() {
               )}
             </CardContent>
           </Card>
+          <ContributionsCard
+            locations={userData.ContributedLocations}
+            reviews={userData.ContributedReview}
+            notices={userData.ContributedNotice}
+          />
         </div>
       </main>
     </div>

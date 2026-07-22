@@ -29,7 +29,7 @@ func CORS() gin.HandlerFunc {
 
 		// 1. Allow localhost for development (you can be more specific with the port)
 		// 2. Allow the main domain (e.g., "pclub.in")
-		// 3. Allow any subdomain (e.g., "auth.pclub.in")
+		// 3. Allow any subdomain (e.g., "search.pclub.in", "bsearch.pclub.in", "auth.pclub.in")
 		if hostname == "localhost" || hostname == viper.GetString("domain") || strings.HasSuffix(hostname, "."+viper.GetString("domain")) {
 
 			// Other method:

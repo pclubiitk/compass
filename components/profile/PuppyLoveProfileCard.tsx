@@ -293,7 +293,7 @@ export function PuppyLoveProfileCard({
               match!
             </p>
             <a
-              href={process.env.NEXT_PUBLIC_SEARCH_UI_URL || "/"}
+              href={process.env.NEXT_PUBLIC_SEARCH_DOMAIN || ""}
               className="inline-flex items-center justify-center gap-2 px-7 py-2.5 rounded-full bg-linear-to-r from-rose-500 via-pink-500 to-fuchsia-500 hover:from-rose-600 hover:via-pink-600 hover:to-fuchsia-600 text-white font-medium transition-all shadow-md shadow-rose-500/25 hover:shadow-lg hover:shadow-rose-500/30"
             >
               <Heart className="h-4 w-4" />
