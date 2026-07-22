@@ -71,16 +71,16 @@ export function BottomNav() {
   };
 
   return (
-    <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md bg-white px-2 py-2 rounded-full shadow-md flex items-center justify-between gap-0.5 border">
+    <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md bg-white dark:bg-gray-800 px-2 py-2 rounded-full shadow-md flex items-center justify-between gap-0.5 border-gray-200 dark:border-gray-900">
       {navItems.map(({ icon: Icon, label, path }) => (
         <Button
           key={label}
           variant="ghost"
-          className="flex flex-col items-center justify-center px-0 min-w-15 sm:min-w-18"
+          className="flex flex-col items-center dark:hover:bg-gray-700 justify-center px-0 min-w-15 sm:min-w-18"
           onClick={(e) => handleClick(label, path, e)}
         >
-          <Icon className="h-5 w-5 sm:h-6 sm:w-6 text-gray-700" />
-          <span className="text-xs sm:text-sm text-gray-700 font-medium">
+          <Icon className="h-5 w-5 sm:h-6 sm:w-6 text-gray-700 dark:text-gray-300" />
+          <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 font-medium">
             {label}
           </span>
         </Button>

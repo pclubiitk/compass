@@ -14,6 +14,7 @@ import {
   MessageSquareText,
   Star,
   User,
+  Image as ImageIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -32,6 +33,7 @@ interface FlaggedReview {
   status: string;
   locationId: string;
   contributedBy: string;
+  imageId?: string; // Added to hold the review's associated image
 }
 
 function normalizeImage(raw: Record<string, unknown>): FlaggedImage | null {
@@ -51,6 +53,19 @@ function normalizeReview(raw: Record<string, unknown>): FlaggedReview | null {
   const reviewId = (raw.reviewId ?? raw.ReviewId) as string | undefined;
   if (!reviewId) return null;
 
+  // 1. Check if the backend sent the polymorphic 'images' array
+  let imageId: string | undefined = undefined;
+  if (Array.isArray(raw.images) && raw.images.length > 0) {
+    // Grab the ID from the first image in the array
+    const firstImage = raw.images[0] as Record<string, unknown>;
+    imageId = String(firstImage.imageId ?? firstImage.ImageID ?? firstImage.ImageId ?? "");
+  }
+
+  // 2. Fallback just in case
+  if (!imageId) {
+    imageId = (raw.imageId ?? raw.ImageId ?? raw.ImageID) as string | undefined;
+  }
+
   return {
     reviewId,
     description: String(raw.description ?? raw.Description ?? ""),
@@ -58,6 +73,7 @@ function normalizeReview(raw: Record<string, unknown>): FlaggedReview | null {
     status: String(raw.status ?? raw.Status ?? ""),
     locationId: String(raw.locationId ?? raw.LocationId ?? ""),
     contributedBy: String(raw.contributedBy ?? raw.ContributedBy ?? ""),
+    ...(imageId && { imageId: String(imageId) }), // Attach if it exists
   };
 }
 
@@ -98,11 +114,14 @@ export default function FlaggedImagesComponent() {
       const imagesData = await imagesRes.json();
       const allImages = Array.isArray(imagesData?.images) ? imagesData.images : [];
       const flaggedImages = allImages
-        .map((img: Record<string, unknown>) => normalizeImage(img))
-        .filter((img: FlaggedImage | null): img is FlaggedImage => {
-          return img !== null && isFlaggedImageStatus(img.status);
-        });
-
+      .map((img: Record<string, unknown>) => normalizeImage(img))
+      .filter((img: FlaggedImage | null): img is FlaggedImage => {
+        return (
+          img !== null && 
+          isFlaggedImageStatus(img.status) && 
+          img.parentAssetType !== "Review" // <-- Prevents duplication!
+        );
+      });
       setImages(flaggedImages);
 
       if (reviewsRes.ok) {
@@ -321,13 +340,30 @@ export default function FlaggedImagesComponent() {
                         key={review.reviewId}
                         className="overflow-hidden hover:shadow-lg transition-shadow flex flex-col"
                       >
+                        {/* CONDITIONAL IMAGE BLOCK */}
+                        {review.imageId && (
+                          <div className="relative w-full h-48 bg-muted border-b">
+                            <Image
+                              src={`${assetUrl}/tmp/${review.imageId}.webp`}
+                              alt="Review associated image"
+                              fill
+                              className="object-cover"
+                              unoptimized
+                            />
+                            <div className="absolute top-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded flex items-center gap-1 backdrop-blur-sm">
+                              <ImageIcon className="h-3 w-3" />
+                              Has Attached Image
+                            </div>
+                          </div>
+                        )}
+
                         <div className="p-4 flex flex-col flex-1">
                           <div className="flex items-start justify-between gap-2 mb-3">
                             <div className="flex items-center gap-2">
                               <MessageSquareText className="h-5 w-5 text-muted-foreground" />
                               <h3 className="font-semibold">Review</h3>
                             </div>
-                            <Badge variant="outline" className="bg-red-100 shrink-0">
+                            <Badge variant="outline" className="bg-red-100 shrink-0 text-black">
                               Flagged
                             </Badge>
                           </div>
@@ -364,7 +400,7 @@ export default function FlaggedImagesComponent() {
                           <div className="flex gap-2 mt-4 pt-4 border-t">
                             <Button
                               size="sm"
-                              className="flex-1 bg-green-500 hover:bg-green-600"
+                              className="flex-1 bg-green-500 hover:bg-green-600 dark:hover:bg-green-400"
                               disabled={isBusy}
                               onClick={() => handleApproveReview(review.reviewId)}
                             >
@@ -377,7 +413,7 @@ export default function FlaggedImagesComponent() {
                             <Button
                               size="sm"
                               variant="destructive"
-                              className="flex-1"
+                              className="flex-1 bg-red-500 hover:bg-red-600 dark:hover:bg-red-400"
                               disabled={isBusy}
                               onClick={() => handleRejectReview(review.reviewId)}
                             >
@@ -393,6 +429,7 @@ export default function FlaggedImagesComponent() {
             </TabsContent>
 
             <TabsContent value="images">
+              {/* This section remains exactly as you requested */}
               {images.length === 0 ? (
                 <div className="flex items-center justify-center py-16 text-center">
                   <div>

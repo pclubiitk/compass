@@ -343,29 +343,29 @@ export default function AdminMap() {
     <div className="relative h-screen w-screen">
       {/* Search Bar Overlay */}
       <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 w-[90%] max-w-md flex flex-col gap-1">
-        <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-md">
+        <div className="flex items-center gap-2 bg-white dark:bg-gray-800 px-4 py-2 rounded-full shadow-md">
           <Input
             placeholder="Search by name or coordinates"
-            className="flex-1 border-none text-black placeholder:text-gray-500 focus-visible:ring-0 focus-visible:ring-offset-0"
+            className="flex-1 border-none text-black dark:text-gray-300 placeholder:text-gray-500 focus-visible:ring-0 focus-visible:ring-offset-0"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSearch()}
           />
-          <Button size="icon" variant="ghost" onClick={handleSearch}>
-            <Search className="h-5 w-5 text-gray-500" />
+          <Button size="icon" variant="ghost" onClick={handleSearch} className="dark:hover:bg-gray-700">
+            <Search className="h-5 w-5 text-gray-500 dark:text-gray-300" />
           </Button>
         </div>
         {/* Dropdown with search results */}
         {results.length > 0 && (
-          <div className="bg-white max-h-72 overflow-y-auto rounded-xl shadow-lg border border-gray-100 mt-1">
+          <div className="bg-white dark:bg-gray-800 max-h-72 overflow-y-auto rounded-xl shadow-lg border border-gray-100 dark:border-gray-900 mt-1">
             {results.map((loc) => (
               <div
                 key={loc.locationId || loc.id}
-                className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b last:border-b-0 border-gray-100 transition-colors"
+                className="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer border-b last:border-b-0 border-gray-100 transition-colors"
                 onClick={() => handleSelect(loc)}
               >
                 <div className="flex items-center justify-between">
-                  <span className="font-semibold text-gray-800 text-sm">
+                  <span className="font-semibold text-gray-800 dark:text-gray-300 text-sm">
                     {loc.name}
                   </span>
                   {(loc.category || loc.locationType || loc.location_type) && (
@@ -375,7 +375,7 @@ export default function AdminMap() {
                   )}
                 </div>
                 {loc.description && (
-                  <p className="text-xs text-gray-500 line-clamp-1 mt-1">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1 mt-1">
                     {loc.description}
                   </p>
                 )}

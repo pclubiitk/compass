@@ -111,27 +111,41 @@ func getImageAndUser(assetID uuid.UUID) (model.Image, model.User, error) {
 
 // handleFlaggedImage sends violation email and updates DB
 func handleFlaggedImage(image model.Image, user model.User) error {
-	imageID := image.ImageID.String()
+    imageID := image.ImageID.String()
 
-	mailJob := MailJob{
-		Type: "violation_warning",
-		To:   user.Email,
-		Data: map[string]interface{}{
-			"username": user.Email,
-			"reason":   "Your uploaded image violated our content policy and was rejected.",
-		},
-	}
-	if err := sendEmail(mailJob); err != nil {
-		logrus.Errorf("Failed to queue violation email for %s: %v", user.Email, err)
-	}
+    mailJob := MailJob{
+        Type: "violation_warning",
+        To:   user.Email,
+        Data: map[string]interface{}{
+            "username": user.Email,
+            "reason":   "Your uploaded image violated our content policy and was rejected.",
+        },
+    }
+    if err := sendEmail(mailJob); err != nil {
+        logrus.Errorf("Failed to queue violation email for %s: %v", user.Email, err)
+    }
 
-	if err := connections.DB.Model(&model.Image{}).
-		Where("image_id = ?", imageID).
-		Update("status", model.Rejected).Error; err != nil {
-		return err
-	}
+    if err := connections.DB.Model(&model.Image{}).
+        Where("image_id = ?", imageID).
+        Update("status", model.Rejected).Error; err != nil {
+        return err
+    }
 
-	return nil
+    if image.ParentAssetType == "Review" {
+        // Changed ParentAssetId to ParentAssetID here
+        result := connections.DB.Model(&model.Review{}).
+            Where("review_id = ?", image.ParentAssetID). 
+            Update("status", model.RejectedByBot)
+
+        if result.Error != nil {
+            logrus.Errorf("Failed to reject parent review: %v", result.Error)
+        } else {
+            // And changed it here as well
+            logrus.Infof("Successfully rejected parent review %s because of foul image", image.ParentAssetID) 
+        }
+    }
+
+    return nil
 }
 
 // handleApprovedImage moves image, updates DB, and sends thank-you email

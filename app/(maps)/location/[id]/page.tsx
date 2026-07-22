@@ -62,8 +62,8 @@ interface LocationData {
   locationId: string;
   name: string;
   description: string;
-  avg_rating: number;
-  ReviewCount: number;
+  avgRating: number;
+  reviewCount: number;
   tag: string;
   time: string;
   contact: string; // Phone/Email?
@@ -80,12 +80,14 @@ interface ReviewData {
   rating: number;
   description: string;
   CreatedAt: string;
-  Images?: {
-    ImageID: string;
+  images?: {
+    imageId: string;
   }[];
-  User: {
-    name: string;
-    profile_pic?: string;
+  User?: { // Added '?' because GORM might return null if no user is found
+    profilePic?: boolean; // In your Go struct, this was a boolean!
+    profile?: {
+      name: string; // Now the name is correctly nested inside profile
+    };
   };
 }
 
@@ -98,6 +100,8 @@ export default function LocationPage() {
   const [location, setLocation] = useState<LocationData | null>(null);
   const [reviews, setReviews] = useState<ReviewData[]>([]);
   // const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalReviews, setTotalReviews] = useState(0);
 
   const { isAdmin, setGlobalLoading, isGlobalLoading } = useGContext();
   console.log(isAdmin);
@@ -127,14 +131,24 @@ export default function LocationPage() {
     }
   };
 
-  const fetchReviews = async () => {
+  const fetchReviews = async (pageNum: number = 1) => {
     if (!id) return;
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_MAPS_URL}/api/maps/reviews/${id}/${page}`,
+        `${process.env.NEXT_PUBLIC_MAPS_URL}/api/maps/reviews/${id}/${pageNum}`,
       );
       const data = await res.json();
-      setReviews(data.reviews || []);
+      
+      if (pageNum === 1) {
+        // If it's the first page, replace the list
+        setReviews(data.reviews || []);
+      } else {
+        // If it's page 2+, append the new reviews to the bottom
+        setReviews(prevReviews => [...prevReviews, ...(data.reviews || [])]);
+      }
+      
+      // Save the total so the button knows when to hide
+      setTotalReviews(data.total || 0);
     } catch (err) {
       console.error("Failed to fetch reviews:", err);
     }
@@ -142,20 +156,24 @@ export default function LocationPage() {
 
   useEffect(() => {
     const loadData = async () => {
-      // setLoading(true);
       setGlobalLoading(true);
-      await Promise.all([fetchLocation(), fetchReviews()]);
-      // setLoading(false);
+      
+      // Only fetch the location on the initial load (page 1)
+      if (currentPage === 1) {
+        await fetchLocation();
+      }
+      
+      await fetchReviews(currentPage);
       setGlobalLoading(false);
     };
     loadData();
-  }, [id, page]);
+  }, [id, currentPage]);
 
   if (isGlobalLoading || !location) {
     return;
   }
 
-  const rating = location.avg_rating || 0;
+  const rating = location.avgRating || 0;
   const fullStars = Math.floor(rating);
   const hasHalfStar = rating % 1 >= 0.5;
 
@@ -341,7 +359,7 @@ export default function LocationPage() {
                       })}
                     </div>
                     <span className="text-sm text-gray-500 dark:text-gray-400">
-                      ({location.ReviewCount ?? 0} reviews)
+                      ({location.reviewCount} reviews)
                     </span>
                   </div>
 
@@ -405,7 +423,7 @@ export default function LocationPage() {
               <div className="rounded-xl shadow-sm border bg-white dark:bg-zinc-900 dark:border-zinc-800 p-4 md:p-6 sticky top-4">
                 <div className="flex justify-between items-center mb-6">
                   <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                    {location.ReviewCount} Reviews
+                    {location.reviewCount} Reviews
                   </h2>
                   <ReviewDrawer
                     locationId={id as string}
@@ -417,18 +435,30 @@ export default function LocationPage() {
 
                 <div className="space-y-4 lg:max-h-[calc(100vh-200px)] lg:overflow-y-auto pr-2 custom-scrollbar">
                   {reviews.length > 0 ? (
-                    reviews.map((review) => (
+                  <>
+                    {reviews.map((review) => (
                       <ReviewCard
                         key={review.id}
-
-                        /// TODO : fix username is null
-                        author={review.User?.name || "Anonymous"}
+                        author={review.User?.profile?.name || "Anonymous"}                        
                         rating={review.rating}
                         review_body={review.description}
                         time={review.CreatedAt}
-                        imgs={review.Images || []}
+                        imgs={review.images || []}
                       />
-                    ))
+                    ))}
+                    
+                    {/*The View More Button */}
+                    {reviews.length < totalReviews && (
+                      <div className="flex justify-center mt-6 pt-4 border-t dark:border-zinc-800">
+                        <Button 
+                          variant="outline" 
+                          onClick={() => setCurrentPage(prev => prev + 1)}
+                        >
+                          View More
+                        </Button>
+                      </div>
+                    )}
+                  </>   
                   ) : (
                     <div className="text-center py-12 text-muted-foreground">
                       <div className="bg-gray-100 dark:bg-zinc-800 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">

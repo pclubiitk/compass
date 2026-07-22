@@ -204,24 +204,35 @@ func incrementalLocationProvider(c *gin.Context) {
 }
 
 func locationDetailProvider(c *gin.Context) {
-	id := c.Param("id")
-	var loc model.Location
-	if err := connections.DB.
-		Model(&model.Location{}).
-		Preload("User", connections.UserSelect). // Location contributor
-		Preload("Reviews", func(db *gorm.DB) *gorm.DB {
-			return db.Where("status = ?", model.Approved).
-				Order("created_at DESC").
-				Limit(5)
-		}).
-		Preload("Reviews.User", connections.UserSelect). // Review contributors
-		Where("location_id = ? AND status = ?", id, model.Approved).
-		First(&loc).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Error Fetching location"})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"location": loc})
+    id := c.Param("id")
+    var loc model.Location
 
+    if err := connections.DB.
+        Model(&model.Location{}).
+        Preload("User", connections.UserSelect). // Location contributor
+        Where("location_id = ? AND status = ?", id, model.Approved).
+        First(&loc).Error; err != nil {
+        
+        c.JSON(http.StatusNotFound, gin.H{"error": "Error Fetching location"})
+        return
+    }
+
+    var count int64
+    connections.DB.
+        Model(&model.Review{}).
+        Where("location_id = ? AND status = ?", id, model.Approved).
+        Count(&count)
+
+    loc.ReviewCount = count
+
+	var avgRating float32
+	connections.DB.Model(&model.Review{}).
+		Where("location_id = ? AND status = ?", id, model.Approved).
+		Select("COALESCE(AVG(rating), 0)").
+		Scan(&avgRating)
+	loc.AverageRating = avgRating
+
+    c.JSON(http.StatusOK, gin.H{"location": loc})
 }
 
 func reviewProvider(c *gin.Context) {
@@ -233,7 +244,7 @@ func reviewProvider(c *gin.Context) {
 	}
 
 	page := 1
-	limit := 50
+	limit := 5
 	if p := c.Param("page"); p != "" {
 		if parsedPage, err := strconv.Atoi(p); err != nil || parsedPage < 1 {
 			c.JSON(400, gin.H{"error": "invalid page parameter"})
@@ -269,7 +280,7 @@ func fetchReviewsByLocationID(locationID string, limit, offset int) ([]model.Rev
 		return nil, 0, err
 	}
 
-	if err := db.Preload("User").Where("location_id = ? AND status = ?", locationID, model.Approved).
+	if err := db.Preload("User.Profile").Preload("Images").Where("location_id = ? AND status = ?", locationID, model.Approved).
 		Order("created_at DESC").
 		Limit(limit).
 		Offset(offset).

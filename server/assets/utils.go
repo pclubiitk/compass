@@ -112,32 +112,48 @@ func SaveImage(image []byte, path string, id uuid.UUID) (string, error) {
 // Assumption both public and tmp exist
 // TODO: ensure on server the folders are not deletable
 func MoveImageFromTmpToPublic(imageID uuid.UUID) error {
-	tmpPath := filepath.Join("./assets/tmp", fmt.Sprintf("%s.webp", imageID))
-	publicPath := filepath.Join("./assets/public", fmt.Sprintf("%s.webp", imageID))
-	// Ensure file exists
-	inputFile, err := os.Open(tmpPath)
-	if err != nil {
-		return fmt.Errorf("could not open source file: %w", err)
-	}
-	defer inputFile.Close()
+    tmpPath := filepath.Join("./assets/tmp", fmt.Sprintf("%s.webp", imageID))
+    publicPath := filepath.Join("./assets/public", fmt.Sprintf("%s.webp", imageID))
 
-	outputFile, err := os.Create(publicPath)
-	if err != nil {
-		return fmt.Errorf("could not create dest file: %w", err)
-	}
-	defer outputFile.Close()
+    if err := os.MkdirAll("./assets/public", os.ModePerm); err != nil {
+        return fmt.Errorf("could not create public folder: %w", err)
+    }
 
-	if _, err = io.Copy(outputFile, inputFile); err != nil {
-		return fmt.Errorf("writing to output file failed: %w", err)
-	}
+    if _, err := os.Stat(tmpPath); os.IsNotExist(err) {
+        return fmt.Errorf("source image not found or already used: %w", err)
+    }
 
-	inputFile.Close()
-	outputFile.Close()
+    // 1. Try the ultra-fast OS pointer rename first
+    err := os.Rename(tmpPath, publicPath)
+    if err == nil {
+        return nil // It worked instantly! We are done.
+    }
 
-	if err := os.Remove(tmpPath); err != nil {
-		return fmt.Errorf("failed to remove source file: %w", err)
-	}
-	return nil
+    // 2. If it failed (likely due to Docker cross-device links), fall back to byte copy
+    inputFile, err := os.Open(tmpPath)
+    if err != nil {
+        return fmt.Errorf("could not open source file: %w", err)
+    }
+    defer inputFile.Close()
+
+    outputFile, err := os.Create(publicPath)
+    if err != nil {
+        return fmt.Errorf("could not create dest file: %w", err)
+    }
+    defer outputFile.Close()
+
+    if _, err = io.Copy(outputFile, inputFile); err != nil {
+        return fmt.Errorf("writing to output file failed: %w", err)
+    }
+
+    inputFile.Close()
+    outputFile.Close()
+
+    if err := os.Remove(tmpPath); err != nil {
+        return fmt.Errorf("failed to remove source file: %w", err)
+    }
+    
+    return nil
 }
 
 // Delete image

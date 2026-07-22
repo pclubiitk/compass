@@ -19,61 +19,82 @@ import (
 
 func flagAction(c *gin.Context) {
 
-	reviewID := c.Param("id")
+    reviewID := c.Param("id")
 
-	var req FlagActionRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(400, gin.H{"error": "Invalid request"})
-		return
-	}
+    var req FlagActionRequest
+    if err := c.ShouldBindJSON(&req); err != nil {
+        c.JSON(400, gin.H{"error": "Invalid request"})
+        return
+    }
 
-	var review model.Review
-	if err := connections.DB.Where("review_id = ?", reviewID).First(&review).Error; err != nil {
-		c.JSON(404, gin.H{"error": "Review not found"})
-		return
-	}
+    var review model.Review
+    // 1. ADDED PRELOAD: We must fetch the polymorphic images attached to this review
+    if err := connections.DB.Preload("Images").Where("review_id = ?", reviewID).First(&review).Error; err != nil {
+        c.JSON(404, gin.H{"error": "Review not found"})
+        return
+    }
 
-	if req.Action == "approved" {
-		if err := workers.ApproveReviewRecord(review.ReviewId); err != nil {
-			c.JSON(500, gin.H{"error": "Failed to approve review"})
-			return
-		}
-		c.JSON(200, gin.H{"message": "Review approved"})
-		return
-	}
+    if req.Action == "approved" {
+        // 2. Approve the text and update location score
+        if _, err := workers.ApproveReviewRecord(review.ReviewId); err != nil {
+            c.JSON(500, gin.H{"error": "Failed to approve review text"})
+            return
+        }
 
-	if req.Action == "rejected" {
-		if req.Message == "" {
-			c.JSON(400, gin.H{"error": "Rejection message required"})
-			return
-		}
+        // 3.Handle the images
+        for _, img := range review.Images {
+            
+            imgID := img.ImageID
 
-		review.Status = "rejected"
-		if err := connections.DB.Save(&review).Error; err != nil {
-			c.JSON(500, gin.H{"error": "Failed to update review status"})
-			return
-		}
+            // Mark the image as approved in the database
+            if err := connections.DB.Model(&model.Image{}).
+                Where("image_id = ?", imgID).
+                Update("status", "approved").Error; err != nil {
+                logrus.Errorf("Failed to update status for image %s: %v", imgID, err)
+            }
 
-		var user model.User
-		if err := connections.DB.Where("user_id = ?", review.ContributedBy).First(&user).Error; err != nil {
-			logrus.Errorf("Failed to find user for review rejection email: %v", err)
-			c.JSON(200, gin.H{"message": "Review rejected", "details": req.Message})
-			return
-		}
+            // Move the file from /tmp to /public so React can render it
+            if err := workers.MoveImageFromTmpToPublic(imgID); err != nil {
+                logrus.Errorf("Admin approved, but failed to move image %s to public folder: %v", imgID, err)
+            }
+        }
 
-		connections.MQChannel.Publish(
-			"",
-			viper.GetString("rabbitmq.mailqueue"),
-			false,
-			false,
-			amqp.Publishing{
-				ContentType: "application/json",
-				Body:        []byte(`{"userId": "` + user.UserID.String() + `", "message": "` + req.Message + `"}`),
-			},
-		)
-		c.JSON(200, gin.H{"message": "Review rejected", "details": req.Message})
-		return
-	}
+        c.JSON(200, gin.H{"message": "Review and associated images approved"})
+        return
+    }
+
+    if req.Action == "rejected" {
+        if req.Message == "" {
+            c.JSON(400, gin.H{"error": "Rejection message required"})
+            return
+        }
+
+        review.Status = "rejected"
+        if err := connections.DB.Save(&review).Error; err != nil {
+            c.JSON(500, gin.H{"error": "Failed to update review status"})
+            return
+        }
+
+        var user model.User
+        if err := connections.DB.Where("user_id = ?", review.ContributedBy).First(&user).Error; err != nil {
+            logrus.Errorf("Failed to find user for review rejection email: %v", err)
+            c.JSON(200, gin.H{"message": "Review rejected", "details": req.Message})
+            return
+        }
+
+        connections.MQChannel.Publish(
+            "",
+            viper.GetString("rabbitmq.mailqueue"),
+            false,
+            false,
+            amqp.Publishing{
+                ContentType: "application/json",
+                Body:        []byte(`{"userId": "` + user.UserID.String() + `", "message": "` + req.Message + `"}`),
+            },
+        )
+        c.JSON(200, gin.H{"message": "Review rejected", "details": req.Message})
+        return
+    }
 }
 
 func LocationAction(c *gin.Context) {
