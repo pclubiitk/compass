@@ -1,53 +1,68 @@
 "use client";
 
-import { useTransition, useRef} from "react";
+import { useTransition, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import {
-    Form,
-    FormControl,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
 } from "@/components/ui/form";
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import Image from "next/image";
 import ReCAPTCHA from "react-google-recaptcha";
-
+import { useGContext } from "@/components/ContextProvider";
 
 const formSchema = z.object({
-    email: z.string().email({
-        message: "Please enter a valid email address.",
-    }).refine((email) => email.endsWith("@iitk.ac.in"), {
-        message: "Please enter a valid IITK email address.",
+  email: z
+    .string()
+    .email({
+      message: "Please enter a valid email address.",
+    })
+    .refine((email) => email.endsWith("@iitk.ac.in"), {
+      message: "Please enter a valid IITK email address.",
     }),
+  confirmPLReset: z.boolean().optional(),
 });
 
 export default function ForgotPasswordPage() {
-    const [isPending, startTransition] = useTransition();
+  const [isPending, startTransition] = useTransition();
+  const { isPLseason } = useGContext();
 
-    const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY!;
-    const recaptchaRef = useRef<ReCAPTCHA>(null);
+  const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY!;
+  const recaptchaRef = useRef<ReCAPTCHA>(null);
 
-    const form = useForm<z.infer<typeof formSchema>>({
-        resolver: zodResolver(formSchema),
-        defaultValues: {
-            email: "",
-        },
-    });
+  type FormValues = z.infer<typeof formSchema> & { confirmPLReset?: boolean };
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      email: "",
+      confirmPLReset: false,
+    },
+  });
+
+  async function onSubmit(values: FormValues) {
+    // If Puppy Love season is active, require explicit confirmation
+    if (isPLseason && !values.confirmPLReset) {
+      toast.error(
+        "Please confirm you understand your Puppy Love profile will be reset.",
+      );
+      return;
+    }
     try {
       const token = await recaptchaRef.current?.executeAsync();
       if (!token) {
@@ -57,13 +72,16 @@ export default function ForgotPasswordPage() {
 
       startTransition(async () => {
         try {
-          const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL}/api/auth/forgot-password`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ ...values, token }),
-          });
+          const response = await fetch(
+            `${process.env.NEXT_PUBLIC_AUTH_URL}/api/auth/forgot-password`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ ...values, token }),
+            },
+          );
 
-                    const data = await response.json();
+          const data = await response.json();
 
           if (response.ok) {
             toast.success(data.message || "Reset link sent.");
@@ -87,7 +105,10 @@ export default function ForgotPasswordPage() {
         <CardHeader>
           {/* Centered Logo & Club Name Section */}
           <CardTitle className="flex flex-col items-center gap-2">
-            <a href="https://pclub.in" className="flex flex-col items-center gap-2 font-medium">
+            <a
+              href="https://pclub.in"
+              className="flex flex-col items-center gap-2 font-medium"
+            >
               <div className="flex size-8 items-center justify-center rounded-md">
                 <Image
                   src="/pclub.png"
@@ -127,9 +148,9 @@ export default function ForgotPasswordPage() {
                   <FormItem className="grid gap-2 space-y-0">
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input 
-                        placeholder="@iitk.ac.in" 
-                        {...field} 
+                      <Input
+                        placeholder="@iitk.ac.in"
+                        {...field}
                         type="email"
                         required
                       />
@@ -139,7 +160,43 @@ export default function ForgotPasswordPage() {
                 )}
               />
 
-              <ReCAPTCHA sitekey={siteKey} ref={recaptchaRef} size="invisible" />
+              {isPLseason && (
+                <FormField
+                  control={form.control}
+                  name="confirmPLReset"
+                  render={({ field }) => {
+                    const { value, ref, ...inputProps } = field as any;
+                    return (
+                      <FormItem className="grid gap-2 space-y-0">
+                        <div className="flex items-start gap-2">
+                          <FormControl>
+                            <input
+                              id="confirmPLReset"
+                              type="checkbox"
+                              className="h-4 w-4 rounded"
+                              {...(inputProps as any)}
+                              ref={ref}
+                              checked={!!value}
+                              onChange={(e) => field.onChange(e.target.checked)}
+                            />
+                          </FormControl>
+                          <label htmlFor="confirmPLReset" className="text-sm text-red-600">
+                            I understand that if I have a Puppy Love profile, it
+                            will be reset to null.
+                          </label>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
+                />
+              )}
+
+              <ReCAPTCHA
+                sitekey={siteKey}
+                ref={recaptchaRef}
+                size="invisible"
+              />
 
               <Button type="submit" className="w-full" disabled={isPending}>
                 {isPending ? "Verifying..." : "Send Reset Link"}
@@ -162,7 +219,7 @@ export default function ForgotPasswordPage() {
                 type="button"
                 variant="outline"
                 className="w-full"
-                onClick={() => window.location.href = "/login"}
+                onClick={() => (window.location.href = "/login")}
               >
                 Back to Login
               </Button>

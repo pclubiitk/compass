@@ -66,7 +66,6 @@ interface LocationData {
   ReviewCount: number;
   tag: string;
   time: string;
-  Contact: string; // Name of contact person?
   contact: string; // Phone/Email?
   coverpic: string;
   biopics: string[];
@@ -363,8 +362,8 @@ export default function LocationPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-2 border-t dark:border-zinc-800">
-                  {location.Contact || location.contact?
+                <div className="flex items-center justify-between pt-2">
+                  {location.contact?
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
@@ -377,7 +376,6 @@ export default function LocationPage() {
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-64">
-                      <h4 className="font-semibold mb-1">{location.Contact}</h4>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Phone className="w-3 h-3" />
                         {location.contact}

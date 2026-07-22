@@ -20,8 +20,7 @@ var authConfig = AuthConfig{
 	TokenExpiration:    5 * time.Minute,
 	RefreshTokenExpiry: 24 * 7 * time.Hour, // 7 days
 	CookieDomain:       viper.GetString("domain"), // might need to set to "" in development
-	// FIXME(prod): Set this value to true in prod
-	// CookieSecure:       false, // Set to false in development
+	// FIXME(prod): Set this value to true in prod, else false
 	CookieSecure:       viper.GetString("env") != "dev", // Set to false in development
 	// The Secure attribute is a crucial cookie configuration setting that instructs a web browser to send a cookie only over an encrypted HTTPS connection
 	CookieHTTPOnly: true, // Prevent XSS
@@ -65,6 +64,7 @@ func UserAuthenticator(c *gin.Context) {
 	// Set the role here
 	// TODO: Find better way, here whenever i extract i need to do a check if that thing exist or not
 	c.Set("userID", claims.UserID)
+	c.Set("rollNo", claims.RollNo)
 	c.Set("userRole", claims.Role)
 	c.Set("verified", claims.Verified)
 	c.Set("visibility", claims.Visibility)
@@ -76,6 +76,7 @@ func UserAuthenticator(c *gin.Context) {
 	}
 	c.Next()
 }
+
 func tryRefresh(c *gin.Context) {
 	refreshToken, err := c.Cookie("refresh_token")
 	if err != nil {
@@ -89,7 +90,6 @@ func tryRefresh(c *gin.Context) {
 			return []byte(authConfig.JWTSecretKey), nil
 		},
 	)
-
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
 		return
@@ -112,9 +112,9 @@ func tryRefresh(c *gin.Context) {
 	var modelUser model.User
 	result := connections.DB.
 		Model(&model.User{}).
-		Select("role", "is_verified").
+		Select("user_id", "role", "is_verified").
 		Preload("Profile", func(db *gorm.DB) *gorm.DB {
-			return db.Select("visibility")
+			return db.Select("user_id", "visibility", "roll_no")
 		}).
 		Where("user_id = ?", userID).
 		First(&modelUser)
@@ -127,7 +127,7 @@ func tryRefresh(c *gin.Context) {
 	verified := modelUser.IsVerified
 	visibility := modelUser.Profile.Visibility
 
-	//geneate new access token
+	// generate new access token
 	newAccessToken, err := GenerateAccessToken(userID)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate access token"})
@@ -137,6 +137,7 @@ func tryRefresh(c *gin.Context) {
 	// Set context values
 
 	c.Set("userID", userID)
+	c.Set("rollNo", modelUser.Profile.RollNo)
 	c.Set("userRole", role)
 	c.Set("verified", verified)
 	c.Set("visibility", visibility)
@@ -147,6 +148,15 @@ func tryRefresh(c *gin.Context) {
 func AdminAuthenticator(c *gin.Context) {
 	// verify the role
 	if role := c.GetInt("userRole"); role < int(model.AdminRole) {
+		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Insufficient permissions"})
+		return
+	}
+	c.Next()
+}
+
+func PuppyLoveAdminAuthenticator(c *gin.Context) {
+	// verify the role
+	if role := c.GetInt("userRole"); role < int(model.PuppyLoveAdminRole) {
 		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Insufficient permissions"})
 		return
 	}

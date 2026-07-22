@@ -4,7 +4,9 @@ package connections
 
 import (
 	"compass/model"
+	"compass/model/puppylove"
 	"fmt"
+
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"gorm.io/driver/postgres"
@@ -40,6 +42,12 @@ func dbConnection() {
 		&model.Profile{},
 		&model.ChangeLog{},
 		&model.UserEvent{},
+		&puppylove.PuppyLoveConfig{},
+		&puppylove.PuppyLoveProfile{},
+		&puppylove.ReturnHearts{},
+		&puppylove.HeartClaims{},
+		&puppylove.MatchTable{},
+		&puppylove.SendHeart{},
 	}
 
 	if err := DB.AutoMigrate(models...); err != nil {
