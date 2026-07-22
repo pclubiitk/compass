@@ -244,7 +244,7 @@ func reviewProvider(c *gin.Context) {
 	}
 
 	page := 1
-	limit := 5
+	limit := 50
 	if p := c.Param("page"); p != "" {
 		if parsedPage, err := strconv.Atoi(p); err != nil || parsedPage < 1 {
 			c.JSON(400, gin.H{"error": "invalid page parameter"})
