@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, Map, LogOut, Camera, Info } from "lucide-react";
+import { Search, Map, LogOut, Camera, Info, UserSearch, Megaphone } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -26,6 +26,7 @@ export function SocialProfileCard({
   const { setLoggedIn, setGlobalLoading } = useGContext();
 
   const BACKEND_URL = process.env.NEXT_PUBLIC_AUTH_URL;
+  const searchUiUrl = process.env.NEXT_PUBLIC_SEARCH_DOMAIN || "";
 
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -91,16 +92,12 @@ export function SocialProfileCard({
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > MAX_FILE_SIZE) {
-    toast("File size must be less than 10 MB.");
-    return;
-  }
+      toast("File size must be less than 10 MB.");
+      return;
+    }
     setSelectedImage(file);
     handleUpload(file);
   };
-
-  const searchUiUrl = (
-    process.env.NEXT_PUBLIC_SEARCH_UI_URL || "https://search.pclub.in"
-  ).trim();
 
   const logOut = async () => {
     try {
@@ -184,7 +181,7 @@ export function SocialProfileCard({
               window.location.href = searchUiUrl;
             }}
           >
-            <Search className="h-5 w-5" />
+            <UserSearch className="h-5 w-5" />
           </Button>
 
           {/* Map button with "Under Development" badge */}
@@ -193,9 +190,21 @@ export function SocialProfileCard({
               variant="outline"
               size="icon"
               className="h-12 w-12 shadow-md hover:shadow-lg transition-all hover:scale-105"
-              onClick={() => router.push("/")}
+              onClick={() => router.push("/maps")}
             >
               <Map className="h-5 w-5" />
+            </Button>
+          </div>
+
+          {/* Map button with "Under Development" badge */}
+          <div className="relative">
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-12 w-12 shadow-md hover:shadow-lg transition-all hover:scale-105"
+              onClick={() => router.push("/noticeboard")}
+            >
+              <Megaphone className="h-5 w-5" />
             </Button>
           </div>
 

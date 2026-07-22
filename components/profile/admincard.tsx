@@ -39,12 +39,12 @@ export function AdminCard({
   if (!isAdmin) return null;
 
   return (
-    <Card className="overflow-hidden pt-4 pb-6">
-      <p className="mt-2 text-2xl text-white text-center font-semibold">
+    <Card className="overflow-hidden pt-4 pb-4">
+      <p className="mt-2 text-1xl text-center font-semibold">
         {isSuperAdmin ? "Super Admin Tools" : "Admin Tools"}
       </p>
 
-      <div className="flex flex-wrap gap-4 mt-6 justify-center">
+      <div className="flex flex-wrap gap-4 mt-1 justify-center">
         {isSuperAdmin && (
           <>
             <Button

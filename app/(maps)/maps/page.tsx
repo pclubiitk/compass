@@ -167,7 +167,7 @@ export default function AdminMap() {
     if (e.features && e.features.length > 0) {
       const locationId = e.features[0]?.properties?.locationId;
       if (locationId) {
-        router.push(`/location/${locationId}`);
+        router.push(`/maps/location/${locationId}`);
         return;
       }
     }

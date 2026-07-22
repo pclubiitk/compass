@@ -1,36 +1,35 @@
-// export const SEARCH_POINT = "http://localhost:8083";
-// export const PROFILE_POINT = "http://localhost:3001/profile";
-// export const LOGIN_POINT = "http://localhost:3001/login";
-// export const FORGOT_POINT = "http://localhost:3001/forgot-password";
-// export const PUPPYLOVE_POINT = "http://localhost:8084";
+// Dev
+const config = {
+  searchPoint: "http://localhost:8083",
+  puppyLovePoint: "http://localhost:8084",
+  profilePoint: "http://localhost:3001/",
+  loginPoint: "http://localhost:3001/login",
+  forgotPoint: "http://localhost:3001/forgot-password",
+};
 
+// // Test
+// const config = {
+//   searchPoint: "https://bsearch.pclub.in/students/",
+//   puppyLovePoint: "https://bsearch.pclub.in",
+//   profilePoint: "https://bsearch.pclub.in",
+//   loginPoint: "https://bsearch.pclub.in/login",
+//   forgotPoint: "https://bsearch.pclub.in/forgot-password",
+// };
 
-// // FIXME(prod): In Production
-// export const SEARCH_POINT = "https://search.pclub.in";
-// export const PROFILE_POINT = "https://auth.pclub.in/profile";
-// export const LOGIN_POINT = "https://auth.pclub.in/login";
-// export const FORGOT_POINT = "https://auth.pclub.in/forgot-password";
-// export const PUPPYLOVE_POINT = "";
+// // Prod
+// const config = {
+//   searchPoint: "https://search.pclub.in/students/",
+//   puppyLovePoint: "https://search.pclub.in",
+//   profilePoint: "https://search.pclub.in",
+//   loginPoint: "https://search.pclub.in/login",
+//   forgotPoint: "https://search.pclub.in/forgot-password",
+// };
 
-const isDev = process.env.NODE_ENV === 'development';
+// Backend Points
+export const SEARCH_POINT = config.searchPoint;
+export const PUPPYLOVE_POINT = config.puppyLovePoint;
 
-export const SEARCH_POINT = isDev 
-    ? "http://localhost:8083" // Dev
-    : "https://search.pclub.in";  // Prod
-
-export const PROFILE_POINT = isDev 
-    ? "http://localhost:3001/profile" // Dev
-    : "https://auth.pclub.in/profile"; // Prod
-
-export const LOGIN_POINT = isDev 
-    ? "http://localhost:3001/login" // Dev
-    : "https://auth.pclub.in/login"; // Prod
-
-export const FORGOT_POINT = isDev 
-    ? "http://localhost:3001/forgot-password" // Dev
-    : "https://auth.pclub.in/forgot-password"; // Prod
-
-export const PUPPYLOVE_POINT = isDev
-    ? "http://localhost:8084"
-    : "";
-
+// UI Redirects
+export const PROFILE_POINT = config.profilePoint;
+export const LOGIN_POINT = config.loginPoint;
+export const FORGOT_POINT = config.forgotPoint;

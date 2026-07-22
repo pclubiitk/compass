@@ -1,5 +1,4 @@
-
-import { List, Plus, Grid2x2, CalendarRange } from "lucide-react";
+import { List, Plus, Grid2x2, CalendarRange, Columns } from "lucide-react";
 import { useCalendar } from "@/calendar/contexts/calendar-context";
 import { Button } from "@/components/ui/button";
 import { AddEventDialog } from "@/calendar/components/dialogs/add-event-dialog";
@@ -10,7 +9,6 @@ import { EntitySelect } from "../entity-select";
 import { TodayButton } from "@/calendar/components/header/today-button";
 import { DateNavigator } from "@/calendar/components/header/date-navigator";
 
-
 import type { IEvent } from "@/calendar/interfaces";
 import type { TCalendarView } from "@/calendar/types";
 
@@ -18,7 +16,6 @@ interface IProps {
   view: TCalendarView;
   events: IEvent[];
 }
-
 
 interface CalendarHeaderProps {
   view: TCalendarView;
@@ -29,63 +26,67 @@ export function CalendarHeader({ view, events }: CalendarHeaderProps) {
   const { setView, selectedDate } = useCalendar();
 
   return (
-    <div className="flex flex-col gap-4 border-b p-4 lg:flex-row lg:items-center lg:justify-between">
-      <div className="flex items-center gap-3">
-        <TodayButton />
-        <DateNavigator view={view} events={events} />
-      </div>
+    <div>
+      <div className="flex flex-col gap-4 border-b p-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex items-center gap-3">
+          <TodayButton />
+          <DateNavigator view={view} events={events} />
+        </div>
 
-      <div className="flex flex-col items-center gap-1.5 sm:flex-row sm:justify-between">
-        <div className="flex w-full flex-wrap items-center gap-1.5">
-          <div className="inline-flex">
-            <Button
-              aria-label="View by day"
-              size="icon"
-              variant={view === "day" ? "default" : "outline"}
-              className="rounded-r-none [&_svg]:size-5"
-              onClick={() => setView("day")}
-            >
-              <List strokeWidth={1.8} />
-            </Button>
-            {/* 
-            <Button
-              aria-label="View by week"
-              size="icon"
-              variant={view === "week" ? "default" : "outline"}
-              className="-ml-px rounded-none [&_svg]:size-5"
-              onClick={() => setView("week")}
-            >
-              <Columns strokeWidth={1.8} />
-            </Button> 
-            */}
-
-            <Button
-              aria-label="View by month"
-              size="icon"
-              variant={view === "month" ? "default" : "outline"}
-              className="-ml-px rounded-none [&_svg]:size-5"
-              onClick={() => setView("month")}
-            >
-              <Grid2x2 strokeWidth={1.8} />
-            </Button>
-          </div>
-          <EntitySelect />
-          <div className="flex items-center gap-1.5 ml-auto">
-            <ManageHolidaysDialog />
-            <AddEventDialog startDate={selectedDate}>
-              <Button size="sm" className="gap-1.5">
-                <Plus className="size-4" strokeWidth={2} />
-                Add Event
+        <div className="flex flex-col items-center gap-1.5 sm:flex-row sm:justify-between">
+          <div className="flex w-full flex-wrap items-center gap-1.5">
+            <div className="inline-flex">
+              <Button
+                aria-label="View by day"
+                size="icon"
+                variant={view === "day" ? "default" : "outline"}
+                className="rounded-r-none [&_svg]:size-5"
+                onClick={() => setView("day")}
+              >
+                <List strokeWidth={1.8} />
               </Button>
-            </AddEventDialog>
-            <CalendarSyncDialog>
-              <Button size="sm" variant="outline" className="gap-1.5" aria-label="Sync calendar with external apps">
-                <CalendarRange className="size-4" strokeWidth={1.8} />
-                Sync
+              <Button
+                aria-label="View by week"
+                size="icon"
+                variant={view === "week" ? "default" : "outline"}
+                className="-ml-px rounded-none [&_svg]:size-5"
+                onClick={() => setView("week")}
+              >
+                <Columns strokeWidth={1.8} />
               </Button>
-            </CalendarSyncDialog>
+              <Button
+                aria-label="View by month"
+                size="icon"
+                variant={view === "month" ? "default" : "outline"}
+                className="-ml-px rounded-none [&_svg]:size-5"
+                onClick={() => setView("month")}
+              >
+                <Grid2x2 strokeWidth={1.8} />
+              </Button>
+            </div>
+            <EntitySelect />
           </div>
         </div>
+      </div>
+      <div className="flex flex-col gap-1.5 ml-auto border-b p-2 lg:flex-row lg:items-center justify-end">
+        <ManageHolidaysDialog />
+        <CalendarSyncDialog>
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1.5"
+            aria-label="Sync calendar with external apps"
+          >
+            <CalendarRange className="size-4" strokeWidth={1.8} />
+            Sync
+          </Button>
+        </CalendarSyncDialog>
+        <AddEventDialog startDate={selectedDate}>
+          <Button size="sm" className="gap-1.5">
+            <Plus className="size-4" strokeWidth={2} />
+            Add Event
+          </Button>
+        </AddEventDialog>
       </div>
     </div>
   );

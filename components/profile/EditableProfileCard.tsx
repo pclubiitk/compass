@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/select";
 import { Edit, Save, X } from "lucide-react";
 import { toast } from "sonner";
-import type { Profile } from "@/app/(auth)/profile/page";
+import type { Profile } from "@/app/(auth)/(profile)/page";
 import { courses, departmentNameMap, halls } from "@/components/Constant";
 import {
   AlertDeleteProfileInfo,

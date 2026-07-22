@@ -4,16 +4,35 @@ import { LOGIN_POINT } from "@/lib/constant";
 
 export function middleware(request: NextRequest) {
   const host = request.headers.get("host") || "";
+  const pathname = request.nextUrl.pathname;
+  const isStaticAsset = /\.[a-zA-Z0-9]+$/.test(pathname);
 
   if (host.startsWith("localhost")) {
+    // console.log("[search middleware] allow-localhost", { host, pathname });
+    return NextResponse.next();
+  }
+
+  if (isStaticAsset) {
+    // console.log("[search middleware] allow-static-asset", { host, pathname });
     return NextResponse.next();
   }
 
   const hasSession =
-    request.cookies.has("auth_token") ||
-    request.cookies.has("refresh_token");
+    request.cookies.has("auth_token") || request.cookies.has("refresh_token");
+
+  // console.log("[search middleware] request", {
+  //   host,
+  //   pathname,
+  //   isStaticAsset,
+  //   hasSession,
+  // });
 
   if (!hasSession) {
+    // console.log("[search middleware] redirect-login", {
+    //   host,
+    //   pathname,
+    //   callbackUrl: request.url,
+    // });
     const callbackUrl = request.url;
     return NextResponse.redirect(
       new URL(

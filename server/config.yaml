@@ -1,7 +1,7 @@
 # Main config file
 # Define things like DB name, ports, JWT expiry, etc.
 # remember to put all the fields
-env: dev # prod/dev
+env: dev # prod/dev/test
 
 database:
   host: "localhost"
@@ -38,7 +38,9 @@ domain: ""
 # Browsers rewrite Domain=localhost cookies into .localhost, which breaks host-only cookie checks.
 # Fix: leave domain empty ("") in dev so the cookie is scoped only to localhost
 
-frontend_url: "https://auth.pclub.in" # Dev: http://localhost:3000, Prod: https://auth.pclub.in
+# FIXME(prod):
+# Dev: http://localhost:3000, Test: https://bsearch.pclub.in, Prod: https://search.pclub.in
+frontend_url: "https://search.pclub.in"
 
 expiry:
   emailVerification: 3
