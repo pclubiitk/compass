@@ -41,7 +41,7 @@ func ProcessImageBytes(imgBytes []byte) ([]byte, error) {
 	}
 	// Image format converter
 
-	newImage := bimg.NewImage(imgBytes)  
+	newImage := bimg.NewImage(imgBytes)
 	imgType := newImage.Type()
 
 	if imgType == "heic" || imgType == "heif" || imgType == "HEIC" || imgType == "HEIF" {
@@ -116,27 +116,27 @@ func MoveImageFromTmpToPublic(imageID uuid.UUID) error {
 	publicPath := filepath.Join("./assets/public", fmt.Sprintf("%s.webp", imageID))
 	// Ensure file exists
 	inputFile, err := os.Open(tmpPath)
-    if err != nil {
-        return fmt.Errorf("could not open source file: %w", err)
-    }
-    defer inputFile.Close()
+	if err != nil {
+		return fmt.Errorf("could not open source file: %w", err)
+	}
+	defer inputFile.Close()
 
 	outputFile, err := os.Create(publicPath)
-    if err != nil {
-        return fmt.Errorf("could not create dest file: %w", err)
-    }
-    defer outputFile.Close()
+	if err != nil {
+		return fmt.Errorf("could not create dest file: %w", err)
+	}
+	defer outputFile.Close()
 
 	if _, err = io.Copy(outputFile, inputFile); err != nil {
-        return fmt.Errorf("writing to output file failed: %w", err)
-    }
+		return fmt.Errorf("writing to output file failed: %w", err)
+	}
 
 	inputFile.Close()
-    outputFile.Close()
+	outputFile.Close()
 
 	if err := os.Remove(tmpPath); err != nil {
-        return fmt.Errorf("failed to remove source file: %w", err)
-    }
+		return fmt.Errorf("failed to remove source file: %w", err)
+	}
 	return nil
 }
 

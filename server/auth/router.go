@@ -4,6 +4,7 @@ package auth
 
 import (
 	"compass/middleware"
+	"compass/puppylove"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -23,6 +24,7 @@ func Router(r *gin.Engine) {
 			val, exists := c.Get("visibility")
 			// get the user role
 			role := c.GetInt("userRole")
+			rollNo, _ := c.Get("rollNo")
 
 			// ensure it exists and is a boolean
 			isVisible, ok := val.(bool)
@@ -31,13 +33,22 @@ func Router(r *gin.Engine) {
 				// fallback
 				isVisible = false
 			}
-
+			// TODO: A database query can be heavy here.
+			puppyLoveEnabled := puppylove.IsPuppyLoveEnabled()
+			puppyLovePermitted := puppylove.IsPuppyLovePermitted()
+			puppyLovePublished := puppylove.IsPuppyLoveResultsPublished()
+			// 200,202: logged in + visible
 			if isVisible {
-				// 200: logged in + visible
-				c.JSON(http.StatusOK, gin.H{"success": true, "role": role})
+				if !puppyLoveEnabled {
+					// 200: puppylove disabled
+					c.JSON(http.StatusOK, gin.H{"success": true, "role": role})
+				} else {
+					// 202: puppylove enabled
+					c.JSON(http.StatusAccepted, gin.H{"success": true, "role": role, "permit": puppyLovePermitted, "publish": puppyLovePublished, "rollNo": rollNo})
+				}
 			} else {
-				// 202: logged in + hidden
-				c.JSON(http.StatusAccepted, gin.H{"success": true, "status": "hidden", "role": role})
+				// 203: logged in + hidden
+				c.JSON(http.StatusNonAuthoritativeInfo, gin.H{"success": true, "role": role, "status": "hidden", "rollNo": rollNo})
 			}
 		})
 	}

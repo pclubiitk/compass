@@ -1,4 +1,5 @@
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import Link from "next/link";
 
 // TODO: Add link to the tnc, and other details
 export function ErrorCard() {
@@ -8,12 +9,13 @@ export function ErrorCard() {
       <CardDescription>
         <ol className="mb-2 list-disc ml-5">
           <li>
-            <span className="font-bold">LogIn:</span> Please Log In before, to
-            access the student search.
+            <span className="font-bold">Data Fetching Error:</span> Please
+            ensure your internet is working correctly
           </li>
           <li>
-            <span className="font-bold">Visibility:</span> You must make your
-            profile visible to view other profiles.
+            <span className="font-bold">Clear Local Cache</span> You can visit
+            the <Link href="/info">FAQ section</Link> and clear the local cache
+            to start fresh.
           </li>
         </ol>
       </CardDescription>

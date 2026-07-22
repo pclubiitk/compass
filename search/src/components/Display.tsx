@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import SCard from "@/components/student/SCard";
 import { useGContext } from "@/components/ContextProvider";
-import RedirectIn5Sec from "@/components/cards/RedirectIn5Sec";
+import RedirectIn5Sec from "@/components/cards/RedirectToLogin";
 import FadeAnim from "@/components/ui/animations/fadeAnim";
 
 import { Student } from "@/lib/types/data";

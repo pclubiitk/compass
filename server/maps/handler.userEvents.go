@@ -214,7 +214,7 @@ func batchCreateUserEvents(c *gin.Context) {
 
 	// Delete existing imported class events for the user so we start fresh
 	if err := connections.DB.
-		Where("contributed_by = ? AND (title ILIKE '%Lec-%' OR title ILIKE '%Tut-%' OR title ILIKE '%Prc-%')", uid).
+		Where("contributed_by = ? AND (title ILIKE 'Lec-%' OR title ILIKE 'Tut-%' OR title ILIKE 'Prc-%')", uid).
 		Delete(&model.UserEvent{}).Error; err != nil {
 		logrus.WithError(err).Error("Failed to delete existing class events")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to clear old timetable"})
@@ -284,7 +284,7 @@ func deleteAllClassEvents(c *gin.Context) {
 	uid := userID.(uuid.UUID)
 
 	res := connections.DB.
-		Where("contributed_by = ? AND (title ILIKE '%Lec-%' OR title ILIKE '%Tut-%' OR title ILIKE '%Prc-%')", uid).
+		Where("contributed_by = ? AND (title ILIKE 'Lec-%' OR title ILIKE 'Tut-%' OR title ILIKE 'Prc-%')", uid).
 		Delete(&model.UserEvent{})
 	
 	if err := res.Error; err != nil {

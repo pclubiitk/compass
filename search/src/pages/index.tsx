@@ -65,11 +65,12 @@ import { useGContext } from "@/components/ContextProvider";
 import Options from "@/components/ui/Options";
 import { UsersRound } from "lucide-react";
 import { ErrorCard } from "@/components/cards/ErrorCard";
-import ComingSoon from "@/components/ui/ComingSoon";
 
 export default function Home(props: Object) {
   // [For: Worker Object] [Use a ref to hold the worker instance so it persists across re-renders]
   const workerRef = useRef<Worker>();
+  // Ref to track display blocked state for debounced query checks
+  const isDisplayBlockedRef = useRef<boolean>(false);
   // Array of Students to be rendered in the display
   const [students, setStudents]: [Array<StudentType>, Function] = useState([]);
   // Overlay on the display element state
@@ -88,7 +89,23 @@ export default function Home(props: Object) {
     globalError,
     setGlobalLoading,
     setGlobalError,
+    isPuppyLove,
+    puppyLovePublicKeys,
+    PLpermit,
+    matchedIds,
+    suggestedRollNos,
+    setIsSuggestLoading,
+    isDisplayBlocked,
+    setIsDisplayBlocked,
   } = useGContext();
+
+  // Block display queries when PuppyLove mode is on but permit is off
+  // (after deadline, showing match results instead of search)
+  useEffect(() => {
+    if (isPuppyLove && !PLpermit) {
+      setIsDisplayBlocked(true);
+    }
+  }, [isPuppyLove, PLpermit, setIsDisplayBlocked]);
 
   // [Display Managers] - Overlay for showing info and errors
   const clearOverlay = () => {
@@ -132,6 +149,9 @@ export default function Home(props: Object) {
           case "family_tree_results":
             treeHandler(results);
             break;
+          case "find_all_by_rollNo_results":
+            setStudents(results);
+            break;
           case "delete":
             // No need to inform user
             // console.log(message); // Debug
@@ -172,9 +192,35 @@ export default function Home(props: Object) {
     if (globalError) displayElement(<ErrorCard />);
   }, [globalError]);
 
+  // Keep ref in sync with isDisplayBlocked state
+  // This ref is needed because debounced queries may fire after state changes,
+  // and we need to check the current value at execution time
+  useEffect(() => {
+    isDisplayBlockedRef.current = isDisplayBlocked;
+  }, [isDisplayBlocked]);
+
   // [Onclick functions] Render Helper Functions
   const sendQuery = (query: QueryType) => {
-    workerRef.current?.postMessage({ command: "query", payload: query });
+    // Skip if display is blocked (prevents stale debounced queries from overwriting
+    // suggestions or PuppyLove match results)
+    if (isDisplayBlockedRef.current) return;
+    workerRef.current?.postMessage({
+      command: "query",
+      payload: {
+        query,
+        publicKeys: isPuppyLove ? puppyLovePublicKeys : null,
+      },
+    });
+  };
+
+  const sendFindAllQuery = (rollNos: string[]) => {
+    workerRef.current?.postMessage({
+      command: "find_all_by_rollNo",
+      payload: {
+        rollNos,
+        publicKeys: isPuppyLove ? puppyLovePublicKeys : null,
+      },
+    });
   };
 
   const displayTree = (student: StudentType) => {
@@ -223,6 +269,21 @@ export default function Home(props: Object) {
       </div>,
     ]);
   }
+
+  // PuppyLove Specific, once mode is enabled, permit is off (waiting for admin to publish the results)
+  useEffect(() => {
+    if (isPuppyLove && !PLpermit && matchedIds && matchedIds.length > 0) {
+      sendFindAllQuery(matchedIds);
+    }
+  }, [matchedIds, isPuppyLove, isDisplayBlocked]);
+
+  // Listen for PuppyLove suggest match from context
+  useEffect(() => {
+    if (suggestedRollNos && suggestedRollNos.length > 0) {
+      sendFindAllQuery(suggestedRollNos);
+      setIsSuggestLoading(false);
+    } else setStudents([]);
+  }, [suggestedRollNos]);
 
   return (
     <div>

@@ -1,6 +1,6 @@
 package model
 
-import (
+import (	"compass/model/puppylove"
 	"time"
 
 	"github.com/google/uuid"
@@ -10,10 +10,11 @@ import (
 type Role int
 
 const (
-	SuperAdminRole Role = 101 // "superadmin"
-	AdminRole Role = 100 // "admin"
-	Bot       Role = 99  // "bot"
-	UserRole  Role = 50  // "user"
+	SuperAdminRole     Role = 101 // "superadmin"
+	PuppyLoveAdminRole Role = 101 // "puppyloveadmin"
+	AdminRole          Role = 100 // "admin"
+	Bot                Role = 99  // "bot"
+	UserRole           Role = 50  // "user"
 	// TODO: add roles like Super Admin, Visitors
 )
 
@@ -32,14 +33,15 @@ type User struct {
 	Role              Role      `json:"role" gorm:"type:int;"`
 
 	// Search Profile
-	Profile Profile `gorm:"foreignKey:UserID;references:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"profile"`
+	Profile          Profile                    `gorm:"foreignKey:UserID;references:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"profile"`
+	PuppyLoveProfile puppylove.PuppyLoveProfile `gorm:"foreignKey:UserID;references:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"puppylove_profile,omitempty"`
 
 	// Compass Fields
-	ContributedLocations []Location   `gorm:"foreignKey:ContributedBy;references:UserID"`
-	ContributedReview    []Review     `gorm:"foreignKey:ContributedBy;references:UserID"`
-	ContributedNotice    []Notice     `gorm:"foreignKey:ContributedBy;references:UserID"`
-	PersonalEvents       []UserEvent  `gorm:"foreignKey:ContributedBy;references:UserID"`
-	BioPics              []Image      `gorm:"polymorphic:ParentAsset;" json:"biopics"`
+	ContributedLocations []Location  `gorm:"foreignKey:ContributedBy;references:UserID"`
+	ContributedReview    []Review    `gorm:"foreignKey:ContributedBy;references:UserID"`
+	ContributedNotice    []Notice    `gorm:"foreignKey:ContributedBy;references:UserID"`
+	PersonalEvents       []UserEvent `gorm:"foreignKey:ContributedBy;references:UserID"`
+	BioPics              []Image     `gorm:"polymorphic:ParentAsset;" json:"biopics"`
 	// CalendarToken is a stable secret token embedded in the user's webcal subscription URL.
 	// External calendar clients (Google, Apple, Outlook) poll this URL without cookies.
 	// The token acts as the credential — rotating it revokes old subscription URLs.

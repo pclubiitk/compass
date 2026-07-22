@@ -14,6 +14,7 @@ interface GlobalContextType {
   setLoggedIn: (isLoggedIn: boolean | null) => void;
   isGlobalLoading: boolean;
   setGlobalLoading: (isGlobalLoading: boolean) => void;
+  isPLseason: boolean;
   isAdmin: boolean;
   setAdmin: (isAdmin: boolean) => void;
 }
@@ -23,6 +24,7 @@ const GlobalContext = createContext<GlobalContextType>({
   setLoggedIn: () => {},
   isGlobalLoading: false,
   setGlobalLoading: () => {},
+  isPLseason: false,
   isAdmin: false,
   setAdmin: () => {},
 });
@@ -30,6 +32,7 @@ const GlobalContext = createContext<GlobalContextType>({
 export function GlobalContextProvider({ children }: { children: ReactNode }) {
   const [isLoggedIn, setLoggedIn] = useState<boolean | null>(null);
   const [isGlobalLoading, setGlobalLoading] = useState<boolean>(true);
+  const [isPLseason, setPLseason] = useState<boolean>(true);
   const [isAdmin, setAdmin] = useState<boolean>(false);
 
   useEffect(() => {
@@ -40,10 +43,15 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
           {
             method: "GET",
             credentials: "include",
-          }
+          },
         );
         if (response.ok) {
           setLoggedIn(true);
+          if (response.status === 202) {
+            setPLseason(true);
+          } else {
+            setPLseason(false);
+          }
           const data = await response.json();
           if (data.role && data.role >= 100) {
             setAdmin(true);
@@ -67,6 +75,7 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
     setLoggedIn,
     isGlobalLoading,
     setGlobalLoading,
+    isPLseason,
     isAdmin,
     setAdmin,
   };
