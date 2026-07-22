@@ -108,38 +108,6 @@ func SaveImage(image []byte, path string, id uuid.UUID) (string, error) {
 	return savePath, writeError
 }
 
-// Move form tmp to public
-// Assumption both public and tmp exist
-// TODO: ensure on server the folders are not deletable
-func MoveImageFromTmpToPublic(imageID uuid.UUID) error {
-	tmpPath := filepath.Join("./assets/tmp", fmt.Sprintf("%s.webp", imageID))
-	publicPath := filepath.Join("./assets/public", fmt.Sprintf("%s.webp", imageID))
-	// Ensure file exists
-	inputFile, err := os.Open(tmpPath)
-	if err != nil {
-		return fmt.Errorf("could not open source file: %w", err)
-	}
-	defer inputFile.Close()
-
-	outputFile, err := os.Create(publicPath)
-	if err != nil {
-		return fmt.Errorf("could not create dest file: %w", err)
-	}
-	defer outputFile.Close()
-
-	if _, err = io.Copy(outputFile, inputFile); err != nil {
-		return fmt.Errorf("writing to output file failed: %w", err)
-	}
-
-	inputFile.Close()
-	outputFile.Close()
-
-	if err := os.Remove(tmpPath); err != nil {
-		return fmt.Errorf("failed to remove source file: %w", err)
-	}
-	return nil
-}
-
 // Delete image
 func deleteImage(path string) error {
 	// File exists ?

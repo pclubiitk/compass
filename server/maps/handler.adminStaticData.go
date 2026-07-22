@@ -18,6 +18,7 @@ func flaggedReviewsProvider(c *gin.Context) {
 
 	if err := connections.DB.
 		Preload("User", connections.UserSelect).
+		Preload("Images").
 		Where("status = ?", model.RejectedByBot).
 		Order("created_at DESC").
 		Find(&reviews).Error; err != nil {

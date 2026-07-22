@@ -11,14 +11,13 @@ import (
 )
 
 type Image struct {
-	// TODO: Write the logic to clear older images, having Submitted false
-	CreatedAt       time.Time      `json:"-"`
-	UpdatedAt       time.Time      `json:"-"`
-	DeletedAt       gorm.DeletedAt `gorm:"index" json:"-"`
-	 ImageID uuid.UUID `json:"imageId" gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
-	OwnerID         uuid.UUID      `gorm:"index"`
-	ParentAssetID   uuid.UUID
-	ParentAssetType string
-	Status          Status `gorm:"type:varchar(20);check:status IN ('pending','approved','rejected','rejectedByBot')"`
-	Submitted       bool   `json:"-"`
+    CreatedAt       time.Time      `json:"-"`
+    UpdatedAt       time.Time      `json:"-"`
+    DeletedAt       gorm.DeletedAt `gorm:"index" json:"-"`
+    ImageID         uuid.UUID      `json:"imageId" gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+    OwnerID         uuid.UUID      `gorm:"index" json:"ownerId"`
+    ParentAssetID   uuid.UUID      `json:"parentAssetId"`
+    ParentAssetType string         `json:"parentAssetType"`
+    Status          Status         `gorm:"type:varchar(20);check:status IN ('pending','approved','rejected','rejectedByBot')" json:"status"`
+    Submitted       bool           `json:"-"`
 }

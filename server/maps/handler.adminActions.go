@@ -1,7 +1,6 @@
 package maps
 
 import (
-	"compass/assets"
 	"compass/connections"
 	"compass/model"
 	"compass/workers"
@@ -28,17 +27,35 @@ func flagAction(c *gin.Context) {
 	}
 
 	var review model.Review
-	if err := connections.DB.Where("review_id = ?", reviewID).First(&review).Error; err != nil {
+	if err := connections.DB.Preload("Images").Where("review_id = ?", reviewID).First(&review).Error; err != nil {
 		c.JSON(404, gin.H{"error": "Review not found"})
 		return
 	}
 
 	if req.Action == "approved" {
-		if err := workers.ApproveReviewRecord(review.ReviewId); err != nil {
-			c.JSON(500, gin.H{"error": "Failed to approve review"})
+		// Approve the text and update location score
+		if _, err := workers.ApproveReviewRecord(review.ReviewId); err != nil {
+			c.JSON(500, gin.H{"error": "Failed to approve review text"})
 			return
 		}
-		c.JSON(200, gin.H{"message": "Review approved"})
+		// Handle the images
+		for _, img := range review.Images {
+			imgID := img.ImageID
+
+			// Mark the image as approved in the database
+			if err := connections.DB.Model(&model.Image{}).
+				Where("image_id = ?", imgID).
+				Update("status", "approved").Error; err != nil {
+				logrus.Errorf("Failed to update status for image %s: %v", imgID, err)
+			}
+
+			// Move the file from /tmp to /public so React can render it
+			if err := workers.MoveImageFromTmpToPublic(imgID); err != nil {
+				logrus.Errorf("Admin approved, but failed to move image %s to public folder: %v", imgID, err)
+			}
+		}
+
+		c.JSON(200, gin.H{"message": "Review and associated images approved"})
 		return
 	}
 
@@ -211,7 +228,7 @@ func addNotice(c *gin.Context) {
 				return err
 			}
 			// Move image from tmp to public
-			if err := assets.MoveImageFromTmpToPublic(*input.CoverPic); err != nil {
+			if err := workers.MoveImageFromTmpToPublic(*input.CoverPic); err != nil {
 				return err
 			}
 		}
@@ -482,7 +499,7 @@ func editLocation(c *gin.Context) {
 	loc.Time = input.Time
 	loc.Contact = input.Contact
 	loc.LocationType = input.LocationType
-	loc.Layer = int(input.Layer) 
+	loc.Layer = int(input.Layer)
 
 	if err := connections.DB.Save(&loc).Error; err != nil {
 		logrus.WithError(err).Error("Failed to update location")

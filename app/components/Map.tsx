@@ -231,25 +231,29 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
       });
     };
 
-    navigator.geolocation.getCurrentPosition(
-      ({ coords }) => {
-        const startCenter = (savedCenter || [
-          coords.longitude,
-          coords.latitude,
-        ]) as [number, number];
-        setupMap(startCenter);
-      },
-      () => {
-        // console.error("Geolocation error:", err);
-        setLocationDenied(true);
+    const hasRejected = sessionStorage.getItem('locationRejected') === 'true';
 
-        const startCenter = (savedCenter || FALLBACK_CENTER) as [
-          number,
-          number,
-        ];
-        setupMap(startCenter);
-      },
-    );
+    if (!hasRejected) {
+      // If they haven't rejected, ask for location as normal
+      navigator.geolocation.getCurrentPosition(
+        ({ coords }) => {
+          const startCenter = (savedCenter || [
+            coords.longitude,
+            coords.latitude,
+          ]) as [number, number];
+          setupMap(startCenter);
+        },
+        () => {
+          setLocationDenied(true);
+          const startCenter = (savedCenter || FALLBACK_CENTER) as [number, number];
+          setupMap(startCenter);
+        },
+      );
+    } else {
+      // If they DID reject, skip asking and just load the map silently
+      const startCenter = (savedCenter || FALLBACK_CENTER) as [number, number];
+      setupMap(startCenter);
+    }
 
     return () => {
       mapRef.current?.remove();
@@ -477,7 +481,9 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
           </div>
 
           <AlertDialogFooter>
-            <AlertDialogCancel asChild>
+            <AlertDialogCancel asChild
+              onClick={() => sessionStorage.setItem('locationRejected', 'true')}
+            >
               <Button variant="outline">Continue without location</Button>
             </AlertDialogCancel>
             <AlertDialogAction onClick={retryLocateUser}>
