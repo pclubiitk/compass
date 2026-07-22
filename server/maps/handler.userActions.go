@@ -20,32 +20,41 @@ func addReview(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request data"})
 		return
 	}
+
 	// TODO: Extract this logic out, need something more elegant
 	userID, exist := c.Get("userID")
 	if !exist {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
-	// TODO: If the location is not yet approved but somehow the hacker is trying to add location
-	// Get new review
+
 	newReview := req.ToReview(userID.(uuid.UUID))
 	var missingCount, unableToModerate = 0, 0
 	var images []model.Image
-	// TODO: Empty Review should not be allowed
+
 	// Transaction will combine all steps and will do nothing if any error occurs
 	if err := connections.DB.Transaction(func(tx *gorm.DB) error {
 		// Create review
 		if err := tx.Create(&newReview).Error; err != nil {
 			return err
 		}
+
 		// Associate images
 		if len(*req.Images) > 0 {
 			if err := tx.Where("image_id IN ?", *req.Images).Find(&images).Error; err != nil {
 				return err
 			}
-			if err := tx.Model(&newReview).Association("Images").Replace(&images); err != nil {
+
+			// Explicitly stamp the images with the Review ID
+			if err := tx.Model(&model.Image{}).
+				Where("image_id IN ?", *req.Images).
+				Updates(map[string]interface{}{
+					"parent_asset_id":   newReview.ReviewId,
+					"parent_asset_type": "Review",
+				}).Error; err != nil {
 				return err
 			}
+
 			missingCount += len(*req.Images) - len(images)
 		}
 		return nil
@@ -68,7 +77,7 @@ func addReview(c *gin.Context) {
 	// Publish the job for each image
 	for _, img := range images {
 		payload, _ := json.Marshal(workers.ModerationJob{
-			AssetID: img.ImageID,
+			AssetID: img.ImageID, // Using the struct array we loaded earlier
 			Type:    model.ModerationTypeImage,
 		})
 		if err := workers.PublishJob(payload, model.ModerationQueue); err != nil {
@@ -77,11 +86,12 @@ func addReview(c *gin.Context) {
 			continue
 		}
 	}
+
 	// Write response
 	if missingCount > 0 || unableToModerate > 0 {
 		c.JSON(http.StatusOK, gin.H{
 			"message": fmt.Sprintf(
-				"Your review is under process. %d items (text/images) were dropped and %d could not be processed by moderator due to internal errors.",
+				"Your review is under process.\nWhile processing:\n- %d items (text/images) dropped\n- %d items not processed by moderator.",
 				missingCount, unableToModerate,
 			),
 		})

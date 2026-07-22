@@ -58,36 +58,19 @@ func rejectReviewByBot(review model.Review, user model.User) error {
 	return nil
 }
 
-func approveReviewAndNotify(review *model.Review, user model.User) error {
-	if err := ApproveReviewRecord(review.ReviewId); err != nil {
-		return err
-	}
+func ApproveReviewRecord(reviewID uuid.UUID) (bool, error) {
+	var successfullyApproved bool
 
-	mailJob := MailJob{
-		Type: "thanks_contribution",
-		To:   user.Email,
-		Data: map[string]interface{}{
-			"username":      user.Email,
-			"content_title": "Your review",
-		},
-	}
-	if err := sendEmail(mailJob); err != nil {
-		logrus.Errorf("Failed to queue thank-you email for %s: %v", user.Email, err)
-	}
-
-	return nil
-}
-
-// ApproveReviewRecord marks a review approved and updates the parent location rating.
-func ApproveReviewRecord(reviewID uuid.UUID) error {
-	return connections.DB.Transaction(func(tx *gorm.DB) error {
+	err := connections.DB.Transaction(func(tx *gorm.DB) error {
 		var review model.Review
 		if err := tx.Where("review_id = ?", reviewID).First(&review).Error; err != nil {
 			return err
 		}
 
-		if review.Status == model.Approved {
-			return nil
+		// If the image worker already rejected it, we stop here and do nothing.
+		if review.Status != model.Pending {
+			successfullyApproved = false
+			return nil // Return nil so the transaction doesn't fail, we just exit it early
 		}
 
 		if err := tx.Model(&model.Review{}).
@@ -104,6 +87,38 @@ func ApproveReviewRecord(reviewID uuid.UUID) error {
 		location.ReviewCount += 1
 		location.AverageRating = ((location.AverageRating * float32(location.ReviewCount-1)) + float32(review.Rating)) / float32(location.ReviewCount)
 
+		successfullyApproved = true
 		return tx.Save(&location).Error
 	})
+
+	return successfullyApproved, err
+}
+
+func approveReviewAndNotify(review *model.Review, user model.User) error {
+	wasApproved, err := ApproveReviewRecord(review.ReviewId)
+	if err != nil {
+		return err
+	}
+
+	if !wasApproved {
+		// The transaction noticed the review was already rejected (likely by the image worker)
+		// We log it, skip the thank you email, and return nil so RabbitMQ marks the job as done.
+		logrus.Infof("Review %s was not in pending state (likely flagged by image worker). Skipping approval email.", review.ReviewId)
+		return nil
+	}
+
+	mailJob := MailJob{
+		Type: "thanks_contribution",
+		To:   user.Email,
+		Data: map[string]interface{}{
+			"username":      user.Email,
+			"content_title": "Your review",
+		},
+	}
+
+	if err := sendEmail(mailJob); err != nil {
+		logrus.Errorf("Failed to queue thank-you email for %s: %v", user.Email, err)
+	}
+
+	return nil
 }

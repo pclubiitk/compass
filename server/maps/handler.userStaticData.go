@@ -58,7 +58,7 @@ func noticeProvider(c *gin.Context) {
 			return
 		}
 
-		// Count total notices 
+		// Count total notices
 		var count int64
 		if err := connections.DB.Model(&model.Notice{}).Count(&count).Error; err != nil {
 			logrus.Errorf("Failed to count notices: %v", err)
@@ -76,7 +76,7 @@ func noticeProvider(c *gin.Context) {
 		return
 	}
 
-	// No pagination 
+	// No pagination
 	if err := query.Find(&noticeList).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to fetch notices",
@@ -206,22 +206,17 @@ func incrementalLocationProvider(c *gin.Context) {
 func locationDetailProvider(c *gin.Context) {
 	id := c.Param("id")
 	var loc model.Location
+
 	if err := connections.DB.
 		Model(&model.Location{}).
 		Preload("User", connections.UserSelect). // Location contributor
-		Preload("Reviews", func(db *gorm.DB) *gorm.DB {
-			return db.Where("status = ?", model.Approved).
-				Order("created_at DESC").
-				Limit(5)
-		}).
-		Preload("Reviews.User", connections.UserSelect). // Review contributors
 		Where("location_id = ? AND status = ?", id, model.Approved).
 		First(&loc).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Error Fetching location"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"location": loc})
 
+	c.JSON(http.StatusOK, gin.H{"location": loc})
 }
 
 func reviewProvider(c *gin.Context) {
@@ -269,7 +264,7 @@ func fetchReviewsByLocationID(locationID string, limit, offset int) ([]model.Rev
 		return nil, 0, err
 	}
 
-	if err := db.Preload("User").Where("location_id = ? AND status = ?", locationID, model.Approved).
+	if err := db.Preload("User.Profile").Preload("Images").Where("location_id = ? AND status = ?", locationID, model.Approved).
 		Order("created_at DESC").
 		Limit(limit).
 		Offset(offset).
