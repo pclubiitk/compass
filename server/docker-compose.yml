@@ -89,3 +89,5 @@ services:
       - ./pfp:/assets/pfp
       - ./public:/assets/public
       - ./tmp:/assets/tmp
+      - ./config.yml:/config.yml
+      - ./secret.yml:/secret.yml

@@ -80,7 +80,7 @@ for feature in features:
             lon,                      # longitude
             "location_type",            # location_type
             'approved',               # status
-            "cf0743fa-33c8-4764-9b8a-b503322cd5e6", # contributed_by
+            "4bd76e80-97e7-4e49-abc6-b095be539f65", # contributed_by
             0.0,                      # average_rating
             0                         # review_count
         ))
