@@ -15,6 +15,7 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672" # for the ui
+    restart: always
     environment:
       # FIXME(prod): Update the user id and password
       RABBITMQ_DEFAULT_USER: this_is_mjk
@@ -86,8 +87,8 @@ services:
       # force Go to use go.mod/go.sum for dependency management
       GO111MODULE: on
     volumes:
-      - ./pfp:/assets/pfp
-      - ./public:/assets/public
-      - ./tmp:/assets/tmp
+      - ./assets/pfp:/assets/pfp
+      - ./assets/public:/assets/public
+      - ./assets/tmp:/assets/tmp
       - ./config.yml:/config.yml
       - ./secret.yml:/secret.yml

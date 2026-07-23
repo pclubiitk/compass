@@ -8,7 +8,7 @@ import (
 
 // Later update this to the config or some better way
 // var MapsUnderDev = false
-var MapsUnderDev = viper.GetString("env") != "dev"
+var MapsUnderDev = viper.GetBool("underdev.map")
 
 func UnderDev(c *gin.Context, location string) {
 	switch location {
