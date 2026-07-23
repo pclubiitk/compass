@@ -3,6 +3,9 @@
 # remember to put all the fields
 env: dev # prod/dev/test
 
+underdev:
+  map: false
+
 database:
   host: "localhost"
   name: "compass"

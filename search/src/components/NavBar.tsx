@@ -156,16 +156,17 @@ export const NavBar = (props: NavBarProps) => {
           >
             <Info />
           </Button>
-          <Link href={PROFILE_POINT}>
-            <Button
-              variant="secondary"
-              size="icon"
-              className="rounded-full border cursor-pointer"
-            >
-              <User className="h-4 w-4" />
-              <span className="sr-only">Go to Profile</span>
-            </Button>
-          </Link>
+          <Button
+            variant="secondary"
+            size="icon"
+            className="rounded-full border cursor-pointer"
+            onClick={() => {
+              window.location.href = PROFILE_POINT;
+            }}
+          >
+            <User className="h-4 w-4" />
+            <span className="sr-only">Go to Profile</span>
+          </Button>
         </div>
       </Card>
     </>

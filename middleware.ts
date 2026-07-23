@@ -52,23 +52,31 @@ export function middleware(request: NextRequest) {
   // });
 
   return NextResponse.redirect(
-    new URL(
-      `/login?callbackUrl=${encodeURIComponent(request.url)}`,
-      request.url,
-    ),
+    // TODO: As in prod, due to nginx the request.url will be set to localhost.
+    // In Dev:
+    // new URL(
+    //   `/login?callbackUrl=${encodeURIComponent(request.url)}`,
+    //   request.url,
+    // ),
+    // In Test:
+    new URL("https://bsearch.pclub.in/login")
+    // FIXME(Prod): In Prod:
+    // new URL("https://search.pclub.in/login")
   );
 }
 
 export const config = {
+  
   matcher: [
     /*
      * Match all request paths except for the ones starting with:
      * - api (API routes)
-     * - _next/static (static files)
+     * - _next/static (static files like CSS, JS)
      * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
+     * - favicon.ico, sitemap.xml, robots.txt (metadata files)
      * - public folder
+     * - Any file with a common extension (e.g., logo.png, icon.svg)
      */
-    "/((?!api|_next/static|_next/image|manifest.json|favicon.ico|public).*)",
+    '/((?!api|_next/static|_next/image|favicon.ico|public|sitemap.xml|robots.txt|.+\\.[\\w]+$).*)',
   ],
 };
