@@ -4,23 +4,35 @@ import (
 	"compass/connections"
 	"compass/model"
 	"net/http"
-	"github.com/gin-gonic/gin"
 	"strconv"
+
+	"github.com/gin-gonic/gin"
 )
 
 func FuzzySearchNoticesHandler(c *gin.Context) {
-	
+
 	query := c.Query("query")
 	if query == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "query is required"})
 		return
 	}
 
-	limit := 20
-	if l := c.Query("limit"); l != "" {
-		if parsed, err := strconv.Atoi(l); err == nil {
-			limit = parsed
+	const (
+		defaultLimit = 20
+		maxLimit     = 100
+	)
+
+	limit := defaultLimit
+
+	if raw := c.Query("limit"); raw != "" {
+		parsed, err := strconv.Atoi(raw)
+		if err != nil || parsed < 1 || parsed > maxLimit {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "limit must be between 1 and 100",
+			})
+			return
 		}
+		limit = parsed
 	}
 
 	var notices []model.Notice
