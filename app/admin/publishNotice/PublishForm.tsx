@@ -342,13 +342,13 @@ export default function NoticeboardForm() {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
-          {["title", "description"].map((field) => (
+          {[{ name: "title", maxLength: 50 }, { name: "description", maxLength: undefined }].map(({ name: field, maxLength }) => (
             <div key={field}>
               <Label
                 htmlFor={field}
                 className="block text-sm font-medium capitalize"
               >
-                {field}
+                {field}{field === "title" && <span className="ml-2 text-xs text-muted-foreground font-normal">{formData.title.length}/50</span>}
               </Label>
               <Input
                 id={field}
@@ -358,6 +358,7 @@ export default function NoticeboardForm() {
                 // TODO: add correct interface NoticeFormData
                 value={(formData as any)[field]}
                 onChange={handleChange}
+                maxLength={maxLength}
                 className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder:text-gray-400 dark:bg-gray-800 dark:border-gray-600 dark:placeholder-gray-500 dark:text-white"
                 required
               />

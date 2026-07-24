@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const eventSchema = z.object({
   entity: z.string().optional(), // Entity organizing the event
-  title: z.string().min(1, "Title is required"),
+  title: z.string().min(1, "Title is required").max(50, "Title must be 50 characters or less"),
   description: z.string().min(1, "Description is required"),
   startDate: z.date({ error: "Start date is required" }),
   startTime: z.object(
