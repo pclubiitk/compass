@@ -200,9 +200,22 @@ export default function NoticeboardForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (formData.eventTime && formData.eventEndTime) {
+      const start = new Date(formData.eventTime);
+      const end = new Date(formData.eventEndTime);
+      if (end < start) {
+        toast.error("Event end time cannot be before start time");
+        return;
+      }
+    }
+
     try {
       const payload = {
-        ...formData,
+        title: formData.title,
+        description: formData.description,
+        entity: formData.type,
+        location: formData.location,
+        body: formData.body,
         eventEndTime: formData.eventEndTime
           ? new Date(formData.eventEndTime).toISOString()
           : null,
@@ -239,6 +252,7 @@ export default function NoticeboardForm() {
 
   function isoToDatetimeLocal(iso: string) {
   const date = new Date(iso);
+  if (isNaN(date.getTime()) || date.getFullYear() < 1970) return "";
 
   const pad = (n: number) => String(n).padStart(2, "0");
 
@@ -296,9 +310,22 @@ export default function NoticeboardForm() {
     e.preventDefault();
     if (!noticeId) return;
 
+    if (formData.eventTime && formData.eventEndTime) {
+      const start = new Date(formData.eventTime);
+      const end = new Date(formData.eventEndTime);
+      if (end < start) {
+        toast.error("Event end time cannot be before start time");
+        return;
+      }
+    }
+
     try {
       const payload = {
-        ...formData,
+        title: formData.title,
+        description: formData.description,
+        entity: formData.type,
+        location: formData.location,
+        body: formData.body,
         eventEndTime: formData.eventEndTime
           ? new Date(formData.eventEndTime).toISOString()
           : null,
