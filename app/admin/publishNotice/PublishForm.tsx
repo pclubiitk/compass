@@ -200,19 +200,37 @@ export default function NoticeboardForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+<<<<<<< HEAD
     const uploadedImageIds = images.map((img) => img.id).filter(Boolean) as string[];
 
     if (formData.eventTime && formData.eventEndTime &&
         new Date(formData.eventTime) > new Date(formData.eventEndTime)) {
       toast.error("Start time cannot be after end time");
       return;
+=======
+    if (formData.eventTime && formData.eventEndTime) {
+      const start = new Date(formData.eventTime);
+      const end = new Date(formData.eventEndTime);
+      if (end < start) {
+        toast.error("Event end time cannot be before start time");
+        return;
+      }
+>>>>>>> f5020fd (restrict invalid start-endtime notices and fix empty end date notice handling)
     }
 
     try {
       const payload = {
+<<<<<<< HEAD
         ...formData,
         coverPic: uploadedImageIds[0] || null,
         biopics: uploadedImageIds.length > 1 ? uploadedImageIds.slice(1) : null,
+=======
+        title: formData.title,
+        description: formData.description,
+        entity: formData.type,
+        location: formData.location,
+        body: formData.body,
+>>>>>>> f5020fd (restrict invalid start-endtime notices and fix empty end date notice handling)
         eventEndTime: formData.eventEndTime
           ? new Date(formData.eventEndTime).toISOString()
           : null,
@@ -249,6 +267,7 @@ export default function NoticeboardForm() {
 
   function isoToDatetimeLocal(iso: string) {
   const date = new Date(iso);
+  if (isNaN(date.getTime()) || date.getFullYear() < 1970) return "";
 
   if (isNaN(date.getTime()) || date.getFullYear() <= 1) return "";
 
@@ -308,19 +327,37 @@ export default function NoticeboardForm() {
     e.preventDefault();
     if (!noticeId) return;
 
+<<<<<<< HEAD
     const uploadedImageIds = images.map((img) => img.id).filter(Boolean) as string[];
 
     if (formData.eventTime && formData.eventEndTime &&
         new Date(formData.eventTime) > new Date(formData.eventEndTime)) {
       toast.error("Start time cannot be after end time");
       return;
+=======
+    if (formData.eventTime && formData.eventEndTime) {
+      const start = new Date(formData.eventTime);
+      const end = new Date(formData.eventEndTime);
+      if (end < start) {
+        toast.error("Event end time cannot be before start time");
+        return;
+      }
+>>>>>>> f5020fd (restrict invalid start-endtime notices and fix empty end date notice handling)
     }
 
     try {
       const payload = {
+<<<<<<< HEAD
         ...formData,
         coverPic: uploadedImageIds[0] || null,
         biopics: uploadedImageIds.length > 1 ? uploadedImageIds.slice(1) : null,
+=======
+        title: formData.title,
+        description: formData.description,
+        entity: formData.type,
+        location: formData.location,
+        body: formData.body,
+>>>>>>> f5020fd (restrict invalid start-endtime notices and fix empty end date notice handling)
         eventEndTime: formData.eventEndTime
           ? new Date(formData.eventEndTime).toISOString()
           : null,
