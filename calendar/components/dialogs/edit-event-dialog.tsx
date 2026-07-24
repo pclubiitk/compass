@@ -288,7 +288,7 @@ export function EditEventDialog({ children, event }: IProps) {
                   <FormItem>
                     <FormLabel htmlFor="title">Title</FormLabel>
                     <FormControl>
-                      <Input id="title" disabled={event.title.startsWith("Lec-") || event.title.startsWith("Tut-") || event.title.startsWith("Prc-")} placeholder="Event title" data-invalid={fieldState.invalid} {...field} />
+                      <Input id="title" disabled={event.title.startsWith("Lec-") || event.title.startsWith("Tut-") || event.title.startsWith("Prc-")} placeholder="Event title" maxLength={50} data-invalid={fieldState.invalid} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

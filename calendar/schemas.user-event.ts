@@ -6,7 +6,7 @@ import { z } from "zod";
  * Kept separate so the original eventSchema is never modified.
  */
 export const userEventSchema = z.object({
-  title: z.string().min(1, "Title is required"),
+  title: z.string().min(1, "Title is required").max(50, "Title must be 50 characters or less"),
   description: z.string().default(""),
   startDate: z.date({ error: "Start date is required" }),
   startTime: z.object(

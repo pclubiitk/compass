@@ -68,7 +68,7 @@ type FlagActionRequest struct {
 }
 
 type AddUserEventRequest struct {
-	Title                string     `json:"title" binding:"required"`
+	Title                string     `json:"title" binding:"required,max=50"`
 	Description          string     `json:"description"`
 	EventTime            time.Time  `json:"eventTime" binding:"required"`
 	EventEndTime         time.Time  `json:"eventEndTime" binding:"required"`

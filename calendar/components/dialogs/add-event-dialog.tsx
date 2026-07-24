@@ -108,7 +108,7 @@ export function AddEventDialog({ children, startDate, startTime }: IProps) {
                 <FormItem>
                   <FormLabel htmlFor="title">Title</FormLabel>
                   <FormControl>
-                    <Input id="title" placeholder="Event title" data-invalid={fieldState.invalid} {...field} />
+                    <Input id="title" placeholder="Event title" maxLength={50} data-invalid={fieldState.invalid} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
