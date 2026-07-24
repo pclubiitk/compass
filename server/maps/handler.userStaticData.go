@@ -31,7 +31,9 @@ func noticeProvider(c *gin.Context) {
 	// Base query
 	query := connections.DB.
 		Model(&model.Notice{}).
-		Preload("User", connections.UserSelect).
+		Preload("User", connections.UserSelect). // Preload user data, just like in noticeDetailProvider
+		Preload("CoverPic", connections.ImageSelect).
+		Preload("BioPics", connections.ImageSelect).
 		Order("created_at DESC")
 
 	var noticeList []model.Notice
@@ -94,7 +96,7 @@ func noticeProvider(c *gin.Context) {
 // noticeDetailProvider fetches a single notice by its ID using GORM.
 func noticeDetailProvider(c *gin.Context) {
 
-	// Get and validate the ID from the URL
+	// Get and validate the ID from the URL\
 	noticeIDStr := c.Param("id")
 	noticeID, err := uuid.Parse(noticeIDStr)
 	if err != nil {
@@ -107,6 +109,8 @@ func noticeDetailProvider(c *gin.Context) {
 	result := connections.DB.
 		Model(&model.Notice{}).
 		Preload("User", connections.UserSelect). // Preload user data, just like in noticeProvider
+		Preload("CoverPic", connections.ImageSelect).
+		Preload("BioPics", connections.ImageSelect).
 		Where("notice_id = ?", noticeID).
 		First(&notice) // Use First() to get a single record
 

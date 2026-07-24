@@ -9,8 +9,10 @@ export const metadata: Metadata = {
 export default function NewNoticePage() {
 
   return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <PublishForm />
-    </Suspense>
+    <div className="min-h-screen w-full flex items-center justify-center px-4 py-8">
+      <Suspense fallback={<div>Loading...</div>}>
+        <PublishForm />
+      </Suspense>
+    </div>
   );
 }

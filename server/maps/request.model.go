@@ -37,6 +37,7 @@ type AddNoticeRequest struct {
 	Description  string     `json:"description" binding:"required"`
 	Body         string     `json:"body"`
 	CoverPic     *uuid.UUID `json:"coverPic"`
+	BioPics      *[]uuid.UUID `json:"bioPics"`
 	Entity       string     `json:"entity"`
 	EventTime    time.Time  `json:"eventTime"`
 	EventEndTime time.Time  `json:"eventEndTime"`

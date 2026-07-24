@@ -9,6 +9,7 @@ import {
 import ReviewCard from "@/app/components/user/Contribution_ReviewCard";
 import ComingSoon from "../ui/ComingSoon";
 import { useGContext } from "@/components/ContextProvider";
+import {NoticeCard} from "@/components/profile/NoticeCard";
 
 // Review shape used by ReviewCard (match property names exactly)
 export type Review = {
@@ -100,7 +101,7 @@ export function ContributionsCard({
                 {notices.length > 0 ? (
                   <div className="space-y-4">
                     {notices.map((loc) => (
-                      <LocationCard key={loc.LocationId} location={loc} />
+                      <NoticeCard key={loc.NoticeId} notice={loc} onShare={() => {}} onCopy={() => {}} />
                     ))}
                   </div>
                 ) : (

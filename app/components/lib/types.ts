@@ -17,25 +17,26 @@ interface Actions {
   function?: () => void;
 }
 
-export interface Notice {
-  id: string;
-  title: string;
-  description: string;
-  publisher: string;
-  eventTime: string;
-  eventEndTime: string;
-  location: string;
-  entity: string;
-}
+//According to me (Rohit Kumar , Y25) , these interfaces are not in use .
+// export interface Notice {
+//   id: string;
+//   title: string;
+//   description: string;
+//   publisher: string;
+//   eventTime: string;
+//   eventEndTime: string;
+//   location: string;
+//   entity: string;
+// }
 
 export interface Img {
     CreatedAt: Date;
     UpdatedAt: Date;
     DeletedAt: Date;
-    ImageID: String;
-    OwnerID: String;
-    ParentAssetID: String;
-    ParentAssetType: String;
-    Status: String;
+    ImageID: string;
+    OwnerID: string;
+    ParentAssetID: string;
+    ParentAssetType: string;
+    Status: string;
     Submitted: boolean;
 }

@@ -232,6 +232,25 @@ func addNotice(c *gin.Context) {
 				return err
 			}
 		}
+
+		if input.BioPics != nil && len(*input.BioPics) > 0 {
+			if err := tx.Model(&model.Image{}).
+				Where("image_id IN ?", *input.BioPics).
+				Updates(map[string]interface{}{
+					"ParentAssetID":   notice.NoticeId,
+					"ParentAssetType": "notices",
+					"Submitted":       true,
+					"Status":          "approved",
+				}).Error; err != nil {
+				return err
+			}
+			for _, imgID := range *input.BioPics {
+				if err := workers.MoveImageFromTmpToPublic(imgID); err != nil {
+					return err
+				}
+			}
+		}
+
 		return nil
 	}); err != nil {
 		logrus.Error("Failed to create notice:", err)

@@ -54,7 +54,8 @@ type Notice struct { // change this to ritika's PR, can remove the contributedBy
 	Body          string         `json:"body,omitempty"` // added omitempty
 	ContributedBy uuid.UUID      `json:"contributedBy"`
 	User          *User          `gorm:"foreignKey:ContributedBy;references:UserID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"user,omitempty"`
-	CoverPic      *Image         `gorm:"polymorphic:ParentAsset;" json:"coverpic,omitempty"`
+	CoverPic      *Image         `gorm:"polymorphic:ParentAsset;" json:"coverPic"`
+	BioPics       []Image        `gorm:"polymorphic:ParentAsset;" json:"bioPics"`
 }
 
 type Review struct {
