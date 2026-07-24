@@ -31,7 +31,7 @@ func noticeProvider(c *gin.Context) {
 	// Base query
 	query := connections.DB.
 		Model(&model.Notice{}).
-		Preload("User", connections.UserSelect).
+		Preload("User", connections.UserSelect). // Preload user data, just like in noticeDetailProvider
 		Preload("CoverPic", connections.ImageSelect).
 		Preload("BioPics", connections.ImageSelect).
 		Order("created_at DESC")
