@@ -47,11 +47,8 @@ function noticeToEvent(notice: NoticeFromAPI, index: number): IEvent | null {
   //const start = new Date(notice.eventTime);
   //const end = new Date(notice.eventEndTime);
 
-  const cleanStartTime = notice.eventTime.replace(/(Z|[+-]\d{2}:?\d{2})$/, '');
-  const cleanEndTime = notice.eventEndTime.replace(/(Z|[+-]\d{2}:?\d{2})$/, '');
-
-  const start = new Date(cleanStartTime);
-  const end = new Date(cleanEndTime);
+  const start = new Date(notice.eventTime);
+  const end = new Date(notice.eventEndTime || notice.eventTime);
 
   // Skip notices with invalid dates
   if (isNaN(start.getTime()) || start.getFullYear() < 1970) {
