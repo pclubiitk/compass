@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useHistoryBack } from "@/app/hooks/use-history-back";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -70,6 +71,9 @@ export function EditLocationModal({
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isDesktop = useMediaQuery("(min-width: 768px)");
+
+  // Close modal on phone back button instead of navigating away
+  useHistoryBack(isOpen, () => setIsOpen(false));
 
   const [formData, setFormData] = useState({
     name: "",
