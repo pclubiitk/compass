@@ -1,7 +1,7 @@
 export interface Image {
-  ImageID: string;
+  imageId: string;
   url: string;
-  OwnerID: string;
+  ownerId: string;
   ownerType: string;
   createdAt: string;
   updatedAt: string;
@@ -49,7 +49,7 @@ export interface ReviewData {
   description: string;
   CreatedAt: string;
   Images?: {
-    ImageID: string;
+    imageId: string;
   }[];
   User: {
     name: string;

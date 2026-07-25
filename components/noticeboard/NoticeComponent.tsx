@@ -67,7 +67,7 @@ const NoticeCard = ({
       </h2>
       {notice.coverPic ? (
         <img
-          src={`${process.env.NEXT_PUBLIC_ASSET_URL}/assets/${notice.coverPic.ImageID}.webp`}
+          src={`${process.env.NEXT_PUBLIC_ASSET_URL}/assets/${notice.coverPic.imageId}.webp`}
           alt="Cover"
           className="w-full h-48 object-cover rounded-lg mt-3"
 

@@ -65,11 +65,11 @@ export default function UserNoticeDetailPage() {
         </h1>
         {notice.coverPic ? (
           <img
-            src={`${process.env.NEXT_PUBLIC_ASSET_URL}/assets/${notice.coverPic.ImageID}.webp`}
+            src={`${process.env.NEXT_PUBLIC_ASSET_URL}/assets/${notice.coverPic.imageId}.webp`}
             alt="Cover"
             className="w-full h-64 object-cover rounded-lg mb-6"
             onClick={() =>
-              setLightboxUrl(`${process.env.NEXT_PUBLIC_ASSET_URL}/assets/${notice.coverPic?.ImageID}.webp`)
+              setLightboxUrl(`${process.env.NEXT_PUBLIC_ASSET_URL}/assets/${notice.coverPic?.imageId}.webp`)
             }
           />
         ) : (
@@ -78,9 +78,9 @@ export default function UserNoticeDetailPage() {
         {notice.bioPics && notice.bioPics.length > 0 && (
           <div className="flex space-x-4 mb-6">
             {notice.bioPics.map((bioPic, index) => (
-              <img src={`${process.env.NEXT_PUBLIC_ASSET_URL}/assets/${bioPic.ImageID}.webp`} alt={`Bio Pic ${index + 1}`} key={index} className="w-24 h-24 object-cover rounded-lg"
+              <img src={`${process.env.NEXT_PUBLIC_ASSET_URL}/assets/${bioPic.imageId}.webp`} alt={`Bio Pic ${index + 1}`} key={index} className="w-24 h-24 object-cover rounded-lg"
                 onClick={() =>
-                  setLightboxUrl(`${process.env.NEXT_PUBLIC_ASSET_URL}/assets/${bioPic.ImageID}.webp`)
+                  setLightboxUrl(`${process.env.NEXT_PUBLIC_ASSET_URL}/assets/${bioPic.imageId}.webp`)
                 } />
             ))}
           </div>

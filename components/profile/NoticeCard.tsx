@@ -69,7 +69,7 @@ const NoticeCard = ({
                 <div className="flex-shrink-0 w-20 h-20 rounded-md bg-gray-100 overflow-hidden flex items-center justify-center">
                     {notice.coverPic ? (
                         <img
-                            src={`${process.env.NEXT_PUBLIC_ASSET_URL}/assets/${notice.coverPic.ImageID}.webp`}
+                            src={`${process.env.NEXT_PUBLIC_ASSET_URL}/assets/${notice.coverPic.imageId}.webp`}
                             alt="Cover"
                             className="w-full h-full object-cover"
                         />
