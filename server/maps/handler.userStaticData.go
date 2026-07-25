@@ -209,7 +209,6 @@ func locationDetailProvider(c *gin.Context) {
 
 	if err := connections.DB.
 		Model(&model.Location{}).
-		Preload("User", connections.UserSelect). // Location contributor
 		Where("location_id = ? AND status = ?", id, model.Approved).
 		First(&loc).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Error Fetching location"})
