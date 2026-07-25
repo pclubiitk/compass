@@ -277,16 +277,17 @@ func fetchReviewsByLocationID(locationID string, limit, offset int) ([]model.Rev
 	return reviews, int(total), nil
 }
 
-func fetchReviewsByUserID(userID string, limit, offset int) ([]model.Review, int, error) {
+func fetchReviewsByUserID(userID uuid.UUID, limit, offset int) ([]model.Review, int, error) {
 	var reviews []model.Review
 	var total int64
 	db := connections.DB
+	// fmt.Printf("userid gotten %T", userID)
 
 	if err := db.Model(&model.Review{}).Where("contributed_by = ?", userID).Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
-	if err := db.Preload("Location").
+	if err := db.
 		Preload("Images", func(tx *gorm.DB) *gorm.DB {
 			return tx.Where("parent_asset_id IS NOT NULL").Where("parent_asset_type = ?", "reviews")
 		}).
@@ -302,12 +303,17 @@ func fetchReviewsByUserID(userID string, limit, offset int) ([]model.Review, int
 }
 
 func getMyReviews(c *gin.Context) {
-	userID := c.GetString("userID")
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
 
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 	offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
 
-	reviews, total, err := fetchReviewsByUserID(userID, limit, offset)
+	reviews, total, err := fetchReviewsByUserID(userID.(uuid.UUID), limit, offset)
+	// fmt.Printf("total %d", total)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch reviews"})
 		return
