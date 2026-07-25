@@ -58,17 +58,17 @@ type Notice struct { // change this to ritika's PR, can remove the contributedBy
 }
 
 type Review struct {
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
-	DeletedAt     gorm.DeletedAt `gorm:"index"`
-	ReviewId      uuid.UUID      `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
-	Description   string         `gorm:"type:text" json:"description"`
-	Rating        int8           `json:"rating"`
-	Status        Status         `gorm:"type:varchar(20);check:status IN ('pending','approved','rejected', 'rejectedByBot')"` // as the user writes a review put the review in the database with pending
-	ContributedBy uuid.UUID      `json:"contributedBy"`                                                                       // This is the foreign key
-	LocationId    uuid.UUID      `json:"locationId"`
-	User          *User          `gorm:"foreignKey:ContributedBy;references:UserID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
-	Images        []Image        `gorm:"polymorphic:ParentAsset;" json:"images"` // base name, parentAsset, it will attach the ID itself
+    CreatedAt     time.Time
+    UpdatedAt     time.Time
+    DeletedAt     gorm.DeletedAt `gorm:"index"`
+    ReviewId      uuid.UUID      `gorm:"type:uuid;default:gen_random_uuid();primaryKey" json:"reviewId"`
+    Description   string         `gorm:"type:text" json:"description"`
+    Rating        int8           `json:"rating"`
+    Status        Status         `gorm:"type:varchar(20);check:status IN ('pending','approved','rejected', 'rejectedByBot')" json:"status"`
+    ContributedBy uuid.UUID      `json:"contributedBy"`
+    LocationId    uuid.UUID      `json:"locationId"`
+    User          *User          `gorm:"foreignKey:ContributedBy;references:UserID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"user"`
+    Images        []Image        `gorm:"polymorphic:ParentAsset;polymorphicValue:Review" json:"images"`
 }
 
 // UserEvent represents a personal calendar event created by a user.

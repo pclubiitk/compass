@@ -8,3 +8,4 @@ build
 # As search will be build via it's own docker file
 search/
 #.env
+server/

@@ -8,6 +8,7 @@ import (
 	"compass/model"
 	"encoding/json"
 	"fmt"
+
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -118,7 +119,7 @@ func handleFlaggedImage(image model.Image, user model.User) error {
 		To:   user.Email,
 		Data: map[string]interface{}{
 			"username": user.Email,
-			"reason":   "Your uploaded image violated our content policy and was rejected.",
+			"reason":   "Your uploaded image violated our content policy and was rejected. Your Review is now under manual processing.",
 		},
 	}
 	if err := sendEmail(mailJob); err != nil {
@@ -129,6 +130,16 @@ func handleFlaggedImage(image model.Image, user model.User) error {
 		Where("image_id = ?", imageID).
 		Update("status", model.Rejected).Error; err != nil {
 		return err
+	}
+
+	if image.ParentAssetType == "Review" {
+		result := connections.DB.Model(&model.Review{}).
+			Where("review_id = ?", image.ParentAssetID).
+			Update("status", model.RejectedByBot)
+
+		if result.Error != nil {
+			logrus.Errorf("Failed to reject parent review: %v", result.Error)
+		}
 	}
 
 	return nil

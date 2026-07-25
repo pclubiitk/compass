@@ -9,7 +9,7 @@ type ReviewProps = {
   review_body: string;
   //once confirm why there was a never
   time: string;
-  imgs: { ImageID: string }[];
+  imgs: { imageId: string }[];
 };
 
 export default function ReviewCard({
@@ -24,9 +24,9 @@ export default function ReviewCard({
       <div className="mx-4 py-3">
         <CardTitle className="text-lg py-1 my-0"> {author} </CardTitle>
         {imgs.map((img) => (
-          <div className="relative w-full h-48 my-2 rounded-md overflow-hidden" key={img.ImageID}>
+          <div className="relative w-full h-48 my-2 rounded-md overflow-hidden" key={img.imageId}>
             <img
-              src={`${process.env.NEXT_PUBLIC_ASSET_URL}/assets/${img.ImageID}.webp`}
+              src={`${process.env.NEXT_PUBLIC_ASSET_URL}/assets/${img.imageId}.webp`}
               alt="Review attachment"
               className="w-full h-full object-cover"
             />

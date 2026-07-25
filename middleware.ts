@@ -2,22 +2,10 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export function middleware(request: NextRequest) {
-  const hostname = request.headers.get("host") || "";
   const pathname = request.nextUrl.pathname;
+  const host = request.headers.get("host") || "";
 
-  // Extract subdomain from hostname
-  const subdomain = hostname.split(".")[0];
-
-  // Get the subdomain from X-Subdomain header (set by nginx/reverse proxy)
-  const proxySubdomain = request.headers.get("X-Subdomain");
-  const actualSubdomain = proxySubdomain || subdomain;
-
-  const hasSession =
-    request.cookies.has("auth_token") ||
-    request.cookies.has("refresh_token");
-
-  // Define public paths that do not require authentication
-  const PUBLIC_AUTH_PATHS = [
+  const PUBLIC_PATHS = [
     "/login",
     "/signup",
     "/forgot-password",
@@ -25,57 +13,70 @@ export function middleware(request: NextRequest) {
     "/privacy-policy",
   ];
 
-  const isPublicAuthPath = PUBLIC_AUTH_PATHS.some((path) =>
-    pathname.startsWith(path)
+  const ALLOWED_WITHOUT_COOKIES = ["/maps", "/location"];
+
+  const isPublicPath = PUBLIC_PATHS.some(
+    (path) => pathname === path || pathname.startsWith(`${path}/`),
   );
 
-  // If no session cookie and they are trying to access a protected page, redirect to login
-  if (!hasSession && !isPublicAuthPath) {
-    const authDomain = process.env.NEXT_PUBLIC_AUTH_DOMAIN || "";
-    const loginBase = authDomain ? `${authDomain}/login` : "/login";
-    const callbackUrl = request.url;
-    return NextResponse.redirect(
-      new URL(`${loginBase}?callbackUrl=${encodeURIComponent(callbackUrl)}`, request.url)
-    );
-  }
+  const isAllowedWithoutCookies = ALLOWED_WITHOUT_COOKIES.some(
+    (path) => pathname === path || pathname.startsWith(`${path}/`),
+  );
 
-  // Route based on subdomain
-  if (actualSubdomain === "auth") {
-    // Auth subdomain - allow all (auth) paths
-    if (!pathname.startsWith("/login") && !pathname.startsWith("/signup") && 
-        !pathname.startsWith("/forgot-password") && !pathname.startsWith("/reset-password") &&
-        !pathname.startsWith("/privacy-policy") && !pathname.startsWith("/profile") &&
-        !pathname.startsWith("/_next") && !pathname.startsWith("/api") &&
-        !pathname.startsWith("/public")) {
-      // Redirect to login if accessing non-auth routes on auth subdomain
-      return NextResponse.redirect(new URL("/login", request.url));
-    }
+  const hasSession =
+    request.cookies.has("auth_token") || request.cookies.has("refresh_token");
+
+  // console.log("[middleware] request", {
+  //   host,
+  //   pathname,
+  //   isStaticAsset,
+  //   isPublicPath,
+  //   isAllowedWithoutCookies,
+  //   hasSession,
+  // });
+
+  if (isPublicPath || isAllowedWithoutCookies) {
+    // console.log("[middleware] allow", { pathname });
     return NextResponse.next();
   }
 
-  if (actualSubdomain === "compass" || actualSubdomain === "maps") {
-    // Maps subdomain - allow all (maps) paths
-    if (pathname !== "/" &&
-        !pathname.startsWith("/location") && !pathname.startsWith("/noticeboard") &&
-        !pathname.startsWith("/_next") && !pathname.startsWith("/api") &&
-        !pathname.startsWith("/public")) {
-      // Redirect to maps if accessing non-maps routes on maps subdomain
-      return NextResponse.redirect(new URL("/", request.url));
-    }
+  if (hasSession) {
+    // console.log("[middleware] allow-with-session", { pathname });
     return NextResponse.next();
   }
+
+  // console.log("[middleware] block", {
+  //   pathname,
+  //   redirectTo: "/login",
+  //   callbackUrl: request.url,
+  // });
+
+  return NextResponse.redirect(
+    // TODO: As in prod, due to nginx the request.url will be set to localhost.
+    // In Dev:
+    // new URL(
+    //   `/login?callbackUrl=${encodeURIComponent(request.url)}`,
+    //   request.url,
+    // ),
+    // In Test:
+    new URL("https://bsearch.pclub.in/login")
+    // FIXME(Prod): In Prod:
+    // new URL("https://search.pclub.in/login")
+  );
 }
 
 export const config = {
+  
   matcher: [
     /*
      * Match all request paths except for the ones starting with:
      * - api (API routes)
-     * - _next/static (static files)
+     * - _next/static (static files like CSS, JS)
      * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
+     * - favicon.ico, sitemap.xml, robots.txt (metadata files)
      * - public folder
+     * - Any file with a common extension (e.g., logo.png, icon.svg)
      */
-    "/((?!api|_next/static|_next/image|favicon.ico|public).*)",
+    '/((?!api|_next/static|_next/image|favicon.ico|public|sitemap.xml|robots.txt|.+\\.[\\w]+$).*)',
   ],
 };

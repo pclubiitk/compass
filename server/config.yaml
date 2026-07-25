@@ -1,29 +1,36 @@
 # Main config file
 # Define things like DB name, ports, JWT expiry, etc.
 # remember to put all the fields
-env: prod # prod/dev
+env: dev # prod/dev/test
+
+underdev:
+  map: false
 
 database:
-  host: "localhost"   # Changed from localhost
+  host: "localhost"
   name: "compass"
   # FIXME(prod): Create new user id
-  user: "this_is_mjk"
+  user: this_is_mjk
   port: 5432
 
 rabbitmq:
-  host: "localhost"    # Changed from localhost
+  host: "localhost"
   # FIXME(prod): Create new user id and pwd
-  user: "this_is_mjk"
-  password: "guest"
+  user: "guest"
   mailqueue: "mail_queue" # Keep the names consistent <type>queue for protect the publish logic correct
   moderationqueue: "moderation_queue"
   port: 5672
+
+redis:
+  host: "localhost"
+  port: "6379"
 
 ports:
   auth: 8080
   maps: 8081
   assets: 8082
   search: 8083
+  puppylove: 8084
 
 smtp:
   host: smtp.gmail.com
@@ -34,7 +41,9 @@ domain: ""
 # Browsers rewrite Domain=localhost cookies into .localhost, which breaks host-only cookie checks.
 # Fix: leave domain empty ("") in dev so the cookie is scoped only to localhost
 
-frontend_url: "http://localhost:3000" # Dev: http://localhost:3000, Prod: https://auth.pclub.in
+# FIXME(prod):
+# Dev: http://localhost:3000, Test: https://bsearch.pclub.in, Prod: https://search.pclub.in
+frontend_url: "https://search.pclub.in"
 
 expiry:
   emailVerification: 3

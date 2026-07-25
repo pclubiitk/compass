@@ -8,12 +8,16 @@ import {
   delete_IDB,
 } from "@/lib/data/indexeddb-manager";
 import { prepare_worker } from "@/lib/workers/prepare_worker";
-import { check_bacchas, check_query } from "@/lib/data/query-processor";
+import {
+  check_bacchas,
+  check_query,
+  find_all_by_rollNo,
+} from "@/lib/data/query-processor";
 
 let students: Student[] = [];
 let new_students: Student[] | undefined = undefined;
 
-//setting up the values for the fields in the Options component
+// Setting up the values for the fields in the Options component
 const options: Options = {
   batch: [],
   hall: [],
@@ -26,29 +30,25 @@ self.onmessage = async (event: MessageEvent) => {
 
   switch (command) {
     case "initialize":
-
       await initializeData();
       break;
     case "query":
       self.postMessage({
         status: "query_results",
-        results: await check_query(payload, students),
+        results: check_query(payload.query, students, payload.publicKeys),
       });
       break;
-    case "get_team": {
-      const rollNos: string[] = payload.map(String); 
-      const teamResults: Student[] = [];
-      for (const rollNo of rollNos) {
-        const found = await check_query({ batch: [], hall: [], course: [], dept: [], name: rollNo, gender: "", address: "" }, students);
-        teamResults.push(...found);
-      }
-      self.postMessage({
-        status: "team_results",
-        results: teamResults,
-      });
-      break;
-    }
 
+    case "find_all_by_rollNo":
+      self.postMessage({
+        status: "find_all_by_rollNo_results",
+        results: find_all_by_rollNo(
+          payload.rollNos,
+          students,
+          payload.publicKeys,
+        ),
+      });
+      break;
     case "get_family_tree":
       const student: Student = payload;
       const baapu = students.filter(
@@ -71,6 +71,10 @@ self.onmessage = async (event: MessageEvent) => {
       break;
   }
 };
+
+// NOTE: mergePuppyLoveData removed - PuppyLove data (interests/bio) is now
+// fetched via ContextProvider and cached in localStorage with 1hr expiry.
+// The data is accessed directly from context in SCard component.
 
 async function initializeData(): Promise<void> {
   let noLastTimeStamp = false;
@@ -120,6 +124,7 @@ async function initializeData(): Promise<void> {
         "Could not find data locally or fetch it. This web app will not work.",
     });
   } else {
+    // Prepare worker with student data (PuppyLove data is now handled via context)
     prepare_worker(students, options);
   }
 }

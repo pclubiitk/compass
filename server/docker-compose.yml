@@ -15,6 +15,7 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672" # for the ui
+    restart: always
     environment:
       # FIXME(prod): Update the user id and password
       RABBITMQ_DEFAULT_USER: this_is_mjk
@@ -46,6 +47,16 @@ services:
       # NOTE: ./db_data_on_host is the directory on my host (relative to the docker-compose.yml file),
       # and /var/lib/postgresql/data is the default PostgreSQL data directory within the container.
       - ./db_data:/var/lib/postgresql/data
+  redis:
+    image: redis:7-alpine
+    restart: always
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
   server:
     build:
       context: .
@@ -59,17 +70,25 @@ services:
       - "8081:8081"
       - "8082:8082"
       - "8083:8083"
+      - "8084:8084"
     depends_on:
       rabbitmq:
         condition: service_healthy
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_healthy
+    # No use, as we just run the binary
     environment:
       POSTGRES_HOST: postgres
       RABBITMQ_HOST: rabbitmq
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
       # force Go to use go.mod/go.sum for dependency management
       GO111MODULE: on
     volumes:
-      - ./pfp:/assets/pfp
-      - ./public:/assets/public
-      - ./tmp:/assets/tmp
+      - ./assets/pfp:/assets/pfp
+      - ./assets/public:/assets/public
+      - ./assets/tmp:/assets/tmp
+      - ./config.yml:/config.yml
+      - ./secret.yml:/secret.yml

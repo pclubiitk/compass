@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SocialProfileCard } from "@/components/profile/SocialProfileCard";
 import { EditableProfileCard } from "@/components/profile/EditableProfileCard";
 import { ContributionsCard } from "@/components/profile/ContributionsCard";
+import { PuppyLoveProfileCard } from "@/components/profile/PuppyLoveProfileCard";
 import { AdminCard } from "@/components/profile/admincard";
 import type { Review } from "@/components/profile/ContributionsCard";
 import type { LocationCardProps } from "@/components/profile/LocationCard";
@@ -21,6 +22,7 @@ import { Calendar } from "lucide-react";
 
 import type { IEvent } from "@/calendar/interfaces";
 import ComingSoon from "@/components/ui/ComingSoon";
+import { useGContext } from "@/components/ContextProvider";
 
 // Data Type
 export type Profile = {
@@ -40,7 +42,7 @@ export type Profile = {
 export type UserData = {
   role: number;
   profile: Profile;
-  ContributedLocations: LocationCardProps['location'][];
+  ContributedLocations: LocationCardProps["location"][];
   ContributedReview: Review[];
   ContributedNotice: any[];
 };
@@ -51,6 +53,12 @@ export default function ProfilePage() {
   const [calendarEvents, setCalendarEvents] = useState<IEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [calendarLoading, setCalendarLoading] = useState(true);
+
+  // PuppyLove state
+  const { isPLseason } = useGContext();
+  const [isPuppyLoveRegistered, setIsPuppyLoveRegistered] = useState(false);
+  const [puppyLoveBio, setPuppyLoveBio] = useState("");
+  const [puppyLoveInterests, setPuppyLoveInterests] = useState<string[]>([]);
 
   // Fetch calendar events using the new requests module
   const fetchCalendarEvents = useCallback(async (isInitial = false) => {
@@ -71,6 +79,46 @@ export default function ProfilePage() {
   useEffect(() => {
     fetchCalendarEvents(true);
   }, [fetchCalendarEvents]);
+
+  // Check PuppyLove status and fetch profile
+  const fetchPuppyLoveProfile = useCallback(async () => {
+    try {
+      // Check if user is registered (has dirty = true)
+      const dataRes = await fetch(
+        `${process.env.NEXT_PUBLIC_PUPPYLOVE_URL}/api/puppylove/users/data`,
+        { credentials: "include" },
+      );
+
+      if (dataRes.ok) {
+        const data = await dataRes.json();
+        // User is registered if they have a profile with dirty = true
+        setIsPuppyLoveRegistered(data.dirty === true);
+
+        // Set bio and interests
+        setPuppyLoveBio(data.about || "");
+        // console.log("[PuppyLove] Raw interest field:", data.interest);
+        // Note: Backend returns "interest" (singular), not "interests" (plural)
+        setPuppyLoveInterests(
+          Array.isArray(data.interests)
+            ? data.interests
+            : typeof data.interests === "string"
+              ? data.interests
+                  .split(",")
+                  .map((s: string) => s.trim())
+                  .filter(Boolean)
+              : [],
+        );
+      } else if (dataRes.status === 404) {
+        setIsPuppyLoveRegistered(false);
+      }
+    } catch (err) {
+      console.error("Failed to check PuppyLove status:", err);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isPLseason) fetchPuppyLoveProfile();
+  }, [isPLseason, fetchPuppyLoveProfile]);
 
   const fetchProfile = useCallback(async () => {
     // We don't reset loading to true on refetch to avoid skeleton flashes
@@ -107,7 +155,10 @@ export default function ProfilePage() {
           if (reviewsRes.ok) {
             const rdata = await reviewsRes.json();
             // rdata.reviews expected to be an array of review objects
-            setUserData((prev) => ({ ...(prev as any), ContributedReview: rdata.reviews }));
+            setUserData((prev) => ({
+              ...(prev as any),
+              ContributedReview: rdata.reviews,
+            }));
           }
         } catch (err) {
           console.warn("Failed to fetch contributed reviews:", err);
@@ -179,29 +230,27 @@ export default function ProfilePage() {
         </div>
       </aside>
 
-
       {/* --- Right Column (Scrollable) --- */}
       <main className="flex-1 lg:h-screen lg:overflow-y-auto p-4 sm:p-6 lg:p-8 lg:pl-0">
         <div className="space-y-8">
+          {/* PuppyLove Profile Card - only visible during Valentine's mode */}
+          <PuppyLoveProfileCard
+            initialBio={puppyLoveBio}
+            initialInterests={puppyLoveInterests}
+            isPuppyLoveActive={isPLseason}
+            isRegistered={isPuppyLoveRegistered}
+            onUpdate={fetchPuppyLoveProfile}
+          />
           <EditableProfileCard
             profile={userData.profile}
             onUpdate={fetchProfile}
           />
-          <ContributionsCard
-            locations={userData.ContributedLocations ?? []}
-            // reviews={userData.ContributedReview ?? []}
-            // notices={userData.ContributedNotice ?? []}
-            reviews={userData.ContributedReview}
-            notices={userData.ContributedNotice}
-          />
-
           {/* Calendar Section */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="w-5 h-5" />
-                Campus Events
-
+                My Events
               </CardTitle>
             </CardHeader>
             <CardContent className="p-2 sm:p-4 lg:p-6 pt-0">
@@ -221,6 +270,11 @@ export default function ProfilePage() {
               )}
             </CardContent>
           </Card>
+          <ContributionsCard
+            locations={userData.ContributedLocations}
+            reviews={userData.ContributedReview}
+            notices={userData.ContributedNotice}
+          />
         </div>
       </main>
     </div>

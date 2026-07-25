@@ -63,6 +63,9 @@ func loginHandler(c *gin.Context) {
 
 	//  Fetch user from DB
 	result := connections.DB.Model(&model.User{}).Select("email", "user_id", "password", "role", "is_verified").
+		Preload("Profile", func(db *gorm.DB) *gorm.DB {
+			return db.Select("user_id")
+		}).
 		Where("email = ?", strings.ToLower(req.Email)).First(&dbUser)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {

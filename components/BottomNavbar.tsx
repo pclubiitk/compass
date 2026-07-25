@@ -1,6 +1,6 @@
 "use client";
 
-import { Search, Megaphone, Plus, User } from "lucide-react";
+import { MapPinSearch, UserSearch, Megaphone, Plus, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRouter, usePathname } from "next/navigation";
 import { useGContext } from "@/components/ContextProvider";
@@ -12,10 +12,11 @@ export function BottomNav() {
   const { isLoggedIn, isGlobalLoading } = useGContext();
 
   const navItems = [
-    { icon: Search, label: "Search", path: "/" },
+    { icon: MapPinSearch, label: "Location", path: "/maps" },
+    { icon: UserSearch, label: "Search", path: process.env.NEXT_PUBLIC_SEARCH_DOMAIN || ""},
     { icon: Megaphone, label: "Noticeboard", path: "/noticeboard" },
-    { icon: Plus, label: "Add Location", path: "" },
-    { icon: User, label: "Profile", path: "/profile" },
+    { icon: Plus, label: "Location", path: "" },
+    { icon: User, label: "Profile", path: "/" },
   ];
 
   const handleClick = async (
@@ -25,7 +26,7 @@ export function BottomNav() {
   ) => {
     e?.preventDefault();
 
-    if (label === "Add Location") {
+    if (label === "Location") {
       if (isGlobalLoading) return;
 
       if (!isLoggedIn) {
@@ -33,11 +34,11 @@ export function BottomNav() {
         return;
       }
 
-      if (pathname !== "/") {
+      if (pathname !== "/maps") {
         toast.error(" Please select a location on the map first.", {
           duration: 2000,
         });
-        router.push("/");
+        router.push("/maps");
         return;
       }
 
@@ -71,16 +72,16 @@ export function BottomNav() {
   };
 
   return (
-    <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md bg-white px-2 py-2 rounded-full shadow-md flex items-center justify-between gap-0.5 border">
+    <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md bg-white dark:bg-gray-800 py-2 rounded-full shadow-md flex items-center justify-between gap-0.5 border-gray-200 dark:border-gray-900">
       {navItems.map(({ icon: Icon, label, path }) => (
         <Button
           key={label}
-          variant="ghost"
-          className="flex flex-col items-center justify-center px-0 min-w-15 sm:min-w-18"
+          variant="link"
+          className="flex flex-col items-center justify-center min-w-15"
           onClick={(e) => handleClick(label, path, e)}
         >
-          <Icon className="h-5 w-5 sm:h-6 sm:w-6 text-gray-700" />
-          <span className="text-xs sm:text-sm text-gray-700 font-medium">
+          <Icon className="h-5 w-5 sm:h-6 sm:w-6 text-gray-700 dark:text-gray-300" />
+          <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 font-medium">
             {label}
           </span>
         </Button>

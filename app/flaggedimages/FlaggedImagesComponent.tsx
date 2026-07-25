@@ -14,8 +14,10 @@ import {
   MessageSquareText,
   Star,
   User,
+  Image as ImageIcon,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useGContext } from "@/components/ContextProvider";
 
 interface FlaggedImage {
   imageId: string;
@@ -32,32 +34,42 @@ interface FlaggedReview {
   status: string;
   locationId: string;
   contributedBy: string;
+  imageId?: string; // Added to hold the review's associated image
 }
 
 function normalizeImage(raw: Record<string, unknown>): FlaggedImage | null {
-  const imageId = (raw.imageId ?? raw.ImageID) as string | undefined;
+  const imageId = raw.imageId as string | undefined;
   if (!imageId) return null;
 
   return {
     imageId,
-    ownerId: String(raw.ownerId ?? raw.OwnerID ?? ""),
-    parentAssetId: String(raw.parentAssetId ?? raw.ParentAssetID ?? ""),
-    parentAssetType: String(raw.parentAssetType ?? raw.ParentAssetType ?? ""),
-    status: String(raw.status ?? raw.Status ?? ""),
+    ownerId: String(raw.ownerId ?? ""),
+    parentAssetId: String(raw.parentAssetId ?? ""),
+    parentAssetType: String(raw.parentAssetType ?? ""),
+    status: String(raw.status ?? ""),
   };
 }
 
 function normalizeReview(raw: Record<string, unknown>): FlaggedReview | null {
-  const reviewId = (raw.reviewId ?? raw.ReviewId) as string | undefined;
+  const reviewId = raw.reviewId as string | undefined;
   if (!reviewId) return null;
+
+  // Check if the backend sent the polymorphic 'images' array
+  let imageId: string | undefined = undefined;
+  if (Array.isArray(raw.images) && raw.images.length > 0) {
+    // Grab the ID from the first image in the array
+    const firstImage = raw.images[0] as Record<string, unknown>;
+    imageId = String(firstImage.imageId ?? "");
+  }
 
   return {
     reviewId,
-    description: String(raw.description ?? raw.Description ?? ""),
-    rating: Number(raw.rating ?? raw.Rating ?? 0),
-    status: String(raw.status ?? raw.Status ?? ""),
-    locationId: String(raw.locationId ?? raw.LocationId ?? ""),
-    contributedBy: String(raw.contributedBy ?? raw.ContributedBy ?? ""),
+    description: String(raw.description ?? ""),
+    rating: Number(raw.rating ?? 0),
+    status: String(raw.status ?? ""),
+    locationId: String(raw.locationId ?? ""),
+    contributedBy: String(raw.contributedBy ?? ""),
+    ...(imageId && { imageId: String(imageId) }),
   };
 }
 
@@ -70,7 +82,7 @@ export default function FlaggedImagesComponent() {
   const router = useRouter();
   const [images, setImages] = useState<FlaggedImage[]>([]);
   const [reviews, setReviews] = useState<FlaggedReview[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { setGlobalLoading } = useGContext();
   const [actionId, setActionId] = useState<string | null>(null);
 
   const assetUrl = process.env.NEXT_PUBLIC_ASSET_URL;
@@ -79,31 +91,35 @@ export default function FlaggedImagesComponent() {
   const fetchFlaggedContent = async () => {
     if (!assetUrl || !mapsUrl) {
       toast.error("Backend URLs not configured");
-      setLoading(false);
       return;
     }
 
     try {
-      setLoading(true);
-
+      setGlobalLoading(true);
       const [imagesRes, reviewsRes] = await Promise.all([
         fetch(`${assetUrl}/gallery`, { credentials: "include" }),
         fetch(`${mapsUrl}/api/maps/flag`, { credentials: "include" }),
       ]);
 
-      if (!imagesRes.ok) {
+      if (imagesRes.ok) {
+        const imagesData = await imagesRes.json();
+        const allImages = Array.isArray(imagesData?.images)
+          ? imagesData.images
+          : [];
+        const flaggedImages = allImages
+          .map((img: Record<string, unknown>) => normalizeImage(img))
+          .filter((img: FlaggedImage | null): img is FlaggedImage => {
+            return (
+              img !== null &&
+              isFlaggedImageStatus(img.status) &&
+              img.parentAssetType !== "Review" // Prevents duplication
+            );
+          });
+        setImages(flaggedImages);
+      } else {
+        setImages([]);
         throw new Error("Failed to fetch flagged images");
       }
-
-      const imagesData = await imagesRes.json();
-      const allImages = Array.isArray(imagesData?.images) ? imagesData.images : [];
-      const flaggedImages = allImages
-        .map((img: Record<string, unknown>) => normalizeImage(img))
-        .filter((img: FlaggedImage | null): img is FlaggedImage => {
-          return img !== null && isFlaggedImageStatus(img.status);
-        });
-
-      setImages(flaggedImages);
 
       if (reviewsRes.ok) {
         const reviewsData = await reviewsRes.json();
@@ -118,12 +134,13 @@ export default function FlaggedImagesComponent() {
         setReviews(flaggedReviews);
       } else {
         setReviews([]);
+        throw new Error("Failed to fetch flagged reviews");
       }
     } catch (error) {
       console.error(error);
       toast.error("Failed to load flagged content");
     } finally {
-      setLoading(false);
+      setGlobalLoading(false);
     }
   };
 
@@ -201,7 +218,9 @@ export default function FlaggedImagesComponent() {
 
       const result = await response.json();
       toast.success(result.message || "Review approved");
-      setReviews((prev) => prev.filter((review) => review.reviewId !== reviewId));
+      setReviews((prev) =>
+        prev.filter((review) => review.reviewId !== reviewId),
+      );
     } catch (error) {
       console.error(error);
       toast.error("Failed to approve review");
@@ -216,7 +235,7 @@ export default function FlaggedImagesComponent() {
     const message =
       window.prompt(
         "Rejection message for the user:",
-        "Your review was rejected after admin review."
+        "Your review was rejected after admin review.",
       ) ?? "";
 
     if (!message.trim()) {
@@ -239,7 +258,9 @@ export default function FlaggedImagesComponent() {
 
       const result = await response.json();
       toast.success(result.message || "Review rejected");
-      setReviews((prev) => prev.filter((review) => review.reviewId !== reviewId));
+      setReviews((prev) =>
+        prev.filter((review) => review.reviewId !== reviewId),
+      );
     } catch (error) {
       console.error(error);
       toast.error("Failed to reject review");
@@ -247,14 +268,6 @@ export default function FlaggedImagesComponent() {
       setActionId(null);
     }
   };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    );
-  }
 
   const totalFlagged = reviews.length + images.length;
 
@@ -295,9 +308,7 @@ export default function FlaggedImagesComponent() {
               <TabsTrigger value="reviews">
                 Reviews ({reviews.length})
               </TabsTrigger>
-              <TabsTrigger value="images">
-                Images ({images.length})
-              </TabsTrigger>
+              <TabsTrigger value="images">Images ({images.length})</TabsTrigger>
             </TabsList>
 
             <TabsContent value="reviews">
@@ -321,13 +332,32 @@ export default function FlaggedImagesComponent() {
                         key={review.reviewId}
                         className="overflow-hidden hover:shadow-lg transition-shadow flex flex-col"
                       >
+                        {review.imageId && (
+                          <div className="relative w-full h-48 bg-muted border-b">
+                            <Image
+                              src={`${assetUrl}/tmp/${review.imageId}.webp`}
+                              alt="Review associated image"
+                              fill
+                              className="object-cover"
+                              unoptimized
+                            />
+                            <div className="absolute top-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded flex items-center gap-1 backdrop-blur-sm">
+                              <ImageIcon className="h-3 w-3" />
+                              Has Attached Image
+                            </div>
+                          </div>
+                        )}
+
                         <div className="p-4 flex flex-col flex-1">
                           <div className="flex items-start justify-between gap-2 mb-3">
                             <div className="flex items-center gap-2">
                               <MessageSquareText className="h-5 w-5 text-muted-foreground" />
                               <h3 className="font-semibold">Review</h3>
                             </div>
-                            <Badge variant="outline" className="bg-red-100 shrink-0">
+                            <Badge
+                              variant="outline"
+                              className="bg-red-100 shrink-0 text-black"
+                            >
                               Flagged
                             </Badge>
                           </div>
@@ -351,7 +381,9 @@ export default function FlaggedImagesComponent() {
                               <span className="font-medium text-foreground">
                                 Location:
                               </span>{" "}
-                              <span className="break-all">{review.locationId}</span>
+                              <span className="break-all">
+                                {review.locationId}
+                              </span>
                             </p>
                             <p>
                               <span className="font-medium text-foreground">
@@ -364,9 +396,11 @@ export default function FlaggedImagesComponent() {
                           <div className="flex gap-2 mt-4 pt-4 border-t">
                             <Button
                               size="sm"
-                              className="flex-1 bg-green-500 hover:bg-green-600"
+                              className="flex-1 bg-green-500 hover:bg-green-600 dark:hover:bg-green-400"
                               disabled={isBusy}
-                              onClick={() => handleApproveReview(review.reviewId)}
+                              onClick={() =>
+                                handleApproveReview(review.reviewId)
+                              }
                             >
                               {isBusy ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -377,9 +411,11 @@ export default function FlaggedImagesComponent() {
                             <Button
                               size="sm"
                               variant="destructive"
-                              className="flex-1"
+                              className="flex-1 bg-red-500 hover:bg-red-600 dark:hover:bg-red-400"
                               disabled={isBusy}
-                              onClick={() => handleRejectReview(review.reviewId)}
+                              onClick={() =>
+                                handleRejectReview(review.reviewId)
+                              }
                             >
                               Reject
                             </Button>
@@ -428,7 +464,10 @@ export default function FlaggedImagesComponent() {
                             <h3 className="font-semibold text-sm line-clamp-2 flex-1 break-all">
                               {image.imageId}
                             </h3>
-                            <Badge variant="outline" className="bg-red-100 shrink-0">
+                            <Badge
+                              variant="outline"
+                              className="bg-red-100 shrink-0"
+                            >
                               Flagged
                             </Badge>
                           </div>
