@@ -158,7 +158,7 @@ console.log(
           <Button
             variant="outline"
             size="icon"
-            onClick={() => router.push("/profile")}
+            onClick={() => router.push("/")}
             className="hover:bg-accent"
           >
             <ArrowLeft className="h-5 w-5" />
