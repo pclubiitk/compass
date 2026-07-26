@@ -69,7 +69,7 @@ func noticeProvider(c *gin.Context) {
 		}
 
 		c.JSON(http.StatusOK, gin.H{
-			"noticeboard_list": noticeList,
+			"noticeboard_list": publicNotices(noticeList),
 			"total_notices":    count,
 			"current_page":     page,
 		})
@@ -87,7 +87,7 @@ func noticeProvider(c *gin.Context) {
 	fmt.Printf("Fetched all notices without pagination: %d\n", len(noticeList))
 
 	c.JSON(http.StatusOK, gin.H{
-		"noticeboard_list": noticeList,
+		"noticeboard_list": publicNotices(noticeList),
 	})
 }
 
@@ -121,8 +121,43 @@ func noticeDetailProvider(c *gin.Context) {
 		return
 	}
 
-	// Return the complete notice object
-	c.JSON(http.StatusOK, notice)
+	c.JSON(http.StatusOK, publicNotice(notice))
+}
+
+// noticeResponse is the public contract for notice endpoints. It deliberately
+// excludes ownership and ORM audit fields from the persistence model.
+type noticeResponse struct {
+	ID           uuid.UUID `json:"id"`
+	Entity       string    `json:"entity"`
+	EventTime    time.Time `json:"eventTime"`
+	EventEndTime time.Time `json:"eventEndTime"`
+	Location     string    `json:"location"`
+	Title        string    `json:"title"`
+	Description  string    `json:"description"`
+	Body         string    `json:"body,omitempty"`
+	CreatedAt    time.Time `json:"created_at"`
+}
+
+func publicNotice(notice model.Notice) noticeResponse {
+	return noticeResponse{
+		ID:           notice.NoticeId,
+		Entity:       notice.Entity,
+		EventTime:    notice.EventTime,
+		EventEndTime: notice.EventEndTime,
+		Location:     notice.Location,
+		Title:        notice.Title,
+		Description:  notice.Description,
+		Body:         notice.Body,
+		CreatedAt:    notice.CreatedAt,
+	}
+}
+
+func publicNotices(notices []model.Notice) []noticeResponse {
+	response := make([]noticeResponse, len(notices))
+	for i, notice := range notices {
+		response[i] = publicNotice(notice)
+	}
+	return response
 }
 
 func incrementalLocationProvider(c *gin.Context) {
@@ -209,16 +244,49 @@ func locationDetailProvider(c *gin.Context) {
 
 	if err := connections.DB.
 		Model(&model.Location{}).
-		Preload("User", func(db *gorm.DB) *gorm.DB {
-			return db.Select("user_id, email")
-		}). // Location contributor
-		Where("location_id = ?", id).
+		Select("location_id", "name", "description", "latitude", "longitude", "location_type", "layer", "average_rating", "review_count", "tag", "contact", "time").
+		Where("location_id = ? AND status = ?", id, model.Approved).
 		First(&loc).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Error Fetching location"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"location": loc})
+	c.JSON(http.StatusOK, gin.H{"location": publicLocationDetail(loc)})
+}
+
+// locationDetailResponse is the public contract for GET /location/:id. Keep
+// internal moderation, ownership, and audit fields on model.Location out of
+// this unauthenticated endpoint.
+type locationDetailResponse struct {
+	LocationID    uuid.UUID `json:"locationId"`
+	Name          string    `json:"name"`
+	Description   string    `json:"description"`
+	Latitude      float32   `json:"latitude"`
+	Longitude     float32   `json:"longitude"`
+	LocationType  string    `json:"locationType"`
+	Layer         int       `json:"layer"`
+	AverageRating float32   `json:"avgRating"`
+	ReviewCount   int64     `json:"reviewCount"`
+	Tag           string    `json:"tag"`
+	Contact       string    `json:"contact"`
+	Time          string    `json:"time"`
+}
+
+func publicLocationDetail(loc model.Location) locationDetailResponse {
+	return locationDetailResponse{
+		LocationID:    loc.LocationId,
+		Name:          loc.Name,
+		Description:   loc.Description,
+		Latitude:      loc.Latitude,
+		Longitude:     loc.Longitude,
+		LocationType:  loc.LocationType,
+		Layer:         loc.Layer,
+		AverageRating: loc.AverageRating,
+		ReviewCount:   loc.ReviewCount,
+		Tag:           loc.Tag,
+		Contact:       loc.Contact,
+		Time:          loc.Time,
+	}
 }
 
 func reviewProvider(c *gin.Context) {
@@ -251,7 +319,7 @@ func reviewProvider(c *gin.Context) {
 	// hasMore := offset+len(reviews) < total
 
 	c.JSON(200, gin.H{
-		"reviews": reviews,
+		"reviews": publicReviews(reviews),
 		"page":    page,
 		"total":   total,
 	})
@@ -266,7 +334,17 @@ func fetchReviewsByLocationID(locationID string, limit, offset int) ([]model.Rev
 		return nil, 0, err
 	}
 
-	if err := db.Preload("User.Profile").Preload("Images").Where("location_id = ? AND status = ?", locationID, model.Approved).
+	if err := db.
+		Preload("User", func(tx *gorm.DB) *gorm.DB {
+			return tx.Select("user_id")
+		}).
+		Preload("User.Profile", func(tx *gorm.DB) *gorm.DB {
+			return tx.Select("user_id", "name")
+		}).
+		Preload("Images", func(tx *gorm.DB) *gorm.DB {
+			return tx.Select("image_id", "parent_asset_id")
+		}).
+		Where("location_id = ? AND status = ?", locationID, model.Approved).
 		Order("created_at DESC").
 		Limit(limit).
 		Offset(offset).
@@ -275,6 +353,46 @@ func fetchReviewsByLocationID(locationID string, limit, offset int) ([]model.Rev
 	}
 
 	return reviews, int(total), nil
+}
+
+type publicReviewImage struct {
+	ImageID uuid.UUID `json:"imageId"`
+}
+
+type publicReviewer struct {
+	Profile struct {
+		Name string `json:"name"`
+	} `json:"profile"`
+}
+
+type publicReviewResponse struct {
+	ReviewID    uuid.UUID           `json:"reviewId"`
+	Description string              `json:"description"`
+	Rating      int8                `json:"rating"`
+	CreatedAt   time.Time           `json:"createdAt"`
+	User        publicReviewer      `json:"user"`
+	Images      []publicReviewImage `json:"images"`
+}
+
+func publicReviews(reviews []model.Review) []publicReviewResponse {
+	response := make([]publicReviewResponse, len(reviews))
+	for i, review := range reviews {
+		entry := publicReviewResponse{
+			ReviewID:    review.ReviewId,
+			Description: review.Description,
+			Rating:      review.Rating,
+			CreatedAt:   review.CreatedAt,
+			Images:      make([]publicReviewImage, len(review.Images)),
+		}
+		if review.User != nil {
+			entry.User.Profile.Name = review.User.Profile.Name
+		}
+		for j, image := range review.Images {
+			entry.Images[j] = publicReviewImage{ImageID: image.ImageID}
+		}
+		response[i] = entry
+	}
+	return response
 }
 
 func fetchReviewsByUserID(userID uuid.UUID, limit, offset int) ([]model.Review, int, error) {

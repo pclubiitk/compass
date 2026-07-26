@@ -76,14 +76,14 @@ interface LocationData {
 }
 
 interface ReviewData {
-  id: string;
+  reviewId: string;
   rating: number;
   description: string;
-  CreatedAt: string;
+  createdAt: string;
   images?: {
     imageId: string;
   }[];
-  User?: { // Added '?' because GORM might return null if no user is found
+  user?: { // Added '?' because a reviewer may no longer have a user record
     profilePic?: boolean; // In your Go struct, this was a boolean!
     profile?: {
       name: string; // Now the name is correctly nested inside profile
@@ -438,11 +438,11 @@ export default function LocationPage() {
                   <>
                     {reviews.map((review) => (
                       <ReviewCard
-                        key={review.id}
-                        author={review.User?.profile?.name || "Anonymous"}                        
+                        key={review.reviewId}
+                        author={review.user?.profile?.name || "Anonymous"}
                         rating={review.rating}
                         review_body={review.description}
-                        time={review.CreatedAt}
+                        time={review.createdAt}
                         imgs={review.images || []}
                       />
                     ))}
