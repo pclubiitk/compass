@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { Info, User, BarChart3 } from "lucide-react";
+import { Info, User, BarChart3, MapPin } from "lucide-react";
 import { CardDescription, Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { PROFILE_POINT } from "@/lib/constant";
+import { PROFILE_POINT, MAPS_POINT } from "@/lib/constant";
 import { useGContext } from "./ContextProvider";
 import { PuppyLoveHeartsCard } from "@/components/puppy-love/HeartsCard";
 import { PuppyLoveLoginAndRegisterPasswordCard } from "@/components/puppy-love/LoginAndRegister";
@@ -155,6 +155,19 @@ export const NavBar = (props: NavBarProps) => {
             onClick={() => router.push("/info")}
           >
             <Info />
+          </Button>
+
+          {/* Campus Maps Button */}
+          <Button
+            variant="secondary"
+            size="icon"
+            className="rounded-full border cursor-pointer"
+            onClick={() => {
+              window.location.href = `${MAPS_POINT}/maps`;
+            }}
+          >
+            <MapPin className="h-4 w-4" />
+            <span className="sr-only">Campus Maps</span>
           </Button>
           <Button
             variant="secondary"
