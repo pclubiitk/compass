@@ -17,25 +17,36 @@ func FuzzySearchLocationsHandler(c *gin.Context) {
 		return
 	}
 
-	limit := 10
-	if l := c.Query("limit"); l != "" {
-		if parsed, err := strconv.Atoi(l); err == nil {
-			limit = parsed
-		}
-	}
+	const (
+		defaultLimit = 20
+		maxLimit     = 100
+	)
 
+	limit := defaultLimit
+
+	if raw := c.Query("limit"); raw != "" {
+		parsed, err := strconv.Atoi(raw)
+		if err != nil || parsed < 1 || parsed > maxLimit {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "limit must be between 1 and 100",
+			})
+			return
+		}
+		limit = parsed
+	}
 	var locations []model.Location
 	db := connections.DB
 
 	// Fuzzy search using similarity
 	// TODO: Can and Need to extend to description, better search logic here.
 	err := db.Raw(`
-        SELECT *, similarity(name, ?) AS score
-        FROM locations
-        WHERE similarity(name, ?) > 0.4
-        ORDER BY score DESC
-        LIMIT ?
-    `, query, query, limit).Scan(&locations).Error
+    SELECT *, similarity(name, ?) AS score
+    FROM locations
+    WHERE status = 'approved'
+      AND similarity(name, ?) > 0.4
+    ORDER BY score DESC
+    LIMIT ?
+`, query, query, limit).Scan(&locations).Error
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch locations", "details": err.Error()})
