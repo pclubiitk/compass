@@ -12,10 +12,10 @@ export function BottomNav() {
   const { isLoggedIn, isGlobalLoading } = useGContext();
 
   const navItems = [
-    { icon: MapPinSearch, label: "Location", path: "/maps" },
+    // { icon: MapPinSearch, label: "Location", path: "/maps" },
     { icon: UserSearch, label: "Search", path: process.env.NEXT_PUBLIC_SEARCH_DOMAIN || ""},
     { icon: Megaphone, label: "Noticeboard", path: "/noticeboard" },
-    { icon: Plus, label: "AddLocation", path: "" },
+    { icon: Plus, label: "Add Location", path: "/maps" },
     { icon: User, label: "Profile", path: "/" },
   ];
 
