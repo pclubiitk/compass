@@ -19,6 +19,9 @@ import (
 // CncImage compresses and converts image to WebP format
 // TODO: Need to fix the quality for different image type, as png is very heavy
 func CncImage(image *multipart.FileHeader) ([]byte, error) {
+	if err := ValidateImageSize(image.Size); err != nil {
+		return nil, err
+	}
 	file, err := image.Open()
 	if err != nil {
 		return nil, err
@@ -33,6 +36,18 @@ func CncImage(image *multipart.FileHeader) ([]byte, error) {
 
 // ProcessImageBytes processes raw image bytes converting them to WebP
 func ProcessImageBytes(imgBytes []byte) ([]byte, error) {
+	if err := ValidateImageSize(int64(len(imgBytes))); err != nil {
+		return nil, err
+	}
+
+	metadata, err := bimg.Metadata(imgBytes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read image metadata: %w", err)
+	}
+	if err := validateImageMetadata(metadata); err != nil {
+		return nil, err
+	}
+
 	options := bimg.Options{
 		// TODO: Make the width and the height according to the formate
 		Quality: viper.GetInt("image.quality"),

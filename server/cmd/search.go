@@ -3,6 +3,7 @@ package main
 
 import (
 	"compass/middleware"
+	"compass/requestlimit"
 	"compass/search"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
@@ -12,6 +13,7 @@ import (
 func searchServer() *http.Server {
 	PORT := viper.GetString("ports.search")
 	r := gin.New()
+	r.Use(requestlimit.Middleware(requestlimit.MaxRequestBodyBytes))
 	r.Use(middleware.CORS())
 	r.Use(gin.Logger())
 
