@@ -254,6 +254,13 @@ func updateProfile(c *gin.Context) {
 }
 
 func getProfileHandler(c *gin.Context) {
+	// This response includes mutable, user-specific contributions. Do not let a
+	// browser or intermediary reuse an earlier profile response after a location
+	// has been submitted or moderated.
+	c.Header("Cache-Control", "private, no-cache, no-store, must-revalidate")
+	c.Header("Pragma", "no-cache")
+	c.Header("Expires", "0")
+
 	var user model.User
 	userID, exist := c.Get("userID")
 	if !exist {
@@ -263,7 +270,7 @@ func getProfileHandler(c *gin.Context) {
 	err := connections.DB.
 		Model(&model.User{}).
 		Preload("Profile").
-		Preload("ContributedLocations", connections.RecentFiveLocations).
+		Preload("ContributedLocations", connections.RecentContributedLocations).
 		Preload("ContributedNotice", connections.RecentFiveNotices).
 		Preload("ContributedReview", connections.RecentFiveReviews).
 		Omit("password").
