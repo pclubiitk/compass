@@ -61,6 +61,7 @@ next-env.d.ts
 /server/parser/*.sql
 /server/db_data/
 /server/db_backup
+/server/db_data_resource
 /server/logs
 
 # build
