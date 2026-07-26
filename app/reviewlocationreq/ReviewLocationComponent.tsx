@@ -81,7 +81,7 @@ console.log(
         })
       );
     }
-    router.push(`/`);
+    router.push(`/maps`);
   };
 
   const handleApprove = async (locationId: string, e: React.MouseEvent) => {
