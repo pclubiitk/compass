@@ -15,7 +15,7 @@ export function BottomNav() {
     { icon: MapPinSearch, label: "Location", path: "/maps" },
     { icon: UserSearch, label: "Search", path: process.env.NEXT_PUBLIC_SEARCH_DOMAIN || ""},
     { icon: Megaphone, label: "Noticeboard", path: "/noticeboard" },
-    { icon: Plus, label: "Location", path: "" },
+    { icon: Plus, label: "AddLocation", path: "" },
     { icon: User, label: "Profile", path: "/" },
   ];
 

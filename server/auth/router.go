@@ -16,7 +16,7 @@ func Router(r *gin.Engine) {
 		auth.POST("/login", loginHandler)
 		auth.POST("/signup", signupHandler)
 		auth.GET("/logout", logoutHandler)
-		auth.GET("/verify", verificationHandler)
+		auth.GET("/verify", verificationRateLimit, verificationHandler)
 		auth.POST("/forgot-password", forgotPasswordHandler)
 		auth.POST("/reset-password", resetPasswordHandler)
 		// Middleware will handel not login state
