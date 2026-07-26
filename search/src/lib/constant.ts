@@ -33,3 +33,7 @@ export const PUPPYLOVE_POINT = config.puppyLovePoint;
 export const PROFILE_POINT = config.profilePoint;
 export const LOGIN_POINT = config.loginPoint;
 export const FORGOT_POINT = config.forgotPoint;
+
+// Maps
+export const MAPS_POINT =
+  process.env.NEXT_PUBLIC_MAPS_DOMAIN || "http://localhost:3001";

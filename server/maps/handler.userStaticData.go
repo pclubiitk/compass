@@ -212,7 +212,7 @@ func locationDetailProvider(c *gin.Context) {
 		Preload("User", func(db *gorm.DB) *gorm.DB {
 			return db.Select("user_id, email")
 		}). // Location contributor
-		Where("location_id = ? AND status = ?", id, model.Approved).
+		Where("location_id = ?", id).
 		First(&loc).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Error Fetching location"})
 		return
