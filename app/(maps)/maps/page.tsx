@@ -319,6 +319,14 @@ export default function AdminMap() {
         }
       }
     }
+    // Auto-search from URL param ?search= (read once on mount)
+    if (typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search);
+      const searchQ = urlParams.get("search");
+      if (searchQ) {
+        setQuery(searchQ);
+      }
+    }
   }, [mapRef]);
 
   useEffect(() => {

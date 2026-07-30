@@ -232,6 +232,26 @@ func addNotice(c *gin.Context) {
 				return err
 			}
 		}
+		if input.BioPics != nil && len(*input.BioPics) > 0 {
+			for _, bioPicID := range *input.BioPics {
+				if input.CoverPic != nil && *input.CoverPic == bioPicID {
+					continue
+				}
+				if err := tx.Model(&model.Image{}).
+					Where("image_id = ?", bioPicID).
+					Updates(map[string]interface{}{
+						"ParentAssetID":   notice.NoticeId,
+						"ParentAssetType": "notices",
+						"Submitted":       true,
+						"Status":          "approved",
+					}).Error; err != nil {
+					return err
+				}
+				if err := workers.MoveImageFromTmpToPublic(bioPicID); err != nil {
+					return err
+				}
+			}
+		}
 		return nil
 	}); err != nil {
 		logrus.Error("Failed to create notice:", err)
@@ -429,7 +449,7 @@ func editNotice(c *gin.Context) {
 		return
 	}
 
-	var input model.Notice
+	var input AddNoticeRequest
 	if err := c.ShouldBindJSON(&input); err != nil {
 		logrus.WithError(err).Warn("JSON binding failed")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format"})
@@ -459,6 +479,46 @@ func editNotice(c *gin.Context) {
 		logrus.WithError(err).Error("Failed to update notice")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update notice"})
 		return
+	}
+
+	if input.CoverPic != nil {
+		if err := connections.DB.Model(&model.Image{}).
+			Where("image_id = ?", *input.CoverPic).
+			Updates(map[string]interface{}{
+				"ParentAssetID":   notice.NoticeId,
+				"ParentAssetType": "notices",
+				"Submitted":       true,
+				"Status":          "approved",
+			}).Error; err != nil {
+			logrus.WithError(err).Error("Failed to attach cover image")
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to attach cover image"})
+			return
+		}
+		if err := workers.MoveImageFromTmpToPublic(*input.CoverPic); err != nil {
+			logrus.WithError(err).Error("Failed to move cover image")
+		}
+	}
+	if input.BioPics != nil && len(*input.BioPics) > 0 {
+		for _, bioPicID := range *input.BioPics {
+			if input.CoverPic != nil && *input.CoverPic == bioPicID {
+				continue
+			}
+			if err := connections.DB.Model(&model.Image{}).
+				Where("image_id = ?", bioPicID).
+				Updates(map[string]interface{}{
+					"ParentAssetID":   notice.NoticeId,
+					"ParentAssetType": "notices",
+					"Submitted":       true,
+					"Status":          "approved",
+				}).Error; err != nil {
+				logrus.WithError(err).Error("Failed to attach bio pic")
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to attach bio pic"})
+				return
+			}
+			if err := workers.MoveImageFromTmpToPublic(bioPicID); err != nil {
+				logrus.WithError(err).Error("Failed to move bio pic")
+			}
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
