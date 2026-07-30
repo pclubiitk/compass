@@ -2,16 +2,18 @@
 package main
 
 import (
-	"net/http"
+	"compass/maps"
+	"compass/middleware"
+	"compass/requestlimit"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
-	"compass/middleware"
-	"compass/maps"
+	"net/http"
 )
 
 func mapsServer() *http.Server {
 	PORT := viper.GetString("ports.maps")
 	r := gin.New()
+	r.Use(requestlimit.Middleware(requestlimit.MaxRequestBodyBytes))
 	r.Use(middleware.CORS())
 	r.Use(gin.Logger())
 

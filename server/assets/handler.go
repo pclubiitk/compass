@@ -15,8 +15,6 @@ import (
 	"gorm.io/gorm"
 )
 
-const maxImageSize = 10 << 20 // 10 MB
-
 func uploadAsset(c *gin.Context) {
 	var req ImageUploadRequest
 	if err := c.ShouldBind(&req); err != nil {
@@ -35,13 +33,17 @@ func uploadAsset(c *gin.Context) {
 		Submitted: false,
 	}
 	file := req.File
-	if file.Size > maxImageSize {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Image must be less than 10 MB"})
+	if err := ValidateImageSize(file.Size); err != nil {
+		c.JSON(http.StatusRequestEntityTooLarge, gin.H{"error": "Image must be less than 10 MB"})
 		return
 	}
 	cwd, _ := os.Getwd()
 	// Compress and convert the image to webp
 	if img, err := CncImage(file); err != nil {
+		if errors.Is(err, ErrImageTooLarge) || errors.Is(err, ErrImageDimensionsExceeded) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Image exceeds upload limits"})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error in compressing the image"})
 	} else if path, err := SaveImage(img, filepath.Join(cwd, "assets", "tmp"), image.ImageID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error in saving image"})
