@@ -37,9 +37,12 @@ export default function NoticeBoardPage() {
   const [hasMore, setHasMore] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
   const loaderRef = useRef<HTMLDivElement | null>(null);
+  const fetchingRef = useRef(false);
+  const hasMoreRef = useRef(true);
 
   const fetchNotices = useCallback(async () => {
-    if (!hasMore || loading) return;
+    if (!hasMoreRef.current || fetchingRef.current) return;
+    fetchingRef.current = true;
     setLoading(true);
     try {
       const res = await fetch(
@@ -62,18 +65,22 @@ export default function NoticeBoardPage() {
             ...prev,
             ...incoming.filter((n: any) => !prev.some((p) => p.id === n.id)),
           ];
-          setHasMore(newNotices.length < json.total_notices);
+          const more = newNotices.length < json.total_notices;
+          hasMoreRef.current = more;
+          setHasMore(more);
           return newNotices;
         });
       } else {
+        hasMoreRef.current = false;
         setHasMore(false);
       }
     } catch (err) {
       console.error("Error fetching notices:", err);
     } finally {
+      fetchingRef.current = false;
       setLoading(false);
     }
-  }, [page, hasMore, loading]);
+  }, [page]);
 
   useEffect(() => {
     fetchNotices();
@@ -82,7 +89,7 @@ export default function NoticeBoardPage() {
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
-        if (!isSearching && entries[0].isIntersecting && hasMore && !loading) {
+        if (!isSearching && entries[0].isIntersecting && hasMoreRef.current && !fetchingRef.current) {
           setPage((prev) => prev + 1);
         }
       },
@@ -93,7 +100,7 @@ export default function NoticeBoardPage() {
     return () => {
       if (current) observer.unobserve(current);
     };
-  }, [hasMore, loading, isSearching]);
+  }, [isSearching]);
 
   //cache and fuzzy search effect
   // Cache and fuzzy search effect
