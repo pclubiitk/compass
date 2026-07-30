@@ -8,6 +8,12 @@ import { useGContext } from "@/components/ContextProvider";
 import { toast } from "sonner";
 
 import { NoticeCard } from "@/components/noticeboard/NoticeComponent";
+
+function validDate(iso: string | undefined | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return isNaN(d.getTime()) || d.getFullYear() <= 1 ? "" : iso;
+}
 import { AuthGuard } from "@/components/AuthGuard";
 
 interface Notice {
@@ -18,6 +24,8 @@ interface Notice {
   entity: string;
   location: string;
   eventTime: string;
+  eventEndTime?: string;
+  coverpic?: unknown;
 }
 
 export default function NoticeBoardPage() {
@@ -46,6 +54,8 @@ export default function NoticeBoardPage() {
           const incoming = json.noticeboard_list.map((n: any) => ({
             ...n,
             id: n.NoticeId || n.id,
+            eventTime: validDate(n.eventTime),
+            eventEndTime: validDate(n.eventEndTime) || null,
           }));
 
           const newNotices = [
@@ -147,6 +157,8 @@ export default function NoticeBoardPage() {
         const mappedResults = results.map((n: any) => ({
           ...n,
           id: n.NoticeId || n.id,
+          eventTime: validDate(n.eventTime),
+          eventEndTime: validDate(n.eventEndTime) || null,
         }));
 
         setNotices(mappedResults);

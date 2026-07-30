@@ -32,6 +32,8 @@ func noticeProvider(c *gin.Context) {
 	query := connections.DB.
 		Model(&model.Notice{}).
 		Preload("User", connections.UserSelect).
+		Preload("CoverPic").
+		Preload("BioPics").
 		Order("created_at DESC")
 
 	var noticeList []model.Notice
@@ -107,6 +109,8 @@ func noticeDetailProvider(c *gin.Context) {
 	result := connections.DB.
 		Model(&model.Notice{}).
 		Preload("User", connections.UserSelect). // Preload user data, just like in noticeProvider
+		Preload("CoverPic").
+		Preload("BioPics").
 		Where("notice_id = ?", noticeID).
 		First(&notice) // Use First() to get a single record
 
