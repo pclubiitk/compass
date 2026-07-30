@@ -200,9 +200,19 @@ export default function NoticeboardForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    const uploadedImageIds = images.map((img) => img.id).filter(Boolean) as string[];
+
+    if (formData.eventTime && formData.eventEndTime &&
+        new Date(formData.eventTime) > new Date(formData.eventEndTime)) {
+      toast.error("Start time cannot be after end time");
+      return;
+    }
+
     try {
       const payload = {
         ...formData,
+        coverPic: uploadedImageIds[0] || null,
+        biopics: uploadedImageIds.length > 1 ? uploadedImageIds.slice(1) : null,
         eventEndTime: formData.eventEndTime
           ? new Date(formData.eventEndTime).toISOString()
           : null,
@@ -239,6 +249,8 @@ export default function NoticeboardForm() {
 
   function isoToDatetimeLocal(iso: string) {
   const date = new Date(iso);
+
+  if (isNaN(date.getTime()) || date.getFullYear() <= 1) return "";
 
   const pad = (n: number) => String(n).padStart(2, "0");
 
@@ -296,9 +308,19 @@ export default function NoticeboardForm() {
     e.preventDefault();
     if (!noticeId) return;
 
+    const uploadedImageIds = images.map((img) => img.id).filter(Boolean) as string[];
+
+    if (formData.eventTime && formData.eventEndTime &&
+        new Date(formData.eventTime) > new Date(formData.eventEndTime)) {
+      toast.error("Start time cannot be after end time");
+      return;
+    }
+
     try {
       const payload = {
         ...formData,
+        coverPic: uploadedImageIds[0] || null,
+        biopics: uploadedImageIds.length > 1 ? uploadedImageIds.slice(1) : null,
         eventEndTime: formData.eventEndTime
           ? new Date(formData.eventEndTime).toISOString()
           : null,

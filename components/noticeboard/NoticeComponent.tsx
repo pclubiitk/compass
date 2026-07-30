@@ -1,10 +1,25 @@
 import { useRouter } from "next/navigation";
+import { useState, useCallback } from "react";
 
-import {  Share2, Copy, Edit, Trash } from "lucide-react";
-
+import { Share2, Copy, Edit, Trash, ChevronLeft, ChevronRight } from "lucide-react";
 
 import { useGContext } from "@/components/ContextProvider";
 import { toast } from "sonner";
+import {
+  AuthenticatedImage,
+  buildReviewImageUrl,
+  getImageId,
+  getImageStatus,
+} from "@/app/components/user/AuthenticatedImage";
+
+interface Image {
+  id: string;
+  url?: string;
+  status?: string;
+  parentAssetId?: string;
+  parentAssetType?: string;
+}
+
 interface Notice {
   id: string;
   title: string;
@@ -13,6 +28,9 @@ interface Notice {
   entity: string;
   location: string;
   eventTime: string;
+  eventEndTime?: string;
+  coverpic?: unknown;
+  biopics?: Image[];
 }
 
 const NoticeCard = ({
@@ -27,6 +45,20 @@ const NoticeCard = ({
 }) => {
   const { isAdmin } = useGContext();
 
+  const biopicItems = (notice.biopics || []).map((pic) => ({
+    id: getImageId(pic) || "",
+    status: getImageStatus(pic),
+  }));
+  const [imgIndex, setImgIndex] = useState(0);
+
+  const prevImg = useCallback(() => {
+    setImgIndex((i) => (i > 0 ? i - 1 : biopicItems.length - 1));
+  }, [biopicItems.length]);
+
+  const nextImg = useCallback(() => {
+    setImgIndex((i) => (i < biopicItems.length - 1 ? i + 1 : 0));
+  }, [biopicItems.length]);
+
   const handleDelete = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -35,7 +67,7 @@ const NoticeCard = ({
       "Are you sure you want to delete this notice? This action cannot be undone.",
     );
 
-    if (!confirmed) return; // user clicked Cancel
+    if (!confirmed) return;
 
     try {
       const response = await fetch(
@@ -69,17 +101,66 @@ const NoticeCard = ({
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200 hover:shadow-lg transition-shadow group">
+      {biopicItems.length > 0 ? (
+        <div className="relative w-full h-48 mb-4 rounded-lg overflow-hidden bg-muted">
+          <AuthenticatedImage
+            src={buildReviewImageUrl(biopicItems[imgIndex].id, biopicItems[imgIndex].status).url}
+            alt={notice.title}
+            className="w-full h-full object-cover"
+            requiresAuth={buildReviewImageUrl(biopicItems[imgIndex].id, biopicItems[imgIndex].status).requiresAuth}
+          />
+          {biopicItems.length > 1 && (
+            <>
+              <button
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); prevImg(); }}
+                className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full p-1 transition"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <button
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); nextImg(); }}
+                className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full p-1 transition"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+              <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
+                {biopicItems.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setImgIndex(i); }}
+                    className={`w-2 h-2 rounded-full transition ${i === imgIndex ? "bg-white" : "bg-white/40"}`}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      ) : null}
       <h2 className="text-xl font-bold text-gray-800 group-hover:text-blue-600 transition-colors">
         {notice.title}
       </h2>
       <p className="text-gray-600 mt-2">{notice.description}</p>
       <div className="text-sm text-gray-500 mt-4">
-        <span>
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            router.push(`/maps?search=${encodeURIComponent(notice.location)}`);
+          }}
+          className="hover:text-blue-600 transition-colors text-left"
+        >
           <strong>Location:</strong> {notice.location}
-        </span>
-        <span className="ml-4">
-          <strong>Time:</strong> {new Date(notice.eventTime).toLocaleString()}
-        </span>
+        </button>
+        {notice.eventTime ? (
+          <span className="ml-4">
+            <strong>Start:</strong> {new Date(notice.eventTime).toLocaleString()}
+          </span>
+        ) : null}
+        {notice.eventEndTime ? (
+          <span className="ml-4">
+            <strong>End:</strong> {new Date(notice.eventEndTime).toLocaleString()}
+          </span>
+        ) : null}
       </div>
       <div className="flex items-center space-x-4 mt-4 pt-4 border-t border-gray-100">
         {isAdmin && (
