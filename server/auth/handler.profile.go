@@ -4,13 +4,12 @@ import (
 	"compass/connections"
 	"compass/middleware"
 	"compass/model"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
-
-	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -64,7 +63,7 @@ func verifyProfile(c *gin.Context, profileData model.Profile) bool {
 	}
 
 	// Checking Status of verification
-	if apiResp.Status != nil {
+	if apiResp.Status != nil && apiResp.Name != nil {
 		// Normalize names by removing extra whitespaces and comparing case-insensitively
 		normalizedInputName := strings.ToLower(strings.Join(strings.Fields(profileData.Name), " "))
 		normalizedApiRespName := strings.ToLower(strings.Join(strings.Fields(*apiResp.Name), " "))
@@ -186,13 +185,11 @@ func updateProfile(c *gin.Context) {
 		// if !verifyProfile(c, profileData) {
 		// 	return
 		// }
-		if viper.GetString("env") != "dev" {			
+		if viper.GetString("env") != "dev" {
 			if !verifyProfile(c, profileData) {
 				return
 			}
 		}
-		
-
 	}
 	var newPfpPath string
 	if user.ProfilePic == false {
@@ -254,10 +251,16 @@ func updateProfile(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Profile updated successfully"})
-
 }
 
 func getProfileHandler(c *gin.Context) {
+	// This response includes mutable, user-specific contributions. Do not let a
+	// browser or intermediary reuse an earlier profile response after a location
+	// has been submitted or moderated.
+	c.Header("Cache-Control", "private, no-cache, no-store, must-revalidate")
+	c.Header("Pragma", "no-cache")
+	c.Header("Expires", "0")
+
 	var user model.User
 	userID, exist := c.Get("userID")
 	if !exist {
@@ -267,7 +270,7 @@ func getProfileHandler(c *gin.Context) {
 	err := connections.DB.
 		Model(&model.User{}).
 		Preload("Profile").
-		Preload("ContributedLocations", connections.RecentFiveLocations).
+		Preload("ContributedLocations", connections.RecentContributedLocations).
 		Preload("ContributedNotice", connections.RecentFiveNotices).
 		Preload("ContributedReview", connections.RecentFiveReviews).
 		Omit("password").
@@ -282,7 +285,6 @@ func getProfileHandler(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"profile": user})
-
 }
 
 func autoC(c *gin.Context) {
@@ -369,7 +371,6 @@ func getUserByEmail(c *gin.Context) {
 		Where("email = ?", email).
 		Preload("Profile").
 		First(&user).Error
-
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
@@ -394,7 +395,6 @@ func listUsersHandler(c *gin.Context) {
 		Where("role IN ?", []int{100}).
 		Preload("Profile").
 		Find(&users).Error
-
 	if err != nil {
 		logrus.WithError(err).Error("Database error fetching users")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})

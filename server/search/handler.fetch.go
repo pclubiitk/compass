@@ -41,7 +41,7 @@ func getAllProfiles(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch profiles."})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "Profiles retrieved successfully", "profiles": profiles, "requestTime": requestTime})
+	c.JSON(http.StatusOK, gin.H{"message": "Profiles retrieved successfully", "profiles": publicProfiles(profiles), "requestTime": requestTime})
 }
 
 func getChangeLog(c *gin.Context) {
@@ -87,7 +87,7 @@ func getChangeLog(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve new profiles"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "Updates fetched successfully.", "addProfiles": newProfiles, "deleteUserId": deleteUserId, "requestTime": requestTime})
+	c.JSON(http.StatusOK, gin.H{"message": "Updates fetched successfully.", "addProfiles": publicProfiles(newProfiles), "deleteUserId": deleteUserId, "requestTime": requestTime})
 
 	// // Initialize to empty slices (not nil) so JSON marshals as [] instead of null
 	// newProfiles := []model.ProfileWithPic{}
@@ -114,4 +114,43 @@ func getChangeLog(c *gin.Context) {
 
 	// c.JSON(http.StatusOK, gin.H{"message": "Updates fetched successfully.", "addProfiles": newProfiles, "deleteUserId": deleteUserIdStrings, "requestTime": requestTime})
 
+}
+
+// publicProfile is the directory response contract. Keeping it separate from
+// model.Profile prevents ORM metadata and future private columns from being
+// exposed by the directory sync endpoints.
+type publicProfile struct {
+	UserID     uuid.UUID `json:"userId"`
+	Name       string    `json:"name"`
+	Email      string    `json:"email"`
+	RollNo     string    `json:"rollNo"`
+	Dept       string    `json:"dept"`
+	Course     string    `json:"course"`
+	Gender     string    `json:"gender"`
+	Hall       *string   `json:"hall"`
+	RoomNumber *string   `json:"roomNo"`
+	HomeTown   *string   `json:"homeTown"`
+	Bapu       string    `json:"bapu"`
+	Bachhas    string    `json:"bachhas"`
+}
+
+func publicProfiles(profiles []model.Profile) []publicProfile {
+	response := make([]publicProfile, len(profiles))
+	for i, profile := range profiles {
+		response[i] = publicProfile{
+			UserID:     profile.UserID,
+			Name:       profile.Name,
+			Email:      profile.Email,
+			RollNo:     profile.RollNo,
+			Dept:       profile.Dept,
+			Course:     profile.Course,
+			Gender:     profile.Gender,
+			Hall:       profile.Hall,
+			RoomNumber: profile.RoomNumber,
+			HomeTown:   profile.HomeTown,
+			Bapu:       profile.Bapu,
+			Bachhas:    profile.Bachhas,
+		}
+	}
+	return response
 }

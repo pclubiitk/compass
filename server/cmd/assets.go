@@ -3,6 +3,7 @@ package main
 import (
 	"compass/assets"
 	"compass/middleware"
+	"compass/requestlimit"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -12,6 +13,7 @@ import (
 func assetServer() *http.Server {
 	PORT := viper.GetString("ports.assets")
 	r := gin.New()
+	r.Use(requestlimit.Middleware(requestlimit.MaxRequestBodyBytes))
 	r.Use(middleware.CORS())
 	r.Use(gin.Logger())
 
