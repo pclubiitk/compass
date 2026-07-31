@@ -44,6 +44,15 @@ func ProcessImageBytes(imgBytes []byte) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to read image metadata: %w", err)
 	}
+
+	if metadata.Size.Width > 8000 || metadata.Size.Height > 8000 {
+    return nil, fmt.Errorf(
+        "image dimensions too large: %dx%d",
+        metadata.Size.Width,
+        metadata.Size.Height,
+    )
+	}
+	
 	if err := validateImageMetadata(metadata); err != nil {
 		return nil, err
 	}
@@ -55,7 +64,7 @@ func ProcessImageBytes(imgBytes []byte) ([]byte, error) {
 		// Height:  payload.Height,
 	}
 	// Image format converter
-
+	
 	newImage := bimg.NewImage(imgBytes)
 	imgType := newImage.Type()
 
