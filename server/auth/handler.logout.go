@@ -8,6 +8,6 @@ import (
 )
 
 func logoutHandler(c *gin.Context) {
-	middleware.ClearAuthCookie(c)
+	middleware.RevokeSession(c)
 	c.JSON(http.StatusOK, gin.H{"message": "Logged Out Successfully"})
 }

@@ -34,6 +34,7 @@ func dbConnection() {
 
 	models := []interface{}{
 		&model.User{},
+		&model.UserRefreshToken{},
 		&model.Location{},
 		&model.Notice{},
 		&model.Review{},

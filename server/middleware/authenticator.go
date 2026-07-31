@@ -107,6 +107,12 @@ func tryRefresh(c *gin.Context) {
 		return
 	}
 
+	storedUserID, err := IsRefreshTokenActive(refreshToken)
+	if err != nil || storedUserID != userID {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Session revoked"})
+		return
+	}
+
 	// Fetch user details from db
 
 	var modelUser model.User
