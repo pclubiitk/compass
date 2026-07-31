@@ -106,6 +106,7 @@ export default function App(props: AppProps) {
     <>
       <Head>
         <title>Student Search | IITK</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
         <link
           rel="icon"
           type="image/png"
