@@ -97,14 +97,6 @@ func signupHandler(c *gin.Context) {
 				return
 			}
 
-			// Resend OTP logic for unverified user
-			allowed, ttl := CheckOTPSendRateLimit(existingUser.UserID)
-			if !allowed {
-				c.Header("Retry-After", fmt.Sprintf("%d", int(ttl.Seconds())+1))
-				c.JSON(http.StatusTooManyRequests, gin.H{"error": "Too many verification attempts. Please try again later."})
-				return
-			}
-
 			// Generate new token and update user
 			newToken := generateVerificationToken()
 			newExpiry := time.Now().Add(time.Duration(viper.GetInt("expiry.emailVerification")) * time.Hour).Format(time.RFC3339)
@@ -144,9 +136,6 @@ func signupHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error creating user"})
 		return
 	}
-
-	// Track the first OTP send in rate limiter
-	CheckOTPSendRateLimit(user.UserID)
 
 	//  Add mail job to queue
 	verifyLink := fmt.Sprintf("%s/signup?token=%s&userID=%s",
