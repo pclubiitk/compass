@@ -12,6 +12,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { SingleDayPicker } from "@/calendar/components/ui/single-day-picker";
@@ -23,6 +33,7 @@ import type { IEvent } from "@/calendar/interfaces";
 export function ManageHolidaysDialog() {
   const [isOpen, setIsOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
   const { rawEvents, refreshEvents } = useCalendar();
 
   const [newStart, setNewStart] = useState<Date | null>(null);
@@ -162,8 +173,7 @@ export function ManageHolidaysDialog() {
   };
 
   const handleClearTimetable = async () => {
-    if (!confirm("Are you sure you want to clear all imported Pingala class events? This action cannot be undone.")) return;
-    
+    setShowClearConfirm(false);
     setIsUpdating(true);
     try {
       await deleteAllClassEvents();
@@ -179,84 +189,106 @@ export function ManageHolidaysDialog() {
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          Manage Timetable
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>Manage Timetable</DialogTitle>
-        </DialogHeader>
+    <>
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogTrigger asChild>
+          <Button variant="outline" size="sm">
+            Manage Timetable
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Manage Timetable</DialogTitle>
+          </DialogHeader>
 
-        <div className="space-y-6">
-          <div className="text-sm text-muted-foreground">
-            Classes are skipped on these dates. Add holidays below to hide classes, or remove them to restore classes.
-          </div>
-
-          <div className="space-y-4">
-            <h4 className="font-medium">Add New Holiday Range</h4>
-            <div className="flex gap-4 items-end">
-              <div className="flex-1 space-y-2">
-                <Label>Start Date</Label>
-                <SingleDayPicker placeholder="Start date" value={newStart || undefined} onSelect={(d) => setNewStart(d || null)} />
-              </div>
-              <div className="flex-1 space-y-2">
-                <Label>End Date</Label>
-                <SingleDayPicker placeholder="End date" value={newEnd || undefined} onSelect={(d) => setNewEnd(d || null)} />
-              </div>
+          <div className="space-y-6">
+            <div className="text-sm text-muted-foreground">
+              Classes are skipped on these dates. Add holidays below to hide classes, or remove them to restore classes.
             </div>
-            <Button
-              className="w-full"
-              onClick={handleAddHoliday}
-              disabled={isUpdating || !newStart || !newEnd}
-            >
-              {isUpdating ? "Updating..." : "Add Holiday to Classes"}
-            </Button>
-          </div>
 
-          <div className="space-y-3 pt-4 border-t">
-            <h4 className="font-medium">Existing Holidays</h4>
-            {uniqueExceptions.length === 0 ? (
-              <div className="text-sm text-muted-foreground">No holidays added yet.</div>
-            ) : (
-              <div className="max-h-48 overflow-y-auto space-y-2 pr-2">
-                {uniqueExceptions.map((dateStr) => (
-                  <div key={dateStr} className="flex items-center justify-between p-2 rounded-md border bg-muted/50">
-                    <span className="text-sm font-medium">
-                      {format(parseISO(dateStr), "MMMM do, yyyy")}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleRemoveHoliday(dateStr)}
-                      disabled={isUpdating}
-                      className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
+            <div className="space-y-4">
+              <h4 className="font-medium">Add New Holiday Range</h4>
+              <div className="flex gap-4 items-end">
+                <div className="flex-1 space-y-2">
+                  <Label>Start Date</Label>
+                  <SingleDayPicker placeholder="Start date" value={newStart || undefined} onSelect={(d) => setNewStart(d || null)} />
+                </div>
+                <div className="flex-1 space-y-2">
+                  <Label>End Date</Label>
+                  <SingleDayPicker placeholder="End date" value={newEnd || undefined} onSelect={(d) => setNewEnd(d || null)} />
+                </div>
               </div>
-            )}
-          </div>
-          <div className="space-y-3 pt-4 border-t">
-            <h4 className="font-medium text-destructive">Danger Zone</h4>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Remove all imported Pingala class events.</span>
               <Button
-                variant="destructive"
-                size="sm"
-                onClick={handleClearTimetable}
-                disabled={isUpdating}
+                className="w-full"
+                onClick={handleAddHoliday}
+                disabled={isUpdating || !newStart || !newEnd}
               >
-                Clear Timetable
+                {isUpdating ? "Updating..." : "Add Holiday to Classes"}
               </Button>
             </div>
+
+            <div className="space-y-3 pt-4 border-t">
+              <h4 className="font-medium">Existing Holidays</h4>
+              {uniqueExceptions.length === 0 ? (
+                <div className="text-sm text-muted-foreground">No holidays added yet.</div>
+              ) : (
+                <div className="max-h-48 overflow-y-auto space-y-2 pr-2">
+                  {uniqueExceptions.map((dateStr) => (
+                    <div key={dateStr} className="flex items-center justify-between p-2 rounded-md border bg-muted/50">
+                      <span className="text-sm font-medium">
+                        {format(parseISO(dateStr), "MMMM do, yyyy")}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRemoveHoliday(dateStr)}
+                        disabled={isUpdating}
+                        className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="space-y-3 pt-4 border-t">
+              <h4 className="font-medium text-destructive">Danger Zone</h4>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Remove all imported Pingala class events.</span>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setShowClearConfirm(true)}
+                  disabled={isUpdating}
+                >
+                  Clear Timetable
+                </Button>
+              </div>
+            </div>
           </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={showClearConfirm} onOpenChange={setShowClearConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear Timetable</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to clear all imported Pingala class events? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleClearTimetable}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Clear Timetable
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
