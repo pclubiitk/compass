@@ -78,16 +78,18 @@ func flagAction(c *gin.Context) {
 			return
 		}
 
-		connections.MQChannel.Publish(
-			"",
-			viper.GetString("rabbitmq.mailqueue"),
-			false,
-			false,
-			amqp.Publishing{
-				ContentType: "application/json",
-				Body:        []byte(`{"userId": "` + user.UserID.String() + `", "message": "` + req.Message + `"}`),
+		job := workers.MailJob{
+			Type: "violation_warning",
+			To:   user.Email,
+			Data: map[string]interface{}{
+				"username": user.Profile.Name, // or some other name
+				"reason":   req.Message,
 			},
-		)
+		}
+		payload, _ := json.Marshal(job)
+		if err := workers.PublishJob(payload, model.MailQueue); err != nil {
+			logrus.Error("Failed to enqueue mail job:", err)
+		}
 		c.JSON(200, gin.H{"message": "Review rejected", "details": req.Message})
 		return
 	}
@@ -123,16 +125,22 @@ func LocationAction(c *gin.Context) {
 		}
 
 		// Send mail thanking contributor
-		connections.MQChannel.Publish(
-			"",
-			viper.GetString("rabbitmq.mailqueue"),
-			false,
-			false,
-			amqp.Publishing{
-				ContentType: "application/json",
-				Body:        []byte(`{"userId": "` + loc.ContributedBy.String() + `", "message": "Thanks for contributing a location! It's now live."}`),
-			},
-		)
+		var contributor model.User
+		if err := connections.DB.Where("user_id = ?", loc.ContributedBy).First(&contributor).Error; err != nil {
+			logrus.Error("Failed to fetch user for email notification:", err)
+		} else {
+			job := workers.MailJob{
+				Type: "generic_notice",
+				To:   contributor.Email,
+				Data: map[string]interface{}{
+					"message": "Thanks for contributing a location! It's now live.",
+				},
+			}
+			payload, _ := json.Marshal(job)
+			if err := workers.PublishJob(payload, model.MailQueue); err != nil {
+				logrus.Error("Failed to enqueue mail job:", err)
+			}
+		}
 
 		c.JSON(200, gin.H{"message": "Location approved and added"})
 		return
@@ -151,16 +159,22 @@ func LocationAction(c *gin.Context) {
 		}
 
 		// Send rejection mail
-		connections.MQChannel.Publish(
-			"",
-			viper.GetString("rabbitmq.mailqueue"),
-			false,
-			false,
-			amqp.Publishing{
-				ContentType: "application/json",
-				Body:        []byte(`{"userId": "` + loc.ContributedBy.String() + `", "message": "` + req.Message + `"}`),
-			},
-		)
+		var contributor model.User
+		if err := connections.DB.Where("user_id = ?", loc.ContributedBy).First(&contributor).Error; err != nil {
+			logrus.Error("Failed to fetch user for email notification:", err)
+		} else {
+			job := workers.MailJob{
+				Type: "generic_notice",
+				To:   contributor.Email,
+				Data: map[string]interface{}{
+					"message": req.Message,
+				},
+			}
+			payload, _ := json.Marshal(job)
+			if err := workers.PublishJob(payload, model.MailQueue); err != nil {
+				logrus.Error("Failed to enqueue mail job:", err)
+			}
+		}
 
 		c.JSON(200, gin.H{"message": "Location rejected", "details": req.Message})
 		return
