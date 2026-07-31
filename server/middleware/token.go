@@ -31,7 +31,6 @@ func SaveRefreshToken(userID uuid.UUID, token string) error {
 		UserID:    userID,
 		Token:     token,
 		ExpiresAt: time.Now().Add(authConfig.RefreshTokenExpiry),
-		IsActive:  true,
 	}).Error
 }
 
@@ -39,15 +38,13 @@ func RevokeRefreshToken(token string) error {
 	if token == "" {
 		return nil
 	}
-	return connections.DB.Model(&model.UserRefreshToken{}).
-		Where("token = ?", token).
-		Update("is_active", false).Error
+	return connections.DB.Where("token = ?", token).Delete(&model.UserRefreshToken{}).Error
 }
 
 func IsRefreshTokenActive(token string) (uuid.UUID, error) {
 	var session model.UserRefreshToken
 	err := connections.DB.
-		Where("token = ? AND expires_at > ? AND is_active = ?", token, time.Now(), true).
+		Where("token = ? AND expires_at > ?", token, time.Now()).
 		First(&session).Error
 	if err != nil {
 		return uuid.Nil, err
