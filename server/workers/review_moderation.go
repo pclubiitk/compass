@@ -67,10 +67,11 @@ func ApproveReviewRecord(reviewID uuid.UUID) (bool, error) {
 			return err
 		}
 
-		// If the image worker already rejected it, we stop here and do nothing.
-		if review.Status != model.Pending {
+		// Only pending or bot-flagged reviews can be approved.
+		// Already approved or admin-rejected reviews are not re-processed.
+		if review.Status != model.Pending && review.Status != model.RejectedByBot {
 			successfullyApproved = false
-			return nil // Return nil so the transaction doesn't fail, we just exit it early
+			return nil // not an error, just a no-op
 		}
 
 		if err := tx.Model(&model.Review{}).
