@@ -5,7 +5,6 @@ import (
 	"compass/model"
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -13,8 +12,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-// getCalendarToken returns the authenticated user's calendar token and their
-// ready-to-subscribe webcal:// URL.
+// getCalendarToken returns the authenticated user's calendar subscription URL.
 // GET /api/maps/calendar/token   (requires auth)
 func getCalendarToken(c *gin.Context) {
 	userID, exist := c.Get("userID")
@@ -49,9 +47,7 @@ func getCalendarToken(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"token":      user.CalendarToken,
-		"webcal_url": buildWebcalURL(user.CalendarToken),
-		"https_url":  buildHTTPSURL(user.CalendarToken),
+		"https_url": buildHTTPSURL(user.CalendarToken),
 	})
 }
 
@@ -80,24 +76,12 @@ func regenerateCalendarToken(c *gin.Context) {
 	logrus.WithField("userID", userID).Info("Calendar token regenerated")
 
 	c.JSON(http.StatusOK, gin.H{
-		"token":      newToken,
-		"webcal_url": buildWebcalURL(newToken),
-		"https_url":  buildHTTPSURL(newToken),
-		"message":    "Calendar token regenerated. Update your calendar app with the new URL.",
+		"https_url": buildHTTPSURL(newToken),
+		"message":   "Calendar token regenerated. Update your calendar app with the new URL.",
 	})
 }
 
-func buildWebcalURL(token string) string {
-	url := buildHTTPSURL(token)
-	// Swap http(s):// prefix for webcal:// so calendar apps treat it as a subscription URL
-	switch {
-	case strings.HasPrefix(url, "https://"):
-		url = "webcal://" + url[len("https://"):]
-	case strings.HasPrefix(url, "http://"):
-		url = "webcal://" + url[len("http://"):]
-	}
-	return url
-}
+
 
 func buildHTTPSURL(token string) string {
 	env := viper.GetString("env")
