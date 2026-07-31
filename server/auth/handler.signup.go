@@ -87,13 +87,66 @@ func signupHandler(c *gin.Context) {
 		// Handle Duplicate User Error (Postgres Code 23505)
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-			c.JSON(http.StatusConflict, gin.H{"error": "User already exists"})
+			var existingUser model.User
+			if err := connections.DB.Where("email = ?", strings.ToLower(input.Email)).First(&existingUser).Error; err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
+				return
+			}
+			if existingUser.IsVerified {
+				c.JSON(http.StatusConflict, gin.H{"error": "User already exists"})
+				return
+			}
+
+			// Resend OTP logic for unverified user
+			allowed, ttl := CheckOTPSendRateLimit(existingUser.UserID)
+			if !allowed {
+				c.Header("Retry-After", fmt.Sprintf("%d", int(ttl.Seconds())+1))
+				c.JSON(http.StatusTooManyRequests, gin.H{"error": "Too many verification attempts. Please try again later."})
+				return
+			}
+
+			// Generate new token and update user
+			newToken := generateVerificationToken()
+			newExpiry := time.Now().Add(time.Duration(viper.GetInt("expiry.emailVerification")) * time.Hour).Format(time.RFC3339)
+			newVerificationToken := fmt.Sprintf("%s<>%s", newToken, newExpiry)
+
+			if err := connections.DB.Model(&existingUser).Update("verification_token", newVerificationToken).Error; err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update verification token"})
+				return
+			}
+
+			// Dispatch mail job
+			verifyLink := fmt.Sprintf("%s/signup?token=%s&userID=%s",
+				viper.GetString("frontend_url"),
+				newToken,
+				existingUser.UserID)
+
+			job := workers.MailJob{
+				Type: "user_verification",
+				To:   input.Email,
+				Data: map[string]interface{}{
+					"token": fmt.Sprintf("%s-%s", newToken[:3], newToken[3:]),
+					"link":  verifyLink,
+				},
+			}
+			payload, _ := json.Marshal(job)
+			if err := workers.PublishJob(payload, model.MailQueue); err != nil {
+				logrus.Error("Failed to enqueue mail job:", err)
+			}
+
+			c.JSON(http.StatusOK, gin.H{
+				"message": "Verification email resent. Please check your email.",
+				"userID":  existingUser.UserID,
+			})
 			return
 		}
 		// Handle other DB errors
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error creating user"})
 		return
 	}
+
+	// Track the first OTP send in rate limiter
+	CheckOTPSendRateLimit(user.UserID)
 
 	//  Add mail job to queue
 	verifyLink := fmt.Sprintf("%s/signup?token=%s&userID=%s",

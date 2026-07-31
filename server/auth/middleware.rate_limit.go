@@ -14,6 +14,8 @@ import (
 const (
 	verificationMaxAttempts = 5
 	verificationWindow      = 15 * time.Minute
+	otpSendMaxAttempts      = 3
+	otpSendWindow           = 15 * time.Minute
 )
 
 // verificationRateLimit limits OTP guesses for a verification target. Redis makes
@@ -54,4 +56,31 @@ func verificationRateLimit(c *gin.Context) {
 	c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{
 		"error": "Too many verification attempts. Please try again later.",
 	})
+}
+
+// CheckOTPSendRateLimit limits the number of OTPs sent to an email.
+// Returns (allowed bool, ttl time.Duration)
+func CheckOTPSendRateLimit(userID uuid.UUID) (bool, time.Duration) {
+	key := fmt.Sprintf("rate_limit:otp_send:%s", userID)
+	attempts, err := connections.RedisClient.Incr(connections.RedisCtx, key).Result()
+	if err != nil {
+		// Log the error but allow the request to proceed if Redis is down
+		logrus.WithError(err).Error("failed to apply OTP send rate limit")
+		return true, 0
+	}
+
+	if attempts == 1 {
+		if err := connections.RedisClient.Expire(connections.RedisCtx, key, otpSendWindow).Err(); err != nil {
+			logrus.WithError(err).Error("failed to set OTP send rate limit expiry")
+			connections.RedisClient.Del(connections.RedisCtx, key)
+			return true, 0
+		}
+	}
+
+	if attempts <= otpSendMaxAttempts {
+		return true, 0
+	}
+
+	ttl, _ := connections.RedisClient.TTL(connections.RedisCtx, key).Result()
+	return false, ttl
 }
