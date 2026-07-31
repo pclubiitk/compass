@@ -289,12 +289,17 @@ export async function deleteUserEvent(eventId: string): Promise<void> {
 // WebCal API
 
 export interface CalendarTokenResponse {
-  /** The raw UUID token (keep this private) */
-  token: string;
-  /** webcal:// paste this into Google Calendar / Apple Calendar */
-  webcal_url: string;
-  /** https:// for alternative for apps that don't support webcal:// */
+  /** https:// calendar subscription URL */
   https_url: string;
+}
+
+/**
+ * Derive a webcal:// URL from an https (or http) URL.
+ * Calendar apps like Google Calendar and Apple Calendar recognise webcal://
+ * as a subscription hint.
+ */
+export function toWebcalUrl(httpsUrl: string): string {
+  return httpsUrl.replace(/^https?:\/\//, "webcal://");
 }
 
 /**
