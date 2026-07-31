@@ -26,7 +26,7 @@ export function BottomNav() {
   ) => {
     e?.preventDefault();
 
-    if (label === "Location") {
+    if (label === "Add Location") {
       if (isGlobalLoading) return;
 
       if (!isLoggedIn) {

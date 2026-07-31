@@ -75,6 +75,17 @@ func SetAuthCookie(c *gin.Context, token string) {
 		authConfig.CookieSecure,
 		authConfig.CookieHTTPOnly,
 	)
+	
+	csrfToken := uuid.New().String()
+	c.SetCookie(
+		"csrf_token",
+		csrfToken,
+		int(authConfig.TokenExpiration.Seconds()),
+		"/",
+		authConfig.CookieDomain,
+		authConfig.CookieSecure,
+		false,
+	)
 }
 
 func SetRefreshCookie(c *gin.Context, token string) {
@@ -109,5 +120,14 @@ func ClearAuthCookie(c *gin.Context) {
 		authConfig.CookieDomain,
 		authConfig.CookieSecure,
 		authConfig.CookieHTTPOnly,
+	)
+	c.SetCookie(
+		"csrf_token",
+		"",
+		-1,
+		"/",
+		authConfig.CookieDomain,
+		authConfig.CookieSecure,
+		false,
 	)
 }

@@ -36,6 +36,31 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
   const [isAdmin, setAdmin] = useState<boolean>(false);
 
   useEffect(() => {
+    // Patch fetch globally to include CSRF token on state-changing requests
+    if (typeof window !== "undefined" && !(window as any).__fetchPatched) {
+      const originalFetch = window.fetch;
+      window.fetch = async (input, init) => {
+        const method = (init?.method || "GET").toUpperCase();
+        if (["POST", "PUT", "DELETE", "PATCH"].includes(method)) {
+          const csrfToken = document.cookie
+            .split("; ")
+            .find((row) => row.startsWith("csrf_token="))
+            ?.split("=")[1] || "";
+          if (csrfToken) {
+            init = {
+              ...init,
+              headers: {
+                ...init?.headers,
+                "X-CSRF-Token": csrfToken,
+              },
+            };
+          }
+        }
+        return originalFetch(input, init);
+      };
+      (window as any).__fetchPatched = true;
+    }
+
     async function verifyingLogin() {
       try {
         const response = await fetch(

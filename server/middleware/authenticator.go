@@ -40,6 +40,15 @@ func init() {
 
 // TODO: Extract the basic token extraction and verification out and keep just the user part
 func UserAuthenticator(c *gin.Context) {
+	if c.Request.Method == "POST" || c.Request.Method == "PUT" || c.Request.Method == "DELETE" || c.Request.Method == "PATCH" {
+		csrfCookie, err := c.Cookie("csrf_token")
+		csrfHeader := c.GetHeader("X-CSRF-Token")
+		if err != nil || csrfHeader == "" || csrfCookie != csrfHeader {
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "CSRF token mismatch or missing"})
+			return
+		}
+	}
+
 	// Check for cookie
 	tokenString, err := c.Cookie("auth_token")
 	if err != nil {
