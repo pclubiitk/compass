@@ -11,5 +11,6 @@ type UserRefreshToken struct {
 	UserID    uuid.UUID `gorm:"type:uuid;index;not null"`
 	Token     string    `gorm:"type:text;uniqueIndex;not null"`
 	ExpiresAt time.Time `gorm:"index;not null"`
+	IsActive  bool      `gorm:"default:true;not null"`
 	CreatedAt time.Time
 }
