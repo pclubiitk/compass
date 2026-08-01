@@ -300,33 +300,49 @@ export function GlobalContextProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-
     // Patch fetch globally to include CSRF token on state-changing requests
     if (typeof window !== "undefined" && !(window as any).__fetchPatched) {
       const originalFetch = window.fetch;
-      window.fetch = async (input, init) => {
-        const method = (init?.method || "GET").toUpperCase();
-        if (["POST", "PUT", "DELETE", "PATCH"].includes(method)) {
-          const csrfToken = document.cookie
-            .split("; ")
-            .find((row) => row.startsWith("csrf_token="))
-            ?.split("=")[1] || "";
+      const STATE_CHANGING_METHODS = ["POST", "PUT", "DELETE", "PATCH"];
+
+      window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+        const request = input instanceof Request ? input : undefined;
+
+        const method = (init?.method || request?.method || "GET").toUpperCase();
+
+        if (STATE_CHANGING_METHODS.includes(method)) {
+          const csrfToken =
+            document.cookie
+              .split("; ")
+              .find((row) => row.startsWith("csrf_token="))
+              ?.split("=")[1] || "";
+
           if (csrfToken) {
+            // Merge headers from the original Request (if any) and init.headers
+            const mergedHeaders = new Headers(request?.headers || undefined);
+
+            if (init?.headers) {
+              new Headers(init.headers).forEach((value, key) => {
+                mergedHeaders.set(key, value);
+              });
+            }
+
+            mergedHeaders.set("X-CSRF-Token", csrfToken);
+
             init = {
               ...init,
-              headers: {
-                ...init?.headers,
-                "X-CSRF-Token": csrfToken,
-              },
+              headers: mergedHeaders,
+              method, // ensure the normalized method is preserved
             };
           }
         }
-        return originalFetch(input, init);
+
+        return originalFetch(input as any, init);
       };
+
       (window as any).__fetchPatched = true;
     }
 
-    
     async function verifyingLogin() {
       try {
         setGlobalLoading(true);

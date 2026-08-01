@@ -194,9 +194,14 @@ func toggleVisibility(c *gin.Context) {
 	// Clear the old cookie with visibility true
 	middleware.ClearAuthCookie(c)
 	token, err := middleware.GenerateAccessToken(userID.(uuid.UUID))
-	ref_token, _ := middleware.GenerateRefreshToken(userID.(uuid.UUID))
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"message": "visibility updated successfully, please login again to continue"})
+		return
+	}
+	ref_token, err := middleware.GenerateRefreshToken(userID.(uuid.UUID))
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"message": "visibility updated successfully, please login again to continue"})
+		return
 	}
 	middleware.SetAuthCookie(c, token)
 	middleware.SetRefreshCookie(c, ref_token)

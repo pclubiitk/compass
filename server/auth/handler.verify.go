@@ -83,7 +83,7 @@ func verificationHandler(c *gin.Context) {
 				if ttl > 0 {
 					c.Header("Retry-After", fmt.Sprintf("%d", int(ttl.Seconds())+1))
 				}
-				c.JSON(http.StatusTooManyRequests, gin.H{"error": "Too many incorrect attempts. Please wait 15 minutesbefore trying again."})
+				c.JSON(http.StatusTooManyRequests, gin.H{"error": "Too many incorrect attempts. Please wait 15 minutes before trying again."})
 			}
 		} else {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid OTP"})
@@ -101,6 +101,11 @@ func verificationHandler(c *gin.Context) {
 		return
 	}
 	accessToken, err := middleware.GenerateAccessToken(user.UserID)
+	if err != nil {
+		// TODO: Redirect to login page
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token, you will need to login!"})
+		return
+	}
 	refreshToken, err := middleware.GenerateRefreshToken(user.UserID)
 	if err != nil {
 		// TODO: Redirect to login page
