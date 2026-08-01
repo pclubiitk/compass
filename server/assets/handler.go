@@ -16,6 +16,7 @@ import (
 )
 
 func uploadAsset(c *gin.Context) {
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 10<<20) // 10MB hard cap
 	var req ImageUploadRequest
 	if err := c.ShouldBind(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Image is required"})
