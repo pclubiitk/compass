@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { hasAdminRole } from "../lib/admin";
 
 export default function AdminGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -18,8 +19,7 @@ export default function AdminGuard({ children }: { children: React.ReactNode }) 
         
         if (res.ok) {
           const data = await res.json();
-          // Assuming role >= 100 means admin
-          if (data.role >= 100) {
+          if (hasAdminRole(data)) {
             setIsAuthorized(true);
           } else {
             toast.error("You are not authorized to view this page.");
