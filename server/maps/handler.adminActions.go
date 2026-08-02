@@ -200,7 +200,7 @@ func addNotice(c *gin.Context) {
 		return
 	}
 
-	if !input.EventEndTime.IsZero() && input.EventEndTime.Before(input.EventTime) {
+	if !EventTimesValid(input.EventTime, input.EventEndTime) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Event end time cannot be before start time"})
 		return
 	}
@@ -481,7 +481,7 @@ func editNotice(c *gin.Context) {
 		return
 	}
 
-	if !input.EventEndTime.IsZero() && input.EventEndTime.Before(input.EventTime) {
+	if !EventTimesValid(input.EventTime, input.EventEndTime) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Event end time cannot be before start time"})
 		return
 	}

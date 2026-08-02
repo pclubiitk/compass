@@ -67,6 +67,12 @@ type FlagActionRequest struct {
 	Message string `json:"message"`
 }
 
+// EventTimesValid reports whether an event's end time is not before its start time.
+// A zero end time is treated as "not set" and is considered valid.
+func EventTimesValid(eventTime, eventEndTime time.Time) bool {
+	return eventEndTime.IsZero() || !eventEndTime.Before(eventTime)
+}
+
 type AddUserEventRequest struct {
 	Title                string     `json:"title" binding:"required,max=50"`
 	Description          string     `json:"description"`

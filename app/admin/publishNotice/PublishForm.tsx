@@ -87,6 +87,19 @@ export default function NoticeboardForm() {
     }));
   };
 
+  function validateEventTimes(eventTime: string, eventEndTime: string): boolean {
+    if (!eventTime || !eventEndTime) return true;
+
+    const start = new Date(eventTime);
+    const end = new Date(eventEndTime);
+    if (end < start) {
+      toast.error("Event end time cannot be before start time");
+      return false;
+    }
+
+    return true;
+  }
+
   // Specific handler for the MDEditor, as its onChange provides the value directly
   const handleEditorChange = (value?: string) => {
     setFormData((prevData) => ({
@@ -201,6 +214,7 @@ export default function NoticeboardForm() {
     e.preventDefault();
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     const uploadedImageIds = images.map((img) => img.id).filter(Boolean) as string[];
 
     if (formData.eventTime && formData.eventEndTime &&
@@ -216,6 +230,10 @@ export default function NoticeboardForm() {
         return;
       }
 >>>>>>> f5020fd (restrict invalid start-endtime notices and fix empty end date notice handling)
+=======
+    if (!validateEventTimes(formData.eventTime, formData.eventEndTime)) {
+      return;
+>>>>>>> 05543f2 (fix: address Sourcery review on useHistoryBack, event time validation, and form triggers)
     }
 
     try {
@@ -328,6 +346,7 @@ export default function NoticeboardForm() {
     if (!noticeId) return;
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     const uploadedImageIds = images.map((img) => img.id).filter(Boolean) as string[];
 
     if (formData.eventTime && formData.eventEndTime &&
@@ -343,6 +362,10 @@ export default function NoticeboardForm() {
         return;
       }
 >>>>>>> f5020fd (restrict invalid start-endtime notices and fix empty end date notice handling)
+=======
+    if (!validateEventTimes(formData.eventTime, formData.eventEndTime)) {
+      return;
+>>>>>>> 05543f2 (fix: address Sourcery review on useHistoryBack, event time validation, and form triggers)
     }
 
     try {
