@@ -41,7 +41,14 @@ func verificationHandler(c *gin.Context) {
 		if ttl > 0 {
 			c.Header("Retry-After", fmt.Sprintf("%d", int(ttl.Seconds())+1))
 		}
-		c.JSON(http.StatusTooManyRequests, gin.H{"error": "Too many incorrect attempts. Please wait 15 minutes before trying again."})
+
+		durationMinutes := int(verificationWindow.Minutes())
+		waitMessage := fmt.Sprintf("Too many incorrect attempts. Please wait %d minute", durationMinutes)
+		if durationMinutes != 1 {
+			waitMessage += "s"
+		}
+
+		c.JSON(http.StatusTooManyRequests, gin.H{"error": waitMessage})
 		return
 	}
 
@@ -69,24 +76,27 @@ func verificationHandler(c *gin.Context) {
 	if tokenSplit[0] != token {
 		// Wrong OTP — increment counter and reset the 15-min window on each wrong attempt
 		attempts, incrErr := connections.RedisClient.Incr(connections.RedisCtx, rateLimitKey).Result()
-		if incrErr == nil {
-			// Always reset expiry so the window is 15 min from the last wrong attempt
-			connections.RedisClient.Expire(connections.RedisCtx, rateLimitKey, verificationWindow)
-			remaining := int64(verificationMaxAttempts) - attempts
-			if remaining > 0 {
-				c.JSON(http.StatusUnauthorized, gin.H{
-					"error":             "Invalid OTP",
-					"attemptsRemaining": remaining,
-				})
-			} else {
-				ttl, _ := connections.RedisClient.TTL(connections.RedisCtx, rateLimitKey).Result()
-				if ttl > 0 {
-					c.Header("Retry-After", fmt.Sprintf("%d", int(ttl.Seconds())+1))
-				}
-				c.JSON(http.StatusTooManyRequests, gin.H{"error": "Too many incorrect attempts. Please wait 15 minutes before trying again."})
-			}
+		if incrErr != nil {
+			// Fail closed: if Redis is unavailable we cannot enforce rate limiting,
+			// so reject the request entirely rather than silently allowing bypass.
+			c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Service temporarily unavailable. Please try again later."})
+			return
+		}
+
+		// Always reset expiry so the window is 15 min from the last wrong attempt
+		connections.RedisClient.Expire(connections.RedisCtx, rateLimitKey, verificationWindow)
+		remaining := int64(verificationMaxAttempts) - attempts
+		if remaining > 0 {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"error":             "Invalid OTP",
+				"attemptsRemaining": remaining,
+			})
 		} else {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid OTP"})
+			ttl, _ := connections.RedisClient.TTL(connections.RedisCtx, rateLimitKey).Result()
+			if ttl > 0 {
+				c.Header("Retry-After", fmt.Sprintf("%d", int(ttl.Seconds())+1))
+			}
+			c.JSON(http.StatusTooManyRequests, gin.H{"error": "Too many incorrect attempts. Please wait 15 minutes before trying again."})
 		}
 		return
 	}
