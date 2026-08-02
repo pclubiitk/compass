@@ -19,12 +19,40 @@ type JWTClaims struct {
 	jwt.RegisteredClaims
 }
 
+func NewAccessTokenClaims(userID uuid.UUID, role int, verified bool, visibility bool) JWTClaims {
+	return JWTClaims{
+		UserID:     userID,
+		Role:       role,
+		Verified:   verified,
+		Visibility: visibility,
+		TokenType:  "access",
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject:   userID.String(),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(5 * time.Minute)),
+			Issuer:    "pclub",
+		},
+	}
+}
+
 type JWTClaimsRefresh struct {
 	UserID    string `json:"user_id"`
 	TokenType string `json:"token_type"`
 	jwt.RegisteredClaims
 }
 
+func NewRefreshTokenClaims(userID uuid.UUID, expiry time.Duration) JWTClaimsRefresh {
+	return JWTClaimsRefresh{
+		UserID:    userID.String(),
+		TokenType: "refresh",
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject:   userID.String(),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(expiry)),
+			Issuer:    "pclub",
+		},
+	}
+}
 
 // AuthConfig holds authentication configuration
 type AuthConfig struct {
