@@ -22,7 +22,7 @@ import (
 // 	}
 // }
 
-// FIXME: 
+// FIXME:
 // We see a Refresh storm, when the access token expires,
 // Root Cause: Token Refresh Storm
 // User's access token expired (5-minute expiry)
@@ -58,7 +58,6 @@ func Router(r *gin.Engine) {
 	admin := r.Group("/")
 	admin.Use(middleware.UserAuthenticator, middleware.EmailVerified, middleware.AdminAuthenticator)
 	// admin.Use(middleware.UserAuthenticator, middleware.EmailVerified, middleware.AdminAuthenticator, noCacheMiddleware())
-	admin.Use(middleware.UserAuthenticator, middleware.EmailVerified, middleware.AdminAuthenticator)
 	{
 		admin.Static("/tmp", "./assets/tmp")
 		admin.GET("/gallery", imageListProvider)

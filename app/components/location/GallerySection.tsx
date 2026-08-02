@@ -1,5 +1,24 @@
 "use client";
 
+import Image from "next/image";
+import { X } from "lucide-react";
+
+import type { Img } from "@/app/components/lib/types";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardAction,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Drawer,
   DrawerClose,
@@ -8,135 +27,124 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
-import { Button } from "@/components/ui/button";
-import Image from "next/image";
-import { X } from "lucide-react";
-import { Img } from "@/app/components/lib/types";
-import { Accordion } from "@radix-ui/react-accordion";
-import { AccordionContent } from "@radix-ui/react-accordion";
-import { AccordionItem } from "@radix-ui/react-accordion";
-import { AccordionTrigger } from "@radix-ui/react-accordion";
-
-import { Badge } from "@/components/ui/badge"
-import { toast } from "sonner";
-import { ChevronDown } from "lucide-react";
-
-import {
-  Card,
-  CardAction,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import { setLazyProp } from "next/dist/server/api-utils";
-import { Dispatch, SetStateAction } from "react";
-// import { Img } from "@/app/components/lib/types";
-
-
 
 interface GallerySectionProps {
   images: Img[];
-  handleApprove: (img: Img, load: boolean, setLoad: Dispatch<SetStateAction<boolean>>) => void;
-  handleDelete: (img: Img, load: boolean, setLoad: (load: boolean)=> void) => void;
-  load: boolean;
-  setLoad: Dispatch<SetStateAction<boolean>>;
+  handleApprove: (img: Img) => void;
+  handleDelete: (img: Img) => void;
 }
 
+function imageUrl(image: Img): string {
+  const directory = image.status === "approved" ? "assets" : "tmp";
+  return `${process.env.NEXT_PUBLIC_ASSET_URL}/${directory}/${image.imageId}.webp`;
+}
 
+export function GallerySection({
+  images,
+  handleApprove,
+  handleDelete,
+}: GallerySectionProps) {
+  if (images.length === 0) return null;
 
-
-export function GallerySection({ images, handleApprove, handleDelete, load, setLoad }: GallerySectionProps) {
-
-  if (!images || images.length === 0) {
-    return 
-  }
+  const status = images[0].status;
+  const title = status.charAt(0).toUpperCase() + status.slice(1);
 
   return (
-   
-      <Accordion
+    <Accordion
       type="single"
       collapsible
-      defaultValue="shipping"
-      className="w-full max-w-7xl mx-auto"
+      defaultValue={status}
+      className="mx-auto w-full max-w-7xl"
     >
-        <AccordionItem value={images[0].Status.toString()}>
+      <AccordionItem value={status}>
         <AccordionTrigger>
-            <h2 className="scroll-m-20 border-b my-2 pb-2 text-3xl font-semibold tracking-tight first:mt-0" >
-                {images[0].Status.charAt(0).toUpperCase() + images[0].Status.slice(1)} Images <ChevronDown className="inline"/>
-            </h2>
-            </AccordionTrigger>
-         <AccordionContent className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-    {images.map((img, i) => (   
-    <Card className="relative max-w-sm pt-0 m-4" key={i}>
-                   <Image
-                  alt={`Location photo ${i + 1}`}
-                  src={img.Status == "approved" ? `${process.env.NEXT_PUBLIC_ASSET_URL}/assets/${img.ImageID}.webp`: `${process.env.NEXT_PUBLIC_ASSET_URL}/tmp/${img.ImageID}.webp`}
-                  width="1000"
-                  height="1000"
-                  className="rounded w-full"
-                  unoptimized
-                />
-      <CardHeader>
-        <CardAction>
-          <Badge className={img.Status == "approved" ? "bg-green-100" : "bg-red-100"} variant="secondary">{img.Status.charAt(0).toUpperCase() + img.Status.slice(1)}</Badge>
-        </CardAction>
-        <CardTitle>{img.ImageID}</CardTitle>
-        <CardDescription>
-        </CardDescription>
-      </CardHeader>
-      <CardFooter className="flex space-x-4">
-        <Drawer>
-            <DrawerTrigger asChild>
-        <Button className="flex-1 bg-blue-500 cursor-pointer">View Details</Button>
-            </DrawerTrigger>
-            <DrawerContent className="h-[80vh] p-4 border">
-              <div className="relative w-full h-full flex flex-col">
-                <DrawerHeader className="absolute top-0 right-0 z-50 p-4">
-                  <DrawerClose asChild>
-                    <Button
-                      variant="secondary"
-                      size="icon"
-                      className="rounded-full bg-white/10 hover:bg-white/20 border-none"
-                    >
-                      <X className="h-6 w-6" />
-                      <span className="sr-only">Close</span>
+          <h2 className="my-2 scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight first:mt-0">
+            {title} Images
+          </h2>
+        </AccordionTrigger>
+        <AccordionContent className="grid w-full grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+          {images.map((image, index) => (
+            <Card className="relative m-4 max-w-sm pt-0" key={image.imageId}>
+              <Image
+                alt={`Location photo ${index + 1}`}
+                src={imageUrl(image)}
+                width={1000}
+                height={1000}
+                className="w-full rounded"
+                unoptimized
+              />
+              <CardHeader>
+                <CardAction>
+                  <Badge
+                    className={
+                      status === "approved" ? "bg-green-100" : "bg-red-100"
+                    }
+                    variant="secondary"
+                  >
+                    {title}
+                  </Badge>
+                </CardAction>
+                <CardTitle>{image.imageId}</CardTitle>
+              </CardHeader>
+              <CardFooter className="flex space-x-4">
+                <Drawer>
+                  <DrawerTrigger asChild>
+                    <Button className="flex-1 cursor-pointer bg-blue-500">
+                      View Details
                     </Button>
-                  </DrawerClose>
-                  
-                </DrawerHeader>
-
-                <div className="flex relative w-[80vw] h-full items-center justify-around p-4 m-auto">
-                  <div>
-                    <Image
-                    src={img.Status == "approved" ? `${process.env.NEXT_PUBLIC_ASSET_URL}/assets/${img.ImageID}.webp`: `${process.env.NEXT_PUBLIC_ASSET_URL}/tmp/${img.ImageID}.webp`}
-                      alt={`Full screen photo ${i + 1}`}
-                      width={500}
-                      height={500}
-                      className="object-contain rounded"
-                      unoptimized // uncomment in dev if testing by adding and deleting images with same uuid
-                    />
-                  </div>
-                  <div>
-                <DrawerTitle>ImageID: {img.ImageID}</DrawerTitle>
-                  <div>Owner: {img.OwnerID}</div>
-                  <div>Parent Asset ID: {img.ParentAssetID}</div>
-                  <div>Parent Asset Type: {img.ParentAssetType}</div>
-                  <div>Status: {img.Status}</div>
-                  </div>
-                </div>
-              </div>
-            </DrawerContent>
-        </Drawer>
-        <Button className="flex-1 bg-green-500 cursor-pointer" disabled={img.Status == "approved" ? true: false} onClick={() => handleApprove(img, load, setLoad) }>Approve</Button>
-        <Button className="flex-1 bg-red-500 cursor-pointer" onClick={() => handleDelete(img, load, setLoad)}>Delete</Button>
-      </CardFooter>
-    </Card>
-
-
-))}
-</AccordionContent>
-        </AccordionItem>
-        </Accordion>
+                  </DrawerTrigger>
+                  <DrawerContent className="h-[80vh] border p-4">
+                    <div className="relative flex h-full w-full flex-col">
+                      <DrawerHeader className="absolute right-0 top-0 z-50 p-4">
+                        <DrawerClose asChild>
+                          <Button
+                            variant="secondary"
+                            size="icon"
+                            className="rounded-full border-none bg-white/10 hover:bg-white/20"
+                          >
+                            <X className="h-6 w-6" />
+                            <span className="sr-only">Close</span>
+                          </Button>
+                        </DrawerClose>
+                      </DrawerHeader>
+                      <div className="m-auto flex h-full w-[80vw] items-center justify-around p-4">
+                        <Image
+                          src={imageUrl(image)}
+                          alt={`Full screen photo ${index + 1}`}
+                          width={500}
+                          height={500}
+                          className="rounded object-contain"
+                          unoptimized
+                        />
+                        <div>
+                          <DrawerTitle>ImageID: {image.imageId}</DrawerTitle>
+                          <div>Owner: {image.ownerId}</div>
+                          <div>Parent Asset ID: {image.parentAssetId}</div>
+                          <div>Parent Asset Type: {image.parentAssetType}</div>
+                          <div>Status: {image.status}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </DrawerContent>
+                </Drawer>
+                <Button
+                  className="flex-1 cursor-pointer bg-green-500"
+                  disabled={status === "approved"}
+                  onClick={() => handleApprove(image)}
+                >
+                  Approve
+                </Button>
+                <Button
+                  className="flex-1 cursor-pointer bg-red-500"
+                  onClick={() => handleDelete(image)}
+                >
+                  Delete
+                </Button>
+              </CardFooter>
+            </Card>
+          ))}
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
   );
 }

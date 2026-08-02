@@ -1,88 +1,139 @@
-'use client';
-import { useState, useEffect, use, Dispatch, SetStateAction } from "react";
-import { PhotoGallery } from "../components/location/PhotoGallery";
-import { Gallery } from "../components/location/Gallery";
-import { Img } from  "@/app/components/lib/types";
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import type { Img } from "@/app/components/lib/types";
+import { Gallery } from "@/app/components/location/Gallery";
+import { parseGalleryImages } from "./gallery-data";
 
-const handleApprove = async (img: Img, load: boolean, setLoad: Dispatch<SetStateAction<boolean>>) => {
-  
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_ASSET_URL}/gallery/${img.ImageID}`, { 
-        method: 'PUT',
-        credentials: "include",
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
-      console.log(response)
-      if (!response.ok) {
-        // attempts to parse server error, fallback to generic
-        const errorData = await response.json().catch(() => null); 
-        throw new Error(errorData?.message || `Error ${response.status}: Failed to approve`);
-      }
+function csrfHeaders(): HeadersInit {
+  const csrfToken = document.cookie
+    .split("; ")
+    .find((row) => row.startsWith("csrf_token="))
+    ?.slice("csrf_token=".length);
 
-      const result = await response.json();
-      console.log('Success:', result);
-      toast.success(result.message);
-
-      setLoad(prev => !prev);
-    } catch (error: any) {
-      console.error('Error:', error);
-      toast.error('Failed to update item.');
-    }
-};
-
-const handleDelete = async (img: Img, load: boolean, setLoad: (load: boolean)=> void) => {
-
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_ASSET_URL}/gallery/${img.ImageID}`, { 
-        method: 'DELETE',
-        credentials: "include",
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-
-      const result = await response.json();
-      toast.success(result.message);
-      setLoad(!load)
-    } catch (error) {
-      console.error('Error:', error);
-      toast.error('Failed to update item.');
-    }
+  return {
+    "Content-Type": "application/json",
+    ...(csrfToken ? { "X-CSRF-Token": decodeURIComponent(csrfToken) } : {}),
   };
-
+}
 
 function GalleryPage() {
+  const [images, setImages] = useState<Img[]>([]);
+  const [refreshVersion, setRefreshVersion] = useState(0);
+  const assetUrl = process.env.NEXT_PUBLIC_ASSET_URL;
 
-    const [images, setImages] = useState<Img[]>([]);
-    const [load, setLoad] = useState<boolean>(true);
+  useEffect(() => {
+    const controller = new AbortController();
 
-    useEffect(() => {
-        // Simulate fetching images from an API
-        // In a real application, replace this with actual data fetching logic
-        // fetch(`${process.env.NEXT_PUBLIC_AUTH_URL}/api/auth/me`)
-        fetch( `${process.env.NEXT_PUBLIC_ASSET_URL}/gallery`,{
+    async function loadImages() {
+      if (!assetUrl) {
+        toast.error("Asset backend URL is not configured.");
+        return;
+      }
+
+      try {
+        const response = await fetch(`${assetUrl}/gallery`, {
           credentials: "include",
-        },).then(response => response.json()).then(data => setImages(data.images))
-        // TODO: fix dependency array so that too many requests are not sent to backendx
-    }, [load]);
+          signal: controller.signal,
+        });
+        if (!response.ok) {
+          throw new Error(`Failed to load gallery (${response.status})`);
+        }
+
+        setImages(parseGalleryImages(await response.json()));
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        console.error("Failed to load gallery:", error);
+        setImages([]);
+        toast.error("Failed to load gallery.");
+      }
+    }
+
+    void loadImages();
+    return () => controller.abort();
+  }, [assetUrl, refreshVersion]);
+
+  const refresh = useCallback(() => {
+    setRefreshVersion((version) => version + 1);
+  }, []);
+
+  const handleApprove = useCallback(
+    async (image: Img) => {
+      if (!assetUrl) return;
+
+      try {
+        const response = await fetch(`${assetUrl}/gallery/${image.imageId}`, {
+          method: "PUT",
+          credentials: "include",
+          headers: csrfHeaders(),
+        });
+        const result = await response.json().catch(() => null);
+        if (!response.ok) {
+          throw new Error(
+            result?.error ||
+              result?.message ||
+              `Failed to approve (${response.status})`,
+          );
+        }
+
+        toast.success(result?.message || "Image approved");
+        refresh();
+      } catch (error) {
+        console.error("Failed to approve image:", error);
+        toast.error(
+          error instanceof Error ? error.message : "Failed to approve image.",
+        );
+      }
+    },
+    [assetUrl, refresh],
+  );
+
+  const handleDelete = useCallback(
+    async (image: Img) => {
+      if (!assetUrl) return;
+
+      try {
+        const response = await fetch(`${assetUrl}/gallery/${image.imageId}`, {
+          method: "DELETE",
+          credentials: "include",
+          headers: csrfHeaders(),
+        });
+        const result = await response.json().catch(() => null);
+        if (!response.ok) {
+          throw new Error(
+            result?.error ||
+              result?.message ||
+              `Failed to delete (${response.status})`,
+          );
+        }
+
+        toast.success(result?.message || "Image deleted");
+        refresh();
+      } catch (error) {
+        console.error("Failed to delete image:", error);
+        toast.error(
+          error instanceof Error ? error.message : "Failed to delete image.",
+        );
+      }
+    },
+    [assetUrl, refresh],
+  );
 
   return (
     <div className="p-8">
-      <h1 className="text-2xl font-bold mb-4 text-center">Gallery Management</h1>
-            <div className="w-[30vw] m-auto text-justify py-6 text-muted-foreground italic">
-              As an admin, you can review all the images uploaded here.
-              Images will be made publicly visible on the platform only after approval by an admin.
-              You may approve or delete any image
+      <h1 className="mb-4 text-center text-2xl font-bold">Gallery Management</h1>
+      <div className="m-auto w-[30vw] py-6 text-justify italic text-muted-foreground">
+        As an admin, you can review all the images uploaded here. Images will be
+        made publicly visible on the platform only after approval by an admin.
+        You may approve or delete any image.
       </div>
-        <Gallery images={images} handleApprove={handleApprove} handleDelete={handleDelete} load={load} setLoad={setLoad}/>
+      <Gallery
+        images={images}
+        handleApprove={handleApprove}
+        handleDelete={handleDelete}
+      />
     </div>
   );
 }

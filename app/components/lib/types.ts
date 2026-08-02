@@ -29,13 +29,9 @@ export interface Notice {
 }
 
 export interface Img {
-    CreatedAt: Date;
-    UpdatedAt: Date;
-    DeletedAt: Date;
-    ImageID: String;
-    OwnerID: String;
-    ParentAssetID: String;
-    ParentAssetType: String;
-    Status: String;
-    Submitted: boolean;
+  imageId: string;
+  ownerId: string;
+  parentAssetId: string;
+  parentAssetType: string;
+  status: string;
 }
