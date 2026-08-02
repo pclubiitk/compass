@@ -13,7 +13,7 @@ type Profile struct {
 	// Student Search Data, Personal Data
 	Name       string  `json:"name"`
 	Email      string  `json:"email"`
-	RollNo     string  `json:"rollNo"`
+	RollNo     string  `json:"rollNo" gorm:"uniqueIndex:idx_profiles_roll_no_unique,where:roll_no <> '' AND deleted_at IS NULL"`
 	Dept       string  `json:"dept" gorm:"index"`
 	Course     string  `json:"course"`
 	Gender     string  `json:"gender"`
