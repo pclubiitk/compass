@@ -47,20 +47,17 @@ function noticeToEvent(notice: NoticeFromAPI, index: number): IEvent | null {
   //const start = new Date(notice.eventTime);
   //const end = new Date(notice.eventEndTime);
 
-  const cleanStartTime = notice.eventTime.replace(/(Z|[+-]\d{2}:?\d{2})$/, '');
-  const cleanEndTime = notice.eventEndTime.replace(/(Z|[+-]\d{2}:?\d{2})$/, '');
-
-  const start = new Date(cleanStartTime);
-  const end = new Date(cleanEndTime);
+  const start = new Date(notice.eventTime);
+  const end = new Date(notice.eventEndTime || notice.eventTime);
 
   // Skip notices with invalid dates
-  if (isNaN(start.getTime())) {
+  if (isNaN(start.getTime()) || start.getFullYear() < 1970) {
     console.warn("Invalid date in notice:", notice.title, notice.eventTime);
     return null;
   }
 
   // If end date is invalid, default to start date + 1 hour
-  const validEnd = isNaN(end.getTime())
+  const validEnd = isNaN(end.getTime()) || end.getFullYear() < 1970
     ? new Date(start.getTime() + 60 * 60 * 1000)
     : end;
 

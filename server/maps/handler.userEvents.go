@@ -52,6 +52,11 @@ func createUserEvent(c *gin.Context) {
 		return
 	}
 
+	if !EventTimesValid(input.EventTime, input.EventEndTime) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Event end time cannot be before start time"})
+		return
+	}
+
 	color := input.Color
 	if color == "" {
 		color = "blue"
@@ -121,6 +126,11 @@ func updateUserEvent(c *gin.Context) {
 	if err := c.ShouldBindJSON(&input); err != nil {
 		logrus.WithError(err).Warn("JSON binding failed for user event update")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format"})
+		return
+	}
+
+	if !EventTimesValid(input.EventTime, input.EventEndTime) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Event end time cannot be before start time"})
 		return
 	}
 

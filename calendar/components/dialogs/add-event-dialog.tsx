@@ -108,7 +108,7 @@ export function AddEventDialog({ children, startDate, startTime }: IProps) {
                 <FormItem>
                   <FormLabel htmlFor="title">Title</FormLabel>
                   <FormControl>
-                    <Input id="title" placeholder="Event title" data-invalid={fieldState.invalid} {...field} />
+                    <Input id="title" placeholder="Event title" maxLength={50} data-invalid={fieldState.invalid} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -126,7 +126,10 @@ export function AddEventDialog({ children, startDate, startTime }: IProps) {
                       <SingleDayPicker
                         id="startDate"
                         value={field.value}
-                        onSelect={date => field.onChange(date as Date)}
+                        onSelect={date => {
+                          field.onChange(date as Date);
+                          form.trigger(["endTime", "recurrenceEndDate"]);
+                        }}
                         placeholder="Select a date"
                         data-invalid={fieldState.invalid}
                       />
@@ -143,7 +146,10 @@ export function AddEventDialog({ children, startDate, startTime }: IProps) {
                   <FormItem className="flex-1">
                     <FormLabel>Start Time</FormLabel>
                     <FormControl>
-                      <TimeInput value={field.value as TimeValue} onChange={field.onChange} hourCycle={12} data-invalid={fieldState.invalid} />
+                      <TimeInput value={field.value as TimeValue} onChange={time => {
+                        field.onChange(time);
+                        form.trigger(["endTime", "recurrenceEndDate"]);
+                      }} hourCycle={12} data-invalid={fieldState.invalid} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -161,7 +167,10 @@ export function AddEventDialog({ children, startDate, startTime }: IProps) {
                     <FormControl>
                       <SingleDayPicker
                         value={field.value}
-                        onSelect={date => field.onChange(date as Date)}
+                        onSelect={date => {
+                          field.onChange(date as Date);
+                          form.trigger(["endTime"]);
+                        }}
                         placeholder="Select a date"
                         data-invalid={fieldState.invalid}
                       />
@@ -178,7 +187,10 @@ export function AddEventDialog({ children, startDate, startTime }: IProps) {
                   <FormItem className="flex-1">
                     <FormLabel>End Time</FormLabel>
                     <FormControl>
-                      <TimeInput value={field.value as TimeValue} onChange={field.onChange} hourCycle={12} data-invalid={fieldState.invalid} />
+                      <TimeInput value={field.value as TimeValue} onChange={time => {
+                        field.onChange(time);
+                        form.trigger(["endTime"]);
+                      }} hourCycle={12} data-invalid={fieldState.invalid} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -256,7 +268,10 @@ export function AddEventDialog({ children, startDate, startTime }: IProps) {
                     <FormControl>
                       <SingleDayPicker
                         value={field.value ?? undefined}
-                        onSelect={date => field.onChange(date as Date)}
+                        onSelect={date => {
+                          field.onChange(date as Date);
+                          form.trigger(["recurrenceEndDate"]);
+                        }}
                         placeholder="No end date (forever)"
                         data-invalid={fieldState.invalid}
                       />
