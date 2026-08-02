@@ -24,7 +24,7 @@ function Display(props: DisplayProps) {
   const students = props.toShow.map((el) => (
     <SCard
       data={el}
-      key={el.UserID}
+      key={el.userId}
       onClick={() => props.displayCard(el)}
       pointer={true}
       type={"normal"}

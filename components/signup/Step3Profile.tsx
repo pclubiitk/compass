@@ -129,7 +129,7 @@ export function Step3Profile() {
 
       if (response.ok) {
         toast.success(data.message || "Profile updated successfully!");
-        router.push("/profile");
+        router.push("/");
       } else {
         toast.error(data.error || "Failed to update profile.");
       }

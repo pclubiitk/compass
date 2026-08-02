@@ -154,7 +154,7 @@ export const RecoveryCodeVerificationCard = ({
         <CardHeader className="text-center">
           <div className="flex justify-center mb-2">
             <Image
-              src="/icons/puppyLoveLogo.png"
+            src={`${process.env.NEXT_PUBLIC_BASE_PATH || ""}/icons/puppyLoveLogo.png`}
               alt="Puppy Love"
               width={64}
               height={64}

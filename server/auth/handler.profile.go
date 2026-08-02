@@ -177,20 +177,20 @@ func updateProfile(c *gin.Context) {
 	}
 
 	// Check if verification request is needed, email should be same, it can't be changed
-	if user.Profile.Name != profileData.Name ||
-		user.Profile.RollNo != profileData.RollNo ||
-		user.Profile.Dept != profileData.Dept ||
-		user.Profile.Course != profileData.Course {
-		// Verify from oa
-		// if !verifyProfile(c, profileData) {
-		// 	return
-		// }
-		if viper.GetString("env") != "dev" {
-			if !verifyProfile(c, profileData) {
-				return
-			}
-		}
-	}
+	// if user.Profile.Name != profileData.Name ||
+	// 	user.Profile.RollNo != profileData.RollNo ||
+	// 	user.Profile.Dept != profileData.Dept ||
+	// 	user.Profile.Course != profileData.Course {
+	// 	Verify from oa
+	// 	if !verifyProfile(c, profileData) {
+	// 		return
+	// 	}
+	// 	if viper.GetString("env") != "dev" {
+	// 		if !verifyProfile(c, profileData) {
+	// 			return
+	// 		}
+	// 	}
+	// }
 	var newPfpPath string
 	if user.ProfilePic == false {
 		if path, err := FetchAndSaveProfileImage(input.RollNo, user.Email, userID.(uuid.UUID)); err == nil && path != "" {
@@ -258,7 +258,7 @@ func getProfileHandler(c *gin.Context) {
 	// browser or intermediary reuse an earlier profile response after a location
 	// has been submitted or moderated.
 	c.Header("Cache-Control", "private, no-cache, no-store, must-revalidate")
-	c.Header("Pragma", "no-cache")
+	c.Header("Pragma", "no-cache") 
 	c.Header("Expires", "0")
 
 	var user model.User

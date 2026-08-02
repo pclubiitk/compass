@@ -14,6 +14,13 @@ const nextConfig: NextConfig = {
     root: "./",
   },
   async rewrites() {
+    // In production nginx sends /students directly to the search frontend.
+    // Rewriting it to the same public URL here makes the Compass app proxy
+    // back through itself if the request ever reaches port 3001.
+    if (!SEARCH_URL?.startsWith("http://localhost:")) {
+      return [];
+    }
+
     return [
       {
         source: "/students/:path*",

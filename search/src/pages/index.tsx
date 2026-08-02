@@ -65,8 +65,10 @@ import { useGContext } from "@/components/ContextProvider";
 import Options from "@/components/ui/Options";
 import { UsersRound } from "lucide-react";
 import { ErrorCard } from "@/components/cards/ErrorCard";
+import { useRouter } from "next/router";
 
 export default function Home(props: Object) {
+  const router = useRouter();
   // [For: Worker Object] [Use a ref to hold the worker instance so it persists across re-renders]
   const workerRef = useRef<Worker>();
   // Ref to track display blocked state for debounced query checks
@@ -125,10 +127,14 @@ export default function Home(props: Object) {
     if (typeof window !== "undefined" && window.Worker) {
       // console.log("[Component Mounted] - Worker Initializing"); // Debug
 
-      // Create worker instance. ( The URL is relative to public folder )
-      const worker = new Worker("workers/data_worker.js", {
-        type: "module",
-      });
+      // Use Next's resolved base path instead of referencing Node's `process`
+      // global in browser code.
+      const worker = new Worker(
+        `${router.basePath}/workers/data_worker.js`,
+        {
+          type: "module",
+        },
+      );
       workerRef.current = worker;
 
       // Listen for messages
@@ -185,7 +191,7 @@ export default function Home(props: Object) {
         workerRef.current?.terminate();
       };
     }
-  }, [isLoggedIn, profileVisibility]);
+  }, [isLoggedIn, profileVisibility, router.basePath]);
 
   // Whenever error any global error occurs, show the error card
   useEffect(() => {

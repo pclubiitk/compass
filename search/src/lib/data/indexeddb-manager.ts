@@ -210,7 +210,7 @@ async function apply_Changelog(resp: {
         // Modify the data in memory
         // Add or update profiles
         for (const st of addProfiles) {
-          const idx = current.findIndex((s: Student) => s.UserID === st.UserID);
+          const idx = current.findIndex((s: Student) => s.userId === st.userId);
           if (idx >= 0) {
             current[idx] = st; // Update existing
           } else {
@@ -220,7 +220,7 @@ async function apply_Changelog(resp: {
 
         // Delete profiles
         const deleteSet = new Set(deleteUserIds); // Use a Set for faster lookups
-        current = current.filter((s: Student) => !deleteSet.has(s.UserID));
+        current = current.filter((s: Student) => !deleteSet.has(s.userId));
 
         // Write modified data back to the database
         // .put() to overwrite existing entry

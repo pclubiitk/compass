@@ -110,15 +110,18 @@ export default function App(props: AppProps) {
           rel="icon"
           type="image/png"
           sizes="32x32"
-          href="/icons/32x32.png"
+          href={`${process.env.NEXT_PUBLIC_BASE_PATH || ""}/icons/32x32.png`}
         />
         <link
           rel="icon"
           type="image/png"
           sizes="16x16"
-          href="/icons/16x16.png"
+          href={`${process.env.NEXT_PUBLIC_BASE_PATH || ""}/icons/16x16.png`}
         />
-        <link rel="manifest" href="/manifest.json" />
+        <link
+          rel="manifest"
+          href={`${process.env.NEXT_PUBLIC_BASE_PATH || ""}/manifest.json`}
+        />
       </Head>
       <GlobalContextProvider>
         <AppWrapper {...props} />

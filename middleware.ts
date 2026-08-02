@@ -25,13 +25,13 @@ export function middleware(request: NextRequest) {
 
   const hasSession =
     request.cookies.has("auth_token") || request.cookies.has("refresh_token");
-
+    
   // console.log("[middleware] request", {
   //   host,
   //   pathname,
-  //   isStaticAsset,
+  //   isStaticAsset,       
   //   isPublicPath,
-  //   isAllowedWithoutCookies,
+  //     isAllowedWithoutCookies,
   //   hasSession,
   // });
 
@@ -59,9 +59,9 @@ export function middleware(request: NextRequest) {
     //   request.url,
     // ),
     // In Test:
-    new URL("https://bsearch.pclub.in/login")
+    // new URL("https://bsearch.pclub.in/login")
     // FIXME(Prod): In Prod:
-    // new URL("https://search.pclub.in/login")
+    new URL("https://search.pclub.in/login")
   );
 }
 

@@ -26,7 +26,7 @@ export const PasswordRecoveryOptionsCard = ({
           <CardTitle className="flex flex-col items-center gap-2">
             <div className="flex size-16 items-center justify-center rounded-md">
               <Image
-                src="/icons/puppyLoveLogo.png"
+              src={`${process.env.NEXT_PUBLIC_BASE_PATH || ""}/icons/puppyLoveLogo.png`}
                 alt="Puppy Love"
                 width={64}
                 height={64}

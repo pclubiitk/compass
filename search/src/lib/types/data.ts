@@ -1,7 +1,7 @@
 //common types
 
 export interface Student {
-  UserID: string; // uuid.UUID
+  userId: string; // uuid.UUID
   homeTown: string; //address
   dept: string; //department
   gender: string; //gender

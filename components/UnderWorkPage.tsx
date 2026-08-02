@@ -33,7 +33,7 @@ export function UnderWorkPage({ featureName }: { featureName: string }) {
 
         <div className="pt-4">
           <a
-            href="/profile"
+            href="/"
             className="inline-flex items-center justify-center px-6 py-2 bg-white text-black hover:bg-gray-100 font-medium rounded-lg transition-colors"
           >
             Go Back

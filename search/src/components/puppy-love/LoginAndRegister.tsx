@@ -233,7 +233,7 @@ export const PuppyLoveLoginAndRegisterPasswordCard = ({
         <CardHeader>
           <CardTitle className="flex flex-col items-center gap-2">
             <Image
-              src="/icons/puppyLoveLogo.png"
+              src={`${process.env.NEXT_PUBLIC_BASE_PATH || ""}/icons/puppyLoveLogo.png`}
               alt="Puppy Love"
               width={64}
               height={64}

@@ -1,6 +1,7 @@
 // TODO: Update the data
 export const courses = [
   "BTech",
+  "B.Cyber",
   "MSc(Int)",
   "MSc(2 yr)",
   "MTech",

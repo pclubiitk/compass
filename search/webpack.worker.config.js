@@ -2,10 +2,10 @@ const path = require("path");
 const webpack = require("webpack");
 
 // Load environment variables from your .env file
-// require("dotenv").config({ path: path.resolve(__dirname, ".env") });
+require("dotenv").config({ path: path.resolve(__dirname, ".env") });
 
 module.exports = {
-  mode: "development",
+  mode: "production",
   target: "webworker",
 
   entry: "./src/lib/workers/data_worker.ts",
@@ -31,12 +31,14 @@ module.exports = {
       },
     ],
   },
-  // plugins: [
-  //   new webpack.DefinePlugin({
-  //     // This tells Webpack to find all instances of 'process.env.VARIABLE_NAME' and replace them with the actual value.
-  //     "process.env.NEXT_PUBLIC_SEARCH_URL": JSON.stringify(
-  //       process.env.NEXT_PUBLIC_SEARCH_URL
-  //     ),
-  //   }),
-  // ],
+  plugins: [
+    new webpack.DefinePlugin({
+      // Workers are built outside Next.js, so Next cannot inline public env
+      // variables for them. Never leave a runtime `process` reference in the
+      // browser worker bundle.
+      "process.env.NEXT_PUBLIC_MAPS_DOMAIN": JSON.stringify(
+        process.env.NEXT_PUBLIC_MAPS_DOMAIN || "http://localhost:3001",
+      ),
+    }),
+  ],
 };

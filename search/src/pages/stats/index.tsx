@@ -90,7 +90,7 @@ export default function StatsPage() {
         <header className="space-y-3 text-center">
           <div className="flex justify-center">
             <Image
-              src="/icons/puppyLoveLogo.png"
+              src={`${process.env.NEXT_PUBLIC_BASE_PATH || ""}/icons/puppyLoveLogo.png`}
               alt="PuppyLove"
               width={64}
               height={64}

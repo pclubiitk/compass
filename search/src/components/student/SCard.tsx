@@ -200,7 +200,7 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
             style={{ width: 200, height: 200 }}
             email={props.data.email}
             gender={props.data.gender}
-            profilePic={"pfp/" + props.data.UserID + ".webp"}
+            profilePic={"pfp/" + props.data.userId + ".webp"}
             alt="Image of student"
           />
           <CardHeader className="p-2 pb-0 w-full">
@@ -306,7 +306,7 @@ const SCard = React.forwardRef<HTMLDivElement, SCardProps>((props, ref) => {
             style={{ width: 150, height: 150 }}
             email={props.data.email}
             gender={props.data.gender}
-            profilePic={"pfp/" + props.data.UserID + ".webp"}
+            profilePic={"pfp/" + props.data.userId + ".webp"}
             alt="Image of student"
           />
           <CardHeader className="w-full px-0">

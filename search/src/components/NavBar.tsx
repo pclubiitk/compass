@@ -109,7 +109,7 @@ export const NavBar = (props: NavBarProps) => {
             className="hover:opacity-80 transition-opacity"
           >
             <Image
-              src={"/icons/logo.png"}
+              src={`${process.env.NEXT_PUBLIC_BASE_PATH || ""}/icons/logo.png`}
               className="rounded-full"
               alt="Pclub Logo"
               width={36}
@@ -121,7 +121,7 @@ export const NavBar = (props: NavBarProps) => {
           {props.isPLseason && (
             <div className="relative flex items-center">
               <Image
-                src={"/icons/puppyLoveLogo.png"}
+                src={`${process.env.NEXT_PUBLIC_BASE_PATH || ""}/icons/puppyLoveLogo.png`}
                 className={`rounded-full cursor-pointer transition-all duration-300 transform hover:scale-110 
                 `}
                 alt="Puppy Love"
