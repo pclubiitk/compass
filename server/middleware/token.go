@@ -3,6 +3,8 @@ package middleware
 import (
 	"compass/connections"
 	"compass/model"
+	"crypto/sha256"
+	"encoding/hex"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -18,10 +20,15 @@ func GenerateRefreshToken(userID uuid.UUID) (string, error) {
 	return token.SignedString([]byte(authConfig.JWTSecretKey))
 }
 
+func hashRefreshToken(token string) string {
+	sum := sha256.Sum256([]byte(token))
+	return hex.EncodeToString(sum[:])
+}
+
 func SaveRefreshToken(userID uuid.UUID, token string) error {
 	return connections.DB.Create(&model.UserRefreshToken{
 		UserID:    userID,
-		Token:     token,
+		Token:     hashRefreshToken(token),
 		ExpiresAt: time.Now().Add(authConfig.RefreshTokenExpiry),
 	}).Error
 }
@@ -31,14 +38,14 @@ func RevokeRefreshToken(token string) error {
 		return nil
 	}
 	return connections.DB.Model(&model.UserRefreshToken{}).
-		Where("token = ?", token).
+		Where("token = ?", hashRefreshToken(token)).
 		Update("is_active", false).Error
 }
 
 func IsRefreshTokenActive(token string) (uuid.UUID, error) {
 	var session model.UserRefreshToken
 	err := connections.DB.
-		Where("token = ? AND expires_at > ? AND is_active = ?", token, time.Now(), true).
+		Where("token = ? AND expires_at > ? AND is_active = ?", hashRefreshToken(token), time.Now(), true).
 		First(&session).Error
 	if err != nil {
 		return uuid.Nil, err
