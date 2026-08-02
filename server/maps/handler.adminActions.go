@@ -10,9 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 	"gorm.io/gorm"
 )
 
@@ -86,8 +84,10 @@ func flagAction(c *gin.Context) {
 				"reason":   req.Message,
 			},
 		}
-		payload, _ := json.Marshal(job)
-		if err := workers.PublishJob(payload, model.MailQueue); err != nil {
+		payload, err := json.Marshal(job)
+		if err != nil {
+			logrus.WithError(err).Error("Failed to marshal violation warning mail job")
+		} else if err := workers.PublishJob(payload, model.MailQueue); err != nil {
 			logrus.Error("Failed to enqueue mail job:", err)
 		}
 		c.JSON(200, gin.H{"message": "Review rejected", "details": req.Message})
@@ -136,8 +136,10 @@ func LocationAction(c *gin.Context) {
 					"message": "Thanks for contributing a location! It's now live.",
 				},
 			}
-			payload, _ := json.Marshal(job)
-			if err := workers.PublishJob(payload, model.MailQueue); err != nil {
+			payload, err := json.Marshal(job)
+			if err != nil {
+				logrus.WithError(err).Error("Failed to marshal location approval mail job")
+			} else if err := workers.PublishJob(payload, model.MailQueue); err != nil {
 				logrus.Error("Failed to enqueue mail job:", err)
 			}
 		}
@@ -170,8 +172,10 @@ func LocationAction(c *gin.Context) {
 					"message": req.Message,
 				},
 			}
-			payload, _ := json.Marshal(job)
-			if err := workers.PublishJob(payload, model.MailQueue); err != nil {
+			payload, err := json.Marshal(job)
+			if err != nil {
+				logrus.WithError(err).Error("Failed to marshal location rejection mail job")
+			} else if err := workers.PublishJob(payload, model.MailQueue); err != nil {
 				logrus.Error("Failed to enqueue mail job:", err)
 			}
 		}
@@ -343,8 +347,10 @@ func makeAdminHandler(c *gin.Context) {
 		},
 	}
 
-	payload, _ := json.Marshal(job)
-	if err := workers.PublishJob(payload, model.MailQueue); err != nil {
+	payload, err := json.Marshal(job)
+	if err != nil {
+		logrus.WithError(err).Error("Failed to marshal admin promotion mail job")
+	} else if err := workers.PublishJob(payload, model.MailQueue); err != nil {
 		logrus.WithError(err).Error("Failed to enqueue admin promotion email")
 		// Don't fail the request if email fails to enqueue
 	}
