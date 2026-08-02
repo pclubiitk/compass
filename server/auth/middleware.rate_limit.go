@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	verificationMaxAttempts = 5
+	verificationMaxAttempts = 3
 	verificationWindow      = 15 * time.Minute
 )
 
