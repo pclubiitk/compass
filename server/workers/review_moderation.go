@@ -73,6 +73,13 @@ func ApproveReviewRecord(reviewID uuid.UUID) (bool, error) {
 			return nil // Return nil so the transaction doesn't fail, we just exit it early
 		}
 
+		if review.Rating < model.MinRating || review.Rating > model.MaxRating {
+			logrus.Warnf("Review %s has out-of-range rating %d; rejecting instead of approving", review.ReviewId, review.Rating)
+			return tx.Model(&model.Review{}).
+				Where("review_id = ?", reviewID).
+				Update("status", model.RejectedByBot).Error
+		}
+
 		if err := tx.Model(&model.Review{}).
 			Where("review_id = ?", reviewID).
 			Update("status", model.Approved).Error; err != nil {
