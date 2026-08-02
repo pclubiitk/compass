@@ -37,7 +37,7 @@ func RecentFiveReviews(db *gorm.DB) *gorm.DB {
 	return db.Preload("Images", func(tx *gorm.DB) *gorm.DB {
 		return tx.
 			Where("parent_asset_id IS NOT NULL").
-			Where("parent_asset_type = ?", "reviews")
+			Where("parent_asset_type = ?", "Review")
 	}).
 		Order("created_at DESC").
 		Limit(5)

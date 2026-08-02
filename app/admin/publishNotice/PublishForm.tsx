@@ -24,6 +24,7 @@ const CopyIcon = () => (
     <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
   </svg>
 );
+
 const UploadIcon = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -45,42 +46,33 @@ const UploadIcon = () => (
 interface UploadedImage {
   previewUrl: string;
   file: File;
-  id: string | null; // Will be null until upload is complete
+  id: string | null;
   isUploading: boolean;
   copySuccess: boolean;
 }
 
 export default function NoticeboardForm() {
   const router = useRouter();
-  // FIXME:
-  // 28:10  Error: 'isSubmitting' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-  // 29:10  Error: 'error' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-  // const [isSubmitting, setIsSubmitting] = useState(false);
-  // const [error, setError] = useState<string | null>(null);
 
   const searchParams = useSearchParams();
   const noticeId = searchParams.get("noticeid");
   const [images, setImages] = useState<UploadedImage[]>([]);
-  const fileInputRef = useRef<HTMLInputElement>(null); // To trigger file input click
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // TODO: fix datetype of formdata to RFC formal
   const [formData, setFormData] = useState({
-    type: "Event", // You might want a select input for this
+    type: "Event",
     title: "",
     location: "",
     eventTime: "",
     eventEndTime: "",
     description: "",
-    body: "**hello world!**\n\nstart writing your notice here.", // Initial markdown content
+    body: "**hello world!**\n\nstart writing your notice here.",
   });
-
-  console.log("Current notice", noticeId);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
-
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -100,15 +92,13 @@ export default function NoticeboardForm() {
     return true;
   }
 
-  // Specific handler for the MDEditor, as its onChange provides the value directly
   const handleEditorChange = (value?: string) => {
     setFormData((prevData) => ({
       ...prevData,
-      body: value || "", // Ensure value is not undefined
+      body: value || "", 
     }));
   };
 
-  // -- changes --
   const handleFileSelectAndUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
   ) => {
@@ -150,9 +140,6 @@ export default function NoticeboardForm() {
           throw new Error(`image upload failed for ${image.file.name}`);
         const result = await response.json();
 
-        // console.log("SERVER RESPONSE:", result);
-        // console.log("ID BEING READ:", result.ImageID);
-
         setImages((prev) =>
           prev.map((img) =>
             img.file === image.file
@@ -161,29 +148,25 @@ export default function NoticeboardForm() {
           ),
         );
       } catch {
-        // setError(err.message);
         setImages((prev) =>
           prev.filter((img) => img.previewUrl !== image.previewUrl),
         );
-        // removed the failed uploads
       }
     }
   };
 
-  // Deletes a specific image from the array by its previewUrl
   const handleImageDelete = (previewUrlToDelete: string) => {
     const imageToDelete = images.find(
       (img) => img.previewUrl === previewUrlToDelete,
     );
     if (imageToDelete) {
-      URL.revokeObjectURL(imageToDelete.previewUrl); // Clean up memory
+      URL.revokeObjectURL(imageToDelete.previewUrl); 
     }
     setImages((prev) =>
       prev.filter((img) => img.previewUrl !== previewUrlToDelete),
     );
   };
 
-  // Copies the ID for a specific image
   const handleCopyId = (previewUrlToCopy: string) => {
     const imageToCopy = images.find(
       (img) => img.previewUrl === previewUrlToCopy,
@@ -210,45 +193,25 @@ export default function NoticeboardForm() {
       );
     }, 2000);
   };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-    const uploadedImageIds = images.map((img) => img.id).filter(Boolean) as string[];
-
-    if (formData.eventTime && formData.eventEndTime &&
-        new Date(formData.eventTime) > new Date(formData.eventEndTime)) {
-      toast.error("Start time cannot be after end time");
-      return;
-=======
-    if (formData.eventTime && formData.eventEndTime) {
-      const start = new Date(formData.eventTime);
-      const end = new Date(formData.eventEndTime);
-      if (end < start) {
-        toast.error("Event end time cannot be before start time");
-        return;
-      }
->>>>>>> f5020fd (restrict invalid start-endtime notices and fix empty end date notice handling)
-=======
     if (!validateEventTimes(formData.eventTime, formData.eventEndTime)) {
       return;
->>>>>>> 05543f2 (fix: address Sourcery review on useHistoryBack, event time validation, and form triggers)
     }
+    const uploadedImageIds = images.map((img) => img.id).filter(Boolean) as string[];
 
     try {
       const payload = {
-<<<<<<< HEAD
         ...formData,
         coverPic: uploadedImageIds[0] || null,
         biopics: uploadedImageIds.length > 1 ? uploadedImageIds.slice(1) : null,
-=======
         title: formData.title,
         description: formData.description,
         entity: formData.type,
         location: formData.location,
         body: formData.body,
->>>>>>> f5020fd (restrict invalid start-endtime notices and fix empty end date notice handling)
         eventEndTime: formData.eventEndTime
           ? new Date(formData.eventEndTime).toISOString()
           : null,
@@ -275,8 +238,6 @@ export default function NoticeboardForm() {
       }
 
       localStorage.removeItem("notice_search_cache");
-
-      console.log("Notice submitted successfully!");
       router.push("/noticeboard");
     } catch {
       toast.error("Failed to submit notice");
@@ -284,31 +245,26 @@ export default function NoticeboardForm() {
   };
 
   function isoToDatetimeLocal(iso: string) {
-  const date = new Date(iso);
-  if (isNaN(date.getTime()) || date.getFullYear() < 1970) return "";
+    const date = new Date(iso);
+    if (isNaN(date.getTime()) || date.getFullYear() <= 1) return "";
 
-  if (isNaN(date.getTime()) || date.getFullYear() <= 1) return "";
+    const pad = (n: number) => String(n).padStart(2, "0");
 
-  const pad = (n: number) => String(n).padStart(2, "0");
+    return (
+      date.getFullYear() +
+      "-" +
+      pad(date.getMonth() + 1) +
+      "-" +
+      pad(date.getDate()) +
+      "T" +
+      pad(date.getHours()) +
+      ":" +
+      pad(date.getMinutes())
+    );
+  }
 
-  return (
-    date.getFullYear() +
-    "-" +
-    pad(date.getMonth() + 1) +
-    "-" +
-    pad(date.getDate()) +
-    "T" +
-    pad(date.getHours()) +
-    ":" +
-    pad(date.getMinutes())
-  );
-}
-
-
-  // Clean up all object URLs when the component unmounts
   useEffect(() => {
     if (noticeId) {
-      // Fetch existing notice data and populate form
       const fetchNotice = async () => {
         try {
           const res = await fetch(
@@ -339,48 +295,28 @@ export default function NoticeboardForm() {
     return () => {
       images.forEach((image) => URL.revokeObjectURL(image.previewUrl));
     };
-  }, []); // vs [images]
+  }, []); 
 
   const handleEdit = async (e: React.MouseEvent) => {
     e.preventDefault();
     if (!noticeId) return;
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-    const uploadedImageIds = images.map((img) => img.id).filter(Boolean) as string[];
-
-    if (formData.eventTime && formData.eventEndTime &&
-        new Date(formData.eventTime) > new Date(formData.eventEndTime)) {
-      toast.error("Start time cannot be after end time");
-      return;
-=======
-    if (formData.eventTime && formData.eventEndTime) {
-      const start = new Date(formData.eventTime);
-      const end = new Date(formData.eventEndTime);
-      if (end < start) {
-        toast.error("Event end time cannot be before start time");
-        return;
-      }
->>>>>>> f5020fd (restrict invalid start-endtime notices and fix empty end date notice handling)
-=======
     if (!validateEventTimes(formData.eventTime, formData.eventEndTime)) {
       return;
->>>>>>> 05543f2 (fix: address Sourcery review on useHistoryBack, event time validation, and form triggers)
     }
+
+    const uploadedImageIds = images.map((img) => img.id).filter(Boolean) as string[];
 
     try {
       const payload = {
-<<<<<<< HEAD
         ...formData,
         coverPic: uploadedImageIds[0] || null,
         biopics: uploadedImageIds.length > 1 ? uploadedImageIds.slice(1) : null,
-=======
         title: formData.title,
         description: formData.description,
         entity: formData.type,
         location: formData.location,
         body: formData.body,
->>>>>>> f5020fd (restrict invalid start-endtime notices and fix empty end date notice handling)
         eventEndTime: formData.eventEndTime
           ? new Date(formData.eventEndTime).toISOString()
           : null,
@@ -388,6 +324,7 @@ export default function NoticeboardForm() {
           ? new Date(formData.eventTime).toISOString()
           : null
       };
+      
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_MAPS_URL}/api/maps/editNotice/${noticeId}`,
         {
@@ -406,12 +343,9 @@ export default function NoticeboardForm() {
       }
 
       localStorage.removeItem("notice_search_cache");
-
-      console.log("Notice updated successfully!");
       router.push("/noticeboard");
     } catch {
       toast.error("Failed to update notice");
-      // console.error("Failed to update notice:", err);
     }
   };
 
@@ -437,7 +371,6 @@ export default function NoticeboardForm() {
                 name={field}
                 placeholder={field}
                 type="text"
-                // TODO: add correct interface NoticeFormData
                 value={(formData as any)[field]}
                 onChange={handleChange}
                 maxLength={maxLength}
@@ -448,7 +381,6 @@ export default function NoticeboardForm() {
           ))}
 
           <div className="flex flex-col md:flex-row md:space-x-6 md:items-start space-y-6 md:space-y-0">
-            {/* Location and Time Inputs */}
             <div className="md:w-1/2 space-y-6">
               <div>
                 <Label
@@ -486,13 +418,11 @@ export default function NoticeboardForm() {
               </div>
             </div>
 
-            {/* Scrollable Multi-Image Preview Pane */}
             <div className="md:w-1/2">
               <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Images
               </Label>
               <p className="text-xs text-muted-foreground">10 MB</p>
-              {/* Hidden file input that now accepts multiple files */}
               <Input
                 type="file"
                 accept="image/*"
@@ -501,26 +431,19 @@ export default function NoticeboardForm() {
                 onChange={handleFileSelectAndUpload}
                 className="hidden"
               />
-              {/* Scrollable container */}
               <div className="mt-1 h-48 w-full p-2 border-2 border-dashed border-gray-300 rounded-lg overflow-y-auto flex flex-wrap gap-4">
-                {/* Map over the images array to display each preview */}
                 {images.map((image) => (
                   <div
                     key={image.previewUrl}
                     className="relative w-28 h-28 group shrink-0"
                   >
-                    {/* {image.isUploading && (
-                    <div className="absolute inset-0 z-10 flex items-center justify-center bg-black bg-opacity-50 rounded-lg text-white text-xs">Uploading...</div>
-                )} */}
                     <img
                       src={image.previewUrl}
                       alt="Preview"
                       className="w-full h-full object-cover rounded-lg"
                     />
 
-                    {/* Buttons appear on hover */}
-                    {
-                      /*!image.isUploading && */ image.id && (
+                    { image.id && (
                         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-black bg-opacity-40 rounded-lg flex items-center justify-center space-x-2">
                           <button
                             type="button"
@@ -542,7 +465,6 @@ export default function NoticeboardForm() {
                   </div>
                 ))}
 
-                {/* Add More button is always visible */}
                 <div
                   onClick={() => fileInputRef.current?.click()}
                   className="w-28 h-28 shrink-0 flex flex-col items-center justify-center border-2 border-transparent rounded-lg cursor-pointer bg-gray-100 hover:bg-gray-200 text-gray-500"
@@ -570,7 +492,6 @@ export default function NoticeboardForm() {
             />
           </div>
 
-          {/* The MDEditor for the description */}
           <div>
             <Label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
               Body (Markdown Supported)
@@ -587,9 +508,7 @@ export default function NoticeboardForm() {
             </div>
           </div>
 
-          {/* Submit Button */}
           {noticeId ? (
-            // cancel button and update button in one columns
             <div className="flex-col w-full space-x-4">
               <Button
                 type="button"

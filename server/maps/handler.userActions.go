@@ -40,19 +40,21 @@ func addReview(c *gin.Context) {
 		}
 
 		// Associate images
-		if len(*req.Images) > 0 {
-			if err := tx.Where("image_id IN ?", *req.Images).Find(&images).Error; err != nil {
+		if req.Images != nil && len(*req.Images) > 0 {
+			if err := tx.Where("image_id IN ? AND owner_id = ?", *req.Images, userID.(uuid.UUID)).Find(&images).Error; err != nil {
 				return err
 			}
 
 			// Explicitly stamp the images with the Review ID
-			if err := tx.Model(&model.Image{}).
-				Where("image_id IN ?", *req.Images).
-				Updates(map[string]interface{}{
-					"parent_asset_id":   newReview.ReviewId,
-					"parent_asset_type": "Review",
-				}).Error; err != nil {
-				return err
+			if len(images) > 0 {
+				if err := tx.Model(&model.Image{}).
+					Where("image_id IN ?", images).
+					Updates(map[string]interface{}{
+						"parent_asset_id":   newReview.ReviewId,
+						"parent_asset_type": "Review",
+					}).Error; err != nil {
+					return err
+				}
 			}
 
 			missingCount += len(*req.Images) - len(images)
@@ -128,7 +130,7 @@ func requestLocationAddition(c *gin.Context) {
 		// Associate CoverPic
 		if req.CoverPic != nil {
 			var coverPic model.Image
-			if err := tx.First(&coverPic, "image_id = ?", *req.CoverPic).Error; err == nil {
+			if err := tx.First(&coverPic, "image_id = ? AND owner_id = ?", *req.CoverPic, userID.(uuid.UUID)).Error; err == nil {
 				if err := tx.Model(&newLocation).Association("CoverPic").Replace(&coverPic); err != nil {
 					return err
 				}
@@ -137,9 +139,9 @@ func requestLocationAddition(c *gin.Context) {
 			}
 		}
 		// Associate BioPics
-		if len(*req.BioPics) > 0 {
+		if req.BioPics != nil && len(*req.BioPics) > 0 {
 			var bioPics []model.Image
-			if err := tx.Where("image_id IN ?", *req.BioPics).Find(&bioPics).Error; err != nil {
+			if err := tx.Where("image_id IN ? AND owner_id = ?", *req.BioPics, userID.(uuid.UUID)).Find(&bioPics).Error; err != nil {
 				return err
 			}
 			if err := tx.Model(&newLocation).Association("BioPics").Replace(&bioPics); err != nil {

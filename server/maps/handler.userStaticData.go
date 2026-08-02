@@ -411,7 +411,7 @@ func fetchReviewsByUserID(userID uuid.UUID, limit, offset int) ([]model.Review, 
 
 	if err := db.
 		Preload("Images", func(tx *gorm.DB) *gorm.DB {
-			return tx.Where("parent_asset_id IS NOT NULL").Where("parent_asset_type = ?", "reviews")
+			return tx.Where("parent_asset_id IS NOT NULL").Where("parent_asset_type = ?", "Review")
 		}).
 		Where("contributed_by = ?", userID).
 		Order("created_at DESC").

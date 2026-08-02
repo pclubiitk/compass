@@ -38,8 +38,30 @@ func init() {
 	}
 }
 
+var csrfProtectedMethods = map[string]struct{}{
+	"POST":   {},
+	"PUT":    {},
+	"DELETE": {},
+	"PATCH":  {},
+}
+
+// requiresCSRFProtection centralizes which HTTP methods require CSRF validation.
+func requiresCSRFProtection(method string) bool {
+	_, ok := csrfProtectedMethods[method]
+	return ok
+}
+
 // TODO: Extract the basic token extraction and verification out and keep just the user part
 func UserAuthenticator(c *gin.Context) {
+	if requiresCSRFProtection(c.Request.Method) {
+		csrfCookie, err := c.Cookie("csrf_token")
+		csrfHeader := c.GetHeader("X-CSRF-Token")
+		if err != nil || csrfHeader == "" || csrfCookie != csrfHeader {
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "CSRF token mismatch or missing"})
+			return
+		}
+	}
+
 	// Check for cookie
 	tokenString, err := c.Cookie("auth_token")
 	if err != nil {
