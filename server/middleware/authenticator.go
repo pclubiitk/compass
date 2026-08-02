@@ -3,6 +3,7 @@ package middleware
 import (
 	"compass/connections"
 	"compass/model"
+	"compass/profileaccess"
 	"net/http"
 	"strings"
 	"time"
@@ -219,25 +220,42 @@ func EmailVerified(c *gin.Context) {
 	c.Next()
 }
 
-func CheckVisibility(c *gin.Context) {
-	// is visibility on?
-
-	// TODO: better way for this check, as its in every handler request.
-	visibility, exists := c.Get("visibility")
+func CheckDirectoryAccess(c *gin.Context) {
+	// Authorization uses the current database record rather than the JWT's
+	// cached visibility claim. This prevents a verified user from abandoning the
+	// mandatory profile step and reading the directory with a stale claim.
+	userID, exists := c.Get("userID")
 	if !exists {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
 
-	if isVisible, ok := visibility.(bool); ok {
-		if !isVisible {
-			c.Redirect(http.StatusFound, "/")
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized, Please make your profile visible/public to view others"})
-			return
-		}
-	} else {
-		// if data type is wrong (not bool)
+	userUUID, ok := userID.(uuid.UUID)
+	if !ok {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		return
+	}
+
+	var profile model.Profile
+	if err := connections.DB.
+		Select("name", "roll_no", "dept", "course", "gender", "visibility").
+		Where("user_id = ?", userUUID).
+		First(&profile).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		} else {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Unable to verify profile access"})
+		}
+		return
+	}
+
+	if !profileaccess.IsComplete(profile) {
+		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Complete your profile before searching the student directory"})
+		return
+	}
+	if !profileaccess.CanSearch(profile) {
+		c.Redirect(http.StatusFound, "/")
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized, Please make your profile visible/public to view others"})
 		return
 	}
 

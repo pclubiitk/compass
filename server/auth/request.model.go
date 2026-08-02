@@ -22,11 +22,11 @@ type RecaptchaResponse struct {
 }
 
 type ProfileUpdateRequest struct {
-	Name       string `json:"name"`
-	RollNo     string `json:"rollNo"`
-	Dept       string `json:"dept"`
-	Course     string `json:"course"`
-	Gender     string `json:"gender"`
+	Name       string  `json:"name" binding:"required"`
+	RollNo     string  `json:"rollNo" binding:"required"`
+	Dept       string  `json:"dept" binding:"required"`
+	Course     string  `json:"course" binding:"required"`
+	Gender     string  `json:"gender" binding:"required"`
 	Hall       *string `json:"hall"`
 	RoomNumber *string `json:"roomNo"`
 	HomeTown   *string `json:"homeTown"`
@@ -51,7 +51,6 @@ type StudentDetails struct {
 	Username   string `json:"username"`
 	Location   string `json:"location"`
 }
-
 
 type ForgotPasswordRequest struct {
 	Email string `form:"email" binding:"required,email"`

@@ -14,7 +14,7 @@ func Router(r *gin.Engine) {
 	search.DELETE("/", deleteProfileData)
 
 	protected := search.Group("/")
-	protected.Use(middleware.CheckVisibility)
+	protected.Use(middleware.CheckDirectoryAccess)
 	{
 		protected.GET("/", getAllProfiles)
 		protected.GET("/changeLog", getChangeLog)

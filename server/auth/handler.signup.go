@@ -62,7 +62,9 @@ func signupHandler(c *gin.Context) {
 		IsVerified:        false,
 		Role:              model.UserRole,
 		VerificationToken: fmt.Sprintf("%s<>%s", token, expiry),
-		Profile:           model.Profile{Email: strings.ToLower(input.Email), Visibility: true},
+		// Directory access is enabled only after the mandatory profile step is
+		// completed and verified.
+		Profile: model.Profile{Email: strings.ToLower(input.Email), Visibility: false},
 	}
 
 	// Saving user in DB and updating in changelog

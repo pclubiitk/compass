@@ -4,6 +4,7 @@ import (
 	"compass/connections"
 	"compass/middleware"
 	"compass/model"
+	"compass/profileaccess"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -166,14 +167,19 @@ func updateProfile(c *gin.Context) {
 		// We set the UserID from the authenticated user's token, not from the input
 		UserID:     userID.(uuid.UUID),
 		Email:      user.Email,
-		Name:       caser.String(input.Name),
-		RollNo:     input.RollNo,
-		Dept:       input.Dept,
-		Course:     input.Course,
-		Gender:     input.Gender,
+		Name:       caser.String(strings.TrimSpace(input.Name)),
+		RollNo:     strings.TrimSpace(input.RollNo),
+		Dept:       strings.TrimSpace(input.Dept),
+		Course:     strings.TrimSpace(input.Course),
+		Gender:     strings.ToUpper(strings.TrimSpace(input.Gender)),
 		Hall:       input.Hall,
 		RoomNumber: input.RoomNumber,
 		HomeTown:   input.HomeTown,
+		Visibility: profileaccess.VisibilityAfterCompletion(user.Profile),
+	}
+	if !profileaccess.IsComplete(profileData) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Name, roll number, department, course, and gender are required"})
+		return
 	}
 
 	// Check if verification request is needed, email should be same, it can't be changed
@@ -245,6 +251,14 @@ func updateProfile(c *gin.Context) {
 	}); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update profile"})
 		return
+	}
+	// Step 3 changes the visibility claim created at verification time. Refresh
+	// the short-lived access cookie so /api/auth/me reflects the completed state
+	// immediately; the search API still verifies the database state itself.
+	if accessToken, err := middleware.GenerateAccessToken(userID.(uuid.UUID)); err != nil {
+		logrus.WithError(err).Warn("profile updated but access token refresh failed")
+	} else {
+		middleware.SetAuthCookie(c, accessToken)
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Profile updated successfully"})
 }
