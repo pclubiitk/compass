@@ -30,12 +30,11 @@ export async function fetch_student_data() {
 
 export async function fetch_changelog(lastTime: Timestamp) {
   try {
-    const resp = await fetch(`${SEARCH_POINT}/api/search/changeLog`, {
-      method: "POST",
+    const params = new URLSearchParams({
+      lastUpdateTime: new Date(lastTime).toISOString(),
+    });
+    const resp = await fetch(`${SEARCH_POINT}/api/search/changeLog?${params}`, {
       credentials: "include",
-      body: JSON.stringify({
-        lastUpdateTime: new Date(lastTime).toISOString(),
-      }),
     });
     if (!resp.ok) {
       postMessage({

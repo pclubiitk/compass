@@ -3,7 +3,7 @@ package search
 import "time"
 
 type changeLogRequest struct {
-	LastUpdateTime time.Time `json:"lastUpdateTime" binding:"required"`
+	LastUpdateTime time.Time `form:"lastUpdateTime" json:"lastUpdateTime" binding:"required"`
 }
 
 type toggleVisibilityRequest struct {

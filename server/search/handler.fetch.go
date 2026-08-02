@@ -48,7 +48,7 @@ func getChangeLog(c *gin.Context) {
 	var input changeLogRequest
 	var requestTime = time.Now()
 	// Request Validation
-	if err := c.ShouldBindJSON(&input); err != nil {
+	if err := c.ShouldBindQuery(&input); err != nil {
 		// Adding the request time format
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format", "requestTime": requestTime})
 		return
