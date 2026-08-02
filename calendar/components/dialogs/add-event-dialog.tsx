@@ -128,7 +128,7 @@ export function AddEventDialog({ children, startDate, startTime }: IProps) {
                         value={field.value}
                         onSelect={date => {
                           field.onChange(date as Date);
-                          form.trigger(["startTime", "endTime", "startDate", "endDate", "recurrenceEndDate"]);
+                          form.trigger(["endTime", "recurrenceEndDate"]);
                         }}
                         placeholder="Select a date"
                         data-invalid={fieldState.invalid}
@@ -148,7 +148,7 @@ export function AddEventDialog({ children, startDate, startTime }: IProps) {
                     <FormControl>
                       <TimeInput value={field.value as TimeValue} onChange={time => {
                         field.onChange(time);
-                        form.trigger(["startTime", "endTime", "startDate", "endDate", "recurrenceEndDate"]);
+                        form.trigger(["endTime", "recurrenceEndDate"]);
                       }} hourCycle={12} data-invalid={fieldState.invalid} />
                     </FormControl>
                     <FormMessage />
@@ -169,7 +169,7 @@ export function AddEventDialog({ children, startDate, startTime }: IProps) {
                         value={field.value}
                         onSelect={date => {
                           field.onChange(date as Date);
-                          form.trigger(["startTime", "endTime", "startDate", "endDate", "recurrenceEndDate"]);
+                          form.trigger(["endTime"]);
                         }}
                         placeholder="Select a date"
                         data-invalid={fieldState.invalid}
@@ -189,7 +189,7 @@ export function AddEventDialog({ children, startDate, startTime }: IProps) {
                     <FormControl>
                       <TimeInput value={field.value as TimeValue} onChange={time => {
                         field.onChange(time);
-                        form.trigger(["startTime", "endTime", "startDate", "endDate", "recurrenceEndDate"]);
+                        form.trigger(["endTime"]);
                       }} hourCycle={12} data-invalid={fieldState.invalid} />
                     </FormControl>
                     <FormMessage />
@@ -270,7 +270,7 @@ export function AddEventDialog({ children, startDate, startTime }: IProps) {
                         value={field.value ?? undefined}
                         onSelect={date => {
                           field.onChange(date as Date);
-                          form.trigger(["startTime", "endTime", "startDate", "endDate", "recurrenceEndDate"]);
+                          form.trigger(["recurrenceEndDate"]);
                         }}
                         placeholder="No end date (forever)"
                         data-invalid={fieldState.invalid}

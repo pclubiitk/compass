@@ -87,6 +87,19 @@ export default function NoticeboardForm() {
     }));
   };
 
+  function validateEventTimes(eventTime: string, eventEndTime: string): boolean {
+    if (!eventTime || !eventEndTime) return true;
+
+    const start = new Date(eventTime);
+    const end = new Date(eventEndTime);
+    if (end < start) {
+      toast.error("Event end time cannot be before start time");
+      return false;
+    }
+
+    return true;
+  }
+
   // Specific handler for the MDEditor, as its onChange provides the value directly
   const handleEditorChange = (value?: string) => {
     setFormData((prevData) => ({
@@ -200,13 +213,8 @@ export default function NoticeboardForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (formData.eventTime && formData.eventEndTime) {
-      const start = new Date(formData.eventTime);
-      const end = new Date(formData.eventEndTime);
-      if (end < start) {
-        toast.error("Event end time cannot be before start time");
-        return;
-      }
+    if (!validateEventTimes(formData.eventTime, formData.eventEndTime)) {
+      return;
     }
 
     try {
@@ -310,13 +318,8 @@ export default function NoticeboardForm() {
     e.preventDefault();
     if (!noticeId) return;
 
-    if (formData.eventTime && formData.eventEndTime) {
-      const start = new Date(formData.eventTime);
-      const end = new Date(formData.eventEndTime);
-      if (end < start) {
-        toast.error("Event end time cannot be before start time");
-        return;
-      }
+    if (!validateEventTimes(formData.eventTime, formData.eventEndTime)) {
+      return;
     }
 
     try {
