@@ -26,6 +26,50 @@ func GenerateRefreshToken(userID uuid.UUID) (string, error) {
 	return token.SignedString([]byte(authConfig.JWTSecretKey))
 }
 
+func SaveRefreshToken(userID uuid.UUID, token string) error {
+	return connections.DB.Create(&model.UserRefreshToken{
+		UserID:    userID,
+		Token:     token,
+		ExpiresAt: time.Now().Add(authConfig.RefreshTokenExpiry),
+	}).Error
+}
+
+func RevokeRefreshToken(token string) error {
+	if token == "" {
+		return nil
+	}
+	return connections.DB.Where("token = ?", token).Delete(&model.UserRefreshToken{}).Error
+}
+
+func IsRefreshTokenActive(token string) (uuid.UUID, error) {
+	var session model.UserRefreshToken
+	err := connections.DB.
+		Where("token = ? AND expires_at > ?", token, time.Now()).
+		First(&session).Error
+	if err != nil {
+		return uuid.Nil, err
+	}
+	return session.UserID, nil
+}
+
+func IssueRefreshToken(userID uuid.UUID) (string, error) {
+	token, err := GenerateRefreshToken(userID)
+	if err != nil {
+		return "", err
+	}
+	if err := SaveRefreshToken(userID, token); err != nil {
+		return "", err
+	}
+	return token, nil
+}
+
+func RevokeSession(c *gin.Context) {
+	if refreshToken, err := c.Cookie("refresh_token"); err == nil {
+		_ = RevokeRefreshToken(refreshToken)
+	}
+	ClearAuthCookie(c)
+}
+
 func GenerateAccessToken(userID uuid.UUID) (string, error) {
 
 	var modelUser model.User

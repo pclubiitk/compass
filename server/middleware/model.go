@@ -10,27 +10,29 @@ import (
 
 // JWTClaims custom claims structure
 type JWTClaims struct {
-	UserID   uuid.UUID `json:"user_id"`
-	RollNo   string    `json:"roll_no"`
-	Role     int       `json:"role"`
-	Verified bool      `json:"verified"`
-	Visibility bool    `json:"visibility"`
+	UserID     uuid.UUID `json:"user_id"`
+	RollNo     string    `json:"roll_no"`
+	Role       int       `json:"role"`
+	Verified   bool      `json:"verified"`
+	Visibility bool      `json:"visibility"`
+	TokenType  string    `json:"token_type"`
 	jwt.RegisteredClaims
 }
 
 type JWTClaimsRefresh struct {
-	UserID string `json:"user_id"`
+	UserID    string `json:"user_id"`
+	TokenType string `json:"token_type"`
 	jwt.RegisteredClaims
 }
 
 
 // AuthConfig holds authentication configuration
 type AuthConfig struct {
-	JWTSecretKey    string
-	TokenExpiration time.Duration
+	JWTSecretKey       string
+	TokenExpiration    time.Duration
 	RefreshTokenExpiry time.Duration
-	CookieDomain    string
-	CookieSecure    bool
-	CookieHTTPOnly  bool
-	SameSiteMode    http.SameSite
+	CookieDomain       string
+	CookieSecure       bool
+	CookieHTTPOnly     bool
+	SameSiteMode       http.SameSite
 }

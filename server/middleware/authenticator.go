@@ -83,6 +83,10 @@ func UserAuthenticator(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token claims"})
 		return
 	}
+	if claims.TokenType != "access" {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token type"})
+		return
+	}
 	// Set the role here
 	// TODO: Find better way, here whenever i extract i need to do a check if that thing exist or not
 	c.Set("userID", claims.UserID)
@@ -122,10 +126,20 @@ func tryRefresh(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token claims"})
 		return
 	}
+	if claims.TokenType != "refresh" {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token type"})
+		return
+	}
 
 	userID, err := uuid.Parse(claims.UserID)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	storedUserID, err := IsRefreshTokenActive(refreshToken)
+	if err != nil || storedUserID != userID {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Session revoked"})
 		return
 	}
 

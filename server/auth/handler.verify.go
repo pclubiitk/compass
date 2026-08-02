@@ -118,7 +118,6 @@ func verificationHandler(c *gin.Context) {
 	}
 	refreshToken, err := middleware.GenerateRefreshToken(user.UserID)
 	if err != nil {
-		// TODO: Redirect to login page
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token, you will need to login!"})
 		return
 	}
