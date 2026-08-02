@@ -2,6 +2,7 @@ package search
 
 import (
 	"compass/connections"
+	"compass/directorycache"
 	"compass/model"
 	"net/http"
 	"time"
@@ -66,54 +67,33 @@ func getChangeLog(c *gin.Context) {
 	// 	return
 	// }
 	// Generate the json form the logs
-	var addUserId []uuid.UUID // Refers to update in the change log
-	var deleteUserId []uuid.UUID
+	var addUserIDs []uuid.UUID // Refers to update in the change log
+	var deleteUserIDs []uuid.UUID
 
 	// Retrieve only un expired changelogs after last update time for user
 	if err := connections.DB.Model(model.ChangeLog{}).
 		Where("created_at > ? AND action = ?", input.LastUpdateTime, model.Update).
-		Pluck("user_id", &addUserId).Error; err != nil {
+		Pluck("user_id", &addUserIDs).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch 'add' updates if any."})
 		return
 	}
 	if err := connections.DB.Model(model.ChangeLog{}).
 		Where("created_at > ? AND action = ?", input.LastUpdateTime, model.Delete).
-		Pluck("user_id", &deleteUserId).Error; err != nil {
+		Pluck("user_id", &deleteUserIDs).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch 'delete' updates if any."})
 		return
 	}
 	var newProfiles []model.Profile
-	if err := connections.DB.Where("user_id IN ?", addUserId).Find(&newProfiles).Error; err != nil {
+	if err := connections.DB.Where("user_id IN ?", addUserIDs).Find(&newProfiles).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve new profiles"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "Updates fetched successfully.", "addProfiles": publicProfiles(newProfiles), "deleteUserId": deleteUserId, "requestTime": requestTime})
-
-	// // Initialize to empty slices (not nil) so JSON marshals as [] instead of null
-	// newProfiles := []model.ProfileWithPic{}
-	// deleteUserIdStrings := []string{}
-
-	// // Only query if there are user IDs to fetch
-	// if len(addUserId) > 0 {
-	// 	if err := connections.DB.
-	// 		Table("profiles").
-	// 		Select("DISTINCT ON (profiles.user_id) profiles.*, users.profile_pic").
-	// 		Joins("LEFT JOIN users ON users.user_id = profiles.user_id").
-	// 		Where("profiles.user_id IN ? AND profiles.deleted_at IS NULL", addUserId).
-	// 		Order("profiles.user_id, profiles.updated_at DESC").
-	// 		Scan(&newProfiles).Error; err != nil {
-	// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve new profiles"})
-	// 		return
-	// 	}
-	// }
-
-	// // Convert UUIDs to strings for frontend
-	// for _, id := range deleteUserId {
-	// 	deleteUserIdStrings = append(deleteUserIdStrings, id.String())
-	// }
-
-	// c.JSON(http.StatusOK, gin.H{"message": "Updates fetched successfully.", "addProfiles": newProfiles, "deleteUserId": deleteUserIdStrings, "requestTime": requestTime})
-
+	c.JSON(http.StatusOK, gin.H{
+		"message":        "Updates fetched successfully.",
+		"addProfiles":    publicProfiles(newProfiles),
+		"deleteCacheIds": directorycache.IDs(deleteUserIDs),
+		"requestTime":    requestTime,
+	})
 }
 
 // publicProfile is the directory response contract. Keeping it separate from
@@ -121,6 +101,7 @@ func getChangeLog(c *gin.Context) {
 // exposed by the directory sync endpoints.
 type publicProfile struct {
 	UserID     uuid.UUID `json:"userId"`
+	CacheID    string    `json:"cacheId"`
 	Name       string    `json:"name"`
 	Email      string    `json:"email"`
 	RollNo     string    `json:"rollNo"`
@@ -139,6 +120,7 @@ func publicProfiles(profiles []model.Profile) []publicProfile {
 	for i, profile := range profiles {
 		response[i] = publicProfile{
 			UserID:     profile.UserID,
+			CacheID:    directorycache.ID(profile.UserID),
 			Name:       profile.Name,
 			Email:      profile.Email,
 			RollNo:     profile.RollNo,

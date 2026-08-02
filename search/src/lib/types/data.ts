@@ -2,6 +2,7 @@
 
 export interface Student {
   userId: string; // uuid.UUID
+  cacheId: string; // opaque key used only for incremental cache eviction
   homeTown: string; //address
   dept: string; //department
   gender: string; //gender

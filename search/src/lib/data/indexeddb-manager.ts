@@ -1,5 +1,6 @@
 // TODO: Update these functions along with more simplified implementation
 import { Student } from "@/lib/types/data";
+import { mergeStudentChangelog } from "@/lib/data/changelog";
 import { Timestamp } from "next/dist/server/lib/cache-handlers/types";
 
 // Holds the reference to the IndexedDB storing student data locally
@@ -12,7 +13,8 @@ async function start_IDB(): Promise<void> {
   return new Promise((resolve, reject) => {
     db = undefined;
     try {
-      const openRequest = indexedDB.open("students", 3);
+      // Version 4 drops cached v3 profiles, which do not have opaque cache IDs.
+      const openRequest = indexedDB.open("students", 4);
       openRequest.addEventListener(
         "error",
         () => {
@@ -173,7 +175,7 @@ async function check_IDB(): Promise<Student[]> {
 
 async function apply_Changelog(resp: {
   addProfiles: Student[];
-  deleteUserId: string[];
+  deleteCacheIds: string[];
   requestTime: Timestamp;
 }): Promise<Student[]> {
   return new Promise(async (resolve, reject) => {
@@ -198,7 +200,7 @@ async function apply_Changelog(resp: {
 
       // Ensure arrays are not null (defensive handling for backend nil slices)
       const addProfiles = resp.addProfiles || [];
-      const deleteUserIds = resp.deleteUserId || [];
+      const deleteCacheIds = resp.deleteCacheIds || [];
 
       // Get existing student data object
       const getRequest = store.get(1);
@@ -207,20 +209,11 @@ async function apply_Changelog(resp: {
         // Initialize with existing students, or an empty array if none exist
         current = getRequest.result?.students || [];
 
-        // Modify the data in memory
-        // Add or update profiles
-        for (const st of addProfiles) {
-          const idx = current.findIndex((s: Student) => s.userId === st.userId);
-          if (idx >= 0) {
-            current[idx] = st; // Update existing
-          } else {
-            current.push(st); // Add new
-          }
-        }
-
-        // Delete profiles
-        const deleteSet = new Set(deleteUserIds); // Use a Set for faster lookups
-        current = current.filter((s: Student) => !deleteSet.has(s.userId));
+        current = mergeStudentChangelog(
+          current,
+          addProfiles,
+          deleteCacheIds,
+        );
 
         // Write modified data back to the database
         // .put() to overwrite existing entry

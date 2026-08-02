@@ -130,7 +130,7 @@ export default function Home(props: Object) {
       // Use Next's resolved base path instead of referencing Node's `process`
       // global in browser code.
       const worker = new Worker(
-        `${router.basePath}/workers/data_worker.js`,
+        `${router.basePath}/workers/data_worker.js?v=4`,
         {
           type: "module",
         },
