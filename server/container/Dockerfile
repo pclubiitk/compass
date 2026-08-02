@@ -33,7 +33,7 @@ COPY . .
 
 # Ensure CGO is enabled and build
 ENV CGO_ENABLED=1
-RUN GOOS=linux go build -a -o server ./cmd
+RUN GOOS=linux go build -ldflags="-s -w" -o server ./cmd
 # Stage 2: Runtime
 FROM debian:bookworm-slim
 
@@ -42,7 +42,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   libvips42 \
   libde265-0 \
   libx265-199 \
-  libheif1 \
   ca-certificates \
   && rm -rf /var/lib/apt/lists/*
 
@@ -54,7 +53,6 @@ RUN ldconfig
 # Copy server binary + configs
 COPY --from=builder /app/server /server
 COPY ./config.yaml /config.yaml
-COPY ./secret.yml /secret.yml
 COPY ./assets/pfp /assets/pfp
 COPY ./assets/public /assets/public
 COPY ./assets/tmp /assets/tmp

@@ -1,52 +1,44 @@
-# For running app + dependencies like Postgres, Rabbitmq ,Redis
-# Define services for app, db,
 
-# TODO: Race condition resolution the rabbitmq server starts on port don't accept the conections for some time,
-# But server tries for the connection hence causing it to crash
-# So later add a retry logic for few attempts with 5 sec delay assuming it will eventually connect
-# For now i wil add the restart condition in the docker compose file itself, the restart condition
-
-# TODO: Find the time zone issues if any, can cause issues in the changelog logic
 
 services:
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rabbitmq-1
+    restart: always
+    env_file:
+      - secret.yml
     ports:
       - "5672:5672"
-      - "15672:15672" # for the ui
-    restart: always
+      - "15672:15672" # Management UI
     environment:
-      # FIXME(prod): Update the user id and password
-      RABBITMQ_DEFAULT_USER: this_is_mjk
-      RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-compass}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS}
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
+
   postgres:
-    container_name: db_postgres # Making specific container name to use it while connecting it via the pg_backup.sh
+    container_name: db_postgres
     image: postgres:15
     restart: always
+    env_file:
+      - secret.yml
     environment:
-      # FIXME(prod): Update the user id and password
-      POSTGRES_USER: this_is_mjk
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: compass
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-compass}
     ports:
       - "5432:5432"
-    # in health check change the user (i have set it to the value above)
     healthcheck:
-      # FIXME(prod): Update
-      test: ["CMD-SHELL", "pg_isready -U this_is_mjk -d compass"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
     volumes:
-      # NOTE: ./db_data_on_host is the directory on my host (relative to the docker-compose.yml file),
-      # and /var/lib/postgresql/data is the default PostgreSQL data directory within the container.
-      - ./db_data:/var/lib/postgresql/data
+      - ./db_data_resource:/var/lib/postgresql/data
+
   redis:
     image: redis:7-alpine
     restart: always
@@ -57,14 +49,14 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
   server:
     build:
       context: .
       dockerfile: container/Dockerfile
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    # it will restart the container if it crashers (due to rabbit mq or any other issue)
-    restart: on-failure
+    restart: always
     ports:
       - "8080:8080"
       - "8081:8081"
@@ -78,17 +70,15 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    # No use, as we just run the binary
+    env_file:
+      - secret.yml
     environment:
       POSTGRES_HOST: postgres
       RABBITMQ_HOST: rabbitmq
       REDIS_HOST: redis
       REDIS_PORT: "6379"
-      # force Go to use go.mod/go.sum for dependency management
-      GO111MODULE: on
+      GO111MODULE: "on"
     volumes:
-      - ./assets/pfp:/assets/pfp
-      - ./assets/public:/assets/public
-      - ./assets/tmp:/assets/tmp
-      - ./config.yml:/config.yml
-      - ./secret.yml:/secret.yml
+      - ./assets:/assets
+      - ./config.yml:/config.yml:ro
+      - ./secret.yml:/secret.yml:ro
