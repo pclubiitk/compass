@@ -200,6 +200,11 @@ func addNotice(c *gin.Context) {
 		return
 	}
 
+	if !EventTimesValid(input.EventTime, input.EventEndTime) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Event end time cannot be before start time"})
+		return
+	}
+
 	userID, exist := c.Get("userID") // means api requests must be authenticated
 	if !exist {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
@@ -473,6 +478,11 @@ func editNotice(c *gin.Context) {
 	if err := c.ShouldBindJSON(&input); err != nil {
 		logrus.WithError(err).Warn("JSON binding failed")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format"})
+		return
+	}
+
+	if !EventTimesValid(input.EventTime, input.EventEndTime) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Event end time cannot be before start time"})
 		return
 	}
 

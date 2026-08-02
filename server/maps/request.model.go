@@ -33,7 +33,7 @@ func (r AddLocationRequest) ToLocation(userID uuid.UUID) model.Location {
 }
 
 type AddNoticeRequest struct {
-	Title        string       `json:"title" binding:"required"`
+	Title        string       `json:"title" binding:"required,max=50"`
 	Description  string       `json:"description" binding:"required"`
 	Body         string       `json:"body"`
 	CoverPic     *uuid.UUID   `json:"coverPic"`
@@ -67,8 +67,14 @@ type FlagActionRequest struct {
 	Message string `json:"message"`
 }
 
+// EventTimesValid reports whether an event's end time is not before its start time.
+// A zero end time is treated as "not set" and is considered valid.
+func EventTimesValid(eventTime, eventEndTime time.Time) bool {
+	return eventEndTime.IsZero() || !eventEndTime.Before(eventTime)
+}
+
 type AddUserEventRequest struct {
-	Title                string     `json:"title" binding:"required"`
+	Title                string     `json:"title" binding:"required,max=50"`
 	Description          string     `json:"description"`
 	EventTime            time.Time  `json:"eventTime" binding:"required"`
 	EventEndTime         time.Time  `json:"eventEndTime" binding:"required"`

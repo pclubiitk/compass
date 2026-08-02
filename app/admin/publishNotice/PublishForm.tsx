@@ -87,6 +87,19 @@ export default function NoticeboardForm() {
     }));
   };
 
+  function validateEventTimes(eventTime: string, eventEndTime: string): boolean {
+    if (!eventTime || !eventEndTime) return true;
+
+    const start = new Date(eventTime);
+    const end = new Date(eventEndTime);
+    if (end < start) {
+      toast.error("Event end time cannot be before start time");
+      return false;
+    }
+
+    return true;
+  }
+
   // Specific handler for the MDEditor, as its onChange provides the value directly
   const handleEditorChange = (value?: string) => {
     setFormData((prevData) => ({
@@ -202,9 +215,7 @@ export default function NoticeboardForm() {
 
     const uploadedImageIds = images.map((img) => img.id).filter(Boolean) as string[];
 
-    if (formData.eventTime && formData.eventEndTime &&
-        new Date(formData.eventTime) > new Date(formData.eventEndTime)) {
-      toast.error("Start time cannot be after end time");
+    if (!validateEventTimes(formData.eventTime, formData.eventEndTime)) {
       return;
     }
 
@@ -249,7 +260,6 @@ export default function NoticeboardForm() {
 
   function isoToDatetimeLocal(iso: string) {
   const date = new Date(iso);
-
   if (isNaN(date.getTime()) || date.getFullYear() <= 1) return "";
 
   const pad = (n: number) => String(n).padStart(2, "0");
@@ -310,9 +320,7 @@ export default function NoticeboardForm() {
 
     const uploadedImageIds = images.map((img) => img.id).filter(Boolean) as string[];
 
-    if (formData.eventTime && formData.eventEndTime &&
-        new Date(formData.eventTime) > new Date(formData.eventEndTime)) {
-      toast.error("Start time cannot be after end time");
+    if (!validateEventTimes(formData.eventTime, formData.eventEndTime)) {
       return;
     }
 
@@ -364,13 +372,13 @@ export default function NoticeboardForm() {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
-          {["title", "description"].map((field) => (
+          {[{ name: "title", maxLength: 50 }, { name: "description", maxLength: undefined }].map(({ name: field, maxLength }) => (
             <div key={field}>
               <Label
                 htmlFor={field}
                 className="block text-sm font-medium capitalize"
               >
-                {field}
+                {field}{field === "title" && <span className="ml-2 text-xs text-muted-foreground font-normal">{formData.title.length}/50</span>}
               </Label>
               <Input
                 id={field}
@@ -380,6 +388,7 @@ export default function NoticeboardForm() {
                 // TODO: add correct interface NoticeFormData
                 value={(formData as any)[field]}
                 onChange={handleChange}
+                maxLength={maxLength}
                 className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder:text-gray-400 dark:bg-gray-800 dark:border-gray-600 dark:placeholder-gray-500 dark:text-white"
                 required
               />

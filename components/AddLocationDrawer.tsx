@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useHistoryBack } from "@/app/hooks/use-history-back";
+
 import {
   Drawer,
   DrawerContent,
@@ -60,6 +62,9 @@ export default function AddLocationDrawer({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isDesktop = useMediaQuery("(min-width: 768px)");
+
+  // Close drawer on phone back button instead of navigating away
+  useHistoryBack(open, () => onOpenChange(false));
 
   // Auto-fill lat/lon + trigger open
   useEffect(() => {
