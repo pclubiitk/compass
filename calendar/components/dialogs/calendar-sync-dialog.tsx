@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { CalendarDays, Copy, RefreshCw, ExternalLink, CheckCircle2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
-import { getCalendarToken, regenerateCalendarToken } from "@/calendar/requests";
+import { getCalendarToken, regenerateCalendarToken, toWebcalUrl } from "@/calendar/requests";
 import type { CalendarTokenResponse } from "@/calendar/requests";
 
 import { Button } from "@/components/ui/button";
@@ -118,13 +118,13 @@ export function CalendarSyncDialog({ children }: CalendarSyncDialogProps) {
                 </label>
                 <div className="flex items-center gap-2 min-w-0">
                   <code className="flex-1 min-w-0 truncate rounded-md border bg-muted px-3 py-2 text-xs font-mono">
-                    {tokenData.webcal_url}
+                    {toWebcalUrl(tokenData.https_url)}
                   </code>
                   <Button
                     size="icon"
                     variant="outline"
                     className="shrink-0"
-                    onClick={() => handleCopy(tokenData.webcal_url, "webcal")}
+                    onClick={() => handleCopy(toWebcalUrl(tokenData.https_url), "webcal")}
                     aria-label="Copy webcal URL"
                   >
                     {copied === "webcal" ? (

@@ -241,14 +241,14 @@ function delete_IDB() {
   DBDeleteRequest.onerror = () => {
     self.postMessage({
       status: "delete",
-      message: "Successfully deleted local data",
+      message: "unable to delete local data",
     });
   };
 
   DBDeleteRequest.onsuccess = () => {
     self.postMessage({
       status: "delete",
-      message: "unable to delete local data",
+      message: "Successfully deleted local data",
     });
   };
 }
