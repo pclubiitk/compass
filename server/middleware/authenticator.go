@@ -231,7 +231,7 @@ func CheckVisibility(c *gin.Context) {
 
 	if isVisible, ok := visibility.(bool); ok {
 		if !isVisible {
-			c.Redirect(http.StatusFound, "/profile")
+			c.Redirect(http.StatusFound, "/")
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized, Please make your profile visible/public to view others"})
 			return
 		}

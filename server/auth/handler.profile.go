@@ -177,20 +177,16 @@ func updateProfile(c *gin.Context) {
 	}
 
 	// Check if verification request is needed, email should be same, it can't be changed
-	// if user.Profile.Name != profileData.Name ||
-	// 	user.Profile.RollNo != profileData.RollNo ||
-	// 	user.Profile.Dept != profileData.Dept ||
-	// 	user.Profile.Course != profileData.Course {
-	// 	Verify from oa
-	// 	if !verifyProfile(c, profileData) {
-	// 		return
-	// 	}
-	// 	if viper.GetString("env") != "dev" {
-	// 		if !verifyProfile(c, profileData) {
-	// 			return
-	// 		}
-	// 	}
-	// }
+	if user.Profile.Name != profileData.Name ||
+		user.Profile.RollNo != profileData.RollNo ||
+		user.Profile.Dept != profileData.Dept ||
+		user.Profile.Course != profileData.Course {
+		if viper.GetString("env") != "dev" {
+			if !verifyProfile(c, profileData) {
+				return
+			}
+		}
+	}
 	var newPfpPath string
 	if user.ProfilePic == false {
 		if path, err := FetchAndSaveProfileImage(input.RollNo, user.Email, userID.(uuid.UUID)); err == nil && path != "" {

@@ -35,7 +35,9 @@ func viperConfig() {
 	// Viper does not live-watch environment variables, so if you update the env then also it will be the same as run time
 	// hence add a route in the admin side to update it (specially for api keys)
 	if viper.BindEnv("database.host", "POSTGRES_HOST") != nil ||
-		viper.BindEnv("rabbitmq.host", "RABBITMQ_HOST") != nil {
-		logrus.Error(("Error connecting to env variables"))
-	}
+	viper.BindEnv("rabbitmq.host", "RABBITMQ_HOST") != nil ||
+	viper.BindEnv("redis.host", "REDIS_HOST") != nil ||
+	viper.BindEnv("redis.port", "REDIS_PORT") != nil {
+		logrus.Error("Error connecting to environment variables")
+  	}
 }

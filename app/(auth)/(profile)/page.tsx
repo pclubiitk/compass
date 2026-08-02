@@ -175,7 +175,7 @@ export default function ProfilePage() {
       } else {
         toast.error("Invalid Session. Redirecting to login.");
         // After login again direct to profile
-        router.push("/login?callbackUrl=/profile");
+        router.push("/login?callbackUrl=/");
       }
     } catch (err) {
       console.log(err);
