@@ -302,9 +302,10 @@ export default function AdminMap() {
 
   useEffect(() => {
     setMounted(true);
-    // Store mapRef in window for compatibility with existing marker code
+    // Store refs in window for compatibility with the bottom navigation.
     if (typeof window !== "undefined") {
       window.mapRef = mapRef;
+      window.userMarkerRef = userMarkerRef;
     }
     // Check for marker data in sessionStorage and auto-place it
     if (typeof window !== "undefined") {
@@ -327,7 +328,15 @@ export default function AdminMap() {
         setQuery(searchQ);
       }
     }
-  }, [mapRef]);
+    return () => {
+      if (window.mapRef === mapRef) {
+        delete (window as Partial<Window>).mapRef;
+      }
+      if (window.userMarkerRef === userMarkerRef) {
+        delete (window as Partial<Window>).userMarkerRef;
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!query.trim()) {
