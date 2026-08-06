@@ -1,9 +1,6 @@
 package middleware
 
 import (
-	"net/url"
-	"strings"
-
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
 )
@@ -19,26 +16,12 @@ func CORS() gin.HandlerFunc {
 			return
 		}
 
-		// We need to parse the origin to get just the hostname
-		parsedOrigin, err := url.Parse(origin)
-		if err != nil {
-			c.Next()
-			return
-		}
-		hostname := parsedOrigin.Hostname()
-
-		// 1. Allow localhost for development (you can be more specific with the port)
-		// 2. Allow the main domain (e.g., "pclub.in")
-		// 3. Allow any subdomain (e.g., "search.pclub.in", "bsearch.pclub.in", "auth.pclub.in")
-		if hostname == "localhost" || hostname == viper.GetString("domain") || strings.HasSuffix(hostname, "."+viper.GetString("domain")) {
-
-			// Other method:
-			// c.Writer.Header().Set("Access-Control-Allow-Origin", "*") // For Production: // all origin or our domain
-			// c.Writer.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000") // For development only, Read it from env
-
-			// If it's an allowed origin, set the header to that exact origin
+		// Trust only the configured frontend origin. In production this is
+		// https://search.pclub.in; development and staging must configure their
+		// own exact origin explicitly.
+		if origin == viper.GetString("frontend_url") {
 			c.Writer.Header().Set("Access-Control-Allow-Origin", origin)
-			c.Writer.Header().Set("Access-Control-Allow-Credentials", "true") // To all credentials
+			c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 			c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
 			c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE, PATCH") // allowed methods
 		}
