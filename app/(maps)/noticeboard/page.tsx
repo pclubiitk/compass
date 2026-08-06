@@ -41,19 +41,35 @@ export default function NoticeBoardPage() {
   const fetchingRef = useRef(false);
   const hasMoreRef = useRef(true);
   const isSearchingRef = useRef(false);
+  const listGenerationRef = useRef(0);
+  const paginationControllerRef = useRef<AbortController | null>(null);
 
   const fetchNotices = useCallback(async () => {
-    if (!hasMoreRef.current || fetchingRef.current) return;
+    if (
+      !hasMoreRef.current ||
+      fetchingRef.current ||
+      isSearchingRef.current
+    )
+      return;
+    const generation = listGenerationRef.current;
+    const controller = new AbortController();
+    paginationControllerRef.current = controller;
     fetchingRef.current = true;
     setLoading(true);
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_MAPS_URL}/api/maps/notice?page=${page}`,
+        { signal: controller.signal },
       );
       if (!res.ok) throw new Error(`Failed (status: ${res.status})`);
       const json = await res.json();
 
-      if (isSearchingRef.current) return;
+      if (
+        controller.signal.aborted ||
+        generation !== listGenerationRef.current ||
+        isSearchingRef.current
+      )
+        return;
 
       if (json?.noticeboard_list?.length > 0) {
         setNotices((prev) => {
@@ -79,11 +95,19 @@ export default function NoticeBoardPage() {
         setHasMore(false);
       }
     } catch (err) {
+      if (
+        controller.signal.aborted ||
+        generation !== listGenerationRef.current
+      )
+        return;
       console.error("Error fetching notices:", err);
       toast.error("Failed to load notices.");
     } finally {
-      fetchingRef.current = false;
-      setLoading(false);
+      if (paginationControllerRef.current === controller) {
+        paginationControllerRef.current = null;
+        fetchingRef.current = false;
+        setLoading(false);
+      }
     }
   }, [page]);
 
@@ -116,7 +140,8 @@ export default function NoticeBoardPage() {
 
       // If search is empty, reset to paginated view
       if (!query) {
-        if (isSearching) {
+        if (isSearchingRef.current) {
+          listGenerationRef.current += 1;
           isSearchingRef.current = false;
           setIsSearching(false);
           setNotices([]);
@@ -128,6 +153,10 @@ export default function NoticeBoardPage() {
         return;
       }
 
+      listGenerationRef.current += 1;
+      paginationControllerRef.current?.abort();
+      paginationControllerRef.current = null;
+      fetchingRef.current = false;
       isSearchingRef.current = true;
       setIsSearching(true);
       setLoading(true);
@@ -212,7 +241,7 @@ export default function NoticeBoardPage() {
       clearTimeout(timeout);
       controller.abort();
     };
-  }, [isSearching, searchTerm]);
+  }, [searchTerm]);
 
   const handleShare = (notice: Notice) => {
     setShareNotice(notice);

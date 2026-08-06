@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 type AdminAuthorization = "admin" | "unauthorized" | "forbidden" | "unavailable";
+const AUTHORIZATION_TIMEOUT_MS = 3_000;
 
 async function authorizeAdmin(request: NextRequest): Promise<AdminAuthorization> {
   const authBaseUrl = (
@@ -12,6 +13,9 @@ async function authorizeAdmin(request: NextRequest): Promise<AdminAuthorization>
 
   if (!authBaseUrl) return "unavailable";
 
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), AUTHORIZATION_TIMEOUT_MS);
+
   try {
     const response = await fetch(`${authBaseUrl}/api/auth/me`, {
       headers: {
@@ -20,6 +24,7 @@ async function authorizeAdmin(request: NextRequest): Promise<AdminAuthorization>
       },
       cache: "no-store",
       redirect: "manual",
+      signal: controller.signal,
     });
 
     if (response.status === 401) return "unauthorized";
@@ -32,6 +37,8 @@ async function authorizeAdmin(request: NextRequest): Promise<AdminAuthorization>
     return typeof role === "number" && role >= 100 ? "admin" : "forbidden";
   } catch {
     return "unavailable";
+  } finally {
+    clearTimeout(timeout);
   }
 }
 
@@ -44,8 +51,6 @@ function forbiddenResponse() {
 
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
-  const host = request.headers.get("host") || "";
-
   const PUBLIC_PATHS = [
     "/login",
     "/signup",

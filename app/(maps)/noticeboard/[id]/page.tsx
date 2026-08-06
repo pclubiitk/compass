@@ -44,6 +44,7 @@ export default function UserNoticeDetailPage() {
 
   useEffect(() => {
     if (!id) return;
+    setImgIndex(0);
 
     const fetchNotice = async () => {
       setLoading(true);
@@ -103,6 +104,8 @@ export default function UserNoticeDetailPage() {
     setImgIndex((i) => (i < biopicItems.length - 1 ? i + 1 : 0));
   }, [biopicItems.length]);
 
+  const activeImgIndex = Math.min(imgIndex, Math.max(0, biopicItems.length - 1));
+
   if (loading) return <div className="p-10 text-center">Loading notice...</div>;
   if (!notice) return <div className="p-10 text-center">Sorry, we couldn&apos;t find that notice.</div>;
 
@@ -134,10 +137,10 @@ export default function UserNoticeDetailPage() {
         {biopicItems.length > 0 ? (
           <div className="relative w-full h-64 mb-6 rounded-lg overflow-hidden bg-muted">
             <AuthenticatedImage
-              src={buildReviewImageUrl(biopicItems[imgIndex].id, biopicItems[imgIndex].status).url}
+              src={buildReviewImageUrl(biopicItems[activeImgIndex].id, biopicItems[activeImgIndex].status).url}
               alt={notice.title}
               className="w-full h-full object-cover"
-              requiresAuth={buildReviewImageUrl(biopicItems[imgIndex].id, biopicItems[imgIndex].status).requiresAuth}
+              requiresAuth={buildReviewImageUrl(biopicItems[activeImgIndex].id, biopicItems[activeImgIndex].status).requiresAuth}
             />
             {biopicItems.length > 1 && (
               <>
@@ -158,7 +161,7 @@ export default function UserNoticeDetailPage() {
                     <button
                       key={i}
                       onClick={() => setImgIndex(i)}
-                      className={`w-2 h-2 rounded-full transition ${i === imgIndex ? "bg-white" : "bg-white/40"}`}
+                      className={`w-2 h-2 rounded-full transition ${i === activeImgIndex ? "bg-white" : "bg-white/40"}`}
                     />
                   ))}
                 </div>

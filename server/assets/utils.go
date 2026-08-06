@@ -131,16 +131,3 @@ func SaveImage(image []byte, path string, id uuid.UUID) (string, error) {
 	writeError := bimg.Write(savePath, image)
 	return savePath, writeError
 }
-
-// Delete image
-func deleteImage(path string) error {
-	// File exists ?
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return fmt.Errorf("file does not exist: %s", path)
-	}
-	// Delete the file
-	if err := os.Remove(path); err != nil {
-		return fmt.Errorf("failed to delete file: %w", err)
-	}
-	return nil
-}

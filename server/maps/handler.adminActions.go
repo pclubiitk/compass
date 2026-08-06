@@ -15,52 +15,27 @@ import (
 	"gorm.io/gorm"
 )
 
-func requestedNoticeImageIDs(input AddNoticeRequest) []uuid.UUID {
-	seen := make(map[uuid.UUID]struct{})
-	ids := make([]uuid.UUID, 0)
-	appendID := func(id uuid.UUID) {
-		if id == uuid.Nil {
-			return
-		}
-		if _, exists := seen[id]; exists {
-			return
-		}
-		seen[id] = struct{}{}
-		ids = append(ids, id)
-	}
-
-	if input.CoverPic != nil {
-		appendID(*input.CoverPic)
-	}
-	if input.BioPics != nil {
-		for _, id := range *input.BioPics {
-			appendID(id)
-		}
-	}
-
-	return ids
-}
-
 func attachNoticeImages(
 	tx *gorm.DB,
 	noticeID uuid.UUID,
 	ownerID uuid.UUID,
 	imageIDs []uuid.UUID,
-) error {
+) ([]uuid.UUID, error) {
+	imagesToMove := make([]uuid.UUID, 0, len(imageIDs))
 	for _, imageID := range imageIDs {
 		var image model.Image
 		if err := tx.Where("image_id = ?", imageID).First(&image).Error; err != nil {
-			return fmt.Errorf("image %s was not found", imageID)
+			return nil, fmt.Errorf("image %s was not found", imageID)
 		}
 
 		if image.ParentAssetID == noticeID && image.ParentAssetType == "notices" {
 			continue
 		}
 		if image.OwnerID != ownerID {
-			return fmt.Errorf("image %s is not owned by the current user", imageID)
+			return nil, fmt.Errorf("image %s is not owned by the current user", imageID)
 		}
 		if image.ParentAssetID != uuid.Nil || image.ParentAssetType != "" {
-			return fmt.Errorf("image %s is already attached", imageID)
+			return nil, fmt.Errorf("image %s is already attached", imageID)
 		}
 
 		if err := tx.Model(&model.Image{}).
@@ -71,13 +46,20 @@ func attachNoticeImages(
 				"submitted":         true,
 				"status":            model.Approved,
 			}).Error; err != nil {
-			return err
+			return nil, err
 		}
-		if err := workers.MoveImageFromTmpToPublic(imageID); err != nil {
-			return err
-		}
+		imagesToMove = append(imagesToMove, imageID)
 	}
 
+	return imagesToMove, nil
+}
+
+func moveNoticeImages(imageIDs []uuid.UUID) error {
+	for _, imageID := range imageIDs {
+		if err := workers.MoveImageFromTmpToPublic(imageID); err != nil {
+			return fmt.Errorf("failed to publish image %s: %w", imageID, err)
+		}
+	}
 	return nil
 }
 
@@ -278,6 +260,7 @@ func addNotice(c *gin.Context) {
 		return
 	}
 
+	var imagesToMove []uuid.UUID
 	if err := connections.DB.Transaction(func(tx *gorm.DB) error {
 		// Create notice
 		notice := model.Notice{
@@ -303,15 +286,22 @@ func addNotice(c *gin.Context) {
 		// for i := range notices {
 		// 	notices[i].Description = p.Sanitize(notices[i].Description)
 		// }
-		return attachNoticeImages(
+		var err error
+		imagesToMove, err = attachNoticeImages(
 			tx,
 			notice.NoticeId,
 			userID.(uuid.UUID),
 			requestedNoticeImageIDs(input),
 		)
+		return err
 	}); err != nil {
 		logrus.Error("Failed to create notice:", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create notice"})
+		return
+	}
+	if err := moveNoticeImages(imagesToMove); err != nil {
+		logrus.WithError(err).Error("Failed to publish notice images")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to publish notice images"})
 		return
 	}
 	// TODO: publish a mail confirming notice published
@@ -540,7 +530,11 @@ func editNotice(c *gin.Context) {
 	}
 
 	var notice model.Notice
-	if err := connections.DB.Where("notice_id = ?", noticeID).First(&notice).Error; err != nil {
+	if err := connections.DB.
+		Preload("CoverPic").
+		Preload("BioPics").
+		Where("notice_id = ?", noticeID).
+		First(&notice).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Notice not found"})
 			return
@@ -556,9 +550,9 @@ func editNotice(c *gin.Context) {
 		return
 	}
 	userID := userIDValue.(uuid.UUID)
-	requestedIDs := requestedNoticeImageIDs(input)
-	syncImages := input.CoverPic != nil || input.BioPics != nil
+	syncImages := input.coverPicSupplied() || input.bioPicsSupplied()
 	removedImages := make([]model.Image, 0)
+	imagesToMove := make([]uuid.UUID, 0)
 
 	if err := connections.DB.Transaction(func(tx *gorm.DB) error {
 		notice.Title = input.Title
@@ -582,6 +576,11 @@ func editNotice(c *gin.Context) {
 			Find(&existing).Error; err != nil {
 			return err
 		}
+		existingCoverID := uuid.Nil
+		if notice.CoverPic != nil {
+			existingCoverID = notice.CoverPic.ImageID
+		}
+		requestedIDs := desiredNoticeImageIDs(input, existing, existingCoverID)
 
 		requested := make(map[uuid.UUID]struct{}, len(requestedIDs))
 		for _, id := range requestedIDs {
@@ -598,17 +597,25 @@ func editNotice(c *gin.Context) {
 			}
 		}
 
-		return attachNoticeImages(tx, noticeID, userID, requestedIDs)
+		var err error
+		imagesToMove, err = attachNoticeImages(tx, noticeID, userID, requestedIDs)
+		return err
 	}); err != nil {
 		logrus.WithError(err).Error("Failed to update notice")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update notice"})
 		return
 	}
 
+	moveErr := moveNoticeImages(imagesToMove)
 	for _, image := range removedImages {
 		if err := workers.DeleteImageFiles(image.ImageID); err != nil {
 			logrus.WithError(err).Warn("Failed to delete removed notice image file")
 		}
+	}
+	if moveErr != nil {
+		logrus.WithError(moveErr).Error("Failed to publish updated notice images")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to publish notice images"})
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{

@@ -2,6 +2,7 @@ package maps
 
 import (
 	"compass/model"
+	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
@@ -42,6 +43,34 @@ type AddNoticeRequest struct {
 	EventTime    time.Time    `json:"eventTime"`
 	EventEndTime time.Time    `json:"eventEndTime"`
 	Location     string       `json:"location"`
+	coverPicSet  bool
+	bioPicsSet   bool
+}
+
+func (r *AddNoticeRequest) UnmarshalJSON(data []byte) error {
+	type requestAlias AddNoticeRequest
+	var decoded requestAlias
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		return err
+	}
+
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(data, &fields); err != nil {
+		return err
+	}
+
+	*r = AddNoticeRequest(decoded)
+	_, r.coverPicSet = fields["coverPic"]
+	_, r.bioPicsSet = fields["biopics"]
+	return nil
+}
+
+func (r AddNoticeRequest) coverPicSupplied() bool {
+	return r.coverPicSet || r.CoverPic != nil
+}
+
+func (r AddNoticeRequest) bioPicsSupplied() bool {
+	return r.bioPicsSet || r.BioPics != nil
 }
 
 type AddReviewRequest struct {

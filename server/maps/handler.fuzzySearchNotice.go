@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 )
 
 func FuzzySearchNoticesHandler(c *gin.Context) {
@@ -66,7 +67,8 @@ func FuzzySearchNoticesHandler(c *gin.Context) {
 		`, query, query, query, query, query, query, query, query, query, query, limit).Scan(&ranked).Error
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch notices", "details": err.Error()})
+		logrus.WithError(err).Error("Fuzzy notice search failed")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch notices"})
 		return
 	}
 

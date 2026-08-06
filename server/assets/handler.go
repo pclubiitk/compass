@@ -66,8 +66,15 @@ func uploadAsset(c *gin.Context) {
 
 			payload, _ := json.Marshal(moderationJob)
 			if err := workers.PublishJob(payload, "moderation"); err != nil {
+				if deleteErr := connections.DB.Delete(&image).Error; deleteErr != nil {
+					logrus.WithError(deleteErr).Error("Failed to remove image record after moderation queue failure")
+					c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to clean up image after queue failure"})
+					return
+				}
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to queue moderation job"})
-				deleteImage(path)
+				if deleteErr := deleteImage(path); deleteErr != nil && !errors.Is(deleteErr, os.ErrNotExist) {
+					logrus.WithError(deleteErr).Warn("Failed to remove image file after moderation queue failure")
+				}
 				return
 			}
 		}
@@ -198,9 +205,10 @@ func removeImage(c *gin.Context) {
 		path = filepath.Join(cwd, "assets", "tmp", imageID.String()+".webp")
 	}
 
-	util_error := deleteImage(path)
-	if util_error != nil {
-		logrus.Warnf("Could not delete physical file for image %s: %v", imageID, util_error)
+	if err := deleteImage(path); err != nil && !errors.Is(err, os.ErrNotExist) {
+		logrus.WithError(err).Errorf("Could not delete physical file for image %s", imageID)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete image file"})
+		return
 	}
 
 	deletedImage := connections.DB.Delete(&image)

@@ -1,5 +1,5 @@
 import { useRouter } from "next/navigation";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 
 import { Share2, Copy, Edit, Trash, ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -58,6 +58,12 @@ const NoticeCard = ({
     });
   const [imgIndex, setImgIndex] = useState(0);
 
+  useEffect(() => {
+    setImgIndex(0);
+  }, [notice.id, biopicItems.length]);
+
+  const activeImgIndex = Math.min(imgIndex, Math.max(0, biopicItems.length - 1));
+
   const prevImg = useCallback(() => {
     setImgIndex((i) => (i > 0 ? i - 1 : biopicItems.length - 1));
   }, [biopicItems.length]);
@@ -111,10 +117,10 @@ const NoticeCard = ({
       {biopicItems.length > 0 ? (
         <div className="relative w-full h-48 mb-4 rounded-lg overflow-hidden bg-muted">
           <AuthenticatedImage
-            src={buildReviewImageUrl(biopicItems[imgIndex].id, biopicItems[imgIndex].status).url}
+            src={buildReviewImageUrl(biopicItems[activeImgIndex].id, biopicItems[activeImgIndex].status).url}
             alt={notice.title}
             className="w-full h-full object-cover"
-            requiresAuth={buildReviewImageUrl(biopicItems[imgIndex].id, biopicItems[imgIndex].status).requiresAuth}
+            requiresAuth={buildReviewImageUrl(biopicItems[activeImgIndex].id, biopicItems[activeImgIndex].status).requiresAuth}
           />
           {biopicItems.length > 1 && (
             <>
@@ -135,7 +141,7 @@ const NoticeCard = ({
                   <button
                     key={i}
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); setImgIndex(i); }}
-                    className={`w-2 h-2 rounded-full transition ${i === imgIndex ? "bg-white" : "bg-white/40"}`}
+                    className={`w-2 h-2 rounded-full transition ${i === activeImgIndex ? "bg-white" : "bg-white/40"}`}
                   />
                 ))}
               </div>

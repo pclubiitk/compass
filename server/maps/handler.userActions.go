@@ -41,10 +41,15 @@ func addReview(c *gin.Context) {
 		// Resolve every requested image through the ownership boundary before the
 		// review is created. Missing and other users' IDs are both rejected.
 		if req.Images != nil && len(*req.Images) > 0 {
-			if err := tx.Where("image_id IN ? AND owner_id = ?", *req.Images, userUUID).Find(&images).Error; err != nil {
+			if err := tx.Where(
+				"image_id IN ? AND owner_id = ? AND (parent_asset_id IS NULL OR parent_asset_id = ?) AND (parent_asset_type IS NULL OR parent_asset_type = '')",
+				*req.Images,
+				userUUID,
+				uuid.Nil,
+			).Find(&images).Error; err != nil {
 				return err
 			}
-			if !allRequestedImagesOwned(*req.Images, images) {
+			if !allRequestedImagesAvailable(*req.Images, images) {
 				return errReviewImageForbidden
 			}
 		}
@@ -54,13 +59,22 @@ func addReview(c *gin.Context) {
 		}
 
 		if len(images) > 0 {
-			if err := tx.Model(&model.Image{}).
-				Where("image_id IN ? AND owner_id = ?", *req.Images, userUUID).
+			result := tx.Model(&model.Image{}).
+				Where(
+					"image_id IN ? AND owner_id = ? AND (parent_asset_id IS NULL OR parent_asset_id = ?) AND (parent_asset_type IS NULL OR parent_asset_type = '')",
+					*req.Images,
+					userUUID,
+					uuid.Nil,
+				).
 				Updates(map[string]interface{}{
 					"parent_asset_id":   newReview.ReviewId,
 					"parent_asset_type": "Review",
-				}).Error; err != nil {
-				return err
+				})
+			if result.Error != nil {
+				return result.Error
+			}
+			if result.RowsAffected != int64(uniqueImageIDCount(*req.Images)) {
+				return errReviewImageForbidden
 			}
 		}
 		return nil
@@ -108,6 +122,14 @@ func addReview(c *gin.Context) {
 	} else {
 		c.JSON(http.StatusOK, gin.H{"message": "Your Review is under process, it will be public soon!"})
 	}
+}
+
+func uniqueImageIDCount(imageIDs []uuid.UUID) int {
+	unique := make(map[uuid.UUID]struct{}, len(imageIDs))
+	for _, imageID := range imageIDs {
+		unique[imageID] = struct{}{}
+	}
+	return len(unique)
 }
 
 func requestLocationAddition(c *gin.Context) {
