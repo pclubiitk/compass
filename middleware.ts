@@ -1,7 +1,48 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-export function middleware(request: NextRequest) {
+type AdminAuthorization = "admin" | "unauthorized" | "forbidden" | "unavailable";
+
+async function authorizeAdmin(request: NextRequest): Promise<AdminAuthorization> {
+  const authBaseUrl = (
+    process.env.AUTH_INTERNAL_URL || process.env.NEXT_PUBLIC_AUTH_URL
+  )
+    ?.trim()
+    .replace(/\/+$/, "");
+
+  if (!authBaseUrl) return "unavailable";
+
+  try {
+    const response = await fetch(`${authBaseUrl}/api/auth/me`, {
+      headers: {
+        accept: "application/json",
+        cookie: request.headers.get("cookie") || "",
+      },
+      cache: "no-store",
+      redirect: "manual",
+    });
+
+    if (response.status === 401) return "unauthorized";
+    if (!response.ok) return "unavailable";
+
+    const data: unknown = await response.json();
+    if (!data || typeof data !== "object") return "unavailable";
+
+    const role = (data as { role?: unknown }).role;
+    return typeof role === "number" && role >= 100 ? "admin" : "forbidden";
+  } catch {
+    return "unavailable";
+  }
+}
+
+function forbiddenResponse() {
+  return new NextResponse("Forbidden", {
+    status: 403,
+    headers: { "Cache-Control": "no-store" },
+  });
+}
+
+export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const host = request.headers.get("host") || "";
 
@@ -25,6 +66,8 @@ export function middleware(request: NextRequest) {
 
   const hasSession =
     request.cookies.has("auth_token") || request.cookies.has("refresh_token");
+  const isAdminPath =
+    pathname === "/admin" || pathname.startsWith("/admin/");
     
   // console.log("[middleware] request", {
   //   host,
@@ -40,7 +83,20 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  if (hasSession) {
+  if (isAdminPath && hasSession) {
+    const authorization = await authorizeAdmin(request);
+    if (authorization === "admin") return NextResponse.next();
+    if (authorization === "forbidden") return forbiddenResponse();
+    if (authorization === "unavailable") {
+      return new NextResponse("Authorization service unavailable", {
+        status: 503,
+        headers: { "Cache-Control": "no-store" },
+      });
+    }
+    // An expired or revoked session follows the normal unauthenticated path.
+  }
+
+  if (hasSession && !isAdminPath) {
     // console.log("[middleware] allow-with-session", { pathname });
     return NextResponse.next();
   }

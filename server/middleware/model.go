@@ -46,6 +46,7 @@ func NewRefreshTokenClaims(userID uuid.UUID, expiry time.Duration) JWTClaimsRefr
 		UserID:    userID.String(),
 		TokenType: "refresh",
 		RegisteredClaims: jwt.RegisteredClaims{
+			ID:        uuid.NewString(),
 			Subject:   userID.String(),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(expiry)),

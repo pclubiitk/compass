@@ -64,11 +64,15 @@ func IssueRefreshToken(userID uuid.UUID) (string, error) {
 	return token, nil
 }
 
-func RevokeSession(c *gin.Context) {
+func RevokeSession(c *gin.Context) error {
 	if refreshToken, err := c.Cookie("refresh_token"); err == nil {
-		_ = RevokeRefreshToken(refreshToken)
+		if err := RevokeRefreshToken(refreshToken); err != nil {
+			ClearAuthCookie(c)
+			return err
+		}
 	}
 	ClearAuthCookie(c)
+	return nil
 }
 
 func GenerateAccessToken(userID uuid.UUID) (string, error) {

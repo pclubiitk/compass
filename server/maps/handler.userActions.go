@@ -5,6 +5,7 @@ import (
 	"compass/model"
 	"compass/workers"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -13,6 +14,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
+
+var errReviewImageForbidden = errors.New("review contains an image not owned by the user")
 
 func addReview(c *gin.Context) {
 	var req AddReviewRequest
@@ -28,39 +31,44 @@ func addReview(c *gin.Context) {
 		return
 	}
 
-	newReview := req.ToReview(userID.(uuid.UUID))
-	var missingCount, unableToModerate = 0, 0
+	userUUID := userID.(uuid.UUID)
+	newReview := req.ToReview(userUUID)
+	var unableToModerate int
 	var images []model.Image
 
 	// Transaction will combine all steps and will do nothing if any error occurs
 	if err := connections.DB.Transaction(func(tx *gorm.DB) error {
-		// Create review
+		// Resolve every requested image through the ownership boundary before the
+		// review is created. Missing and other users' IDs are both rejected.
+		if req.Images != nil && len(*req.Images) > 0 {
+			if err := tx.Where("image_id IN ? AND owner_id = ?", *req.Images, userUUID).Find(&images).Error; err != nil {
+				return err
+			}
+			if !allRequestedImagesOwned(*req.Images, images) {
+				return errReviewImageForbidden
+			}
+		}
+
 		if err := tx.Create(&newReview).Error; err != nil {
 			return err
 		}
 
-		// Associate images
-		if req.Images != nil && len(*req.Images) > 0 {
-			if err := tx.Where("image_id IN ? AND owner_id = ?", *req.Images, userID.(uuid.UUID)).Find(&images).Error; err != nil {
+		if len(images) > 0 {
+			if err := tx.Model(&model.Image{}).
+				Where("image_id IN ? AND owner_id = ?", *req.Images, userUUID).
+				Updates(map[string]interface{}{
+					"parent_asset_id":   newReview.ReviewId,
+					"parent_asset_type": "Review",
+				}).Error; err != nil {
 				return err
 			}
-
-			// Explicitly stamp the images with the Review ID
-			if len(images) > 0 {
-				if err := tx.Model(&model.Image{}).
-					Where("image_id IN ?", images).
-					Updates(map[string]interface{}{
-						"parent_asset_id":   newReview.ReviewId,
-						"parent_asset_type": "Review",
-					}).Error; err != nil {
-					return err
-				}
-			}
-
-			missingCount += len(*req.Images) - len(images)
 		}
 		return nil
 	}); err != nil {
+		if errors.Is(err, errReviewImageForbidden) {
+			c.JSON(http.StatusForbidden, gin.H{"error": "One or more images do not belong to the current user"})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to process review addition"})
 		fmt.Print(err)
 		return
@@ -90,11 +98,11 @@ func addReview(c *gin.Context) {
 	}
 
 	// Write response
-	if missingCount > 0 || unableToModerate > 0 {
+	if unableToModerate > 0 {
 		c.JSON(http.StatusOK, gin.H{
 			"message": fmt.Sprintf(
-				"Your review is under process.\nWhile processing:\n- %d items (text/images) dropped\n- %d items not processed by moderator.",
-				missingCount, unableToModerate,
+				"Your review is under process.\nWhile processing:\n- %d items not processed by moderator.",
+				unableToModerate,
 			),
 		})
 	} else {

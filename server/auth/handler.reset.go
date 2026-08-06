@@ -17,6 +17,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 func forgotPasswordHandler(c *gin.Context) {
@@ -151,7 +152,17 @@ func resetPasswordHandler(c *gin.Context) {
 	user.VerificationToken = "" // Clear token
 	// user.IsVerified = true      // Auto-verify user on password reset success -> REMOVED FOR SECURITY
 
-	if err := connections.DB.Save(&user).Error; err != nil {
+	// A password reset is also a session-reset boundary. Update the password and
+	// revoke every refresh token atomically so a stolen session cannot survive a
+	// successful credential reset.
+	if err := connections.DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Save(&user).Error; err != nil {
+			return err
+		}
+		return tx.Model(&model.UserRefreshToken{}).
+			Where("user_id = ? AND is_active = ?", user.UserID, true).
+			Update("is_active", false).Error
+	}); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update password"})
 		return
 	}

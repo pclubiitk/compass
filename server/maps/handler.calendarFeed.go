@@ -77,7 +77,7 @@ func calendarFeedHandler(c *gin.Context) {
 	fmt.Fprintf(w, "METHOD:PUBLISH\r\n")
 	// Hint to calendar clients: refresh every 1 minute (Apple Calendar honours this; Google batches to daily)
 	fmt.Fprintf(w, "X-PUBLISHED-TTL:PT1M\r\n")
-	fmt.Fprintf(w, "X-WR-CALNAME:Campus Compass – %s\r\n", escapeICSText(user.Email))
+	fmt.Fprintf(w, "X-WR-CALNAME:Campus Compass – My Calendar\r\n")
 	fmt.Fprintf(w, "X-WR-TIMEZONE:Asia/Kolkata\r\n")
 
 	dtstamp := time.Now().UTC().Format("20060102T150405Z")
