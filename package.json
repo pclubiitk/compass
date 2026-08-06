@@ -11,6 +11,7 @@
   "dependencies": {
     "@heroicons/react": "^2.2.0",
     "@hookform/resolvers": "^5.2.2",
+    "@internationalized/date": "^3.10.1",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-avatar": "^1.1.11",
@@ -87,6 +88,7 @@
     "@storybook/experimental-addon-test": "^8.6.14",
     "@storybook/react": "^8.6.14",
     "@storybook/test": "^8.6.14",
+    "@types/geojson": "^7946.0.16",
     "@types/node": "^20.19.27",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",

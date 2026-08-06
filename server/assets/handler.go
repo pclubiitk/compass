@@ -6,13 +6,13 @@ import (
 	"compass/workers"
 	"encoding/json"
 	"errors"
-	"net/http"
-	"os"
-	"path/filepath"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+	"net/http"
+	"os"
+	"path/filepath"
 )
 
 func uploadAsset(c *gin.Context) {
@@ -55,16 +55,21 @@ func uploadAsset(c *gin.Context) {
 		deleteImage(path)
 		return
 	} else {
-		moderationJob := workers.ModerationJob{
-			AssetID: image.ImageID,
-			Type:    model.ModerationTypeImage,
-		}
+		// Admin notice images are approved and moved by the notice publish
+		// transaction. Queueing them here as well makes two workers race to
+		// move the same tmp file.
+		if c.GetInt("userRole") < int(model.AdminRole) {
+			moderationJob := workers.ModerationJob{
+				AssetID: image.ImageID,
+				Type:    model.ModerationTypeImage,
+			}
 
-		payload, _ := json.Marshal(moderationJob)
-		if err := workers.PublishJob(payload, "moderation"); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to queue moderation job"})
-			deleteImage(path)
-			return
+			payload, _ := json.Marshal(moderationJob)
+			if err := workers.PublishJob(payload, "moderation"); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to queue moderation job"})
+				deleteImage(path)
+				return
+			}
 		}
 		c.JSON(http.StatusOK, gin.H{"ImageID": image.ImageID})
 	}
@@ -160,53 +165,53 @@ func approveImage(c *gin.Context) {
 }
 
 func removeImage(c *gin.Context) {
-    var image model.Image
-    imageIDParam := c.Param("id")
-    imageID, err := uuid.Parse(imageIDParam)
-    if err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid image ID"})
-        return
-    }
+	var image model.Image
+	imageIDParam := c.Param("id")
+	imageID, err := uuid.Parse(imageIDParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid image ID"})
+		return
+	}
 
-    if err := connections.DB.
-        Model(&model.Image{}).
-        Where("image_id = ?", imageID).
-        First(&image).Error; err != nil {
-        if errors.Is(err, gorm.ErrRecordNotFound) {
-            c.JSON(http.StatusNotFound, gin.H{"error": "Image not found"})
-            return
-        } else {
-            logrus.Errorf("Failed to fetch image: %v", err)
-            c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch image"})
-        }
-        return
-    }
-    
-    cwd, _ := os.Getwd()
-    var path string
+	if err := connections.DB.
+		Model(&model.Image{}).
+		Where("image_id = ?", imageID).
+		First(&image).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Image not found"})
+			return
+		} else {
+			logrus.Errorf("Failed to fetch image: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch image"})
+		}
+		return
+	}
 
-    switch image.Status {
-    case "approved":
-        path = filepath.Join(cwd, "assets", "public", imageID.String()+".webp")
-    default:
-        // "pending", "rejected", "rejectedByBot" all live in the tmp folder
-        path = filepath.Join(cwd, "assets", "tmp", imageID.String()+".webp")
-    }
+	cwd, _ := os.Getwd()
+	var path string
 
-    util_error := deleteImage(path)
-    if util_error != nil {
-        logrus.Warnf("Could not delete physical file for image %s: %v", imageID, util_error)
-    }
+	switch image.Status {
+	case "approved":
+		path = filepath.Join(cwd, "assets", "public", imageID.String()+".webp")
+	default:
+		// "pending", "rejected", "rejectedByBot" all live in the tmp folder
+		path = filepath.Join(cwd, "assets", "tmp", imageID.String()+".webp")
+	}
 
-    deletedImage := connections.DB.Delete(&image)
-    if deletedImage.Error != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete image from database"})
-        return
-    }
+	util_error := deleteImage(path)
+	if util_error != nil {
+		logrus.Warnf("Could not delete physical file for image %s: %v", imageID, util_error)
+	}
 
-    c.JSON(200, gin.H{
-        "message": "Image deleted",
-    })
+	deletedImage := connections.DB.Delete(&image)
+	if deletedImage.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete image from database"})
+		return
+	}
+
+	c.JSON(200, gin.H{
+		"message": "Image deleted",
+	})
 }
 
 func protectedAssetProvider(c *gin.Context) {
@@ -214,7 +219,7 @@ func protectedAssetProvider(c *gin.Context) {
 	imageIDParam := c.Param("imageId")
 	imageID, err := uuid.Parse(imageIDParam)
 	if err != nil {
-		c.JSON(http.StatusBadRequest,gin.H{"error":"Invalid image ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid image ID"})
 		return
 	}
 
@@ -253,7 +258,7 @@ func protectedAssetProvider(c *gin.Context) {
 
 	if !allowed {
 		c.JSON(http.StatusForbidden,
-			gin.H{"error":"Forbidden"})
+			gin.H{"error": "Forbidden"})
 		return
 	}
 

@@ -131,18 +131,43 @@ func noticeDetailProvider(c *gin.Context) {
 // noticeResponse is the public contract for notice endpoints. It deliberately
 // excludes ownership and ORM audit fields from the persistence model.
 type noticeResponse struct {
-	ID           uuid.UUID `json:"id"`
-	Entity       string    `json:"entity"`
-	EventTime    time.Time `json:"eventTime"`
-	EventEndTime time.Time `json:"eventEndTime"`
-	Location     string    `json:"location"`
-	Title        string    `json:"title"`
-	Description  string    `json:"description"`
-	Body         string    `json:"body,omitempty"`
-	CreatedAt    time.Time `json:"created_at"`
+	ID           uuid.UUID             `json:"id"`
+	Entity       string                `json:"entity"`
+	EventTime    time.Time             `json:"eventTime"`
+	EventEndTime time.Time             `json:"eventEndTime"`
+	Location     string                `json:"location"`
+	Title        string                `json:"title"`
+	Description  string                `json:"description"`
+	Body         string                `json:"body,omitempty"`
+	CreatedAt    time.Time             `json:"created_at"`
+	CoverPic     *noticeImageResponse  `json:"coverpic,omitempty"`
+	BioPics      []noticeImageResponse `json:"biopics"`
+}
+
+type noticeImageResponse struct {
+	ImageID uuid.UUID    `json:"imageId"`
+	Status  model.Status `json:"status"`
+}
+
+func publicNoticeImage(image model.Image) noticeImageResponse {
+	return noticeImageResponse{
+		ImageID: image.ImageID,
+		Status:  image.Status,
+	}
 }
 
 func publicNotice(notice model.Notice) noticeResponse {
+	bioPics := make([]noticeImageResponse, 0, len(notice.BioPics))
+	for _, image := range notice.BioPics {
+		bioPics = append(bioPics, publicNoticeImage(image))
+	}
+
+	var coverPic *noticeImageResponse
+	if notice.CoverPic != nil {
+		image := publicNoticeImage(*notice.CoverPic)
+		coverPic = &image
+	}
+
 	return noticeResponse{
 		ID:           notice.NoticeId,
 		Entity:       notice.Entity,
@@ -153,6 +178,8 @@ func publicNotice(notice model.Notice) noticeResponse {
 		Description:  notice.Description,
 		Body:         notice.Body,
 		CreatedAt:    notice.CreatedAt,
+		CoverPic:     coverPic,
+		BioPics:      bioPics,
 	}
 }
 

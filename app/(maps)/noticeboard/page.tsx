@@ -36,9 +36,11 @@ export default function NoticeBoardPage() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
+  const [listVersion, setListVersion] = useState(0);
   const loaderRef = useRef<HTMLDivElement | null>(null);
   const fetchingRef = useRef(false);
   const hasMoreRef = useRef(true);
+  const isSearchingRef = useRef(false);
 
   const fetchNotices = useCallback(async () => {
     if (!hasMoreRef.current || fetchingRef.current) return;
@@ -50,6 +52,8 @@ export default function NoticeBoardPage() {
       );
       if (!res.ok) throw new Error(`Failed (status: ${res.status})`);
       const json = await res.json();
+
+      if (isSearchingRef.current) return;
 
       if (json?.noticeboard_list?.length > 0) {
         setNotices((prev) => {
@@ -76,6 +80,7 @@ export default function NoticeBoardPage() {
       }
     } catch (err) {
       console.error("Error fetching notices:", err);
+      toast.error("Failed to load notices.");
     } finally {
       fetchingRef.current = false;
       setLoading(false);
@@ -84,7 +89,7 @@ export default function NoticeBoardPage() {
 
   useEffect(() => {
     fetchNotices();
-  }, [page, fetchNotices]);
+  }, [page, listVersion, fetchNotices]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -105,22 +110,28 @@ export default function NoticeBoardPage() {
   //cache and fuzzy search effect
   // Cache and fuzzy search effect
   useEffect(() => {
+    const controller = new AbortController();
     const timeout = setTimeout(async () => {
       const query = searchTerm.trim();
 
       // If search is empty, reset to paginated view
       if (!query) {
         if (isSearching) {
+          isSearchingRef.current = false;
           setIsSearching(false);
           setNotices([]);
+          hasMoreRef.current = true;
           setPage(1);
           setHasMore(true);
+          setListVersion((version) => version + 1);
         }
         return;
       }
 
+      isSearchingRef.current = true;
       setIsSearching(true);
       setLoading(true);
+      hasMoreRef.current = false;
 
       const CACHE_KEY = "notice_search_cache";
 
@@ -131,12 +142,18 @@ export default function NoticeBoardPage() {
         let results;
 
         // Check cache first
-        if (cache[query]) {
-          results = cache[query];
+        const cachedEntry = cache[query];
+        if (
+          cachedEntry &&
+          !Array.isArray(cachedEntry) &&
+          cachedEntry.expiresAt > Date.now()
+        ) {
+          results = cachedEntry.results;
         } else {
           // Fetch from API
           const res = await fetch(
             `${process.env.NEXT_PUBLIC_MAPS_URL}/api/maps/notice/fuzzy?query=${encodeURIComponent(query)}&limit=20`,
+            { signal: controller.signal },
           );
 
           if (!res.ok) throw new Error(`Failed (status: ${res.status})`);
@@ -145,7 +162,13 @@ export default function NoticeBoardPage() {
           results = data.results || [];
 
           // Save to cache
-          const newCache = { ...cache, [query]: results };
+          const newCache = {
+            ...cache,
+            [query]: {
+              results,
+              expiresAt: Date.now() + 5 * 60 * 1000,
+            },
+          };
           const cacheSize = new Blob([JSON.stringify(newCache)]).size;
           const MAX_SIZE = 5 * 1024 * 1024; // 5 MB
 
@@ -153,7 +176,12 @@ export default function NoticeBoardPage() {
             // Keep only current result if cache is too large
             localStorage.setItem(
               CACHE_KEY,
-              JSON.stringify({ [query]: results }),
+              JSON.stringify({
+                [query]: {
+                  results,
+                  expiresAt: Date.now() + 5 * 60 * 1000,
+                },
+              }),
             );
           } else {
             localStorage.setItem(CACHE_KEY, JSON.stringify(newCache));
@@ -168,19 +196,23 @@ export default function NoticeBoardPage() {
           eventEndTime: validDate(n.eventEndTime) || null,
         }));
 
-        setNotices(mappedResults);
+        if (!controller.signal.aborted) setNotices(mappedResults);
         setHasMore(false); // Disable infinite scroll during search
       } catch (err) {
+        if (controller.signal.aborted) return;
         console.error("Fuzzy search error:", err);
         toast.error("Error searching notices.");
         setNotices([]);
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     }, 300);
 
-    return () => clearTimeout(timeout);
-  }, [searchTerm]);
+    return () => {
+      clearTimeout(timeout);
+      controller.abort();
+    };
+  }, [isSearching, searchTerm]);
 
   const handleShare = (notice: Notice) => {
     setShareNotice(notice);
@@ -259,11 +291,15 @@ export default function NoticeBoardPage() {
                   />
                 </Link>
               ))
-            ) : !loading ? (
+            ) : loading ? (
+              <p className="text-center text-gray-500 py-12">
+                Loading notices…
+              </p>
+            ) : (
               <p className="text-center text-gray-500 py-12">
                 No notices available at the moment.
               </p>
-            ) : null}
+            )}
 
             {notices.length > 0 && (
               <div ref={loaderRef} className="text-center py-6 text-gray-500">

@@ -83,10 +83,17 @@ export default function UserNoticeDetailPage() {
     fetchNotice();
   }, [id]);
 
-  const biopicItems = (notice?.biopics || []).map((pic) => ({
-    id: getImageId(pic) || "",
-    status: getImageStatus(pic),
-  }));
+  const seenImageIds = new Set<string>();
+  const biopicItems = [notice?.coverpic, ...(notice?.biopics || [])]
+    .map((pic) => ({
+      id: getImageId(pic) || "",
+      status: getImageStatus(pic),
+    }))
+    .filter(({ id }) => {
+      if (!id || seenImageIds.has(id)) return false;
+      seenImageIds.add(id);
+      return true;
+    });
 
   const prevImg = useCallback(() => {
     setImgIndex((i) => (i > 0 ? i - 1 : biopicItems.length - 1));
@@ -97,7 +104,7 @@ export default function UserNoticeDetailPage() {
   }, [biopicItems.length]);
 
   if (loading) return <div className="p-10 text-center">Loading notice...</div>;
-  if (!notice) return <div className="p-10 text-center">Sorry, we couldn't find that notice.</div>;
+  if (!notice) return <div className="p-10 text-center">Sorry, we couldn&apos;t find that notice.</div>;
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4">

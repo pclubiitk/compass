@@ -6,6 +6,7 @@ import (
 	"compass/workers"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -13,6 +14,72 @@ import (
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
+
+func requestedNoticeImageIDs(input AddNoticeRequest) []uuid.UUID {
+	seen := make(map[uuid.UUID]struct{})
+	ids := make([]uuid.UUID, 0)
+	appendID := func(id uuid.UUID) {
+		if id == uuid.Nil {
+			return
+		}
+		if _, exists := seen[id]; exists {
+			return
+		}
+		seen[id] = struct{}{}
+		ids = append(ids, id)
+	}
+
+	if input.CoverPic != nil {
+		appendID(*input.CoverPic)
+	}
+	if input.BioPics != nil {
+		for _, id := range *input.BioPics {
+			appendID(id)
+		}
+	}
+
+	return ids
+}
+
+func attachNoticeImages(
+	tx *gorm.DB,
+	noticeID uuid.UUID,
+	ownerID uuid.UUID,
+	imageIDs []uuid.UUID,
+) error {
+	for _, imageID := range imageIDs {
+		var image model.Image
+		if err := tx.Where("image_id = ?", imageID).First(&image).Error; err != nil {
+			return fmt.Errorf("image %s was not found", imageID)
+		}
+
+		if image.ParentAssetID == noticeID && image.ParentAssetType == "notices" {
+			continue
+		}
+		if image.OwnerID != ownerID {
+			return fmt.Errorf("image %s is not owned by the current user", imageID)
+		}
+		if image.ParentAssetID != uuid.Nil || image.ParentAssetType != "" {
+			return fmt.Errorf("image %s is already attached", imageID)
+		}
+
+		if err := tx.Model(&model.Image{}).
+			Where("image_id = ?", imageID).
+			Updates(map[string]interface{}{
+				"parent_asset_id":   noticeID,
+				"parent_asset_type": "notices",
+				"submitted":         true,
+				"status":            model.Approved,
+			}).Error; err != nil {
+			return err
+		}
+		if err := workers.MoveImageFromTmpToPublic(imageID); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
 
 func flagAction(c *gin.Context) {
 
@@ -236,46 +303,12 @@ func addNotice(c *gin.Context) {
 		// for i := range notices {
 		// 	notices[i].Description = p.Sanitize(notices[i].Description)
 		// }
-		//  Image exist in the request
-		// TODO: Security analysis, if somehow i know what is the uploded image id, then i can steal the image for the user.
-		if input.CoverPic != nil {
-			// Attach existing image to notice polymorphically
-			if err := tx.Model(&model.Image{}).
-				Where("image_id = ?", *input.CoverPic).
-				Updates(map[string]interface{}{
-					"ParentAssetID":   notice.NoticeId,
-					"ParentAssetType": "notices",
-					"Submitted":       true,
-					"Status":          "approved", // As notice is allowed by admin, hence no moderation
-				}).Error; err != nil {
-				return err
-			}
-			// Move image from tmp to public
-			if err := workers.MoveImageFromTmpToPublic(*input.CoverPic); err != nil {
-				return err
-			}
-		}
-		if input.BioPics != nil && len(*input.BioPics) > 0 {
-			for _, bioPicID := range *input.BioPics {
-				if input.CoverPic != nil && *input.CoverPic == bioPicID {
-					continue
-				}
-				if err := tx.Model(&model.Image{}).
-					Where("image_id = ?", bioPicID).
-					Updates(map[string]interface{}{
-						"ParentAssetID":   notice.NoticeId,
-						"ParentAssetType": "notices",
-						"Submitted":       true,
-						"Status":          "approved",
-					}).Error; err != nil {
-					return err
-				}
-				if err := workers.MoveImageFromTmpToPublic(bioPicID); err != nil {
-					return err
-				}
-			}
-		}
-		return nil
+		return attachNoticeImages(
+			tx,
+			notice.NoticeId,
+			userID.(uuid.UUID),
+			requestedNoticeImageIDs(input),
+		)
 	}); err != nil {
 		logrus.Error("Failed to create notice:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -452,11 +485,31 @@ func deleteNotice(c *gin.Context) {
 		return
 	}
 
-	// soft delete (sets deleted_at timestamp)
-	if err := connections.DB.Delete(&notice).Error; err != nil {
+	var images []model.Image
+	if err := connections.DB.
+		Where("parent_asset_id = ? AND parent_asset_type = ?", noticeID, "notices").
+		Find(&images).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch notice images"})
+		return
+	}
+
+	if err := connections.DB.Transaction(func(tx *gorm.DB) error {
+		if len(images) > 0 {
+			if err := tx.Delete(&images).Error; err != nil {
+				return err
+			}
+		}
+		return tx.Delete(&notice).Error
+	}); err != nil {
 		logrus.WithError(err).Error("Failed to delete notice")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete notice"})
 		return
+	}
+
+	for _, image := range images {
+		if err := workers.DeleteImageFiles(image.ImageID); err != nil {
+			logrus.WithError(err).Warn("Failed to delete notice image file")
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -497,57 +550,64 @@ func editNotice(c *gin.Context) {
 		return
 	}
 
-	notice.Title = input.Title
-	notice.Description = input.Description
-	notice.Entity = input.Entity
-	notice.EventTime = input.EventTime
-	notice.EventEndTime = input.EventEndTime
-	notice.Body = input.Body
-	notice.Location = input.Location
+	userIDValue, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+	userID := userIDValue.(uuid.UUID)
+	requestedIDs := requestedNoticeImageIDs(input)
+	syncImages := input.CoverPic != nil || input.BioPics != nil
+	removedImages := make([]model.Image, 0)
 
-	if err := connections.DB.Save(&notice).Error; err != nil {
+	if err := connections.DB.Transaction(func(tx *gorm.DB) error {
+		notice.Title = input.Title
+		notice.Description = input.Description
+		notice.Entity = input.Entity
+		notice.EventTime = input.EventTime
+		notice.EventEndTime = input.EventEndTime
+		notice.Body = input.Body
+		notice.Location = input.Location
+
+		if err := tx.Save(&notice).Error; err != nil {
+			return err
+		}
+		if !syncImages {
+			return nil
+		}
+
+		var existing []model.Image
+		if err := tx.
+			Where("parent_asset_id = ? AND parent_asset_type = ?", noticeID, "notices").
+			Find(&existing).Error; err != nil {
+			return err
+		}
+
+		requested := make(map[uuid.UUID]struct{}, len(requestedIDs))
+		for _, id := range requestedIDs {
+			requested[id] = struct{}{}
+		}
+		for _, image := range existing {
+			if _, keep := requested[image.ImageID]; !keep {
+				removedImages = append(removedImages, image)
+			}
+		}
+		if len(removedImages) > 0 {
+			if err := tx.Delete(&removedImages).Error; err != nil {
+				return err
+			}
+		}
+
+		return attachNoticeImages(tx, noticeID, userID, requestedIDs)
+	}); err != nil {
 		logrus.WithError(err).Error("Failed to update notice")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update notice"})
 		return
 	}
 
-	if input.CoverPic != nil {
-		if err := connections.DB.Model(&model.Image{}).
-			Where("image_id = ?", *input.CoverPic).
-			Updates(map[string]interface{}{
-				"ParentAssetID":   notice.NoticeId,
-				"ParentAssetType": "notices",
-				"Submitted":       true,
-				"Status":          "approved",
-			}).Error; err != nil {
-			logrus.WithError(err).Error("Failed to attach cover image")
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to attach cover image"})
-			return
-		}
-		if err := workers.MoveImageFromTmpToPublic(*input.CoverPic); err != nil {
-			logrus.WithError(err).Error("Failed to move cover image")
-		}
-	}
-	if input.BioPics != nil && len(*input.BioPics) > 0 {
-		for _, bioPicID := range *input.BioPics {
-			if input.CoverPic != nil && *input.CoverPic == bioPicID {
-				continue
-			}
-			if err := connections.DB.Model(&model.Image{}).
-				Where("image_id = ?", bioPicID).
-				Updates(map[string]interface{}{
-					"ParentAssetID":   notice.NoticeId,
-					"ParentAssetType": "notices",
-					"Submitted":       true,
-					"Status":          "approved",
-				}).Error; err != nil {
-				logrus.WithError(err).Error("Failed to attach bio pic")
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to attach bio pic"})
-				return
-			}
-			if err := workers.MoveImageFromTmpToPublic(bioPicID); err != nil {
-				logrus.WithError(err).Error("Failed to move bio pic")
-			}
+	for _, image := range removedImages {
+		if err := workers.DeleteImageFiles(image.ImageID); err != nil {
+			logrus.WithError(err).Warn("Failed to delete removed notice image file")
 		}
 	}
 

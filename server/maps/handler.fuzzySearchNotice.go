@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 func FuzzySearchNoticesHandler(c *gin.Context) {
@@ -35,31 +36,71 @@ func FuzzySearchNoticesHandler(c *gin.Context) {
 		limit = parsed
 	}
 
-	var notices []model.Notice
+	type rankedNotice struct {
+		NoticeID uuid.UUID `gorm:"column:notice_id"`
+	}
+
+	var ranked []rankedNotice
 	db := connections.DB
 
 	err := db.Raw(`
-		SELECT *, 
-		       greatest(
-	           similarity(title, ?),
-	           similarity(description, ?),
-	           similarity(entity, ?)
-	       ) AS score
-	FROM notices
-	WHERE deleted_at IS NULL
-	  AND greatest(
-	      similarity(title, ?),
-	      similarity(description, ?),
-	      similarity(entity, ?)
-	  ) > 0.1
-	ORDER BY score DESC
-	LIMIT ?
-	`, query, query, query, query, query, query, limit).Scan(&notices).Error
+			SELECT notice_id,
+			       greatest(
+		           similarity(title, ?),
+		           similarity(description, ?),
+		           similarity(body, ?),
+		           similarity(entity, ?),
+		           similarity(location, ?)
+		       ) AS score
+		FROM notices
+		WHERE deleted_at IS NULL
+		  AND greatest(
+		      similarity(title, ?),
+		      similarity(description, ?),
+		      similarity(body, ?),
+		      similarity(entity, ?),
+		      similarity(location, ?)
+		  ) > 0.1
+		ORDER BY score DESC
+		LIMIT ?
+		`, query, query, query, query, query, query, query, query, query, query, limit).Scan(&ranked).Error
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch notices", "details": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"results": notices})
+	if len(ranked) == 0 {
+		c.JSON(http.StatusOK, gin.H{"results": []noticeResponse{}})
+		return
+	}
+
+	ids := make([]uuid.UUID, 0, len(ranked))
+	for _, item := range ranked {
+		ids = append(ids, item.NoticeID)
+	}
+
+	var notices []model.Notice
+	if err := db.
+		Preload("CoverPic").
+		Preload("BioPics").
+		Where("notice_id IN ?", ids).
+		Find(&notices).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch notices"})
+		return
+	}
+
+	byID := make(map[uuid.UUID]model.Notice, len(notices))
+	for _, notice := range notices {
+		byID[notice.NoticeId] = notice
+	}
+
+	ordered := make([]model.Notice, 0, len(ranked))
+	for _, item := range ranked {
+		if notice, ok := byID[item.NoticeID]; ok {
+			ordered = append(ordered, notice)
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"results": publicNotices(ordered)})
 }

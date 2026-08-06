@@ -45,10 +45,17 @@ const NoticeCard = ({
 }) => {
   const { isAdmin } = useGContext();
 
-  const biopicItems = (notice.biopics || []).map((pic) => ({
-    id: getImageId(pic) || "",
-    status: getImageStatus(pic),
-  }));
+  const seenImageIds = new Set<string>();
+  const biopicItems = [notice.coverpic, ...(notice.biopics || [])]
+    .map((pic) => ({
+      id: getImageId(pic) || "",
+      status: getImageStatus(pic),
+    }))
+    .filter(({ id }) => {
+      if (!id || seenImageIds.has(id)) return false;
+      seenImageIds.add(id);
+      return true;
+    });
   const [imgIndex, setImgIndex] = useState(0);
 
   const prevImg = useCallback(() => {

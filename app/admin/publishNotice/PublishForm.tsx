@@ -7,6 +7,12 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  AuthenticatedImage,
+  buildReviewImageUrl,
+  getImageId,
+  getImageStatus,
+} from "@/app/components/user/AuthenticatedImage";
 
 const CopyIcon = () => (
   <svg
@@ -45,10 +51,11 @@ const UploadIcon = () => (
 
 interface UploadedImage {
   previewUrl: string;
-  file: File;
+  file?: File;
   id: string | null;
   isUploading: boolean;
   copySuccess: boolean;
+  requiresAuth: boolean;
 }
 
 export default function NoticeboardForm() {
@@ -57,7 +64,9 @@ export default function NoticeboardForm() {
   const searchParams = useSearchParams();
   const noticeId = searchParams.get("noticeid");
   const [images, setImages] = useState<UploadedImage[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const objectUrlsRef = useRef<Set<string>>(new Set());
 
   const [formData, setFormData] = useState({
     type: "Event",
@@ -114,16 +123,23 @@ export default function NoticeboardForm() {
     });
     if (filesArray.length === 0) return;
 
-    const newImages: UploadedImage[] = filesArray.map((file) => ({
-      previewUrl: URL.createObjectURL(file),
-      file,
-      id: null,
-      isUploading: true,
-      copySuccess: false,
-    }));
+    const newImages: UploadedImage[] = filesArray.map((file) => {
+      const previewUrl = URL.createObjectURL(file);
+      objectUrlsRef.current.add(previewUrl);
+      return {
+        previewUrl,
+        file,
+        id: null,
+        isUploading: true,
+        copySuccess: false,
+        requiresAuth: false,
+      };
+    });
     setImages((prev) => [...prev, ...newImages]);
+    e.target.value = "";
 
     for (const image of newImages) {
+      if (!image.file) continue;
       try {
         const imageFormData = new FormData();
         imageFormData.append("file", image.file);
@@ -143,13 +159,18 @@ export default function NoticeboardForm() {
         setImages((prev) =>
           prev.map((img) =>
             img.file === image.file
-              ? { ...img, id: result.ImageID, isUploadingImage: false }
+              ? { ...img, id: result.ImageID, isUploading: false }
               : img,
           ),
         );
-      } catch {
+      } catch (error) {
+        URL.revokeObjectURL(image.previewUrl);
+        objectUrlsRef.current.delete(image.previewUrl);
         setImages((prev) =>
           prev.filter((img) => img.previewUrl !== image.previewUrl),
+        );
+        toast.error(
+          error instanceof Error ? error.message : "Image upload failed",
         );
       }
     }
@@ -160,7 +181,10 @@ export default function NoticeboardForm() {
       (img) => img.previewUrl === previewUrlToDelete,
     );
     if (imageToDelete) {
-      URL.revokeObjectURL(imageToDelete.previewUrl); 
+      if (objectUrlsRef.current.has(imageToDelete.previewUrl)) {
+        URL.revokeObjectURL(imageToDelete.previewUrl);
+        objectUrlsRef.current.delete(imageToDelete.previewUrl);
+      }
     }
     setImages((prev) =>
       prev.filter((img) => img.previewUrl !== previewUrlToDelete),
@@ -174,7 +198,9 @@ export default function NoticeboardForm() {
     if (!imageToCopy || !imageToCopy.id) return;
 
     navigator.clipboard.writeText(
-      `${process.env.NEXT_PUBLIC_ASSET_URL}/tmp/${imageToCopy.id}.webp`,
+      imageToCopy.file
+        ? `${process.env.NEXT_PUBLIC_ASSET_URL}/tmp/${imageToCopy.id}.webp`
+        : imageToCopy.previewUrl,
     );
     setImages((prev) =>
       prev.map((img) =>
@@ -197,16 +223,21 @@ export default function NoticeboardForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (images.some((image) => image.isUploading)) {
+      toast.error("Please wait for all images to finish uploading");
+      return;
+    }
     if (!validateEventTimes(formData.eventTime, formData.eventEndTime)) {
       return;
     }
     const uploadedImageIds = images.map((img) => img.id).filter(Boolean) as string[];
 
+    setIsSubmitting(true);
     try {
       const payload = {
         ...formData,
         coverPic: uploadedImageIds[0] || null,
-        biopics: uploadedImageIds.length > 1 ? uploadedImageIds.slice(1) : null,
+        biopics: uploadedImageIds.slice(1),
         title: formData.title,
         description: formData.description,
         entity: formData.type,
@@ -221,9 +252,11 @@ export default function NoticeboardForm() {
       };
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_MAPS_URL}/api/maps/notice`,
+        noticeId
+          ? `${process.env.NEXT_PUBLIC_MAPS_URL}/api/maps/editNotice/${noticeId}`
+          : `${process.env.NEXT_PUBLIC_MAPS_URL}/api/maps/notice`,
         {
-          method: "POST",
+          method: noticeId ? "PUT" : "POST",
           headers: {
             "Content-Type": "application/json",
           },
@@ -238,9 +271,14 @@ export default function NoticeboardForm() {
       }
 
       localStorage.removeItem("notice_search_cache");
+      toast.success(noticeId ? "Notice updated" : "Notice published");
       router.push("/noticeboard");
-    } catch {
-      toast.error("Failed to submit notice");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to save notice",
+      );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -285,69 +323,43 @@ export default function NoticeboardForm() {
             description: data.description,
             body: data.body,
           });
+
+          const rawImages = [data.coverpic, ...(data.biopics || [])];
+          const seen = new Set<string>();
+          const existingImages: UploadedImage[] = [];
+          for (const rawImage of rawImages) {
+            const id = getImageId(rawImage);
+            if (!id || seen.has(id)) continue;
+            seen.add(id);
+            const status = getImageStatus(rawImage);
+            const imageUrl = buildReviewImageUrl(id, status);
+            existingImages.push({
+              previewUrl: imageUrl.url,
+              id,
+              isUploading: false,
+              copySuccess: false,
+              requiresAuth: imageUrl.requiresAuth,
+            });
+          }
+          setImages(existingImages);
         } catch (err) {
           console.error("Failed to fetch notice:", err);
+          toast.error("Failed to load notice");
+          router.push("/noticeboard");
         }
       };
 
       fetchNotice();
     }
+  }, [noticeId, router]);
+
+  useEffect(() => {
+    const objectUrls = objectUrlsRef.current;
     return () => {
-      images.forEach((image) => URL.revokeObjectURL(image.previewUrl));
+      objectUrls.forEach((url) => URL.revokeObjectURL(url));
+      objectUrls.clear();
     };
-  }, []); 
-
-  const handleEdit = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    if (!noticeId) return;
-
-    if (!validateEventTimes(formData.eventTime, formData.eventEndTime)) {
-      return;
-    }
-
-    const uploadedImageIds = images.map((img) => img.id).filter(Boolean) as string[];
-
-    try {
-      const payload = {
-        ...formData,
-        coverPic: uploadedImageIds[0] || null,
-        biopics: uploadedImageIds.length > 1 ? uploadedImageIds.slice(1) : null,
-        title: formData.title,
-        description: formData.description,
-        entity: formData.type,
-        location: formData.location,
-        body: formData.body,
-        eventEndTime: formData.eventEndTime
-          ? new Date(formData.eventEndTime).toISOString()
-          : null,
-        eventTime: formData.eventTime
-          ? new Date(formData.eventTime).toISOString()
-          : null
-      };
-      
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_MAPS_URL}/api/maps/editNotice/${noticeId}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-          credentials: "include",
-        },
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Something went wrong");
-      }
-
-      localStorage.removeItem("notice_search_cache");
-      router.push("/noticeboard");
-    } catch {
-      toast.error("Failed to update notice");
-    }
-  };
+  }, []);
 
   return (
     <Card>
@@ -379,6 +391,20 @@ export default function NoticeboardForm() {
               />
             </div>
           ))}
+
+          <div>
+            <Label htmlFor="type" className="block text-sm font-medium">
+              Type / Entity
+            </Label>
+            <Input
+              id="type"
+              name="type"
+              value={formData.type}
+              onChange={handleChange}
+              placeholder="e.g. Event, Department, Club"
+              required
+            />
+          </div>
 
           <div className="flex flex-col md:flex-row md:space-x-6 md:items-start space-y-6 md:space-y-0">
             <div className="md:w-1/2 space-y-6">
@@ -437,11 +463,18 @@ export default function NoticeboardForm() {
                     key={image.previewUrl}
                     className="relative w-28 h-28 group shrink-0"
                   >
-                    <img
+                    <AuthenticatedImage
                       src={image.previewUrl}
                       alt="Preview"
                       className="w-full h-full object-cover rounded-lg"
+                      requiresAuth={image.requiresAuth}
                     />
+
+                    {image.isUploading && (
+                      <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/50 text-xs text-white">
+                        Uploading…
+                      </div>
+                    )}
 
                     { image.id && (
                         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-black bg-opacity-40 rounded-lg flex items-center justify-center space-x-2">
@@ -519,18 +552,19 @@ export default function NoticeboardForm() {
               </Button>
               <Button
                 type="submit"
+                disabled={isSubmitting || images.some((image) => image.isUploading)}
                 className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition"
-                onClick={handleEdit}
               >
-                Update Notice
+                {isSubmitting ? "Updating…" : "Update Notice"}
               </Button>
             </div>
           ) : (
             <Button
               type="submit"
+              disabled={isSubmitting || images.some((image) => image.isUploading)}
               className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition"
             >
-              Publish Notice
+              {isSubmitting ? "Publishing…" : "Publish Notice"}
             </Button>
           )}
         </form>

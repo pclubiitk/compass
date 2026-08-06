@@ -58,3 +58,20 @@ func MoveImageFromTmpToPublic(imageID uuid.UUID) error {
 
 	return nil
 }
+
+// DeleteImageFiles removes every on-disk representation of an image. Missing
+// files are expected when cleanup is retried, so deletion is idempotent.
+func DeleteImageFiles(imageID uuid.UUID) error {
+	paths := []string{
+		filepath.Join("./assets/tmp", fmt.Sprintf("%s.webp", imageID)),
+		filepath.Join("./assets/public", fmt.Sprintf("%s.webp", imageID)),
+	}
+
+	for _, path := range paths {
+		if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
+			return fmt.Errorf("failed to delete image %s: %w", imageID, err)
+		}
+	}
+
+	return nil
+}
