@@ -1,4 +1,3 @@
-import { ThemeProvider } from "next-themes";
 import { FeatureGuard } from "@/components/FeatureGuard";
 export const metadata = {
   title: "Campus Notice Board",
@@ -10,11 +9,9 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <FeatureGuard feature="noticeboard">
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-        <div id="noticeboard" className={`antialiased relative min-h-screen`}>
-          <div className="relative z-0">{children}</div>
-        </div>
-      </ThemeProvider>
+      <div id="noticeboard" className="antialiased relative min-h-screen">
+        <div className="relative z-0">{children}</div>
+      </div>
     </FeatureGuard>
   );
 }

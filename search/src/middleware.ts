@@ -35,14 +35,7 @@ export function middleware(request: NextRequest) {
     // });
     const callbackUrl = request.url;
     return NextResponse.redirect(
-      // TODO: As in prod, due to nginx the request.url will be set to localhost.
-      // Dev:
-      // new URL(
-      //   `${LOGIN_POINT}?callbackUrl=${encodeURIComponent(callbackUrl)}`,
-      //   request.url,
-      // ),
-      // FIXME(prod): Prod
-      new URL(`${LOGIN_POINT}`),
+      new URL(`${LOGIN_POINT}?callbackUrl=${encodeURIComponent(callbackUrl)}`),
     );
   }
 

@@ -232,7 +232,11 @@ func incrementalLocationProvider(c *gin.Context) {
 	if err := connections.DB.
 		Model(&model.Location{}).
 		Where("status = ? AND updated_at > ?", model.Approved, since).
-		Select("location_id", "name", "latitude", "longitude", "updated_at", "location_type").
+		// Keep this projection in sync with the initial response above.  The
+		// client replaces cached records with incremental records, so omitting
+		// Layer here would serialize Go's zero value and make an edited location
+		// visible at every zoom level.
+		Select("location_id", "name", "latitude", "longitude", "updated_at", "location_type", "layer").
 		Find(&updated).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch updated locations"})
 		return

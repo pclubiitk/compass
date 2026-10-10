@@ -70,7 +70,7 @@ import { useRouter } from "next/router";
 export default function Home(props: Object) {
   const router = useRouter();
   // [For: Worker Object] [Use a ref to hold the worker instance so it persists across re-renders]
-  const workerRef = useRef<Worker>();
+  const workerRef = useRef<Worker | undefined>(undefined);
   // Ref to track display blocked state for debounced query checks
   const isDisplayBlockedRef = useRef<boolean>(false);
   // Array of Students to be rendered in the display
@@ -102,14 +102,14 @@ export default function Home(props: Object) {
   } = useGContext();
 
   // Block display queries when PuppyLove mode is on but permit is off
-  // (after deadline, showing match results instead of search)
+  // (after deadline,  match results instead of search)
   useEffect(() => {
     if (isPuppyLove && !PLpermit) {
       setIsDisplayBlocked(true);
     }
   }, [isPuppyLove, PLpermit, setIsDisplayBlocked]);
 
-  // [Display Managers] - Overlay for showing info and errors
+  // [Display Managers] - Overlay for  info and errors
   const clearOverlay = () => {
     setCurr(undefined);
     // document.body.style.overflow = "auto"; // Hotfix

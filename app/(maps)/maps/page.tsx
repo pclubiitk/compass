@@ -11,7 +11,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { useTheme } from "next-themes";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search } from "lucide-react";
+import { Home, Search } from "lucide-react";
 import type maplibregl from "maplibre-gl";
 
 function getSearchMarkers(): maplibregl.Marker[] {
@@ -41,15 +41,36 @@ const IITK_CENTER = {
   zoom: 14,
 };
 
-// Use for testing
-// const LAYER_COLORS: Record<number, string> = {
-//   1: "#029987",
-//   2: "#123456",
-//   3: "#530299",
-//   4: "#0be3ff",
-//   5: "#52ff63",
-// };
+const LAYER_COLORS: Record<number, string> = {
+  1: "#029987",
+  2: "#017a8c",
+  3: "#e2ce72",
+  4: "#57cc99",
+  5: "#c7f9cc",
+};
 
+const LAYER_BY_TYPE: Record<string, number> = {
+  admin: 1,
+  lecturehall: 1,
+  hostel: 1,
+  food: 2,
+  recreation: 3,
+};
+
+function resolveLocationLayer(loc: Location): number {
+  const stored = Number(loc.layer);
+  if (stored >= 2 && stored <= 5) return stored;
+
+  const type = (loc.locationType || loc.location_type || "").toLowerCase().trim();
+  if (LAYER_BY_TYPE[type]) return LAYER_BY_TYPE[type];
+
+  const key = String(loc.locationId || loc.id || loc.name || "");
+  let hash = 0;
+  for (let i = 0; i < key.length; i++) {
+    hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
+  }
+  return (hash % 5) + 1;
+}
 
 function maxLayerForZoom(zoom: number): number {
   if (zoom > 17) return 5;
@@ -64,20 +85,34 @@ function buildCircleLayer(maxVisibleLayer: number, theme: string | undefined): C
     id: "locations",
     type: "circle",
     source: "locations",
-    filter: ["<=", ["get", "layer"], maxVisibleLayer],
+    filter: ["<=", ["to-number", ["get", "layer"]], maxVisibleLayer],
     paint: {
       "circle-radius": [
         "interpolate",
         ["linear"],
         ["zoom"],
         12,
-        5,
+        2,
         14,
-        8,
+        3,
         17,
-        12,
+        5,
       ],
-      "circle-color": "#029987",
+      "circle-color": [
+        "match",
+        ["to-number", ["get", "layer"]],
+        1,
+        LAYER_COLORS[1],
+        2,
+        LAYER_COLORS[2],
+        3,
+        LAYER_COLORS[3],
+        4,
+        LAYER_COLORS[4],
+        5,
+        LAYER_COLORS[5],
+        LAYER_COLORS[1],
+      ],
       "circle-stroke-width": 2,
       "circle-stroke-color": theme === "dark" ? "#000000" : "#ffffff",
     },
@@ -89,11 +124,11 @@ function buildTextLayer(maxVisibleLayer: number, theme: string | undefined): Sym
     id: "location-labels",
     type: "symbol",
     source: "locations",
-    filter: ["<=", ["get", "layer"], maxVisibleLayer],
+    filter: ["<=", ["to-number", ["get", "layer"]], maxVisibleLayer],
     layout: {
       "text-field": ["get", "name"],
       "text-font": ["Open Sans Regular", "Arial Unicode MS Regular"],
-      "text-size": 13,
+      "text-size": 10,
       
       "text-variable-anchor": ["top", "bottom", "left", "right"],
       "text-radial-offset": 0, 
@@ -116,11 +151,23 @@ export default function AdminMap() {
   const [cursor, setCursor] = useState<string>("grab");
   const [results, setResults] = useState<any[]>([]);
   const [query, setQuery] = useState("");
+  const [placeholder, setPlaceholder] = useState("Search by name or coordinates");
+
+  useEffect(() => {
+    const placeholders = ["Search by name or coordinates", "⌘K / Ctrl+K to search"];
+    let i = 0;
+    const interval = setInterval(() => {
+      i = (i + 1) % placeholders.length;
+      setPlaceholder(placeholders[i]);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
   const [mounted, setMounted] = useState(false);
   const skipNextSearch = useRef(false);
   const lastSearchMarker = useRef<any>(null);
   const mapRef = useRef<any>(null);
   const userMarkerRef = useRef<any>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const maxVisibleLayer = maxLayerForZoom(zoom);
 
@@ -145,21 +192,37 @@ export default function AdminMap() {
           properties: {
             locationId: loc.locationId || loc.id || "",
             name: loc.name,
-            layer: loc.layer ?? 1,
+            layer: resolveLocationLayer(loc),
             locationType: loc.locationType || loc.location_type || "",
           },
         })),
     };
   }, [locations]);
 
+  const layerStats = useMemo(() => {
+    const counts: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    for (const loc of locations as Location[]) {
+      if (loc.latitude == null || loc.longitude == null) continue;
+      counts[resolveLocationLayer(loc)]++;
+    }
+    const total = Object.values(counts).reduce((sum, count) => sum + count, 0);
+    const visible = Object.entries(counts)
+      .filter(([layer]) => Number(layer) <= maxVisibleLayer)
+      .reduce((sum, [, count]) => sum + count, 0);
+    const usesAutoLayers = (locations as Location[]).every(
+      (loc) => (loc.layer ?? 1) === 1,
+    );
+    return { counts, total, visible, usesAutoLayers };
+  }, [locations, maxVisibleLayer]);
+
   const circleLayer = useMemo(
     () => buildCircleLayer(maxVisibleLayer, currentTheme),
-    [maxVisibleLayer],
+    [maxVisibleLayer, currentTheme],
   );
 
   const textLayer = useMemo(
     () => buildTextLayer(maxVisibleLayer, currentTheme),
-    [maxVisibleLayer],
+    [maxVisibleLayer, currentTheme],
   );
 
   const handleClick = useCallback(async (e: MapLayerMouseEvent) => {
@@ -196,9 +259,6 @@ export default function AdminMap() {
     localStorage.setItem("selected_lat", lat.toString());
     localStorage.setItem("selected_lon", lng.toString());
 
-    // Fly to the clicked location
-    map.flyTo({ center: [lng, lat], zoom: 14 });
-
     // Dispatch event for other components
     window.dispatchEvent(
       new CustomEvent("marker-selected", { detail: { lat, lng } }),
@@ -207,6 +267,33 @@ export default function AdminMap() {
 
   const handleMouseEnter = useCallback(() => setCursor("pointer"), []);
   const handleMouseLeave = useCallback(() => setCursor("grab"), []);
+
+  const handleResetView = useCallback(() => {
+    const map = mapRef.current?.getMap();
+    if (!map) return;
+
+    map.flyTo({
+      center: [IITK_CENTER.longitude, IITK_CENTER.latitude],
+      zoom: IITK_CENTER.zoom,
+      speed: 1.2,
+      curve: 1.5,
+      essential: true,
+    });
+
+    if (lastSearchMarker.current) {
+      try {
+        lastSearchMarker.current.remove();
+      } catch {}
+      lastSearchMarker.current = null;
+    }
+
+    if (userMarkerRef.current) {
+      try {
+        userMarkerRef.current.remove();
+      } catch {}
+      userMarkerRef.current = null;
+    }
+  }, []);
 
   const fuzzySearch = async (searchQuery: string) => {
     // Calling backend if query not found in cache
@@ -356,13 +443,25 @@ export default function AdminMap() {
     return () => clearTimeout(timeout);
   }, [query]);
 
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
   return (
     <div className="relative h-screen w-screen">
       {/* Search Bar Overlay */}
       <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 w-[90%] max-w-md flex flex-col gap-1">
         <div className="flex items-center gap-2 bg-white dark:bg-gray-800 px-4 py-2 rounded-full shadow-md">
           <Input
-            placeholder="Search by name or coordinates"
+            ref={searchInputRef}
+            placeholder={placeholder}
             className="flex-1 border-none text-black dark:text-gray-300 placeholder:text-gray-500 focus-visible:ring-0 focus-visible:ring-offset-0"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -402,6 +501,19 @@ export default function AdminMap() {
         )}
       </div>
 
+      <div className="absolute top-20 right-4 z-50">
+        <Button
+          size="icon"
+          variant="secondary"
+          className="rounded-xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg shadow-lg border border-gray-200 dark:border-gray-700"
+          onClick={handleResetView}
+          aria-label="Reset map view"
+          title="Reset map view"
+        >
+          <Home className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+        </Button>
+      </div>
+
       {/* Sync indicator */}
       {mounted && isValidating && (
         <div className="absolute bottom-4 right-4 text-xs text-gray-600 bg-white/80 px-3 py-1 rounded-md shadow">
@@ -426,14 +538,6 @@ export default function AdminMap() {
           <Layer {...textLayer} />
         </Source>
       </Map>
-
-      // Uncomment for testing layer-wise rendering
-      {/* <div className="absolute top-4 left-4 z-10 rounded-lg border bg-white/90 px-3 py-2 text-sm shadow-md backdrop-blur">
-        <p className="font-medium">Layer visibility</p>
-        <p className="text-muted-foreground">
-          Zoom {zoom.toFixed(1)} · showing layers 1–{maxVisibleLayer}
-        </p>
-      </div> */}
     </div>
   );
 }

@@ -29,6 +29,7 @@ func (r AddLocationRequest) ToLocation(userID uuid.UUID) model.Location {
 		LocationType:  r.LocationType,
 		Description:   r.Description,
 		ContributedBy: userID,
+		Layer:         1,
 		Status:        model.Pending, // By default it is waiting to be reviewed by admin
 	}
 }

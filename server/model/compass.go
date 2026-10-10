@@ -26,7 +26,7 @@ type Location struct {
 	Latitude      float32        `json:"latitude" binding:"required"`
 	Longitude     float32        `json:"longitude" binding:"required"`
 	LocationType  string         `json:"locationType"`
-	Layer         int            `json:"layer"`
+	Layer         int            `json:"layer" gorm:"default:1"`
 	Status        Status         `json:"status" gorm:"type:varchar(20);check:status IN ('pending','approved','rejected')"`          // once the location is approved by the admin it will be publicly available
 	ContributedBy uuid.UUID      `json:"contributedBy"`                                                                             // This is the foreign key
 	User          *User          `gorm:"foreignKey:ContributedBy;references:UserID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"` // many location to single user binding

@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SocialProfileCard } from "@/components/profile/SocialProfileCard";
 import { EditableProfileCard } from "@/components/profile/EditableProfileCard";
 import { ContributionsCard } from "@/components/profile/ContributionsCard";
@@ -19,6 +18,7 @@ import {
 import { ClientContainer } from "@/calendar/components/client-container";
 import { getEvents } from "@/calendar/requests";
 import { Calendar } from "lucide-react";
+import { CollapsibleCard } from "@/components/ui/CollapsibleCard";
 
 import type { IEvent } from "@/calendar/interfaces";
 import ComingSoon from "@/components/ui/ComingSoon";
@@ -241,40 +241,36 @@ export default function ProfilePage() {
             isRegistered={isPuppyLoveRegistered}
             onUpdate={fetchPuppyLoveProfile}
           />
-          <EditableProfileCard
-            profile={userData.profile}
-            onUpdate={fetchProfile}
-          />
+          <CollapsibleCard title="Profile Information" naked>
+            <EditableProfileCard
+              profile={userData.profile}
+              onUpdate={fetchProfile}
+            />
+          </CollapsibleCard>
           {/* Calendar Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="w-5 h-5" />
-                My Events
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-2 sm:p-4 lg:p-6 pt-0">
-              {calendarLoading ? (
-                <div className="h-96 flex items-center justify-center">
-                  <Skeleton className="h-80 w-full mx-4" />
-                </div>
-              ) : (
-                <div className="min-h-125">
-                  <CalendarProvider
-                    events={calendarEvents}
-                    fetchEvents={fetchCalendarEvents}
-                  >
-                    <CalendarInner />
-                  </CalendarProvider>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-          <ContributionsCard
-            locations={userData.ContributedLocations}
-            reviews={userData.ContributedReview}
-            notices={userData.ContributedNotice}
-          />
+          <CollapsibleCard title="My Events" icon={<Calendar className="w-5 h-5" />}>
+            {calendarLoading ? (
+              <div className="h-96 flex items-center justify-center">
+                <Skeleton className="h-80 w-full mx-4" />
+              </div>
+            ) : (
+              <div className="min-h-125">
+                <CalendarProvider
+                  events={calendarEvents}
+                  fetchEvents={fetchCalendarEvents}
+                >
+                  <CalendarInner />
+                </CalendarProvider>
+              </div>
+            )}
+          </CollapsibleCard>
+          <CollapsibleCard title="My Contributions">
+            <ContributionsCard
+              locations={userData.ContributedLocations}
+              reviews={userData.ContributedReview}
+              notices={userData.ContributedNotice}
+            />
+          </CollapsibleCard>
         </div>
       </main>
     </div>

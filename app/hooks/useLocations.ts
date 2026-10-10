@@ -1,7 +1,7 @@
 "use client";
 
 import useSWR from "swr";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 export type Location = {
   locationId?: string;
@@ -14,16 +14,37 @@ export type Location = {
   layer?: number;
 };
 
-// Hook to fetch and cache locations using SWR + localStorage fallback.Automatically merges incremental updates and handles deletions.
+const LOCATION_CACHE_VERSION = "2";
+
+type CachedLocationState = {
+  locations: Location[];
+  usable: boolean;
+};
+
+function readCachedLocations(): CachedLocationState {
+  if (typeof window === "undefined") return { locations: [], usable: false };
+
+
+  if (localStorage.getItem("cached_locations_version") !== LOCATION_CACHE_VERSION) {
+    return { locations: [], usable: false };
+  }
+
+  try {
+    const value = JSON.parse(localStorage.getItem("cached_locations") || "[]");
+    return Array.isArray(value)
+      ? { locations: value, usable: true }
+      : { locations: [], usable: false };
+  } catch {
+    return { locations: [], usable: false };
+  }
+}
+
 
 export function useLocations() {
-  // Read existing local cache
-  // Initialize Cache: Read existing locations and timestamp from localStorage
-  // This ensures we have data to show immediately while fetching updates.
-  const cached =
-    typeof window !== "undefined"
-      ? JSON.parse(localStorage.getItem("cached_locations") || "[]")
-      : [];
+  
+  const [cache, setCache] = useState<CachedLocationState>(readCachedLocations);
+  const cached = cache.locations;
+  const persistedFetchTime = useRef<string | null>(null);
 
 
   // Fetch Updates: Use SWR to fetch from the incremental endpoint.
@@ -31,9 +52,9 @@ export function useLocations() {
   const { data, error, mutate, isValidating } = useSWR(
     "locations",
     async () => {
-      const cachedTime = localStorage.getItem("cached_time");
-      // Prepare Incremental Fetch: If we have a timestamp, ask for updates since then.
-      // If no timestamp (first run), this will be empty, fetching ALL locations.
+      const cachedTime = cache.usable
+        ? localStorage.getItem("cached_time")
+        : null;
       const sinceParam = cachedTime
         ? `?since=${encodeURIComponent(cachedTime)}`
         : "";
@@ -59,8 +80,6 @@ export function useLocations() {
     // 'data' here is the response from the server (incremental updates)
     const updated = data.updated || data.locations || [];
     const deleted = data.deleted || []; // List of IDs to remove
-    const timestamp = data.lastFetchTime || "" // so if any error occurs, everything is reset;
-
     // Remove deleted locations from the cache
     const filtered = cached.filter(
       (l: Location) =>
@@ -85,26 +104,29 @@ export function useLocations() {
       ...updated,
     ];
 
-    //  Persist: Save the merged list and new timestamp to localStorage
-    if (typeof window !== "undefined" && (updated.length || deleted.length)) {
-      localStorage.setItem("cached_locations", JSON.stringify(merged));
-      localStorage.setItem("cached_time", timestamp);
-      (window as any).locations = merged; // Update global variable if used
-    }
-
     return merged;
   }, [data, cached]);
 
-  //  On mount: make sure window reference exists
+  useEffect(() => {
+    const timestamp = data?.lastFetchTime;
+    if (!timestamp || persistedFetchTime.current === timestamp) return;
+
+    persistedFetchTime.current = timestamp;
+    localStorage.setItem("cached_locations", JSON.stringify(merged));
+    localStorage.setItem("cached_time", timestamp);
+    localStorage.setItem("cached_locations_version", LOCATION_CACHE_VERSION);
+    setCache({ locations: merged, usable: true });
+  }, [data, merged]);
+
   useEffect(() => {
     if (typeof window !== "undefined") {
-      (window as any).locations = cached;
+      (window as any).locations = merged;
     }
-  }, []);
+  }, [merged]);
 
   return {
     locations: merged,
-    isLoading: !error && !data && !cached.length,
+    isLoading: !error && !data?.lastFetchTime && !cached.length,
     isValidating,
     error,
     mutate,

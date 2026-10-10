@@ -1,7 +1,7 @@
 "use client";
 // TODO: Read and break where ever possible
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { useGContext } from "@/components/ContextProvider";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -29,7 +29,6 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
-import { file } from "zod";
 
 type MapProps = {
   onMarkerClick: () => void;
@@ -68,19 +67,37 @@ const FALLBACK_CENTER: [number, number] = [
   26.50939610022435, // latitude
 ];
 
+const LOCATION_MARKER_SIZE = 10;
+
+function maxLayerForZoom(zoom: number): number {
+  if (zoom > 17) return 5;
+  if (zoom > 16.5) return 4;
+  if (zoom > 16) return 3;
+  if (zoom > 15) return 2;
+  return 1;
+}
+
+type LocationMarker = {
+  marker: maplibregl.Marker;
+  root: ReturnType<typeof createRoot>;
+};
+
 // Main Map
 export default function Map({ onMarkerClick, locations }: MapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const userMarkerRef = useRef<maplibregl.Marker | null>(null);
-  const locationMarkers = useRef<maplibregl.Marker[]>([]);
+  const locationMarkers = useRef<LocationMarker[]>([]);
   const router = useRouter();
   const [mapLoaded, setMapLoaded] = useState(false);
   const [locationDenied, setLocationDenied] = useState(false);
   const [geoState, setGeoState] = useState<PermissionState | null>(null);
   const { setGlobalLoading } = useGContext();
-  const zoom = mapRef.current?.getZoom()
-  const [filteredLocations, setFilteredLocations] = useState(locations.filter((loc) => loc.layer<=1));
+  const [maxVisibleLayer, setMaxVisibleLayer] = useState(1);
+  const filteredLocations = useMemo(
+    () => locations.filter((loc) => (loc.layer ?? 1) <= maxVisibleLayer),
+    [locations, maxVisibleLayer],
+  );
 
   // Track geolocation permission state (if browser supports it)
   useEffect(() => {
@@ -124,6 +141,8 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
       localStorage.getItem("map_center") || "null",
     );
     const savedZoom = Number(localStorage.getItem("map_zoom")) || 14;
+    let userRoot: ReturnType<typeof createRoot> | null = null;
+    let handleTriggerAddLocation: (() => void) | null = null;
 
     // Helper to set up the map for BOTH success + fallback
     const setupMap = (startCenter: [number, number]) => {
@@ -149,7 +168,7 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
 
       userWrapper.appendChild(userInner);
 
-      const userRoot = createRoot(userInner);
+      userRoot = createRoot(userInner);
       userRoot.render(
         <div className="relative flex flex-col items-center justify-center -mt-10">
           <div className="relative z-10 filter drop-shadow-md transform transition-transform hover:scale-110">
@@ -205,14 +224,15 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
       });
 
       // Handle trigger from Add button
-      window.addEventListener("trigger-add-location", () => {
+      handleTriggerAddLocation = () => {
         if (!mapRef.current || !userMarkerRef.current) return;
         const center = mapRef.current.getCenter();
         userMarkerRef.current.setLngLat(center);
         localStorage.setItem("selected_lat", center.lat.toString());
         localStorage.setItem("selected_lon", center.lng.toString());
         onMarkerClick();
-      });
+      };
+      window.addEventListener("trigger-add-location", handleTriggerAddLocation);
 
       // Save camera position on move
       map.on("moveend", () => {
@@ -224,6 +244,7 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
       });
 
       map.on("load", () => {
+        setMaxVisibleLayer(maxLayerForZoom(map.getZoom()));
         setMapLoaded(true);
         setGlobalLoading(false);
         map.resize();
@@ -256,6 +277,10 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
     }
 
     return () => {
+      if (handleTriggerAddLocation) {
+        window.removeEventListener("trigger-add-location", handleTriggerAddLocation);
+      }
+      userRoot?.unmount();
       mapRef.current?.remove();
       mapRef.current = null;
       document.head.removeChild(styleSheet);
@@ -268,7 +293,10 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
     const map = mapRef.current;
 
     // Clear previous markers
-    locationMarkers.current.forEach((m) => m.remove());
+    locationMarkers.current.forEach(({ marker, root }) => {
+      root.unmount();
+      marker.remove();
+    });
     locationMarkers.current = [];
 
     if (!locations?.length) {
@@ -290,14 +318,14 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
 
       const inner = document.createElement("div");
       inner.style.cssText = `
-          width: 28px; height: 28px;
+          width: ${LOCATION_MARKER_SIZE}px; height: ${LOCATION_MARKER_SIZE}px;
           display: flex; align-items: center; justify-content: center;
           background: ${color};
           color: white;
           border-radius: 50%;
-          box-shadow: 0 4px 10px ${color}70, 0 2px 4px rgba(0,0,0,0.1);
+          box-shadow: 0 2px 6px ${color}70, 0 1px 3px rgba(0,0,0,0.1);
           transition: transform 140ms ease;
-          border: 2px solid white;
+          border: 1.5px solid white;
           animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
           opacity: 0;
           // animation-delay: ${index * 0.03}s;
@@ -307,7 +335,7 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
       el.appendChild(inner);
 
       const root = createRoot(inner);
-      root.render(<Icon size={16} color="white" />);
+      root.render(<Icon size={5} color="white" />);
 
       const marker = new maplibregl.Marker({ element: el, anchor: "center" })
         .setLngLat([loc.longitude, loc.latitude])
@@ -338,7 +366,7 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
         }, 400);
       });
 
-      locationMarkers.current.push(marker);
+      locationMarkers.current.push({ marker, root });
     });
 
     console.log(`Rendered ${locations.length} markers`);
@@ -347,6 +375,16 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
   useEffect(() => {
     if (mapLoaded) renderMarkers();
   }, [locations, mapLoaded, renderMarkers]);
+
+  useEffect(() => {
+    return () => {
+      locationMarkers.current.forEach(({ marker, root }) => {
+        root.unmount();
+        marker.remove();
+      });
+      locationMarkers.current = [];
+    };
+  }, []);
 
   // Refresh markers when drawer closes
   useEffect(() => {
@@ -374,33 +412,18 @@ export default function Map({ onMarkerClick, locations }: MapProps) {
     const handleZoom = () => {
       const zoom = map.getZoom();
       const scale = Math.min(Math.max((zoom - 12) / 6 + 0.9, 0.9), 1.4);
-      console.log(zoom);
-      if (zoom > 17){
-        console.log("layer 12345");
-        setFilteredLocations(locations.filter((loc) => loc.layer <= 5))
-      } else if (zoom > 16.5){
-        console.log("layer 1 + 2 + 3")
-        setFilteredLocations(locations.filter((loc) => loc.layer <= 4))
-      } else if (zoom > 16){
-        console.log("layer 1234")
-        setFilteredLocations(locations.filter((loc) => loc.layer <= 3))
-      } else if (zoom > 15){
-        console.log("layer 1 + layer2")
-        setFilteredLocations(locations.filter((loc) => loc.layer <= 2))
-      } else {
-        console.log("Layer 1");
-        setFilteredLocations(locations.filter((loc) => loc.layer <= 1))
-        console.log(locations.filter((loc) => loc.layer >= 1).length)
-      }
-      console.log(filteredLocations.length)
+      const nextMaxVisibleLayer = maxLayerForZoom(zoom);
+      setMaxVisibleLayer((current) =>
+        current === nextMaxVisibleLayer ? current : nextMaxVisibleLayer,
+      );
       locationMarkers.current.forEach((m) => {
-        const el = m.getElement();
+        const el = m.marker.getElement();
         const inner = el.firstElementChild as HTMLElement;
         if (inner) {
-          inner.style.width = `${28 * scale}px`;
-          inner.style.height = `${28 * scale}px`;
+          inner.style.width = `${LOCATION_MARKER_SIZE * scale}px`;
+          inner.style.height = `${LOCATION_MARKER_SIZE * scale}px`;
         }
-      }, []);
+      });
     };
     map.on("zoom", handleZoom);
     return () => {

@@ -66,8 +66,8 @@ export function BottomNav() {
     }
 
     if (path) {
-      router.push(path);
-      window.scrollTo(0, 0);
+        router.push(path);
+        window.scrollTo(0, 0);
     }
   };
 

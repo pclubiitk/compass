@@ -1,4 +1,5 @@
 import type { AppProps } from "next/app";
+import React from "react";
 import "@/styles/styles.css";
 import "@/styles/globals.css";
 import Head from "next/head";
@@ -33,9 +34,20 @@ function randomHeartProps(i: number) {
   };
 }
 
-// TODO: Extract out app wrapper later.
 function AppWrapper({ Component, pageProps }: AppProps) {
   const { isPuppyLove } = useGContext();
+
+  // Read theme override from localStorage (written by compass app for consistency)
+  const [themeOverride, setThemeOverride] = React.useState<string | undefined>(undefined);
+
+  React.useEffect(() => {
+    const t = localStorage.getItem("theme");
+    if (t === "light" || t === "dark") {
+      setThemeOverride(t);
+    }
+  }, []);
+
+  const forcedTheme = isPuppyLove ? "light" : themeOverride ?? undefined;
 
   return (
     <ThemeProvider
@@ -43,7 +55,7 @@ function AppWrapper({ Component, pageProps }: AppProps) {
       defaultTheme="system"
       enableSystem
       disableTransitionOnChange
-      forcedTheme={isPuppyLove ? "light" : "system"}
+      forcedTheme={forcedTheme}
     >
       <div
         className={`min-h-screen transition-colors duration-500 relative ${

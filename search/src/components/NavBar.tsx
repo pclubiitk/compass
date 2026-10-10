@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Info, User, BarChart3, MapPin } from "lucide-react";
+import { Info, User, BarChart3, Map } from "lucide-react";
 import { CardDescription, Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
@@ -24,7 +24,6 @@ interface NavBarProps {
 export const NavBar = (props: NavBarProps) => {
   const router = useRouter();
   const {
-    isPuppyLove,
     setIsPuppyLove,
     PLpermit,
     showSelections,
@@ -104,18 +103,7 @@ export const NavBar = (props: NavBarProps) => {
         {/* Right Side: Actions & Logos */}
         <div className="flex flex-row gap-1 sm:gap-2 items-center pr-2">
           {/* Main Logo */}
-          <Link
-            href="https://pclub.in"
-            className="hover:opacity-80 transition-opacity"
-          >
-            <Image
-              src={`${process.env.NEXT_PUBLIC_BASE_PATH || ""}/icons/logo.png`}
-              className="rounded-full"
-              alt="Pclub Logo"
-              width={36}
-              height={36}
-            />
-          </Link>
+          
 
           {/* Puppy Love Feature */}
           {props.isPLseason && (
@@ -140,7 +128,7 @@ export const NavBar = (props: NavBarProps) => {
               variant="secondary"
               size="icon"
               className="rounded-full border cursor-pointer bg-rose-50 hover:bg-rose-100 text-rose-500"
-              onClick={() => router.push("/stats")}
+              onClick={() => window.location.href = "/stats"}
             >
               <BarChart3 className="h-4 w-4" />
               <span className="sr-only">View PuppyLove Stats</span>
@@ -148,14 +136,7 @@ export const NavBar = (props: NavBarProps) => {
           )}
 
           {/* Info Button */}
-          <Button
-            variant="secondary"
-            size="icon"
-            className="rounded-full border cursor-pointer"
-            onClick={() => router.push("/info")}
-          >
-            <Info />
-          </Button>
+          
 
           {/* Campus Maps Button */}
           <Button
@@ -166,7 +147,7 @@ export const NavBar = (props: NavBarProps) => {
               window.location.href = `${MAPS_POINT}/maps`;
             }}
           >
-            <MapPin className="h-4 w-4" />
+            <Map className="h-4 w-4" />
             <span className="sr-only">Campus Maps</span>
           </Button>
           <Button
@@ -180,6 +161,31 @@ export const NavBar = (props: NavBarProps) => {
             <User className="h-4 w-4" />
             <span className="sr-only">Go to Profile</span>
           </Button>
+
+
+          <Button
+            variant="secondary"
+            size="icon"
+            className="rounded-full border cursor-pointer"
+            onClick={() => window.location.href = "/info"}
+          >
+            <Info />
+          </Button>
+
+          <Link
+            href="https://pclub.in"
+            className="hover:opacity-80 transition-opacity"
+          >
+            <Image
+              src={`${process.env.NEXT_PUBLIC_BASE_PATH || ""}/icons/logo.png`}
+              className="rounded-full"
+              alt="Pclub Logo"
+              width={36}
+              height={36}
+            />
+          </Link>
+
+
         </div>
       </Card>
     </>

@@ -178,6 +178,8 @@ export function SocialProfileCard({
             size="icon"
             className="h-12 w-12 shadow-md hover:shadow-lg transition-all hover:scale-105"
             onClick={() => {
+              const theme = document.documentElement.classList.contains("dark") ? "dark" : "light";
+              localStorage.setItem("theme", theme);
               window.location.href = searchUiUrl;
             }}
           >
@@ -196,7 +198,7 @@ export function SocialProfileCard({
             </Button>
           </div>
 
-          {/* Map button with "Under Development" badge */}
+          {/* noticeboard button with "Under Development" badge */}
           <div className="relative">
             <Button
               variant="outline"
@@ -215,7 +217,7 @@ export function SocialProfileCard({
             </div>
           </div>
 
-          <Button
+          {/* <Button
             variant="outline"
             size="icon"
             className="h-12 w-12"
@@ -224,7 +226,7 @@ export function SocialProfileCard({
             }}
           >
             <Info />
-          </Button>
+          </Button> */}
 
           <Button
             variant="outline"

@@ -264,15 +264,15 @@ export default function NoticeBoardPage() {
 
   return (
     <AuthGuard callbackUrl="/noticeboard">
-      <div className="min-h-screen bg-gray-50 px-4 py-8 overflow-y-scroll max-h-[100vh]">
+      <div className="min-h-screen bg-gray-50 dark:bg-zinc-950 px-4 py-8 overflow-y-scroll max-h-[100vh]">
         <div className="max-w-5xl mx-auto">
-          <h1 className="text-4xl font-bold text-gray-900 mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-8">
             Campus Notices
           </h1>
 
           <div className="relative mb-8">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-5 w-5 text-gray-400" />
+              <Search className="h-5 w-5 text-gray-400 dark:text-gray-500" />
             </div>
             {isAdmin ? (
               <button
@@ -300,8 +300,9 @@ export default function NoticeBoardPage() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="block w-full pl-10 pr-44 py-3 rounded-xl
-                border border-gray-300 focus:ring-2 focus:ring-blue-400
-                shadow-sm text-gray-800 placeholder-gray-500 transition-all"
+                border border-gray-300 dark:border-zinc-700 focus:ring-2 focus:ring-blue-400
+                bg-white dark:bg-zinc-900 shadow-sm text-gray-800 dark:text-gray-200
+                placeholder-gray-500 dark:placeholder-gray-500 transition-all"
             />
           </div>
 
@@ -321,17 +322,17 @@ export default function NoticeBoardPage() {
                 </Link>
               ))
             ) : loading ? (
-              <p className="text-center text-gray-500 py-12">
+              <p className="text-center text-gray-500 dark:text-gray-400 py-12">
                 Loading notices…
               </p>
             ) : (
-              <p className="text-center text-gray-500 py-12">
+              <p className="text-center text-gray-500 dark:text-gray-400 py-12">
                 No notices available at the moment.
               </p>
             )}
 
             {notices.length > 0 && (
-              <div ref={loaderRef} className="text-center py-6 text-gray-500">
+              <div ref={loaderRef} className="text-center py-6 text-gray-500 dark:text-gray-400">
                 {loading
                   ? "Loading more notices..."
                   : hasMore

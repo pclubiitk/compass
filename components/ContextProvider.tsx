@@ -32,7 +32,9 @@ const GlobalContext = createContext<GlobalContextType>({
 export function GlobalContextProvider({ children }: { children: ReactNode }) {
   const [isLoggedIn, setLoggedIn] = useState<boolean | null>(null);
   const [isGlobalLoading, setGlobalLoading] = useState<boolean>(true);
-  const [isPLseason, setPLseason] = useState<boolean>(true);
+  // Fail closed: PuppyLove UI must stay hidden until the authenticated
+  // session check explicitly reports the season as active (HTTP 202).
+  const [isPLseason, setPLseason] = useState<boolean>(false);
   const [isAdmin, setAdmin] = useState<boolean>(false);
 
   useEffect(() => {

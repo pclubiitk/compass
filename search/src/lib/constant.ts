@@ -16,13 +16,18 @@
 //   forgotPoint: "https://bsearch.pclub.in/forgot-password",
 // };
 
-// Prod
 const config = {
-  searchPoint: "https://search.pclub.in/students",
-  puppyLovePoint: "https://search.pclub.in",
-  profilePoint: "https://search.pclub.in",
-  loginPoint: "https://search.pclub.in/login",
-  forgotPoint: "https://search.pclub.in/forgot-password",
+  searchPoint:
+    process.env.NEXT_PUBLIC_SEARCH_SERVER?.trim() || "http://localhost:8083",
+  puppyLovePoint:
+    process.env.NEXT_PUBLIC_PUPPYLOVE_URL?.trim() || "http://localhost:8084",
+  profilePoint:
+    process.env.NEXT_PUBLIC_PROFILE_URL?.trim() || "http://localhost:3001",
+  loginPoint:
+    process.env.NEXT_PUBLIC_LOGIN_URL?.trim() || "http://localhost:3001/login",
+  forgotPoint:
+    process.env.NEXT_PUBLIC_FORGOT_PASSWORD_URL?.trim() ||
+    "http://localhost:3001/forgot-password",
 };
 
 // Backend Points
